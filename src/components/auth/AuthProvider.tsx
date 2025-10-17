@@ -44,34 +44,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isTeacher = userRole === 'teacher' || isAdmin;
   const isStudent = userRole === 'student';
 
-  // Helper function to fetch user profile with caching
+  // Helper function to fetch user profile with caching (includes school subscription check)
   const fetchUserProfile = useCallback(async (userId: string) => {
     const cacheKey = userId;
     const now = Date.now();
     const lastFetch = lastProfileFetch.current.get(cacheKey) || 0;
-    
+
     // Only fetch if we haven't fetched in the last 5 minutes
     if (profileCache.current.has(cacheKey) && (now - lastFetch) < 5 * 60 * 1000) {
       return profileCache.current.get(cacheKey);
     }
-    
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
-      
+
       const { data: profile, error } = await supabaseBrowser
         .from('user_profiles')
-        .select('role, subscription_type')
+        .select('role, subscription_type, subscription_status, school_code')
         .eq('user_id', userId)
         .abortSignal(controller.signal)
         .single();
-      
+
       clearTimeout(timeoutId);
-      
+
       if (!error && profile) {
-        profileCache.current.set(cacheKey, profile);
+        // Check school subscription if user has a school
+        let hasPremium = profile.subscription_status === 'active';
+
+        if (!hasPremium && profile.school_code) {
+          const { data: schoolData } = await supabaseBrowser
+            .from('school_codes')
+            .select('subscription_status')
+            .eq('code', profile.school_code)
+            .single();
+
+          if (schoolData && schoolData.subscription_status === 'active') {
+            hasPremium = true;
+          }
+        }
+
+        const enrichedProfile = {
+          ...profile,
+          has_premium: hasPremium
+        };
+
+        profileCache.current.set(cacheKey, enrichedProfile);
         lastProfileFetch.current.set(cacheKey, now);
-        return profile;
+        return enrichedProfile;
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
@@ -84,10 +104,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
 
-  // Check if subscription is active
+  // Check if subscription is active (individual OR school-based)
   const checkSubscriptionActive = (profile: any): boolean => {
     if (!profile) return false;
 
+    // Use the enriched profile's has_premium field if available
+    if (profile.has_premium !== undefined) {
+      return profile.has_premium;
+    }
+
+    // Fallback to old logic
     const now = new Date();
     const status = profile.subscription_status;
 

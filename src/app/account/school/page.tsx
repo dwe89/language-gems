@@ -19,25 +19,66 @@ interface SchoolMember {
     email: string;
     display_name: string | null;
     subscription_status: string;
-    created_at: string;
+    created_at: string | null;
   };
 }
 
+interface PendingInvitation {
+  id: string;
+  teacher_email: string;
+  teacher_name: string;
+  invitation_sent_at: string;
+  expires_at: string;
+  status: string;
+}
+
 export default function SchoolManagementPage() {
-  const { user, hasSubscription, isLoading } = useAuth();
+  const { user, hasSubscription, isLoading, userRole } = useAuth();
   const [members, setMembers] = useState<SchoolMember[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [schoolCode, setSchoolCode] = useState<string>('');
+  const [schoolName, setSchoolName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [newTeacherEmail, setNewTeacherEmail] = useState('');
+  const [newTeacherName, setNewTeacherName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isSchoolOwner, setIsSchoolOwner] = useState<boolean>(false);
+  const [checkingPermissions, setCheckingPermissions] = useState(true);
+
+  // Check if user is a school owner
+  useEffect(() => {
+    const checkSchoolOwner = async () => {
+      if (!user) {
+        setCheckingPermissions(false);
+        return;
+      }
+
+      try {
+        const { data: profile } = await supabaseBrowser
+          .from('user_profiles')
+          .select('is_school_owner')
+          .eq('user_id', user.id)
+          .single();
+
+        setIsSchoolOwner(profile?.is_school_owner || false);
+      } catch (error) {
+        console.error('Error checking school owner status:', error);
+        setIsSchoolOwner(false);
+      } finally {
+        setCheckingPermissions(false);
+      }
+    };
+
+    checkSchoolOwner();
+  }, [user]);
 
   useEffect(() => {
-    if (user && hasSubscription) {
+    if (user && hasSubscription && isSchoolOwner) {
       fetchSchoolMembers();
     }
-  }, [user, hasSubscription]);
+  }, [user, hasSubscription, isSchoolOwner]);
 
   const fetchSchoolMembers = async () => {
     try {
@@ -46,8 +87,10 @@ export default function SchoolManagementPage() {
       const data = await response.json();
 
       if (data.success) {
-        setMembers(data.members);
+        setMembers(data.members || []);
+        setPendingInvitations(data.pending_invitations || []);
         setSchoolCode(data.school_code);
+        setSchoolName(data.school_name || data.school_code);
       } else {
         setError(data.error || 'Failed to fetch school members');
       }
@@ -68,21 +111,28 @@ export default function SchoolManagementPage() {
       setError(null);
       setSuccess(null);
 
-      const response = await fetch('/api/school/members', {
+      // Use the new invitation endpoint that sends emails via Brevo
+      const response = await fetch('/api/school/invite-teacher', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           teacher_email: newTeacherEmail.trim(),
+          teacher_name: newTeacherName.trim() || newTeacherEmail.split('@')[0], // Use provided name or email prefix
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Teacher added to school successfully!');
+        if (data.invitation_sent) {
+          setSuccess('Invitation email sent! The teacher will receive an email with signup instructions.');
+        } else {
+          setSuccess('Teacher added to school successfully and notified via email!');
+        }
         setNewTeacherEmail('');
+        setNewTeacherName('');
         await fetchSchoolMembers(); // Refresh the list
       } else {
         setError(data.error || 'Failed to add teacher');
@@ -119,7 +169,40 @@ export default function SchoolManagementPage() {
     }
   };
 
-  if (isLoading) {
+  const deletePendingInvitation = async (invitationId: string, email: string) => {
+    if (!confirm(`Are you sure you want to cancel the invitation for ${email}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/school/invite-teacher?invitation_id=${invitationId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess('Invitation cancelled successfully!');
+        await fetchSchoolMembers(); // Refresh the list
+      } else {
+        setError(data.error || 'Failed to cancel invitation');
+      }
+    } catch (error) {
+      console.error('Error cancelling invitation:', error);
+      setError('Failed to cancel invitation');
+    }
+  };
+
+  // Helper function to format dates in DD/MM/YYYY format
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  if (isLoading || checkingPermissions) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -135,7 +218,7 @@ export default function SchoolManagementPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-slate-800 mb-4">Please sign in</h2>
-          <Link 
+          <Link
             href="/auth/login"
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
@@ -155,11 +238,33 @@ export default function SchoolManagementPage() {
           </div>
           <h2 className="text-2xl font-semibold text-slate-800 mb-4">Premium Required</h2>
           <p className="text-slate-600 mb-6">School management is available for Premium subscribers only.</p>
-          <Link 
+          <Link
             href="/account/upgrade"
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
             Upgrade to Premium
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSchoolOwner) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-8 w-8 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-4">School Owner Access Only</h2>
+          <p className="text-slate-600 mb-6">
+            Only school owners can manage teachers and invitations. You are currently a member of a school.
+          </p>
+          <Link
+            href="/account"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors inline-block"
+          >
+            Back to Account
           </Link>
         </div>
       </div>
@@ -193,7 +298,7 @@ export default function SchoolManagementPage() {
                     </span>
                   </div>
                   <p className="text-white/90 text-lg mb-2">
-                    You are the school owner for: <span className="font-bold">{schoolCode}</span>
+                    You are the school owner for: <span className="font-bold">{schoolName || schoolCode}</span>
                   </p>
                   <p className="text-white/80 text-sm">
                     Add teachers to your school and they'll automatically get premium access
@@ -269,21 +374,41 @@ export default function SchoolManagementPage() {
             Add Teacher to School
           </h2>
 
-          <form onSubmit={addTeacher} className="flex gap-4">
-            <div className="flex-1">
-              <input
-                type="email"
-                value={newTeacherEmail}
-                onChange={(e) => setNewTeacherEmail(e.target.value)}
-                placeholder="Enter teacher's email address"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                required
-              />
+          <form onSubmit={addTeacher} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="teacherName" className="block text-sm font-medium text-slate-700 mb-2">
+                  Teacher Name
+                </label>
+                <input
+                  id="teacherName"
+                  type="text"
+                  value={newTeacherName}
+                  onChange={(e) => setNewTeacherName(e.target.value)}
+                  placeholder="e.g., John Smith"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="teacherEmail" className="block text-sm font-medium text-slate-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  id="teacherEmail"
+                  type="email"
+                  value={newTeacherEmail}
+                  onChange={(e) => setNewTeacherEmail(e.target.value)}
+                  placeholder="teacher@school.com"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
             </div>
             <button
               type="submit"
               disabled={addingTeacher || !newTeacherEmail.trim()}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center font-semibold"
+              className="w-full md:w-auto px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center font-semibold"
             >
               {addingTeacher ? (
                 <>
@@ -300,12 +425,65 @@ export default function SchoolManagementPage() {
           </form>
         </div>
 
+        {/* Pending Invitations */}
+        {pendingInvitations.length > 0 && (
+          <div className="bg-amber-50 rounded-xl shadow-lg overflow-hidden border-2 border-amber-200 mb-8">
+            <div className="px-6 py-4 border-b border-amber-200 bg-amber-100">
+              <h2 className="text-xl font-semibold text-amber-900 flex items-center">
+                <Mail className="h-5 w-5 mr-2 text-amber-600" />
+                Pending Invitations ({pendingInvitations.length})
+              </h2>
+              <p className="text-sm text-amber-700 mt-1">Teachers who have been invited but haven't signed up yet</p>
+            </div>
+            <div className="divide-y divide-amber-200">
+              {pendingInvitations.map((invitation) => (
+                <div key={invitation.id} className="p-6 flex items-center justify-between bg-white">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                      <Mail className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-medium text-slate-900">{invitation.teacher_name}</h3>
+                        <span className="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-full">
+                          Pending
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-slate-600">
+                        <span className="flex items-center">
+                          <Mail className="h-4 w-4 mr-1" />
+                          {invitation.teacher_email}
+                        </span>
+                        <span className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          Invited {formatDate(invitation.invitation_sent_at)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Expires {formatDate(invitation.expires_at)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => deletePendingInvitation(invitation.id, invitation.teacher_email)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Cancel invitation"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* School Members List */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-200">
             <h2 className="text-xl font-semibold text-slate-900 flex items-center">
               <Users className="h-5 w-5 mr-2 text-indigo-600" />
-              School Members ({members.length})
+              Active Members ({members.filter(m => m.status === 'active').length})
             </h2>
           </div>
 
@@ -339,7 +517,7 @@ export default function SchoolManagementPage() {
                         </h3>
                         {member.role === 'owner' && (
                           <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                            Owner
+                            {userRole === 'admin' ? 'Admin' : 'Owner'}
                           </span>
                         )}
                       </div>
@@ -350,7 +528,7 @@ export default function SchoolManagementPage() {
                         </span>
                         <span className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
-                          Joined {new Date(member.joined_at).toLocaleDateString()}
+                          Joined {formatDate(member.joined_at)}
                         </span>
                       </div>
                     </div>

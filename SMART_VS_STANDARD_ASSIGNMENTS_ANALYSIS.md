@@ -1,33 +1,38 @@
-# Comprehensive vs Quick Assignment Analysis
+# Unified Assignment Creator - Quick & Advanced Modes
 
 ## 🎯 Overview
 
-The Language Gems platform supports two distinct assignment types, each designed for different teaching scenarios and complexity levels. This analysis documents the key differences, capabilities, and use cases for each type.
+The Language Gems platform now features a **unified assignment creator** with two modes:
+- **Quick Mode**: Simple, single-game assignments for focused practice
+- **Advanced Mode**: Multi-activity assignments with games, assessments, and worksheets
 
-## 📊 Assignment Type Comparison
+This consolidation eliminates confusion and provides a smooth learning curve from simple to complex assignments.
 
-### **Quick Assignments**
-**Route**: `/dashboard/assignments/new/page.tsx`
-**Purpose**: Simple, single-activity assignments with basic configuration
+## 📊 Assignment Mode Comparison
 
-### **Comprehensive Assignments** 
-**Route**: `/dashboard/assignments/new/enhanced/page.tsx`
-**Purpose**: Advanced, multi-activity assignments with dynamic configuration including games, grammar exercises, assessments, and worksheets
+### **Quick Mode**
+**Route**: `/dashboard/assignments/new` (with Quick Mode toggle)
+**Purpose**: Simple, single-game assignments with basic configuration
+
+### **Advanced Mode**
+**Route**: `/dashboard/assignments/new` (with Advanced Mode toggle)
+**Purpose**: Multi-activity assignments with dynamic configuration including games, grammar exercises, assessments, and worksheets
 
 ## 🔍 Detailed Feature Comparison
 
-| Feature | Quick Assignment | Comprehensive Assignment |
-|---------|-------------------|----------------------------|
-| **Game Selection** | Single game only | Up to 5 games simultaneously |
-| **Workflow Steps** | 3-4 basic steps | 5-step guided workflow |
-| **Content Configuration** | Static form fields | Dynamic sections based on selected games |
-| **Vocabulary Sources** | Basic theme/topic selection | Theme, topic, custom lists, inline creation |
-| **Sentence Support** | Limited | Full sentence game integration |
-| **UI Complexity** | Simple form interface | Advanced wizard with visual cards |
-| **Configuration Logic** | Manual setup | Smart auto-configuration |
-| **Content Consistency** | Manual coordination | Automatic theme/topic alignment |
-| **Progress Tracking** | Basic metrics | Enhanced multi-game analytics |
-| **Database Storage** | Simple assignment record | Complex config JSON structure |
+| Feature | Quick Mode | Advanced Mode |
+|---------|------------|---------------|
+| **Game Selection** | Single game only | Up to 15 games simultaneously |
+| **Assessments & Skills** | Not available | Full access to assessments and grammar skills |
+| **Workflow Steps** | Same 4-step wizard | Same 4-step wizard with more options |
+| **Content Configuration** | Simplified options | Dynamic sections based on selected activities |
+| **Vocabulary Sources** | Theme, topic, custom lists | Theme, topic, custom lists, inline creation |
+| **Sentence Support** | Available for sentence games | Full sentence game integration |
+| **UI Complexity** | Streamlined interface | Advanced wizard with all features |
+| **Configuration Logic** | Basic setup | Smart auto-configuration |
+| **Content Consistency** | Automatic | Automatic theme/topic alignment |
+| **Progress Tracking** | Standard metrics | Enhanced multi-activity analytics |
+| **Mode Switching** | Toggle to Advanced anytime | Toggle to Quick anytime |
 
 ## 🎮 Game Type Handling
 

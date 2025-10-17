@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Gem, Trophy, BookOpen, Eye, ArrowRight, ArrowLeft, CheckCircle,
   AlertCircle, Gamepad2, ClipboardList, X, Headphones, PenTool, Mic, Award, Info,
-  FileText, Target, GraduationCap
+  FileText, Target, GraduationCap, Zap, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabaseBrowser } from '../auth/AuthProvider';
@@ -331,6 +331,9 @@ export default function EnhancedAssignmentCreator({
 
   const { user } = useAuth();
   const [assignmentService] = useState(() => new EnhancedAssignmentService(supabaseBrowser));
+
+  // --- Quick/Advanced Mode Toggle ---
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false);
 
   // --- Main Assignment Data State ---
   const [assignmentDetails, setAssignmentDetails] = useState<Partial<AssignmentCreationData>>({
@@ -1871,7 +1874,8 @@ export default function EnhancedAssignmentCreator({
       onStepComplete: handleStepComplete,
       classes: availableClasses,
       loading,
-      error
+      error,
+      isAdvancedMode // Pass the mode to step components
     };
 
     switch (assignmentSteps[currentStep]?.id) {
@@ -1906,10 +1910,60 @@ export default function EnhancedAssignmentCreator({
         </div>
       ) : null}
 
-      {/* Compact Header */}
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Create New Assignment</h1>
-  <p className="text-sm text-gray-600">Set up activities & assessments</p>
+      {/* Compact Header with Mode Toggle */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Create New Assignment</h1>
+
+        {/* Assignment Type Selector - More Prominent */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-200">
+          <p className="text-center text-sm font-semibold text-gray-700 mb-4">Choose Assignment Type</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+            {/* Simple Assignment */}
+            <button
+              onClick={() => setIsAdvancedMode(false)}
+              className={`p-5 rounded-xl border-2 transition-all text-left ${
+                !isAdvancedMode
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-lg scale-105'
+                  : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:shadow-md'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <Zap className={`h-6 w-6 flex-shrink-0 ${!isAdvancedMode ? 'text-white' : 'text-blue-600'}`} />
+                <div>
+                  <h3 className={`font-bold text-lg mb-1 ${!isAdvancedMode ? 'text-white' : 'text-gray-900'}`}>
+                    Simple Assignment
+                  </h3>
+                  <p className={`text-sm ${!isAdvancedMode ? 'text-blue-100' : 'text-gray-600'}`}>
+                    One game or activity • Quick to set up • Perfect for homework
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* Multi-Activity Assignment */}
+            <button
+              onClick={() => setIsAdvancedMode(true)}
+              className={`p-5 rounded-xl border-2 transition-all text-left ${
+                isAdvancedMode
+                  ? 'bg-purple-600 border-purple-600 text-white shadow-lg scale-105'
+                  : 'bg-white border-gray-200 text-gray-700 hover:border-purple-300 hover:shadow-md'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <Sparkles className={`h-6 w-6 flex-shrink-0 ${isAdvancedMode ? 'text-white' : 'text-purple-600'}`} />
+                <div>
+                  <h3 className={`font-bold text-lg mb-1 ${isAdvancedMode ? 'text-white' : 'text-gray-900'}`}>
+                    Multi-Activity Assignment
+                  </h3>
+                  <p className={`text-sm ${isAdvancedMode ? 'text-purple-100' : 'text-gray-600'}`}>
+                    Multiple games & assessments • Full customization • Complete learning units
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Error Display */}

@@ -52,29 +52,41 @@ export default function AccountPage() {
           .eq('user_id', user.id)
           .single();
 
-        if (profileError || !profile?.school_initials) {
+        if (profileError) {
           console.error("Error fetching teacher profile:", profileError);
           return;
         }
 
-        // If user has a school_code, fetch member count
-        let memberCount = 0;
-        if (profile.school_code) {
+        // If user has a school_code, fetch school details and member count
+        if (profile?.school_code) {
+          // Fetch school details from school_codes table
+          const { data: schoolData, error: schoolError } = await supabaseBrowser
+            .from('school_codes')
+            .select('code, school_name, school_initials')
+            .eq('code', profile.school_code)
+            .single();
+
+          if (schoolError) {
+            console.error("Error fetching school data:", schoolError);
+            return;
+          }
+
+          // Fetch member count
           const { count } = await supabaseBrowser
             .from('school_memberships')
             .select('*', { count: 'exact', head: true })
             .eq('school_code', profile.school_code)
             .eq('status', 'active');
 
-          memberCount = count || 0;
+          const memberCount = count || 0;
 
           setSchoolInfo({
-            schoolCode: profile.school_code,
-            schoolInitials: profile.school_initials || profile.school_code,
+            schoolCode: schoolData.code,
+            schoolInitials: schoolData.school_initials || schoolData.code,
             isOwner: profile.is_school_owner || false,
             memberCount
           });
-        } else if (profile.school_initials) {
+        } else if (profile?.school_initials) {
           // Legacy users with only school_initials (no school_code yet)
           setSchoolInfo({
             schoolCode: profile.school_initials,
@@ -182,14 +194,6 @@ export default function AccountPage() {
 
   // Define account sections, conditionally showing Teacher Dashboard based on subscription
   const accountSections = [
-    // School Management for school owners only
-    ...(isTeacher && hasSubscription && schoolInfo?.isOwner ? [{
-      title: 'School Management',
-      description: 'Add teachers to your school and manage memberships',
-      icon: Users,
-      href: '/account/school',
-      color: 'from-green-500 to-emerald-600'
-    }] : []),
     {
       title: 'My Orders',
       description: 'View your purchase history and download your resources',
@@ -278,8 +282,8 @@ export default function AccountPage() {
         )}
 
 
-        {/* School Management - Prominent Feature for School Owners */}
-        {isTeacher && hasSubscription && schoolInfo?.isOwner && (
+        {/* School Management - Prominent Feature for School Owners Only */}
+        {isTeacher && hasSubscription && schoolInfo && schoolInfo.isOwner && (
           <div className="mb-8">
             <Link
               href="/account/school"
@@ -314,7 +318,7 @@ export default function AccountPage() {
                         {schoolInfo.memberCount} {schoolInfo.memberCount === 1 ? 'Teacher' : 'Teachers'}
                       </span>
                       <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full font-medium">
-                        Owner
+                        {schoolInfo.isOwner ? 'Owner' : 'Member'}
                       </span>
                     </div>
                   </div>

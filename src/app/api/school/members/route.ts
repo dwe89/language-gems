@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '../../../../lib/supabase-server';
+import { createServiceRoleClient } from '../../../../utils/supabase/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
-    
+
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -30,35 +31,65 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Get school members
-    const { data: members, error: membersError } = await supabase
+    // Use service role client to bypass RLS for reading member profiles
+    const supabaseAdmin = createServiceRoleClient();
+
+    // Get school members - manually join with user_profiles
+    const { data: memberships, error: membersError } = await supabaseAdmin
       .from('school_memberships')
-      .select(`
-        id,
-        role,
-        status,
-        joined_at,
-        member_user_id,
-        user_profiles!school_memberships_member_user_id_fkey (
-          email,
-          display_name,
-          subscription_status,
-          created_at
-        )
-      `)
+      .select('id, role, status, joined_at, invited_at, member_user_id')
       .eq('school_code', userProfile.school_code)
-      .eq('status', 'active')
       .order('joined_at', { ascending: false });
 
     if (membersError) {
-      console.error('Error fetching school members:', membersError);
+      console.error('Error fetching school memberships:', membersError);
       return NextResponse.json({ error: 'Failed to fetch school members' }, { status: 500 });
     }
+
+    // Fetch user profiles for each member using service role client to bypass RLS
+    const memberUserIds = memberships?.map(m => m.member_user_id) || [];
+    const { data: userProfiles, error: profilesError } = await supabaseAdmin
+      .from('user_profiles')
+      .select('user_id, email, display_name, subscription_status, created_at')
+      .in('user_id', memberUserIds);
+
+    if (profilesError) {
+      console.error('Error fetching user profiles:', profilesError);
+      return NextResponse.json({ error: 'Failed to fetch user profiles' }, { status: 500 });
+    }
+
+    // Combine memberships with user profiles
+    const members = memberships?.map(membership => ({
+      ...membership,
+      user_profiles: userProfiles?.find(p => p.user_id === membership.member_user_id) || {
+        email: 'Pending invitation',
+        display_name: null,
+        subscription_status: 'pending',
+        created_at: null
+      }
+    })) || [];
+
+    // Get pending invitations using service role client
+    const { data: pendingInvitations } = await supabaseAdmin
+      .from('pending_teacher_invitations')
+      .select('*')
+      .eq('school_code', userProfile.school_code)
+      .eq('status', 'pending')
+      .order('invitation_sent_at', { ascending: false });
+
+    // Get school name from school_codes using service role client
+    const { data: schoolData } = await supabaseAdmin
+      .from('school_codes')
+      .select('school_name')
+      .eq('code', userProfile.school_code)
+      .single();
 
     return NextResponse.json({
       success: true,
       school_code: userProfile.school_code,
-      members: members || []
+      school_name: schoolData?.school_name || userProfile.school_code,
+      members: members || [],
+      pending_invitations: pendingInvitations || []
     });
 
   } catch (error) {

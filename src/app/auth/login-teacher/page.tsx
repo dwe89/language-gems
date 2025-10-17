@@ -20,13 +20,13 @@ import {
 } from 'lucide-react';
 
 export default function TeacherLoginPage() {
-  const [email, setEmail] = useState('');
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState(searchParams?.get('email') ? decodeURIComponent(searchParams.get('email')!) : '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,6 +40,29 @@ export default function TeacherLoginPage() {
       const result = await signIn(email, password, 'teacher');
       if (result.error) {
         setError(result.error);
+        return;
+      }
+
+      // Check if there's a pending invitation to accept
+      const schoolCode = searchParams?.get('school_code');
+      const isInvitation = searchParams?.get('invitation');
+
+      if (schoolCode && isInvitation) {
+        // Accept the invitation
+        const inviteResponse = await fetch('/api/auth/accept-invitation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ school_code: schoolCode })
+        });
+
+        if (!inviteResponse.ok) {
+          const data = await inviteResponse.json();
+          setError(data.error || 'Failed to accept invitation');
+          return;
+        }
+
+        // Show success message and redirect
+        router.push('/account?invitation_accepted=true');
         return;
       }
 

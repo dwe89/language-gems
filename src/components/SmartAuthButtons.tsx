@@ -79,7 +79,7 @@ export default function SmartAuthButtons({ className = '', variant = 'default' }
           <button
             ref={buttonRef}
             onClick={() => setShowSignupSelector(true)}
-            className="block py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-900 rounded-full font-bold transition-colors text-center w-full"
+            className="block py-2 px-6 bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-blue-900 rounded-full font-bold transition-all active:scale-95 shadow-md active:shadow-inner text-center w-full"
           >
             Start Now
           </button>
@@ -108,7 +108,7 @@ export default function SmartAuthButtons({ className = '', variant = 'default' }
           <button
             ref={buttonRef}
             onClick={() => setShowSignupSelector(true)}
-            className="py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-bold transition-colors"
+            className="py-2 px-6 bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-blue-900 font-bold transition-all active:scale-95 shadow-sm active:shadow-inner"
           >
             Start Now
           </button>

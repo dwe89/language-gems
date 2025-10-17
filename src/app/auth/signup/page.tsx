@@ -28,24 +28,69 @@ export default function TeacherSignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [existingUserMessage, setExistingUserMessage] = useState<string | null>(null);
   const router = useRouter();
   const { signIn } = useAuth();
 
-  // Handle URL error parameters
+  // Handle URL parameters (invitation link, error params)
   useEffect(() => {
-    const errorParam = searchParams?.get('error');
-    if (errorParam) {
-      switch (errorParam) {
-        case 'verification_failed':
-          setError('Email verification failed. Please try again or request a new verification email.');
-          break;
-        case 'invalid_verification_link':
-          setError('Invalid verification link. Please try signing up again.');
-          break;
-        default:
-          setError('An error occurred during authentication.');
+    const checkExistingUser = async () => {
+      // Pre-fill email from invitation link
+      const emailParam = searchParams?.get('email');
+      if (emailParam) {
+        const decodedEmail = decodeURIComponent(emailParam);
+        setEmail(decodedEmail);
+
+        // Check if this email already exists
+        const schoolCodeParam = searchParams?.get('school_code');
+        if (schoolCodeParam) {
+          try {
+            console.log('🔍 Checking if user exists:', decodedEmail);
+            const response = await fetch('/api/auth/check-user', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: decodedEmail })
+            });
+            const data = await response.json();
+            console.log('📧 User check result:', data);
+
+            if (data.exists) {
+              console.log('✅ Existing user detected, showing login message');
+              setExistingUserMessage(
+                `You already have an account with this email. Please log in to accept the invitation to join ${schoolCodeParam}.`
+              );
+            } else {
+              console.log('🆕 New user, showing signup form');
+            }
+          } catch (err) {
+            console.error('Error checking user:', err);
+          }
+        }
       }
-    }
+
+      // Pre-fill school code from invitation link
+      const schoolCodeParam = searchParams?.get('school_code');
+      if (schoolCodeParam) {
+        setSelectedSchoolCode(schoolCodeParam.toUpperCase());
+      }
+
+      // Handle error parameters
+      const errorParam = searchParams?.get('error');
+      if (errorParam) {
+        switch (errorParam) {
+          case 'verification_failed':
+            setError('Email verification failed. Please try again or request a new verification email.');
+            break;
+          case 'invalid_verification_link':
+            setError('Invalid verification link. Please try signing up again.');
+            break;
+          default:
+            setError('An error occurred during authentication.');
+        }
+      }
+    };
+
+    checkExistingUser();
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -196,7 +241,28 @@ export default function TeacherSignupPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {existingUserMessage && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <div className="flex items-start space-x-3">
+                <CheckCircle className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 mb-2">Account Already Exists</h3>
+                  <p className="text-sm text-blue-700 mb-4">{existingUserMessage}</p>
+                  <Link
+                    href={`/auth/login-teacher?email=${encodeURIComponent(email)}&school_code=${selectedSchoolCode}&invitation=true`}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  >
+                    Go to Login
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hide form if existing user detected */}
+          {!existingUserMessage && (
+            <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                 Full Name
@@ -215,34 +281,54 @@ export default function TeacherSignupPage() {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="schoolName" className="block text-sm font-medium text-gray-700 mb-2">
-                School Name
-              </label>
-              <div className="relative">
-                <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  id="schoolName"
-                  type="text"
-                  value={schoolName}
-                  onChange={(e) => setSchoolName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., Language Gems Academy"
-                  required
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                This will generate your school code automatically
-              </p>
-            </div>
+            {/* Only show school name field if not joining via invitation */}
+            {!selectedSchoolCode && (
+              <>
+                <div>
+                  <label htmlFor="schoolName" className="block text-sm font-medium text-gray-700 mb-2">
+                    School Name
+                  </label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      id="schoolName"
+                      type="text"
+                      value={schoolName}
+                      onChange={(e) => setSchoolName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Language Gems Academy"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    This will generate your school code automatically
+                  </p>
+                </div>
 
-            {/* School Code Selector */}
-            {schoolName.trim() && (
-              <SchoolCodeSelector
-                schoolName={schoolName}
-                onCodeSelect={setSelectedSchoolCode}
-                selectedCode={selectedSchoolCode}
-              />
+                {/* School Code Selector */}
+                {schoolName.trim() && (
+                  <SchoolCodeSelector
+                    schoolName={schoolName}
+                    onCodeSelect={setSelectedSchoolCode}
+                    selectedCode={selectedSchoolCode}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Show school code info if joining via invitation */}
+            {selectedSchoolCode && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">Joining via invitation</p>
+                    <p className="text-sm text-blue-700 mt-1">
+                      School Code: <span className="font-mono font-semibold">{selectedSchoolCode}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
             <div>
@@ -296,15 +382,18 @@ export default function TeacherSignupPage() {
               )}
             </button>
           </form>
+          )}
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Already have an account?{' '}
-              <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-semibold">
-                Sign in
-              </Link>
-            </p>
-          </div>
+          {!existingUserMessage && (
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                Already have an account?{' '}
+                <Link href="/auth/login-teacher" className="text-blue-600 hover:text-blue-700 font-semibold">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">

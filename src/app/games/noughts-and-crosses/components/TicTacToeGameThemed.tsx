@@ -67,14 +67,30 @@ interface TicTacToeGameProps {
 
 const generateWrongOptions = (correctTranslation: string, vocabulary: any[]) => {
   if (!vocabulary || vocabulary.length === 0) return [];
-  
+
   const otherTranslations = vocabulary
     .filter((item: any) => item.translation !== correctTranslation)
     .map((item: any) => item.translation);
-  
+
   // Shuffle and take 3 random wrong options
   const shuffled = otherTranslations.sort(() => 0.5 - Math.random());
   return shuffled.slice(0, 3);
+};
+
+// Get special characters keyboard layout based on language
+const getSpecialCharacters = (language: string): string[] => {
+  switch (language) {
+    case 'french':
+      return ['à', 'â', 'é', 'è', 'ê', 'ë', 'î', 'ï', 'ô', 'ù', 'û', 'ü', 'ç', 'œ', 'æ', 'ÿ'];
+    case 'spanish':
+      return ['á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü', '¿', '¡'];
+    case 'german':
+      return ['ä', 'ö', 'ü', 'ß'];
+    case 'portuguese':
+      return ['á', 'â', 'ã', 'à', 'é', 'ê', 'í', 'ó', 'ô', 'õ', 'ú', 'ç'];
+    default:
+      return [];
+  }
 };
 
 export default function TicTacToeGame({
@@ -126,6 +142,10 @@ export default function TicTacToeGame({
   const [gameStartTime, setGameStartTime] = useState<Date | null>(null);
   const [questionStartTime, setQuestionStartTime] = useState<number>(0);
   const [storyDismissed, setStoryDismissed] = useState(false);
+
+  // Typing mode state
+  const [typingMode, setTypingMode] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState('');
 
   // Start timer when story is dismissed
   useEffect(() => {
@@ -273,12 +293,32 @@ export default function TicTacToeGame({
     setShowVocabQuestion(true);
   };
 
+  const handleTypedAnswer = async () => {
+    if (!currentQuestion || pendingMove === null || !typedAnswer.trim()) return;
+
+    // Normalize both strings for comparison (lowercase, trim)
+    const normalizedTyped = typedAnswer.trim().toLowerCase();
+    const normalizedCorrect = currentQuestion.translation.trim().toLowerCase();
+    const isCorrect = normalizedTyped === normalizedCorrect;
+
+    // Clear typed answer and hide question
+    setTypedAnswer('');
+    setShowVocabQuestion(false);
+
+    await processAnswer(isCorrect);
+  };
+
   const handleVocabAnswer = async (selectedIndex: number) => {
     setShowVocabQuestion(false);
 
     if (!currentQuestion || pendingMove === null) return;
 
     const isCorrect = selectedIndex === currentQuestion.correctIndex;
+    await processAnswer(isCorrect);
+  };
+
+  const processAnswer = async (isCorrect: boolean) => {
+    if (!currentQuestion || pendingMove === null) return;
     const responseTime = (Date.now() - questionStartTime) / 1000;
 
     // Record word practice with FSRS system (for both assignment and free play modes)
@@ -1613,7 +1653,7 @@ export default function TicTacToeGame({
               initial={{ scale: 0.8, y: 50 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.8, y: 50 }}
-              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-gray-200"
+              className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl border border-gray-200 max-h-[90vh] overflow-y-auto"
             >
               <div className="text-center mb-6">
                 <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1621,8 +1661,38 @@ export default function TicTacToeGame({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Vocabulary Challenge</h3>
                 <p className="text-gray-600">Answer correctly to make your move!</p>
+
+                {/* Mode Toggle */}
+                <div className="flex justify-center gap-2 mt-4">
+                  <button
+                    onClick={() => {
+                      setTypingMode(false);
+                      setTypedAnswer('');
+                    }}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      !typingMode
+                        ? 'bg-purple-600 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Multiple Choice
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTypingMode(true);
+                      setTypedAnswer('');
+                    }}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      typingMode
+                        ? 'bg-purple-600 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Type Answer
+                  </button>
+                </div>
               </div>
-              
+
               <div className="text-center mb-6">
                 <div className="text-sm text-purple-600 font-medium mb-2">
                   {currentQuestion.language} → English
@@ -1631,24 +1701,85 @@ export default function TicTacToeGame({
                   "{currentQuestion.word}"
                 </div>
               </div>
-              
-              <div className="space-y-3">
-                {currentQuestion.options.map((option: string, index: number) => (
+
+              {/* Multiple Choice Mode */}
+              {!typingMode && (
+                <div className="space-y-3">
+                  {currentQuestion.options.map((option: string, index: number) => (
+                    <motion.button
+                      key={index}
+                      onClick={() => {
+                        playSFX('button-click');
+                        handleVocabAnswer(index);
+                      }}
+                      className="w-full p-4 text-left rounded-xl border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all font-medium"
+                      whileHover={{ scale: 1.02, x: 4 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span className="text-purple-600 font-bold mr-3">{String.fromCharCode(65 + index)}.</span>
+                      <span className="text-gray-800">{option}</span>
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+
+              {/* Typing Mode */}
+              {typingMode && (
+                <div className="space-y-4">
+                  {/* Text Input */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={typedAnswer}
+                      onChange={(e) => setTypedAnswer(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && typedAnswer.trim()) {
+                          handleTypedAnswer();
+                        }
+                      }}
+                      placeholder="Type your answer..."
+                      className="w-full p-4 text-lg rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none transition-all"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Special Characters Keyboard */}
+                  {getSpecialCharacters(settings.language).length > 0 && (
+                    <div className="bg-gray-50 rounded-xl p-4">
+                      <div className="text-xs text-gray-600 font-medium mb-2 text-center">Special Characters</div>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {getSpecialCharacters(settings.language).map((char) => (
+                          <button
+                            key={char}
+                            onClick={() => {
+                              playSFX('button-click');
+                              setTypedAnswer(prev => prev + char);
+                            }}
+                            className="w-10 h-10 bg-white hover:bg-purple-50 border-2 border-gray-200 hover:border-purple-300 rounded-lg font-bold text-lg transition-all active:scale-95"
+                          >
+                            {char}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
                   <motion.button
-                    key={index}
-                    onClick={() => {
-                      playSFX('button-click');
-                      handleVocabAnswer(index);
-                    }}
-                    className="w-full p-4 text-left rounded-xl border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all font-medium"
-                    whileHover={{ scale: 1.02, x: 4 }}
-                    whileTap={{ scale: 0.98 }}
+                    onClick={handleTypedAnswer}
+                    disabled={!typedAnswer.trim()}
+                    className={`w-full p-4 rounded-xl font-bold text-white transition-all ${
+                      typedAnswer.trim()
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg'
+                        : 'bg-gray-300 cursor-not-allowed'
+                    }`}
+                    whileHover={typedAnswer.trim() ? { scale: 1.02, y: -2 } : {}}
+                    whileTap={typedAnswer.trim() ? { scale: 0.98 } : {}}
                   >
-                    <span className="text-purple-600 font-bold mr-3">{String.fromCharCode(65 + index)}.</span>
-                    <span className="text-gray-800">{option}</span>
+                    Submit Answer
                   </motion.button>
-                ))}
-              </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}

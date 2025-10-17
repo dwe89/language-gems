@@ -102,7 +102,8 @@ export default function ActivitiesSelectionStep({
   skillsConfig,
   setSkillsConfig,
   onStepComplete,
-}: StepProps) {
+  isAdvancedMode = true, // Default to advanced mode for backward compatibility
+}: StepProps & { isAdvancedMode?: boolean }) {
   const [activeTab, setActiveTab] = useState<'games' | 'assessments' | 'skills'>('games');
 
   // Check if step is completed
@@ -189,47 +190,61 @@ export default function ActivitiesSelectionStep({
         <p className="text-sm text-gray-600">Choose games and assessments for your assignment</p>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-        <button
-          onClick={() => setActiveTab('games')}
-          className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-            activeTab === 'games'
-              ? 'bg-white text-purple-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Gamepad2 className="h-4 w-4 mr-2" />
-          Practice Games ({gameConfig.selectedGames.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('assessments')}
-          className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-            activeTab === 'assessments'
-              ? 'bg-white text-purple-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <FileCheck className="h-4 w-4 mr-2" />
-          Assessments ({assessmentConfig.selectedAssessments.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('skills')}
-          className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-            activeTab === 'skills'
-              ? 'bg-white text-purple-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Brain className="h-4 w-4 mr-2" />
-          Skills ({skillsConfig.selectedSkills.length})
-        </button>
-      </div>
+      {/* Tab Navigation - Only show in Advanced Mode */}
+      {isAdvancedMode ? (
+        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setActiveTab('games')}
+            className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'games'
+                ? 'bg-white text-purple-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Gamepad2 className="h-4 w-4 mr-2" />
+            Practice Games ({gameConfig.selectedGames.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('assessments')}
+            className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'assessments'
+                ? 'bg-white text-purple-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <FileCheck className="h-4 w-4 mr-2" />
+            Assessments ({assessmentConfig.selectedAssessments.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('skills')}
+            className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'skills'
+                ? 'bg-white text-purple-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Brain className="h-4 w-4 mr-2" />
+            Skills ({skillsConfig.selectedSkills.length})
+          </button>
+        </div>
+      ) : (
+        <div className="text-center py-2">
+          <h3 className="text-lg font-semibold text-gray-900">Select Your Game</h3>
+          <p className="text-sm text-gray-600">Choose one game for this assignment</p>
+        </div>
+      )}
 
       {/* Tab Content */}
       <div className="min-h-[400px]">
         {activeTab === 'games' ? (
           <div>
+            {!isAdvancedMode && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Quick Mode:</strong> Select one game for focused practice. Switch to Advanced Mode for multi-game assignments.
+                </p>
+              </div>
+            )}
             <MultiGameSelector
               selectedGames={gameConfig.selectedGames}
               onSelectionChange={(selectedGames) => {
@@ -245,6 +260,7 @@ export default function ActivitiesSelectionStep({
                   gameRequirements: requirements
                 }));
               }}
+              maxSelections={isAdvancedMode ? 15 : 1}
             />
           </div>
         ) : activeTab === 'assessments' ? (
