@@ -126,9 +126,8 @@ export default function GrammarEditPage() {
       }
 
       setSuccess(true);
-      setTimeout(() => {
-        router.push(`/grammar-v2/${language}/${category}/${topic}`);
-      }, 1500);
+      // Refresh the data to show updated content
+      await fetchGrammarPage();
     } catch (err: any) {
       console.error('Error saving grammar page:', err);
       setError(err.message);
@@ -177,7 +176,13 @@ export default function GrammarEditPage() {
         {/* Success Message */}
         {success && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 font-medium">✅ Changes saved successfully! Redirecting...</p>
+            <p className="text-green-800 font-medium">✅ Changes saved successfully!</p>
+            <a
+              href={`/grammar-v2/${language}/${category}/${topic}`}
+              className="text-green-700 underline text-sm mt-2 inline-block"
+            >
+              View updated page →
+            </a>
           </div>
         )}
 
