@@ -24,6 +24,7 @@ export default function GrammarEditPage() {
   const category = searchParams.get('category');
   const topic = searchParams.get('topic');
 
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +40,12 @@ export default function GrammarEditPage() {
   const [sectionsJson, setSectionsJson] = useState('');
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     if (!language || !category || !topic) {
       setError('Missing required parameters');
       setLoading(false);
@@ -46,7 +53,7 @@ export default function GrammarEditPage() {
     }
 
     fetchGrammarPage();
-  }, [language, category, topic]);
+  }, [mounted, language, category, topic]);
 
   const fetchGrammarPage = async () => {
     try {
@@ -130,7 +137,7 @@ export default function GrammarEditPage() {
     }
   };
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
