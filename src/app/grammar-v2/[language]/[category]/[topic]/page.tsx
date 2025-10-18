@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import GrammarPageTemplate from '@/components/grammar/GrammarPageTemplate';
 
 interface PageProps {
@@ -12,9 +13,13 @@ interface PageProps {
 }
 
 // Generate static params for all grammar pages (for static generation)
+// Note: This runs at build time, so we use a direct Supabase client (not cookies-based)
 export async function generateStaticParams() {
-  const supabase = await createClient();
-  
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const { data: pages } = await supabase
     .from('grammar_pages')
     .select('language, category, topic_slug');
