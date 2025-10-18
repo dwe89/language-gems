@@ -1,0 +1,111 @@
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import GrammarPageTemplate from '@/components/grammar/GrammarPageTemplate';
+
+interface PageProps {
+  params: {
+    language: string;
+    category: string;
+    topic: string;
+  };
+}
+
+// Generate static params for all grammar pages (for static generation)
+export async function generateStaticParams() {
+  const supabase = createClient();
+  
+  const { data: pages } = await supabase
+    .from('grammar_pages')
+    .select('language, category, topic_slug');
+
+  if (!pages) return [];
+
+  return pages.map((page) => ({
+    language: page.language,
+    category: page.category,
+    topic: page.topic_slug,
+  }));
+}
+
+// Generate metadata dynamically from database
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const supabase = createClient();
+
+  const { data: page } = await supabase
+    .from('grammar_pages')
+    .select('title, description')
+    .eq('language', params.language)
+    .eq('category', params.category)
+    .eq('topic_slug', params.topic)
+    .single();
+
+  if (!page) {
+    return {
+      title: 'Grammar Topic Not Found - Language Gems',
+      description: 'The requested grammar topic could not be found.',
+    };
+  }
+
+  return {
+    title: `${page.title} - Language Gems`,
+    description: page.description,
+    keywords: `${params.language} grammar, ${params.category}, ${params.topic}, language learning`,
+  };
+}
+
+export default async function DynamicGrammarPage({ params }: PageProps) {
+  const supabase = createClient();
+
+  // Fetch page data from database
+  const { data: page, error } = await supabase
+    .from('grammar_pages')
+    .select('*')
+    .eq('language', params.language)
+    .eq('category', params.category)
+    .eq('topic_slug', params.topic)
+    .single();
+
+  // Handle not found
+  if (error || !page) {
+    console.error('Error fetching grammar page:', error);
+    notFound();
+  }
+
+  // Map language codes to full names
+  const languageMap: Record<string, string> = {
+    spanish: 'spanish',
+    french: 'french',
+    german: 'german',
+  };
+
+  return (
+    <>
+      {/* Add a banner to show this is the NEW database-driven version */}
+      <div className="bg-green-500 text-white text-center py-2 text-sm font-medium">
+        ✅ NEW: This page is now loaded from the database! (Test Mode)
+      </div>
+      
+      <GrammarPageTemplate
+        language={languageMap[page.language] || page.language}
+        category={page.category}
+        topic={page.topic_slug}
+        title={page.title}
+        description={page.description}
+        difficulty={page.difficulty}
+        estimatedTime={page.estimated_time}
+        sections={page.sections}
+        backUrl={page.back_url || `/grammar/${page.language}`}
+        practiceUrl={page.practice_url}
+        quizUrl={page.quiz_url}
+        songUrl={page.song_url}
+        youtubeVideoId={page.youtube_video_id}
+        relatedTopics={page.related_topics || []}
+      />
+    </>
+  );
+}
+
+// Enable ISR (Incremental Static Regeneration) with on-demand revalidation
+export const revalidate = 3600; // Revalidate every hour, or use on-demand revalidation
+
