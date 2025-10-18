@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { createBrowserClient } from '@/utils/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 import { Loader2, Save, X, ArrowLeft } from 'lucide-react';
 
 interface GrammarPageData {
@@ -51,7 +51,7 @@ export default function GrammarEditPage() {
   const fetchGrammarPage = async () => {
     try {
       setLoading(true);
-      const supabase = createBrowserClient();
+      const supabase = createClient();
 
       const { data: page, error: fetchError } = await supabase
         .from('grammar_pages')
