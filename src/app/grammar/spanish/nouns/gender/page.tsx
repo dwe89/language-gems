@@ -1,219 +1,277 @@
-'use client';
+import { Metadata } from 'next';
+import GrammarPageTemplate from '../../../../../components/grammar/GrammarPageTemplate';
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, Target, Award, Clock, Users, Gem, Star, Play, Music } from 'lucide-react';
-import Link from 'next/link';
-import { GemCard, GemButton } from '../../../../../components/ui/GemTheme';
-import FlagIcon from '../../../../../components/ui/FlagIcon';
-import { useAuth } from '../../../../../components/auth/AuthProvider';
-
-const examples = [
-  {
-    spanish: 'el libro',
-    english: 'the book',
-    explanation: 'Masculine noun ending in -o'
-  },
-  {
-    spanish: 'la mesa',
-    english: 'the table',
-    explanation: 'Feminine noun ending in -a'
-  },
-  {
-    spanish: 'el problema',
-    english: 'the problem',
-    explanation: 'Exception: masculine noun ending in -a'
-  },
-  {
-    spanish: 'la mano',
-    english: 'the hand',
-    explanation: 'Exception: feminine noun ending in -o'
-  }
-];
-
-const relatedTopics = [
-  { name: 'Articles (el, la, los, las)', href: '/grammar/spanish/nouns/articles' },
-  { name: 'Plural Formation', href: '/grammar/spanish/nouns/plurals' },
-  { name: 'Adjective Agreement', href: '/grammar/spanish/adjectives/agreement' }
-];
+export const metadata: Metadata = {
+  title: 'Spanish Noun Gender - Language Gems',
+  description: 'Master Spanish noun gender rules. Learn masculine and feminine noun patterns including word endings (-ión, -dad, -eza, -mente) with comprehensive examples.',
+  keywords: 'Spanish noun gender, masculine feminine nouns, Spanish grammar, noun endings, -ión, -dad, -eza, -mente',
+};
 
 export default function SpanishNounGenderPage() {
-  const { user } = useAuth();
-
-  console.log('🏗️ [NOUN GENDER] Page loaded');
+  const sections = [
+    {
+      title: 'Overview',
+      content: 'Every Spanish noun has a grammatical gender: either masculine or feminine. This gender is not always logical or based on biological sex. Instead, it is determined by the noun\'s ending and must be memorized. The gender of a noun is crucial because it affects the articles (el, la, los, las) and adjectives that accompany it.'
+    },
+    {
+      title: 'Basic Gender Rules by Ending',
+      content: 'While Spanish noun gender can seem arbitrary, there are patterns based on word endings that can help you determine or remember the gender of most nouns.',
+      subsections: [
+        {
+          title: 'Masculine Nouns (-O)',
+          content: 'The most reliable rule: nouns ending in -o are almost always masculine. This is the most consistent pattern in Spanish.',
+          examples: [
+            {
+              spanish: 'el libro (the book), el gato (the cat), el carro (the car)',
+              english: 'the book, the cat, the car',
+              highlight: ['libro', 'gato', 'carro']
+            },
+            {
+              spanish: 'el teléfono, el dinero, el trabajo, el tiempo',
+              english: 'the telephone, the money, the work, the time',
+              highlight: ['teléfono', 'dinero', 'trabajo', 'tiempo']
+            }
+          ]
+        },
+        {
+          title: 'Feminine Nouns (-A)',
+          content: 'Nouns ending in -a are usually feminine. This is the second most reliable pattern.',
+          examples: [
+            {
+              spanish: 'la casa (the house), la mesa (the table), la ventana (the window)',
+              english: 'the house, the table, the window',
+              highlight: ['casa', 'mesa', 'ventana']
+            },
+            {
+              spanish: 'la puerta, la silla, la planta, la música',
+              english: 'the door, the chair, the plant, the music',
+              highlight: ['puerta', 'silla', 'planta', 'música']
+            }
+          ]
+        }
+      ]
+    },
+    {
+      title: 'Feminine Nouns by Ending',
+      content: 'Certain word endings are almost always feminine, regardless of whether they end in -a.',
+      subsections: [
+        {
+          title: 'Nouns Ending in -CIÓN',
+          content: 'All nouns ending in -ción are feminine. This is a very reliable rule.',
+          examples: [
+            {
+              spanish: 'la acción (the action), la canción (the song), la educación (the education)',
+              english: 'the action, the song, the education',
+              highlight: ['acción', 'canción', 'educación']
+            },
+            {
+              spanish: 'la información, la situación, la solución, la dirección',
+              english: 'the information, the situation, the solution, the direction',
+              highlight: ['información', 'situación', 'solución', 'dirección']
+            }
+          ]
+        },
+        {
+          title: 'Nouns Ending in -DAD',
+          content: 'All nouns ending in -dad are feminine. This is another very reliable rule.',
+          examples: [
+            {
+              spanish: 'la ciudad (the city), la verdad (the truth), la libertad (the freedom)',
+              english: 'the city, the truth, the freedom',
+              highlight: ['ciudad', 'verdad', 'libertad']
+            },
+            {
+              spanish: 'la realidad, la personalidad, la responsabilidad, la oportunidad',
+              english: 'the reality, the personality, the responsibility, the opportunity',
+              highlight: ['realidad', 'personalidad', 'responsabilidad', 'oportunidad']
+            }
+          ]
+        },
+        {
+          title: 'Nouns Ending in -EZA',
+          content: 'Nouns ending in -eza are feminine. These often describe abstract qualities or states.',
+          examples: [
+            {
+              spanish: 'la belleza (the beauty), la tristeza (the sadness), la naturaleza (the nature)',
+              english: 'the beauty, the sadness, the nature',
+              highlight: ['belleza', 'tristeza', 'naturaleza']
+            },
+            {
+              spanish: 'la riqueza, la pobreza, la pureza, la fortaleza',
+              english: 'the wealth, the poverty, the purity, the strength',
+              highlight: ['riqueza', 'pobreza', 'pureza', 'fortaleza']
+            }
+          ]
+        },
+        {
+          title: 'Nouns Ending in -MENTE',
+          content: 'Nouns ending in -mente are feminine. These are often abstract nouns.',
+          examples: [
+            {
+              spanish: 'la mente (the mind), la gente (the people), la mente',
+              english: 'the mind, the people',
+              highlight: ['mente', 'gente']
+            }
+          ]
+        },
+        {
+          title: 'Nouns Ending in -TUDE',
+          content: 'Nouns ending in -tude are feminine.',
+          examples: [
+            {
+              spanish: 'la actitud (the attitude), la gratitud (the gratitude), la altitud (the altitude)',
+              english: 'the attitude, the gratitude, the altitude',
+              highlight: ['actitud', 'gratitud', 'altitud']
+            }
+          ]
+        },
+        {
+          title: 'Nouns Ending in -SIÓN',
+          content: 'Nouns ending in -sión are feminine, similar to -ción.',
+          examples: [
+            {
+              spanish: 'la decisión (the decision), la televisión (the television), la versión (the version)',
+              english: 'the decision, the television, the version',
+              highlight: ['decisión', 'televisión', 'versión']
+            }
+          ]
+        }
+      ]
+    },
+    {
+      title: 'Masculine Nouns by Ending',
+      content: 'Certain word endings are typically masculine.',
+      subsections: [
+        {
+          title: 'Nouns Ending in -O (Most Common)',
+          content: 'As mentioned, -o is the most common masculine ending.',
+          examples: [
+            {
+              spanish: 'el libro, el gato, el teléfono, el trabajo',
+              english: 'the book, the cat, the telephone, the work',
+              highlight: ['libro', 'gato', 'teléfono', 'trabajo']
+            }
+          ]
+        },
+        {
+          title: 'Nouns Ending in Consonants',
+          content: 'Many nouns ending in consonants are masculine, especially -l, -r, -n, -s.',
+          examples: [
+            {
+              spanish: 'el papel (the paper), el color (the color), el pan (the bread), el mes (the month)',
+              english: 'the paper, the color, the bread, the month',
+              highlight: ['papel', 'color', 'pan', 'mes']
+            },
+            {
+              spanish: 'el árbol, el profesor, el corazón, el país',
+              english: 'the tree, the professor, the heart, the country',
+              highlight: ['árbol', 'profesor', 'corazón', 'país']
+            }
+          ]
+        }
+      ]
+    },
+    {
+      title: 'Important Exceptions',
+      content: 'Some nouns do not follow the typical patterns and must be memorized.',
+      subsections: [
+        {
+          title: 'Masculine Nouns Ending in -A',
+          content: 'These are exceptions to the -a = feminine rule. They must be memorized.',
+          examples: [
+            {
+              spanish: 'el día (the day), el mapa (the map), el problema (the problem)',
+              english: 'the day, the map, the problem',
+              highlight: ['día', 'mapa', 'problema']
+            },
+            {
+              spanish: 'el sistema, el tema, el programa, el drama, el poeta, el planeta',
+              english: 'the system, the theme, the program, the drama, the poet, the planet',
+              highlight: ['sistema', 'tema', 'programa', 'drama', 'poeta', 'planeta']
+            }
+          ]
+        },
+        {
+          title: 'Feminine Nouns Ending in -O',
+          content: 'These are exceptions to the -o = masculine rule. They must be memorized.',
+          examples: [
+            {
+              spanish: 'la mano (the hand), la foto (the photo), la moto (the motorcycle)',
+              english: 'the hand, the photo, the motorcycle',
+              highlight: ['mano', 'foto', 'moto']
+            },
+            {
+              spanish: 'la radio, la soprano, la contralto',
+              english: 'the radio, the soprano, the contralto',
+              highlight: ['radio', 'soprano', 'contralto']
+            }
+          ]
+        }
+      ]
+    },
+    {
+      title: 'Gender and Biological Sex',
+      content: 'In Spanish, grammatical gender does not always correspond to biological sex. For example, "la persona" (the person) is feminine even when referring to a man. Similarly, "el personaje" (the character) is masculine even when referring to a female character.',
+      examples: [
+        {
+          spanish: 'la persona importante (the important person - can be male or female)',
+          english: 'the important person',
+          highlight: ['persona']
+        },
+        {
+          spanish: 'el médico (the doctor - can be male or female)',
+          english: 'the doctor',
+          highlight: ['médico']
+        }
+      ]
+    },
+    {
+      title: 'Practical Examples',
+      content: 'Study these sentences to see how noun gender affects articles and adjectives:',
+      examples: [
+        {
+          spanish: 'El libro rojo está en la mesa grande.',
+          english: 'The red book is on the big table.',
+          highlight: ['libro', 'mesa']
+        },
+        {
+          spanish: 'La ciudad es hermosa y la naturaleza es bella.',
+          english: 'The city is beautiful and the nature is beautiful.',
+          highlight: ['ciudad', 'naturaleza']
+        },
+        {
+          spanish: 'El problema es importante y la solución es difícil.',
+          english: 'The problem is important and the solution is difficult.',
+          highlight: ['problema', 'solución']
+        },
+        {
+          spanish: 'La información es clara y el sistema es complicado.',
+          english: 'The information is clear and the system is complicated.',
+          highlight: ['información', 'sistema']
+        }
+      ]
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-lg">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/grammar/spanish/nouns"
-                className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors shadow-sm"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </Link>
-              <div className="flex items-center space-x-4">
-                <FlagIcon countryCode="ES" size="xl" />
-                <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg">
-                  <BookOpen className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-800 mb-2">Spanish Noun Gender</h1>
-                  <p className="text-gray-600 text-lg">Master the rules for masculine and feminine nouns</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <span className="px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg">
-                beginner
-              </span>
-              <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
-                <Clock className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-700">10 min read</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          {/* Main Content */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-12"
-          >
-            <GemCard className="shadow-xl border border-gray-200">
-              <h2 className="text-3xl font-bold text-gray-800 mb-6">Spanish Noun Gender</h2>
-              <div className="prose prose-lg max-w-none mb-8">
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  Spanish nouns are either <strong>masculine</strong> or <strong>feminine</strong>. This grammatical gender affects the articles and adjectives that accompany the noun.
-                </p>
-
-                <h3 className="text-2xl font-semibold text-gray-800 mb-4">Basic Rules</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div className="p-6 bg-blue-50 border border-blue-200 rounded-xl">
-                    <h4 className="text-xl font-semibold text-blue-800 mb-3">Masculine Nouns</h4>
-                    <p className="text-gray-700 mb-3">Most nouns ending in <strong>-o</strong> are masculine:</p>
-                    <ul className="space-y-1 text-gray-700">
-                      <li>• <strong>el libro</strong> (the book)</li>
-                      <li>• <strong>el gato</strong> (the cat)</li>
-                      <li>• <strong>el carro</strong> (the car)</li>
-                    </ul>
-                  </div>
-
-                  <div className="p-6 bg-pink-50 border border-pink-200 rounded-xl">
-                    <h4 className="text-xl font-semibold text-pink-800 mb-3">Feminine Nouns</h4>
-                    <p className="text-gray-700 mb-3">Most nouns ending in <strong>-a</strong> are feminine:</p>
-                    <ul className="space-y-1 text-gray-700">
-                      <li>• <strong>la casa</strong> (the house)</li>
-                      <li>• <strong>la mesa</strong> (the table)</li>
-                      <li>• <strong>la ventana</strong> (the window)</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <h3 className="text-2xl font-semibold text-gray-800 mb-4">Important Exceptions</h3>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="text-lg font-semibold text-yellow-800 mb-3">Masculine words ending in -a</h4>
-                      <ul className="space-y-1 text-gray-700">
-                        <li>• <strong>el día</strong> (the day)</li>
-                        <li>• <strong>el mapa</strong> (the map)</li>
-                        <li>• <strong>el problema</strong> (the problem)</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-semibold text-yellow-800 mb-3">Feminine words ending in -o</h4>
-                      <ul className="space-y-1 text-gray-700">
-                        <li>• <strong>la mano</strong> (the hand)</li>
-                        <li>• <strong>la foto</strong> (the photo)</li>
-                        <li>• <strong>la moto</strong> (the motorcycle)</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Examples */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <Star className="w-5 h-5 mr-2 text-yellow-500" />
-                  Examples
-                </h3>
-                <div className="grid gap-4">
-                  {examples.map((example, index) => (
-                    <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-6 rounded-xl shadow-sm">
-                      <div className="space-y-3">
-                        <div className="text-lg font-semibold text-gray-800">{example.spanish}</div>
-                        <div className="text-gray-600 italic text-base">{example.english}</div>
-                        <div className="text-sm text-blue-600 font-medium">{example.explanation}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </GemCard>
-          </motion.div>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-            <GemButton
-              variant="gem"
-              gemType={user ? "rare" : "common"}
-              onClick={() => window.location.href = '/grammar/spanish/nouns/gender/practice'}
-              className="w-full"
-            >
-              <Target className="w-5 h-5 mr-2" />
-              {user ? 'Practice Exercises' : 'Free Practice'}
-            </GemButton>
-            <GemButton
-              variant="gem"
-              gemType={user ? "epic" : "common"}
-              onClick={() => window.location.href = '/grammar/spanish/nouns/gender/quiz'}
-              className="w-full"
-            >
-              <Award className="w-5 h-5 mr-2" />
-              {user ? 'Take Quiz' : 'Free Quiz'}
-            </GemButton>
-            <GemButton
-              variant="gem"
-              gemType="legendary"
-              onClick={() => window.location.href = '/songs/es?theme=grammar&topic=noun-gender'}
-              className="w-full"
-            >
-              <Music className="w-5 h-5 mr-2" />
-              Learn with Song
-            </GemButton>
-          </div>
-
-          {/* Related Topics */}
-          <GemCard className="shadow-xl">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Related Topics</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {relatedTopics.map((topic, index) => (
-                <Link key={index} href={topic.href}>
-                  <div className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all duration-200">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-gray-800">{topic.name}</h4>
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
-                        beginner
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </GemCard>
-        </div>
-      </div>
-    </div>
+    <GrammarPageTemplate
+      language="spanish"
+      category="nouns"
+      topic="gender"
+      title="Spanish Noun Gender"
+      description="Master Spanish noun gender rules including masculine and feminine patterns with word endings like -ión, -dad, -eza, and -mente"
+      difficulty="beginner"
+      estimatedTime={25}
+      sections={sections}
+      backUrl="/grammar/spanish"
+      practiceUrl="/grammar/spanish/nouns/gender/practice"
+      quizUrl="/grammar/spanish/nouns/gender/test"
+      youtubeVideoId="EGaSgIRswcI"
+      relatedTopics={[
+        { title: 'Plural Formation', url: '/grammar/spanish/nouns/plural-formation', difficulty: 'beginner' },
+        { title: 'Definite Articles', url: '/grammar/spanish/articles/definite', difficulty: 'beginner' },
+        { title: 'Adjective Agreement', url: '/grammar/spanish/adjectives/adjective-agreement', difficulty: 'beginner' }
+      ]}
+    />
   );
 }
