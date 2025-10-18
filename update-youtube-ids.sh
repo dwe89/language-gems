@@ -13,8 +13,8 @@ find src/app -name "*.tsx" -type f -exec grep -l "youtubeVideoId=" {} \; | while
         continue
     fi
     
-    # Check if file has a placeholder YouTube video ID (not starting with "EG" and not "dQw4w9WgXcQ")
-    if grep -q "youtubeVideoId=\"[^E][^G]" "$file" && ! grep -q "youtubeVideoId=\"dQw4w9WgXcQ\"" "$file"; then
+    # Check if file has a placeholder YouTube video ID (not starting with "EG" and not "EGaSgIRswcI")
+    if grep -q "youtubeVideoId=\"[^E][^G]" "$file" && ! grep -q "youtubeVideoId=\"EGaSgIRswcI\"" "$file"; then
         echo "Updating $file"
         # Use sed to replace any quoted YouTube video ID that doesn't start with "EG"
         sed -i '' 's/youtubeVideoId="[^"]*-spanish"/youtubeVideoId="'${TARGET_VIDEO_ID}'"/g' "$file"

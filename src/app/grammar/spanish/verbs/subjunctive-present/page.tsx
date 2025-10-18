@@ -253,7 +253,7 @@ export default function SpanishPresentSubjunctivePage() {
         practiceUrl="/grammar/spanish/verbs/subjunctive-present/practice"
         quizUrl="/grammar/spanish/verbs/subjunctive-present/quiz"
         songUrl="/songs/es?theme=grammar&topic=subjunctive-present"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -291,7 +291,7 @@ export default function SpanishVerbPatternsPage() {
         practiceUrl="/grammar/spanish/verbs/verb-patterns/practice"
         quizUrl="/grammar/spanish/verbs/verb-patterns/quiz"
         songUrl="/songs/es?theme=grammar&topic=verb-patterns"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

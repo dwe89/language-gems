@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
-import { 
-  ArrowLeft, Users, Plus, Mail, Calendar, Crown, 
-  Trash2, UserCheck, AlertCircle, School, CheckCircle 
+import {
+  ArrowLeft, Users, Plus, Mail, Calendar, Crown,
+  Trash2, UserCheck, AlertCircle, School, CheckCircle
 } from 'lucide-react';
 
 interface SchoolMember {

@@ -28,12 +28,12 @@ interface ConjugationTable {
 
 interface Section {
   title: string;
-  content: string;
+  content?: string;
   examples?: Example[];
   conjugationTable?: ConjugationTable;
   subsections?: {
     title: string;
-    content: string;
+    content?: string;
     examples?: Example[];
     conjugationTable?: ConjugationTable;
   }[];
@@ -165,7 +165,7 @@ export default function GrammarPageTemplate({
         <div className="prose prose-lg max-w-none mb-6">
           <div
             className="text-gray-700 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: section.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
+            dangerouslySetInnerHTML={{ __html: (section.content || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
           />
         </div>
 
@@ -193,7 +193,7 @@ export default function GrammarPageTemplate({
             <div className="prose prose-lg max-w-none mb-4">
               <div
                 className="text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: subsection.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
+                dangerouslySetInnerHTML={{ __html: (subsection.content || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
               />
             </div>
 

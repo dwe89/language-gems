@@ -151,8 +151,10 @@ export async function GET(request: NextRequest) {
     const teacherId = searchParams.get('teacherId');
     const classId = searchParams.get('classId') || undefined;
     const timeRange = (searchParams.get('timeRange') as TimeRange) || 'last_30_days';
+    const viewScope = searchParams.get('viewScope') || 'my';
+    const schoolCode = searchParams.get('schoolCode') || undefined;
 
-    console.log(`📊 [DEBUG] API called with teacherId: ${teacherId}, classId: ${classId || 'all'}, timeRange: ${timeRange}`);
+    console.log(`📊 [DEBUG] API called with teacherId: ${teacherId}, classId: ${classId || 'all'}, timeRange: ${timeRange}, viewScope: ${viewScope}, schoolCode: ${schoolCode}`);
 
     if (!teacherId) {
       return NextResponse.json(
@@ -163,12 +165,31 @@ export async function GET(request: NextRequest) {
 
     const dateFilter = getDateFilter(timeRange);
 
-    // STEP 1: Get all students for this teacher
-    // First get classes for this teacher
-    let classesQuery = supabase
-      .from('classes')
-      .select('id')
-      .eq('teacher_id', teacherId);
+    // STEP 1: Get all students for this teacher or school
+    let classesQuery;
+
+    if (viewScope === 'school' && schoolCode) {
+      // Get all classes in the school
+      // Include both 'teacher' and 'admin' roles (admins can also have classes)
+      const { data: teacherProfiles } = await supabase
+        .from('user_profiles')
+        .select('user_id')
+        .eq('school_code', schoolCode)
+        .in('role', ['teacher', 'admin']);
+
+      const teacherIds = teacherProfiles?.map(t => t.user_id) || [];
+
+      classesQuery = supabase
+        .from('classes')
+        .select('id')
+        .in('teacher_id', teacherIds);
+    } else {
+      // Get classes for this teacher only
+      classesQuery = supabase
+        .from('classes')
+        .select('id')
+        .eq('teacher_id', teacherId);
+    }
 
     if (classId) {
       classesQuery = classesQuery.eq('id', classId);

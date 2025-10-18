@@ -1,0 +1,21 @@
+[dotenv@17.2.1] injecting env (20) from .env.local -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+🚀 Starting practice content generation...
+
+📊 Found 100 topics needing practice content updates
+
+🔢 Processing 3 topics
+
+
+🤖 Generating practice content for: conditional_sentences (verbs)
+✅ Generated 30 practice questions (Beginner: 10, Intermediate: 10, Advanced: 10)
+✅ Updated practice content in database
+✅ [1/3] (Overall: 1/100) Completed: conditional_sentences
+
+
+🤖 Generating practice content for: continuous_constructions (verbs)
+✅ Generated 30 practice questions (Beginner: 10, Intermediate: 10, Advanced: 10)
+✅ Updated practice content in database
+✅ [2/3] (Overall: 2/100) Completed: continuous_constructions
+
+
+🤖 Generating practice content for: word_order_es (syntax)

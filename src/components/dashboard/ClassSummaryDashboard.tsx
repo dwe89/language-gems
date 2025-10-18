@@ -15,6 +15,8 @@ import type { ClassSummaryData, TimeRange } from '@/types/teacherAnalytics';
 interface ClassSummaryDashboardProps {
   teacherId: string;
   classId?: string;
+  viewScope?: 'my' | 'school';
+  schoolCode?: string;
   onStudentClick?: (studentId: string) => void;
   onAssignmentClick?: (assignmentId: string) => void;
 }
@@ -22,6 +24,8 @@ interface ClassSummaryDashboardProps {
 export function ClassSummaryDashboard({
   teacherId,
   classId,
+  viewScope = 'my',
+  schoolCode,
   onStudentClick,
   onAssignmentClick,
 }: ClassSummaryDashboardProps) {
@@ -32,7 +36,7 @@ export function ClassSummaryDashboard({
 
   useEffect(() => {
     loadData();
-  }, [teacherId, classId, timeRange]);
+  }, [teacherId, classId, timeRange, viewScope, schoolCode]);
 
   const loadData = async () => {
     try {
@@ -42,10 +46,15 @@ export function ClassSummaryDashboard({
       const params = new URLSearchParams({
         teacherId,
         timeRange,
+        viewScope,
       });
 
       if (classId) {
         params.append('classId', classId);
+      }
+
+      if (schoolCode && viewScope === 'school') {
+        params.append('schoolCode', schoolCode);
       }
 
       const response = await fetch(

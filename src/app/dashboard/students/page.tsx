@@ -24,6 +24,9 @@ export default function StudentsPage() {
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterActive, setFilterActive] = useState(false);
+  const [viewScope, setViewScope] = useState<'my' | 'school'>('my');
+  const [hasSchoolAccess, setHasSchoolAccess] = useState(false);
+  const [schoolCode, setSchoolCode] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     class: 'all',
     activity: 'all' // all, active, inactive
@@ -46,20 +49,79 @@ export default function StudentsPage() {
       try {
         setLoading(true);
 
-        // Fetch all students enrolled in teacher's classes
-        const { data: enrollments, error: enrollmentError } = await supabaseBrowser
-          .from('class_enrollments')
-          .select(`
-            student_id,
-            enrolled_at,
-            classes!inner(
-              id,
-              name,
-              teacher_id
-            )
-          `)
-          .eq('classes.teacher_id', user.id)
-          .eq('status', 'active');
+        // Fetch teacher's profile to check school access
+        const { data: profileData } = await supabaseBrowser
+          .from('user_profiles')
+          .select('school_code, school_initials, is_school_owner, school_owner_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileData) {
+          const schoolIdentifier = profileData.school_code || profileData.school_initials;
+          setSchoolCode(schoolIdentifier);
+
+          const hasAccess = !!(
+            profileData.is_school_owner ||
+            profileData.school_owner_id ||
+            schoolIdentifier
+          );
+          setHasSchoolAccess(hasAccess);
+        }
+
+        // Fetch students based on viewScope
+        let enrollments;
+        if (viewScope === 'school' && profileData?.school_code) {
+          // Get all teachers in the school
+          const { data: teacherProfiles } = await supabaseBrowser
+            .from('user_profiles')
+            .select('user_id')
+            .eq('school_code', profileData.school_code)
+            .in('role', ['teacher', 'admin']);
+
+          const teacherIds = teacherProfiles?.map(t => t.user_id) || [];
+
+          // Fetch students from all teachers in school
+          const { data, error: enrollmentError } = await supabaseBrowser
+            .from('class_enrollments')
+            .select(`
+              student_id,
+              enrolled_at,
+              classes!inner(
+                id,
+                name,
+                teacher_id
+              )
+            `)
+            .in('classes.teacher_id', teacherIds)
+            .eq('status', 'active');
+
+          if (enrollmentError) {
+            console.error('Error fetching enrollments:', enrollmentError);
+          }
+          enrollments = { data, error: enrollmentError };
+        } else {
+          // Fetch only this teacher's students
+          const { data, error: enrollmentError } = await supabaseBrowser
+            .from('class_enrollments')
+            .select(`
+              student_id,
+              enrolled_at,
+              classes!inner(
+                id,
+                name,
+                teacher_id
+              )
+            `)
+            .eq('classes.teacher_id', user.id)
+            .eq('status', 'active');
+
+          if (enrollmentError) {
+            console.error('Error fetching enrollments:', enrollmentError);
+          }
+          enrollments = { data, error: enrollmentError };
+        }
+
+        const { data: enrollmentsData, error: enrollmentError } = enrollments;
 
         if (enrollmentError) {
           console.error('Error fetching enrollments:', enrollmentError);
@@ -68,14 +130,14 @@ export default function StudentsPage() {
           return;
         }
 
-        if (!enrollments || enrollments.length === 0) {
+        if (!enrollmentsData || enrollmentsData.length === 0) {
           setStudents([]);
           setFilteredStudents([]);
           return;
         }
 
         // Get unique student IDs
-        const studentIds = [...new Set(enrollments.map(e => e.student_id))];
+        const studentIds = [...new Set(enrollmentsData.map(e => e.student_id))];
 
         // Fetch student profiles
         const { data: profiles, error: profileError } = await supabaseBrowser
@@ -112,7 +174,7 @@ export default function StudentsPage() {
 
         // Create enrollment map (student_id -> class_name)
         const enrollmentMap = new Map<string, string>();
-        enrollments.forEach(e => {
+        enrollmentsData.forEach(e => {
           if (!enrollmentMap.has(e.student_id)) {
             enrollmentMap.set(e.student_id, (e.classes as any).name);
           }
@@ -159,7 +221,7 @@ export default function StudentsPage() {
     }
 
     fetchStudents();
-  }, [user]);
+  }, [user, viewScope]);
   
   // Apply filters and search
   useEffect(() => {
@@ -289,9 +351,42 @@ export default function StudentsPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">All Students</h1>
-          <p className="text-gray-600 mt-2">View and search all students across all your classes</p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">All Students</h1>
+            <p className="text-gray-600 mt-2">
+              {viewScope === 'school' && schoolCode
+                ? `Your students and all students in ${schoolCode}`
+                : 'View and search all students across all your classes'
+              }
+            </p>
+          </div>
+
+          {/* View Scope Toggle */}
+          {hasSchoolAccess && (
+            <div className="flex bg-slate-100 rounded-xl p-1">
+              <button
+                onClick={() => setViewScope('my')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  viewScope === 'my'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                My Classes
+              </button>
+              <button
+                onClick={() => setViewScope('school')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  viewScope === 'school'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                School
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Search and Filter */}

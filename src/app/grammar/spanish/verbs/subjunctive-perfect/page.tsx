@@ -227,7 +227,7 @@ export default function SpanishPerfectSubjunctivePage() {
         practiceUrl="/grammar/spanish/verbs/subjunctive-perfect/practice"
         quizUrl="/grammar/spanish/verbs/subjunctive-perfect/quiz"
         songUrl="/songs/es?theme=grammar&topic=subjunctive-perfect"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -21,6 +21,9 @@ type ClassData = {
   created_at: string;
   student_count?: number;
   teacher_id?: string;
+  teacher_name?: string;
+  teacher_email?: string;
+  is_own_class?: boolean;
 };
 
 export default function ClassesPage() {
@@ -35,9 +38,9 @@ export default function ClassesPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [classScope, setClassScope] = useState<'my' | 'school'>('my');
   const [hasSchoolAccess, setHasSchoolAccess] = useState(false);
   const [schoolCode, setSchoolCode] = useState<string | null>(null);
+  const [classScope, setClassScope] = useState<'my' | 'school'>('my');
 
   useEffect(() => {
     // Set a maximum loading timeout to prevent infinite loading
@@ -73,9 +76,9 @@ export default function ClassesPage() {
       setLoading(true);
       setError(null);
 
-      console.log('Loading classes for user:', user.id, 'scope:', classScope);
+      console.log('Loading classes for user:', user.id);
 
-      // Use the new school-filtered endpoint
+      // Fetch classes based on scope
       const response = await fetch(`/api/classes/school-filtered?scope=${classScope}`);
       const data = await response.json();
 
@@ -289,15 +292,39 @@ export default function ClassesPage() {
   });
 
   // ClassCard Component
-  const ClassCard = ({ classData, onDelete }: { classData: ClassData; onDelete: (id: string) => void }) => (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
-      <div className="p-6 flex flex-col h-full">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <BookOpen className="h-6 w-6 text-white" />
+  const ClassCard = ({ classData, onDelete }: { classData: ClassData; onDelete: (id: string) => void }) => {
+    const isOwnClass = classData.is_own_class !== false; // Default to true if not specified
+
+    return (
+      <div className={`bg-white/90 backdrop-blur-sm rounded-2xl border shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group ${
+        isOwnClass ? 'border-slate-200/60' : 'border-blue-200/60 bg-blue-50/30'
+      }`}>
+        <div className="p-6 flex flex-col h-full">
+          {/* Teacher Badge for School View */}
+          {!isOwnClass && classData.teacher_name && (
+            <div className="mb-3 flex items-center justify-between">
+              <div className="inline-flex items-center px-3 py-1.5 bg-blue-100 border border-blue-200 rounded-lg">
+                <Users className="h-3.5 w-3.5 text-blue-600 mr-1.5" />
+                <span className="text-xs font-medium text-blue-700">
+                  {classData.teacher_name}
+                </span>
+              </div>
+              <div className="inline-flex items-center px-2 py-1 bg-amber-100 border border-amber-200 rounded-md">
+                <span className="text-xs font-semibold text-amber-700">View Only</span>
+              </div>
             </div>
-            <div>
+          )}
+
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 ${
+                isOwnClass
+                  ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                  : 'bg-gradient-to-br from-blue-400 to-cyan-500'
+              }`}>
+                <BookOpen className="h-6 w-6 text-white" />
+              </div>
+              <div>
               <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{classData.name}</h3>
               <p className="text-sm text-slate-500">Year {classData.year_group}</p>
             </div>
@@ -322,31 +349,39 @@ export default function ClassesPage() {
         <div className="mt-auto flex items-center justify-between">
           <Link
             href={`/dashboard/classes/${classData.id}`}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl ${
+              isOwnClass
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white'
+            }`}
           >
-            View Class
+            {isOwnClass ? 'View Class' : 'View Class (Read-Only)'}
           </Link>
-          <button
-            onClick={() => onDelete(classData.id)}
-            className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-200/50 hover:border-red-300 ml-3"
-            aria-label="Delete class"
-          >
-            <Trash2 size={18} />
-          </button>
+          {isOwnClass && (
+            <button
+              onClick={() => onDelete(classData.id)}
+              className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-200/50 hover:border-red-300 ml-3"
+              aria-label="Delete class"
+            >
+              <Trash2 size={18} />
+            </button>
+          )}
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-start justify-between mb-6">
           <DashboardHeader
-            title={classScope === 'my' ? 'My Classes' : 'School Classes'}
-            description={classScope === 'my'
-              ? 'Manage your classes and track student progress'
-              : `All classes in ${schoolCode || 'your school'}`
+            title="My Classes"
+            description={
+              classScope === 'school' && hasSchoolAccess && schoolCode
+                ? `Your classes and all classes in ${schoolCode}`
+                : 'Manage your classes and track student progress'
             }
             icon={<BookOpen className="h-5 w-5 text-white" />}
           />
@@ -369,7 +404,7 @@ export default function ClassesPage() {
         {/* Controls Panel */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6 mb-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            {/* Search and Scope Selector */}
+            {/* Search and Scope Toggle */}
             <div className="flex flex-1 max-w-2xl gap-3">
               <div className="relative flex-1">
                 <input
@@ -382,7 +417,7 @@ export default function ClassesPage() {
                 <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
               </div>
 
-              {/* Scope Selector */}
+              {/* Scope Toggle */}
               {hasSchoolAccess && (
                 <div className="flex bg-slate-100 rounded-xl p-1">
                   <button
@@ -403,7 +438,7 @@ export default function ClassesPage() {
                         : 'text-slate-600 hover:text-slate-800'
                     }`}
                   >
-                    School Classes
+                    All School Classes
                   </button>
                 </div>
               )}

@@ -47,10 +47,10 @@ const VERB_SUBCATEGORIES = {
     color: 'from-green-500 to-green-600',
     priority: 1,
     topics: [
-      'present-tense', 'present-continuous', 'present-perfect',
-      'preterite', 'imperfect', 'imperfect-continuous',
-      'future', 'future-perfect', 'periphrastic-future',
-      'conditional', 'conditional-perfect', 'pluperfect'
+      'present-tense', 'present-regular', 'present-irregular', 'present-continuous', 'present-perfect',
+      'preterite-tense', 'imperfect-tense', 'imperfect-continuous', 'imperfect-vs-preterite',
+      'future-tense', 'future-perfect', 'periphrastic-future',
+      'conditional-tense', 'conditional-perfect', 'pluperfect'
     ]
   },
   'subjunctive-moods': {
@@ -72,49 +72,19 @@ const VERB_SUBCATEGORIES = {
     priority: 3,
     topics: [
       'irregular-verbs', 'stem-changing', 'modal-verbs',
-      'reflexive', 'ser-vs-estar', 'copular-verbs',
-      'transitive-intransitive', 'pronominal-verbs', 'auxiliary-verbs',
-      'defective-verbs', 'impersonal-verbs', 'weather-verbs',
-      'light-verbs', 'inchoative-verbs', 'terminative-verbs'
+      'ser-vs-estar', 'pronominal-verbs', 'auxiliary-verbs'
     ]
   },
-  'advanced-grammar': {
-    name: 'Advanced Grammar',
-    description: 'Complex grammatical concepts and structures',
+  'advanced-constructions': {
+    name: 'Advanced Constructions',
+    description: 'Complex verb forms and sentence structures',
     icon: BookOpen,
     color: 'from-indigo-500 to-indigo-600',
     priority: 4,
     topics: [
       'passive-voice', 'reported-speech', 'negation',
-      'verb-aspect', 'verb-moods', 'sequence-of-tenses',
-      'verb-complementation', 'verb-government', 'verb-valency',
-      'verb-conjugation-patterns', 'verb-patterns', 'verb-tense-agreement'
-    ]
-  },
-  'semantic-groups': {
-    name: 'Semantic Verb Groups',
-    description: 'Verbs organized by meaning and usage',
-    icon: Users,
-    color: 'from-pink-500 to-pink-600',
-    priority: 5,
-    topics: [
-      'action-verbs', 'motion-verbs', 'emotion-verbs',
-      'communication-verbs', 'cognitive-verbs', 'perception-verbs',
-      'possession-verbs', 'change-verbs', 'causative-verbs',
-      'existential-verbs', 'stative-verbs'
-    ]
-  },
-  'complex-constructions': {
-    name: 'Complex Constructions',
-    description: 'Advanced verb constructions and forms',
-    icon: ChevronRight,
-    color: 'from-orange-500 to-orange-600',
-    priority: 6,
-    topics: [
-      'compound-tenses', 'continuous-constructions', 'progressive-tenses',
-      'infinitive-constructions', 'verbal-periphrases', 'voice-constructions',
-      'past-participles', 'gerunds', 'phrasal-verbs',
-      'conditional-sentences', 'interrogatives', 'verb-serialization'
+      'sequence-of-tenses', 'conditional-sentences',
+      'infinitive-constructions', 'past-participles', 'gerunds', 'interrogatives'
     ]
   }
 };

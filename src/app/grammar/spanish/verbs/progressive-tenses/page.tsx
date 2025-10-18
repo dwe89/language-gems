@@ -259,7 +259,7 @@ export default function SpanishProgressiveTensesPage() {
         practiceUrl="/grammar/spanish/verbs/progressive-tenses/practice"
         quizUrl="/grammar/spanish/verbs/progressive-tenses/quiz"
         songUrl="/songs/es?theme=grammar&topic=progressive-tenses"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

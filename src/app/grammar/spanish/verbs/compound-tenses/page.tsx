@@ -249,7 +249,7 @@ export default function SpanishCompoundTensesPage() {
         practiceUrl="/grammar/spanish/verbs/compound-tenses/practice"
         quizUrl="/grammar/spanish/verbs/compound-tenses/quiz"
         songUrl="/songs/es?theme=grammar&topic=compound-tenses"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

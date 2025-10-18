@@ -159,22 +159,21 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       description: 'Language learning tips and insights'
     },
     {
-      name: 'Pricing',
-      path: '/pricing',
-      enabled: true,
-      comingSoon: false,
-      comingSoonPath: null,
-      description: 'Choose your plan'
-    },
-    {
       name: 'More',
       path: '#',
       enabled: true,
       comingSoon: false,
       comingSoonPath: null,
-      hasDropdown: true,
+      hasDropdown: true, 
       dropdownOnly: true,
       dropdownItems: [
+        {
+          name: 'Pricing',
+          path: '/pricing',
+          enabled: true,
+          comingSoon: false,
+          description: 'Choose your plan'
+        },
         {
           name: 'Worksheets',
           path: '/worksheets',

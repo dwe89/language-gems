@@ -286,7 +286,7 @@ export default function SpanishVerbMoodsPage() {
         practiceUrl="/grammar/spanish/verbs/verb-moods/practice"
         quizUrl="/grammar/spanish/verbs/verb-moods/quiz"
         songUrl="/songs/es?theme=grammar&topic=verb-moods"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

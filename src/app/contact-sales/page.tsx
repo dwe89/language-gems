@@ -9,8 +9,10 @@ import {
   Calendar, MessageCircle, ExternalLink, Zap
 } from 'lucide-react';
 import Footer from '../../components/layout/Footer';
+import { useToast } from '../../components/ui/use-toast';
 
 export default function ContactSalesPage() {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -38,12 +40,111 @@ export default function ContactSalesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+
+    // Validate required fields
+    if (!formData.firstName.trim()) {
+      toast({
+        title: 'Error',
+        description: 'First name is required',
+        variant: 'destructive'
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.lastName.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Last name is required',
+        variant: 'destructive'
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      toast({
+        title: 'Error',
+        description: 'Valid email is required',
+        variant: 'destructive'
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.school.trim()) {
+      toast({
+        title: 'Error',
+        description: 'School/Institution is required',
+        variant: 'destructive'
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.role) {
+      toast({
+        title: 'Error',
+        description: 'Please select your role',
+        variant: 'destructive'
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      // Format subject line
+      const subject = `School Sales Inquiry: ${formData.school} - ${formData.inquiryType || 'General Inquiry'}`;
+      
+      // Build message including all the form details
+      const fullMessage = `
+Contact Details:
+- Role: ${formData.role}
+- Number of Students: ${formData.studentCount || 'Not specified'}
+- Inquiry Type: ${formData.inquiryType || 'Not specified'}
+- Preferred Contact Method: ${formData.preferredContact}
+
+Message:
+${formData.message || 'No additional message'}
+      `.trim();
+
+      const payload = {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        subject: subject,
+        message: fullMessage,
+        contactType: 'school_sales',
+        phone: formData.phone || undefined,
+        organization: formData.school
+      };
+
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Delay slightly before showing success page to ensure form state updates
+        await new Promise(resolve => setTimeout(resolve, 100));
+        setIsSubmitting(false);
+        setIsSubmitted(true);
+      } else {
+        throw new Error(result.error || 'Failed to submit form');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      setIsSubmitting(false);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to submit your inquiry. Please try again or email us at support@languagegems.com',
+        variant: 'destructive'
+      });
+    }
   };
 
   const contactMethods = [

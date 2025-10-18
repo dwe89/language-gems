@@ -248,7 +248,7 @@ export default function SpanishImperfectSubjunctivePage() {
         practiceUrl="/grammar/spanish/verbs/subjunctive-imperfect/practice"
         quizUrl="/grammar/spanish/verbs/subjunctive-imperfect/quiz"
         songUrl="/songs/es?theme=grammar&topic=subjunctive-imperfect"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

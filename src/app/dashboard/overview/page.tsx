@@ -24,35 +24,56 @@ export default function ProgressPage() {
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [schoolCode, setSchoolCode] = useState<string | null>(null);
+  const [viewScope, setViewScope] = useState<'my' | 'school'>('my');
+  const [hasSchoolAccess, setHasSchoolAccess] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadClasses();
     }
-  }, [user]);
+  }, [user, viewScope]);
 
   const loadClasses = async () => {
     try {
-      // Fetch classes
-      const { data, error } = await supabase
-        .from('classes')
-        .select('id, name')
-        .eq('teacher_id', user!.id)
-        .order('name');
-
-      if (error) throw error;
-
-      setClasses(data || []);
-
-      // Fetch teacher's school initials
+      // Fetch teacher's profile to check school access
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
-        .select('school_initials')
+        .select('school_code, school_initials, school_owner_id, is_school_owner')
         .eq('user_id', user!.id)
         .single();
 
       if (!profileError && profileData) {
-        setSchoolCode(profileData.school_initials);
+        const schoolIdentifier = profileData.school_code || profileData.school_initials;
+        setSchoolCode(schoolIdentifier);
+
+        // Check if user has school access
+        const hasAccess = !!(
+          profileData.is_school_owner ||
+          profileData.school_owner_id ||
+          schoolIdentifier
+        );
+        setHasSchoolAccess(hasAccess);
+      }
+
+      // Fetch classes based on view scope
+      if (viewScope === 'my') {
+        // Only user's classes
+        const { data, error } = await supabase
+          .from('classes')
+          .select('id, name')
+          .eq('teacher_id', user!.id)
+          .order('name');
+
+        if (error) throw error;
+        setClasses(data || []);
+      } else {
+        // School-wide classes
+        const response = await fetch('/api/classes/school-filtered?scope=school');
+        const result = await response.json();
+
+        if (result.success) {
+          setClasses(result.classes.map((c: any) => ({ id: c.id, name: c.name })) || []);
+        }
       }
     } catch (error) {
       console.error('Error loading classes:', error);
@@ -90,9 +111,14 @@ export default function ProgressPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Teacher Intelligence Dashboard</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {viewScope === 'my' ? 'My Classes' : 'School'} Dashboard
+              </h1>
               <p className="text-gray-600 mt-2">
-                60-second overview of class performance, urgent interventions, and assignment efficacy
+                {viewScope === 'my'
+                  ? '60-second overview of your class performance, urgent interventions, and assignment efficacy'
+                  : `School-wide overview of all classes in ${schoolCode || 'your school'}`
+                }
               </p>
               {schoolCode && (
                 <div className="mt-3 inline-flex items-center px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg">
@@ -102,27 +128,61 @@ export default function ProgressPage() {
               )}
             </div>
 
-            {/* Class Selector */}
-            {!loading && classes.length > 0 && (
-              <div className="flex items-center space-x-3">
-                <label htmlFor="class-select" className="text-sm font-medium text-gray-700">
-                  Class:
-                </label>
-                <select
-                  id="class-select"
-                  value={selectedClassId}
-                  onChange={(e) => setSelectedClassId(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium"
-                >
-                  <option value="all">All Classes</option>
-                  {classes.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div className="flex items-center space-x-4">
+              {/* View Scope Toggle */}
+              {hasSchoolAccess && (
+                <div className="flex bg-slate-100 rounded-xl p-1">
+                  <button
+                    onClick={() => {
+                      setViewScope('my');
+                      setSelectedClassId('all');
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      viewScope === 'my'
+                        ? 'bg-white text-indigo-600 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-800'
+                    }`}
+                  >
+                    My Classes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setViewScope('school');
+                      setSelectedClassId('all');
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      viewScope === 'school'
+                        ? 'bg-white text-indigo-600 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-800'
+                    }`}
+                  >
+                    School
+                  </button>
+                </div>
+              )}
+
+              {/* Class Selector */}
+              {!loading && classes.length > 0 && (
+                <div className="flex items-center space-x-3">
+                  <label htmlFor="class-select" className="text-sm font-medium text-gray-700">
+                    Class:
+                  </label>
+                  <select
+                    id="class-select"
+                    value={selectedClassId}
+                    onChange={(e) => setSelectedClassId(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium"
+                  >
+                    <option value="all">All Classes</option>
+                    {classes.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Quick Links to Detailed Dashboards */}
@@ -160,6 +220,8 @@ export default function ProgressPage() {
         <ClassSummaryDashboard
           teacherId={user.id}
           classId={selectedClassId === 'all' ? undefined : selectedClassId}
+          viewScope={viewScope}
+          schoolCode={schoolCode || undefined}
           onStudentClick={handleStudentClick}
           onAssignmentClick={handleAssignmentClick}
         />

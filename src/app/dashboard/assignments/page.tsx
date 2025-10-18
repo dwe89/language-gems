@@ -27,6 +27,9 @@ export default function AssignmentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [viewScope, setViewScope] = useState<'my' | 'school'>('my');
+  const [hasSchoolAccess, setHasSchoolAccess] = useState(false);
+  const [schoolCode, setSchoolCode] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
     assignmentId: string;
@@ -45,22 +48,71 @@ export default function AssignmentsPage() {
 
     const fetchData = async () => {
       try {
-        // Fetch real assignments for this teacher (exclude archived)
-        const { data: assignmentsData, error: assignmentsError } = await supabase
-          .from('assignments')
-          .select(`
-            *,
-            classes!inner(name)
-          `)
-          .eq('created_by', user.id)
-          .neq('status', 'archived')
-          .order('created_at', { ascending: false });
+        // Fetch teacher's profile to check school access
+        const { data: profileData } = await supabase
+          .from('user_profiles')
+          .select('school_code, school_initials, is_school_owner, school_owner_id')
+          .eq('user_id', user.id)
+          .single();
 
-        if (assignmentsError) {
-          console.error('Error fetching assignments:', assignmentsError);
+        if (profileData) {
+          const schoolIdentifier = profileData.school_code || profileData.school_initials;
+          setSchoolCode(schoolIdentifier);
+
+          const hasAccess = !!(
+            profileData.is_school_owner ||
+            profileData.school_owner_id ||
+            schoolIdentifier
+          );
+          setHasSchoolAccess(hasAccess);
         }
 
-        // Fetch teacher's classes
+        // Fetch assignments based on viewScope
+        let assignmentsData;
+        if (viewScope === 'school' && profileData?.school_code) {
+          // Get all teachers in the school
+          const { data: teacherProfiles } = await supabase
+            .from('user_profiles')
+            .select('user_id')
+            .eq('school_code', profileData.school_code)
+            .in('role', ['teacher', 'admin']);
+
+          const teacherIds = teacherProfiles?.map(t => t.user_id) || [];
+
+          // Fetch assignments from all teachers in school
+          const { data, error: assignmentsError } = await supabase
+            .from('assignments')
+            .select(`
+              *,
+              classes!inner(name)
+            `)
+            .in('created_by', teacherIds)
+            .neq('status', 'archived')
+            .order('created_at', { ascending: false });
+
+          if (assignmentsError) {
+            console.error('Error fetching assignments:', assignmentsError);
+          }
+          assignmentsData = data;
+        } else {
+          // Fetch only this teacher's assignments
+          const { data, error: assignmentsError } = await supabase
+            .from('assignments')
+            .select(`
+              *,
+              classes!inner(name)
+            `)
+            .eq('created_by', user.id)
+            .neq('status', 'archived')
+            .order('created_at', { ascending: false });
+
+          if (assignmentsError) {
+            console.error('Error fetching assignments:', assignmentsError);
+          }
+          assignmentsData = data;
+        }
+
+        // Fetch teacher's classes (always just their own for creating new assignments)
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
           .select('*')
@@ -82,7 +134,7 @@ export default function AssignmentsPage() {
     };
 
     fetchData();
-  }, [user, supabase]);
+  }, [user, supabase, viewScope]);
 
   // Filter assignments based on status and search query
   const filteredAssignments = assignments.filter(assignment => {
@@ -188,11 +240,43 @@ export default function AssignmentsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
       <div className="max-w-7xl mx-auto">
-        <DashboardHeader
-          title="Assignments"
-          description="Create and manage assignments for your classes"
-          icon={<FileText className="h-5 w-5 text-white" />}
-        />
+        <div className="flex items-start justify-between mb-6">
+          <DashboardHeader
+            title="Assignments"
+            description={
+              viewScope === 'school' && schoolCode
+                ? `Your assignments and all assignments in ${schoolCode}`
+                : 'Create and manage assignments for your classes'
+            }
+            icon={<FileText className="h-5 w-5 text-white" />}
+          />
+
+          {/* View Scope Toggle */}
+          {hasSchoolAccess && (
+            <div className="flex bg-slate-100 rounded-xl p-1">
+              <button
+                onClick={() => setViewScope('my')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  viewScope === 'my'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                My Classes
+              </button>
+              <button
+                onClick={() => setViewScope('school')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  viewScope === 'school'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                School
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Controls Panel */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6 mb-8">

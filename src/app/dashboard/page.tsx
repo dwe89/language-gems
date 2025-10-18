@@ -88,6 +88,8 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
   const [username, setUsername] = useState(initialUsername);
   const [helpWidgetVisible, setHelpWidgetVisible] = useState(false);
   const [schoolCode, setSchoolCode] = useState<string | null>(null);
+  const [viewScope, setViewScope] = useState<'my' | 'school'>('my');
+  const [hasSchoolAccess, setHasSchoolAccess] = useState(false);
   const [stats, setStats] = useState({
     totalClasses: 0,
     activeStudents: 0,
@@ -108,26 +110,66 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
         // Fetch teacher's school code and display name
         const { data: profileData, error: profileError } = await supabaseBrowser
           .from('user_profiles')
-          .select('school_initials, display_name')
+          .select('school_code, school_initials, display_name, is_school_owner, school_owner_id')
           .eq('user_id', user.id)
           .single();
 
         if (!profileError && profileData) {
-          setSchoolCode(profileData.school_initials);
+          const schoolIdentifier = profileData.school_code || profileData.school_initials;
+          setSchoolCode(schoolIdentifier);
+
+          // Check if user has school access
+          const hasAccess = !!(
+            profileData.is_school_owner ||
+            profileData.school_owner_id ||
+            schoolIdentifier
+          );
+          setHasSchoolAccess(hasAccess);
+
           // Update username with display_name if available
           if (profileData.display_name) {
             setUsername(profileData.display_name);
           }
         }
 
-        const { data, error } = await supabaseBrowser
-          .from('classes')
-          .select(`
-            id,
-            class_enrollments(student_id),
-            assignments(id)
-          `)
-          .eq('teacher_id', user.id);
+        // Fetch classes based on viewScope
+        let classesData;
+        if (viewScope === 'school' && profileData?.school_code) {
+          // Get all teachers in the school
+          const { data: teacherProfiles } = await supabaseBrowser
+            .from('user_profiles')
+            .select('user_id')
+            .eq('school_code', profileData.school_code)
+            .in('role', ['teacher', 'admin']);
+
+          const teacherIds = teacherProfiles?.map(t => t.user_id) || [];
+
+          // Get classes from all teachers in school
+          const { data, error } = await supabaseBrowser
+            .from('classes')
+            .select(`
+              id,
+              class_enrollments(student_id),
+              assignments(id)
+            `)
+            .in('teacher_id', teacherIds);
+
+          classesData = { data, error };
+        } else {
+          // Get only this teacher's classes
+          const { data, error } = await supabaseBrowser
+            .from('classes')
+            .select(`
+              id,
+              class_enrollments(student_id),
+              assignments(id)
+            `)
+            .eq('teacher_id', user.id);
+
+          classesData = { data, error };
+        }
+
+        const { data, error } = classesData;
 
         if (error) {
           console.error('Error fetching dashboard data:', error);
@@ -211,7 +253,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
     }
 
     fetchDashboardData();
-  }, [user]);
+  }, [user, viewScope]);
   
   return (
     <div className="min-h-screen bg-slate-50">
@@ -224,7 +266,10 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
                 Welcome back, {username}!
               </h1>
               <p className="text-slate-600 text-lg max-w-2xl leading-relaxed">
-                Transform learning with cutting-edge tools and insights.
+                {viewScope === 'my'
+                  ? 'Transform learning with cutting-edge tools and insights.'
+                  : `School-wide overview for ${schoolCode || 'your school'}`
+                }
               </p>
               {schoolCode && (
                 <div className="mt-4 inline-flex items-center px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg">
@@ -233,6 +278,32 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
                 </div>
               )}
             </div>
+
+            {/* View Scope Toggle */}
+            {hasSchoolAccess && (
+              <div className="flex bg-slate-100 rounded-xl p-1">
+                <button
+                  onClick={() => setViewScope('my')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    viewScope === 'my'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  My Classes
+                </button>
+                <button
+                  onClick={() => setViewScope('school')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    viewScope === 'school'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  School
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>

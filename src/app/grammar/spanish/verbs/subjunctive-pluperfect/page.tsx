@@ -243,7 +243,7 @@ export default function SpanishPluperfectSubjunctivePage() {
         practiceUrl="/grammar/spanish/verbs/subjunctive-pluperfect/practice"
         quizUrl="/grammar/spanish/verbs/subjunctive-pluperfect/quiz"
         songUrl="/songs/es?theme=grammar&topic=subjunctive-pluperfect"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

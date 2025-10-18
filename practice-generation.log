@@ -1,0 +1,58 @@
+[dotenv@17.2.1] injecting env (20) from .env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+🚀 Starting practice content generation...
+
+📊 Found 105 topics needing practice content updates
+
+
+🤖 Generating practice content for: auxiliary_verbs (verbs)
+❌ Error generating content for auxiliary_verbs: Error: Question 9: correct_answer "has" not in options
+    at <anonymous> (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:141:15)
+    at Array.forEach (<anonymous>)
+    at generatePracticeContent (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:133:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:244:34)
+❌ Failed to process auxiliary_verbs: Error: Question 9: correct_answer "has" not in options
+    at <anonymous> (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:141:15)
+    at Array.forEach (<anonymous>)
+    at generatePracticeContent (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:133:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:244:34)
+
+
+🤖 Generating practice content for: change_verbs (verbs)
+✅ Generated 15 practice questions
+✅ Updated practice content in database
+✅ [1/105] Completed: change_verbs
+
+
+🤖 Generating practice content for: communication_verbs (verbs)
+❌ Error generating content for communication_verbs: Error: Question 9: correct_answer "hablarán" not in options
+    at <anonymous> (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:141:15)
+    at Array.forEach (<anonymous>)
+    at generatePracticeContent (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:133:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:244:34)
+❌ Failed to process communication_verbs: Error: Question 9: correct_answer "hablarán" not in options
+    at <anonymous> (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:141:15)
+    at Array.forEach (<anonymous>)
+    at generatePracticeContent (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:133:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:244:34)
+
+
+🤖 Generating practice content for: imperfect_tense (verbs)
+❌ Error generating content for imperfect_tense: Error: Question 2: correct_answer "comías" not in options
+    at <anonymous> (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:141:15)
+    at Array.forEach (<anonymous>)
+    at generatePracticeContent (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:133:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:244:34)
+❌ Failed to process imperfect_tense: Error: Question 2: correct_answer "comías" not in options
+    at <anonymous> (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:141:15)
+    at Array.forEach (<anonymous>)
+    at generatePracticeContent (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:133:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/home/Documents/Projects/language-gems-recovered/scripts/generate-practice-content.ts:244:34)
+
+
+🤖 Generating practice content for: conditional (verbs)
