@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Edit, Save, X, Loader2 } from 'lucide-react';
+import { Edit } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
-import GrammarEditModal from './GrammarEditModal';
+import SimpleGrammarEditModal from './SimpleGrammarEditModal';
 
 interface GrammarEditButtonProps {
   language: string;
@@ -60,7 +60,7 @@ export default function GrammarEditButton({
       </button>
 
       {/* Edit Modal */}
-      <GrammarEditModal
+      <SimpleGrammarEditModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         language={language}
