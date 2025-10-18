@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import GrammarPageTemplate from '@/components/grammar/GrammarPageTemplate';
+import GrammarEditButton from '@/components/admin/GrammarEditButton';
 
 interface PageProps {
   params: {
@@ -90,7 +91,7 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
       <div className="bg-green-500 text-white text-center py-2 text-sm font-medium">
         ✅ NEW: This page is now loaded from the database! (Test Mode)
       </div>
-      
+
       <GrammarPageTemplate
         language={languageMap[page.language] || page.language}
         category={page.category}
@@ -106,6 +107,24 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
         songUrl={page.song_url}
         youtubeVideoId={page.youtube_video_id}
         relatedTopics={page.related_topics || []}
+      />
+
+      {/* Admin Edit Button (only visible to admins) */}
+      <GrammarEditButton
+        language={params.language}
+        category={params.category}
+        topicSlug={params.topic}
+        initialData={{
+          title: page.title,
+          description: page.description,
+          difficulty: page.difficulty,
+          estimated_time: page.estimated_time,
+          youtube_video_id: page.youtube_video_id,
+          sections: page.sections,
+          related_topics: page.related_topics,
+          practice_url: page.practice_url,
+          quiz_url: page.quiz_url,
+        }}
       />
     </>
   );
