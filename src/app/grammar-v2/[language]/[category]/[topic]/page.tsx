@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import GrammarPageTemplate from '@/components/grammar/GrammarPageTemplate';
-import GrammarEditButton from '@/components/admin/GrammarEditButton';
+import GrammarEditButtonWrapper from '@/components/admin/GrammarEditButtonWrapper';
 
 interface PageProps {
   params: {
@@ -110,7 +110,7 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
       />
 
       {/* Admin Edit Button (only visible to admins) */}
-      <GrammarEditButton
+      <GrammarEditButtonWrapper
         language={params.language}
         category={params.category}
         topicSlug={params.topic}
