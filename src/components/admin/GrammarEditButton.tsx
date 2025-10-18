@@ -42,16 +42,10 @@ export default function GrammarEditButton({
     return null;
   }
 
-  // DEBUG: Always show button for now
-  console.log('🔧 [GRAMMAR EDIT BUTTON] Role:', role, 'isAuthenticated:', isAuthenticated);
-
   // Only show for admin users
-  // if (role !== 'admin') {
-  //   console.log('🔧 [GRAMMAR EDIT BUTTON] Not showing button - role is:', role);
-  //   return null;
-  // }
-
-  console.log('🔧 [GRAMMAR EDIT BUTTON] Showing edit button');
+  if (role !== 'admin') {
+    return null;
+  }
 
   return (
     <>
