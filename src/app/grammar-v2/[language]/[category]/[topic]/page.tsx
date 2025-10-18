@@ -110,22 +110,14 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
       />
 
       {/* Admin Edit Button (only visible to admins) */}
-      <GrammarEditButtonWrapper
-        language={params.language}
-        category={params.category}
-        topicSlug={params.topic}
-        initialData={{
-          title: page.title,
-          description: page.description,
-          difficulty: page.difficulty,
-          estimated_time: page.estimated_time,
-          youtube_video_id: page.youtube_video_id,
-          sections: page.sections,
-          related_topics: page.related_topics,
-          practice_url: page.practice_url,
-          quiz_url: page.quiz_url,
-        }}
-      />
+      <div className="fixed bottom-8 right-8 z-50">
+        <a
+          href={`/admin/grammar/edit?language=${params.language}&category=${params.category}&topic=${params.topic}`}
+          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-semibold"
+        >
+          ✏️ Edit Page
+        </a>
+      </div>
     </>
   );
 }
