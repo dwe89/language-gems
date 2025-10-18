@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 import GrammarPageTemplate from '@/components/grammar/GrammarPageTemplate';
 
 interface PageProps {
@@ -13,7 +13,7 @@ interface PageProps {
 
 // Generate static params for all grammar pages (for static generation)
 export async function generateStaticParams() {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data: pages } = await supabase
     .from('grammar_pages')
@@ -30,7 +30,7 @@ export async function generateStaticParams() {
 
 // Generate metadata dynamically from database
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: page } = await supabase
     .from('grammar_pages')
@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function DynamicGrammarPage({ params }: PageProps) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch page data from database
   const { data: page, error } = await supabase
