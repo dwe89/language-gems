@@ -389,37 +389,59 @@ export function AQAWritingAssessment({
         <p className="text-gray-700 mb-4">Choose the correct word to complete each sentence:</p>
 
         <div className="space-y-6">
-          {(question.data?.questions || []).map((q: any, index: number) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-start space-x-3 mb-3">
-                <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
-                  3.{index + 1}
-                </span>
-                <div className="flex-1">
-                  <p className="text-gray-900 mb-3">{q.sentence}</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {q.options.map((option: string, optIndex: number) => (
-                      <label key={optIndex} className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name={`question-${index}`}
-                          value={option}
-                          checked={response[`question-${index}`] === option}
-                          onChange={(e) => handleResponseChange(question.id, {
-                            ...response,
-                            [`question-${index}`]: e.target.value
-                          })}
-                          className="text-red-600 focus:ring-red-500"
-                        />
-                        <span className="text-gray-700">{option}</span>
-                      </label>
-                    ))}
+          {(question.data?.sentences || []).map((sentence: any, index: number) => {
+            // Build the sentence with gap
+            const words = sentence.completeSentence?.trim().split(/\s+/).filter((w: string) => w) || [];
+            const gapPosition = sentence.gapPosition || 1;
+
+            return (
+              <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3 mb-3">
+                  <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
+                    3.{index + 1}
+                  </span>
+                  <div className="flex-1">
+                    {/* Display sentence with gap */}
+                    <p className="text-gray-900 mb-3 font-medium">
+                      {words.map((word: string, i: number) => (
+                        <span key={i}>
+                          {i === gapPosition - 1 ? (
+                            <span className="inline-block px-3 py-1 bg-yellow-100 border-2 border-yellow-400 rounded mx-1">
+                              _____
+                            </span>
+                          ) : (
+                            word
+                          )}
+                          {i < words.length - 1 && ' '}
+                        </span>
+                      ))}
+                    </p>
+
+                    {/* Multiple choice options */}
+                    <div className="grid grid-cols-1 gap-2">
+                      {(sentence.options || []).map((option: string, optIndex: number) => (
+                        <label key={optIndex} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors">
+                          <input
+                            type="radio"
+                            name={`question-${index}`}
+                            value={option}
+                            checked={response[`question-${index}`] === option}
+                            onChange={(e) => handleResponseChange(question.id, {
+                              ...response,
+                              [`question-${index}`]: e.target.value
+                            })}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                          <span className="text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
+                  <span className="text-xs text-gray-500">[1 mark]</span>
                 </div>
-                <span className="text-xs text-gray-500">[1 mark]</span>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -440,7 +462,7 @@ export function AQAWritingAssessment({
                   4.{index + 1}
                 </span>
                 <div className="flex-1 space-y-3">
-                  <p className="text-gray-900 font-medium">{sentence.english}</p>
+                  <p className="text-gray-900 font-medium">{sentence.englishText || sentence.english}</p>
                   <textarea
                     value={response[`translation-${index}`] || ''}
                     onChange={(e) => handleResponseChange(question.id, {
@@ -452,7 +474,7 @@ export function AQAWritingAssessment({
                     rows={2}
                   />
                 </div>
-                <span className="text-xs text-gray-500">[{sentence.marks} marks]</span>
+                <span className="text-xs text-gray-500">[2 marks]</span>
               </div>
             </div>
           ))}

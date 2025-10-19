@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Target, Award, Clock, Users, Star, ChevronRight, ChevronDown, CheckCircle } from 'lucide-react';
+import { BookOpen, Target, Award, Clock, Users, Star, ChevronRight, ChevronDown, CheckCircle, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { GemCard } from '../../../components/ui/GemTheme';
 import FlagIcon from '../../../components/ui/FlagIcon';
+import { useAuth } from '@/components/auth/AuthProvider';
+import GrammarIndexEditModal from '@/components/admin/GrammarIndexEditModal';
 
 // Interfaces for discovered topics and categories
 interface DiscoveredTopic {
@@ -161,12 +163,14 @@ const CATEGORY_CONFIG = {
 };
 
 export function SpanishGrammarClient() {
-
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'danieletienne89@gmail.com';
 
   const [categories, setCategories] = useState<GrammarCategory[]>([]);
   const [practiceReadyTopics, setPracticeReadyTopics] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Load grammar structure and practice status
   useEffect(() => {
@@ -319,6 +323,15 @@ export function SpanishGrammarClient() {
       </div>
     );
   }
+
+  // Prepare categories for modal
+  const categoriesForModal = categories.map(cat => ({
+    name: cat.name,
+    key: Object.keys(CATEGORY_CONFIG).find(
+      key => CATEGORY_CONFIG[key as keyof typeof CATEGORY_CONFIG].name === cat.name
+    ) || cat.name.toLowerCase(),
+    topics: cat.topics,
+  }));
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -499,6 +512,31 @@ export function SpanishGrammarClient() {
           </GemCard>
         ))}
       </div>
+
+      {/* Admin Edit Button */}
+      {isAdmin && (
+        <>
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="fixed bottom-8 right-8 z-50 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-semibold"
+          >
+            <Edit className="w-5 h-5" />
+            <span>Manage Topics</span>
+          </button>
+
+          {showEditModal && (
+            <GrammarIndexEditModal
+              language="spanish"
+              categories={categoriesForModal}
+              onClose={() => setShowEditModal(false)}
+              onSave={() => {
+                setShowEditModal(false);
+                window.location.reload();
+              }}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }

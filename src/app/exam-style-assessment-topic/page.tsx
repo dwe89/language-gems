@@ -214,11 +214,11 @@ export default function AssessmentsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center mb-4">
             <Link
-              href="/dashboard"
+              href="/assessments"
               className="flex items-center text-gray-600 hover:text-gray-900 transition-colors mr-4"
             >
               <ArrowLeft className="h-5 w-5 mr-1" />
-              Back to Dashboard
+              Back to Assessments
             </Link>
           </div>
 

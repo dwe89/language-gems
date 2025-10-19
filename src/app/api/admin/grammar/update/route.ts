@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
+import { createServiceRoleClient } from '@/utils/supabase/client';
 
 /**
  * API endpoint for updating grammar page content
@@ -45,21 +46,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use service role client to bypass RLS for admin operations
+    const serviceSupabase = createServiceRoleClient();
+
     // Update the grammar page in the database
-    const { data, error } = await supabase
+    const { data, error } = await serviceSupabase
       .from('grammar_pages')
-      .update(updates)
+      .update(updates as any)
       .eq('language', language)
       .eq('category', category)
       .eq('topic_slug', topic_slug)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error('Error updating grammar page:', error);
       return NextResponse.json(
         { success: false, error: error.message },
         { status: 500 }
+      );
+    }
+
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Grammar page not found' },
+        { status: 404 }
       );
     }
 

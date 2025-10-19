@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Edit } from 'lucide-react';
-import { useAuth } from '@/components/auth/AuthProvider';
 import SimpleGrammarEditModal from './SimpleGrammarEditModal';
 
 interface GrammarEditButtonProps {
@@ -28,24 +27,7 @@ export default function GrammarEditButton({
   topicSlug,
   initialData,
 }: GrammarEditButtonProps) {
-  const { role, isAuthenticated } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    console.log('🔧 [GRAMMAR EDIT BUTTON] Mounted with role:', role, 'isAuthenticated:', isAuthenticated);
-  }, [role, isAuthenticated]);
-
-  // Prevent hydration mismatch
-  if (!isMounted) {
-    return null;
-  }
-
-  // Only show for admin users
-  if (role !== 'admin') {
-    return null;
-  }
 
   return (
     <>

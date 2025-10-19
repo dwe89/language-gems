@@ -1,400 +1,391 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Target, Gem, BookOpen, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import GrammarPractice from '@/components/grammar/GrammarPractice';
+import { ArrowLeft, Loader2, Edit } from 'lucide-react';
 import Link from 'next/link';
-import { GemButton } from '../../../../../../components/ui/GemTheme';
-import GrammarPractice from '../../../../../../components/grammar/GrammarPractice';
-import PracticeModeSelector from '../../../../../../components/grammar/PracticeModeSelector';
-import { useAuth } from '../../../../../../components/auth/AuthProvider';
+import { createClient } from '@/utils/supabase/client';
+import GrammarTestEditModal from '@/components/admin/GrammarTestEditModal';
 
-interface GrammarContent {
-  id: string;
-  topic_id: string;
-  content_type: string;
-  title: string;
-  slug: string;
-  content_data: any;
-  difficulty_level: string;
-  estimated_duration: number;
+interface PageProps {
+  params: {
+    language: string;
+    category: string;
+    topic: string;
+  };
 }
 
-interface PracticeItem {
-  id: string;
-  type: 'conjugation' | 'fill_blank' | 'word_order' | 'translation';
-  question: string;
-  answer: string;
-  options?: string[];
-  hint?: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  category: string;
-}
-
-const LANGUAGE_INFO = {
-  spanish: { name: 'Spanish', countryCode: 'ES', color: 'from-red-500 to-yellow-500' },
-  french: { name: 'French', countryCode: 'FR', color: 'from-blue-500 to-white' },
-  german: { name: 'German', countryCode: 'DE', color: 'from-red-600 to-yellow-400' }
-} as const;
-
-// Enhanced data transformation to handle multiple content formats
-const transformPracticeData = (contentData: any, topicSlug: string): PracticeItem[] => {
-  if (!contentData) return [];
-
-
-  const practiceItems: PracticeItem[] = [];
-
-  // Handle different content data structures
-  if (contentData.exercises) {
-    // New format with exercises array
-    contentData.exercises.forEach((exercise: any, exerciseIndex: number) => {
-      if (exercise.prompts) {
-        exercise.prompts.forEach((prompt: any, promptIndex: number) => {
-          // Generate appropriate question based on exercise type
-          let question = '';
-          if (exercise.type === 'conjugation' && prompt.verb && prompt.subject) {
-            question = `Conjugate "${prompt.verb}" for "${prompt.subject}"`;
-          } else if (exercise.type === 'translation' && prompt.english) {
-            question = `Translate: ${prompt.english}`;
-          } else if (exercise.type === 'fill_blank' && prompt.sentence) {
-            question = prompt.sentence;
-          } else {
-            question = prompt.sentence || prompt.question || exercise.instructions || 'Complete this exercise';
-          }
-
-          const practiceItem = {
-            id: `${exerciseIndex}-${promptIndex}`,
-            type: determineQuestionType({ ...prompt, type: exercise.type }),
-            question: question,
-            answer: prompt.answer || '',
-            options: prompt.options || [],
-            hint: prompt.explanation || prompt.hint || exercise.instructions || '',
-            difficulty: mapDifficulty(prompt.difficulty || exercise.difficulty || 'intermediate'),
-            category: exercise.category || topicSlug
-          };
-
-          practiceItems.push(practiceItem);
-        });
-      }
-    });
-  } else if (contentData.questions) {
-    // Alternative format with questions array
-    contentData.questions.forEach((question: any, index: number) => {
-      practiceItems.push({
-        id: `question-${index}`,
-        type: determineQuestionType(question),
-        question: question.question_text || question.question || '',
-        answer: question.correct_answer || question.answer || '',
-        options: question.options || [],
-        hint: question.explanation || question.hint || '',
-        difficulty: mapDifficulty(question.difficulty_level || 'intermediate'),
-        category: topicSlug
-      });
-    });
-  } else if (contentData.items) {
-    // Legacy format with items array
-    contentData.items.forEach((item: any, index: number) => {
-      practiceItems.push({
-        id: `item-${index}`,
-        type: determineQuestionType(item),
-        question: item.prompt || item.question || '',
-        answer: item.answer || '',
-        options: item.choices || item.options || [],
-        hint: item.hint || item.explanation || '',
-        difficulty: mapDifficulty(item.level || 'intermediate'),
-        category: topicSlug
-      });
-    });
-  }
-
-
-  return practiceItems;
+// Map full language names to language codes
+const languageCodeMap: Record<string, string> = {
+  spanish: 'es',
+  french: 'fr',
+  german: 'de',
 };
 
-// Helper function to determine question type from content
-const determineQuestionType = (item: any): PracticeItem['type'] => {
-  // First check if type is explicitly provided
-  if (item.type === 'conjugation' || item.type === 'translation' || item.type === 'fill_blank' || item.type === 'word_order') {
-    return item.type;
-  }
-  if (item.question_type) return item.question_type;
-
-  // Check content patterns
-  if (item.verb && item.subject) return 'conjugation';
-  if (item.english && item.answer) return 'translation';
-  if (item.sentence && item.sentence.includes('___')) return 'fill_blank';
-  if (item.options && item.options.length > 0) return 'fill_blank';
-  if (item.question && item.question.toLowerCase().includes('conjugate')) return 'conjugation';
-  if (item.question && item.question.toLowerCase().includes('translate')) return 'translation';
-  if (item.question && item.question.toLowerCase().includes('order')) return 'word_order';
-
-  return 'fill_blank'; // Default fallback
-};
-
-// Helper function to map difficulty levels
-const mapDifficulty = (difficulty: string): PracticeItem['difficulty'] => {
-  const lower = difficulty.toLowerCase();
-  if (lower.includes('beginner') || lower.includes('easy') || lower === 'a1' || lower === 'a2') return 'beginner';
-  if (lower.includes('advanced') || lower.includes('hard') || lower === 'c1' || lower === 'c2') return 'advanced';
-  return 'intermediate'; // Default for intermediate, b1, b2, etc.
-};
-
-export default function PracticePage() {
-  const params = useParams();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user } = useAuth();
-
-  const language = params?.language as string;
-  const category = params?.category as string;
-  const topic = params?.topic as string;
-  const assignmentId = searchParams?.get('assignment');
-  const isPreview = searchParams?.get('preview') === 'true';
-
-  // This page is now purely for practice mode (test mode has its own route)
-
-  const [practiceContent, setPracticeContent] = useState<GrammarContent | null>(null);
+export default function GrammarPracticePage({ params }: PageProps) {
+  const [showPractice, setShowPractice] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [practiceData, setPracticeData] = useState<any>(null);
+  const [pageTitle, setPageTitle] = useState('');
+  const [topicName, setTopicName] = useState('');
+  const [categoryName, setCategoryName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [selectedMode, setSelectedMode] = useState<'quick' | 'standard' | 'mastery' | null>(null);
-  const [questionCount, setQuestionCount] = useState<number>(0);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [contentId, setContentId] = useState<string | null>(null);
+  const [questionCount, setQuestionCount] = useState(15); // Default to Standard Practice
 
   useEffect(() => {
-    async function fetchPracticeContent() {
+    async function fetchPracticeData() {
       try {
-        setLoading(true);
-        setError(null);
+        const supabase = createClient();
+        const languageCode = languageCodeMap[params.language] || params.language;
 
-        // First get the topic ID
-        const topicsResponse = await fetch(`/api/grammar/topics?language=${language}&category=${category}`);
-        const topicsData = await topicsResponse.json();
+        // Check if user is admin
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        setIsAdmin(currentUser?.email === 'danieletienne89@gmail.com');
 
-        if (!topicsData.success) {
-          throw new Error('Failed to load topics');
+        // Get the grammar page title
+        const { data: page } = await supabase
+          .from('grammar_pages')
+          .select('title')
+          .eq('language', params.language)
+          .eq('category', params.category)
+          .eq('topic_slug', params.topic)
+          .single();
+
+        if (page) {
+          setPageTitle(page.title);
+          setTopicName(page.title);
         }
 
-        const topicData = topicsData.data.find((t: any) => t.slug === topic);
-        if (!topicData) {
-          throw new Error('Topic not found');
+        // Set category name
+        setCategoryName(params.category.charAt(0).toUpperCase() + params.category.slice(1));
+
+        // Get the practice content from grammar_content via grammar_topics
+        const { data: topic } = await supabase
+          .from('grammar_topics')
+          .select('id')
+          .eq('language', languageCode)
+          .eq('category', params.category)
+          .eq('slug', params.topic)
+          .single();
+
+        if (!topic) {
+          setError('Practice not found');
+          setLoading(false);
+          return;
         }
 
-        // Get practice content for this topic
-        const contentType = 'practice';
-        const contentResponse = await fetch(`/api/grammar/content?topicId=${topicData.id}&contentType=${contentType}`);
-        const contentData = await contentResponse.json();
+        const { data: content } = await supabase
+          .from('grammar_content')
+          .select('*')
+          .eq('topic_id', topic.id)
+          .eq('content_type', 'practice')
+          .single();
 
-        if (!contentData.success) {
-          throw new Error('Failed to load content');
+        if (content && content.content_data) {
+          setContentId(content.id);
+          // Transform to GrammarPractice format
+          setPracticeData({
+            difficulty_level: content.difficulty_level || 'beginner',
+            title: content.title || `${pageTitle} Practice`,
+            questions: content.content_data.questions || [],
+          });
+        } else if (content) {
+          // Content exists but no questions yet
+          setContentId(content.id);
+          setPracticeData({
+            difficulty_level: 'beginner',
+            title: `${pageTitle} Practice`,
+            questions: [],
+          });
+        } else {
+          // No content at all - create placeholder for admin
+          if (currentUser?.email === 'danieletienne89@gmail.com') {
+            setPracticeData({
+              difficulty_level: 'beginner',
+              title: `${pageTitle} Practice`,
+              questions: [],
+            });
+          } else {
+            setError('Practice content not available');
+          }
         }
-
-        // Get the first practice content
-        const practiceContentItem = contentData.data[0];
-        console.log('🔍 Content loaded:', {
-          contentType,
-          dataCount: contentData.data?.length,
-          practiceContentItem: practiceContentItem?.title,
-          contentData: practiceContentItem?.content_data
-        });
-
-        if (!practiceContentItem) {
-          throw new Error(`No ${contentType} content available for this topic`);
-        }
-
-        setPracticeContent(practiceContentItem);
       } catch (err) {
-        console.error('Error fetching practice content:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load practice content');
+        console.error('Error fetching practice data:', err);
+        setError('Failed to load practice');
       } finally {
         setLoading(false);
       }
     }
 
-    if (language && category && topic) {
-      fetchPracticeContent();
-    }
-  }, [language, category, topic]);
+    fetchPracticeData();
+  }, [params.language, params.category, params.topic]);
+
+  // Transform practice data to practice items format
+  const transformPracticeData = (questions: any[], count: number) => {
+    // Shuffle and take the specified number of questions
+    const shuffled = [...questions].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, count);
+
+    return selected.map((q: any) => {
+      let type: 'conjugation' | 'fill_blank' | 'word_order' | 'translation' = 'fill_blank';
+      if (q.type === 'fill_blank') type = 'fill_blank';
+      else if (q.type === 'word_order') type = 'word_order';
+      else if (q.type === 'translation') type = 'translation';
+      else if (q.type === 'conjugation') type = 'conjugation';
+
+      return {
+        id: q.id,
+        type,
+        question: q.question,
+        answer: q.correct_answer,
+        options: q.options || [],
+        hint: q.hint || q.explanation || '',
+        difficulty: (q.difficulty || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
+        category: params.category,
+      };
+    });
+  };
+
+  const handlePracticeComplete = (score: number, gemsEarned: number, timeSpent: number) => {
+    console.log('Practice completed!', { score, gemsEarned, timeSpent });
+    setShowPractice(false);
+  };
+
+  const handlePracticeExit = () => {
+    setShowPractice(false);
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
         <div className="text-center">
-          <Gem className="w-12 h-12 text-purple-400 animate-spin mx-auto mb-4" />
-          <p className="text-white">Loading practice content...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-green-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading practice...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !practiceContent) {
+  if (error || !practiceData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-center">
-          <Target className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Practice Not Available</h2>
-          <p className="text-purple-200 mb-6">{error}</p>
-          <Link href={`/grammar/${language}/${category}/${topic}`}>
-            <GemButton variant="gem" gemType="rare">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Topic
-            </GemButton>
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-4xl mx-auto px-4">
+          <Link
+            href={`/grammar/${params.language}/${params.category}/${params.topic}`}
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to {pageTitle || 'Lesson'}
           </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Check if we have practice items
-  const practiceItems = transformPracticeData(practiceContent?.content_data, topic);
-  if (practiceItems.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <BookOpen className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Practice Coming Soon</h2>
-          <p className="text-purple-200 mb-6">
-            Practice exercises for {topic.replace('-', ' ')} are being prepared.
-            Check back soon or try the lesson first!
-          </p>
-          <div className="space-y-3">
-            <Link href={`/grammar/${language}/${category}/${topic}`}>
-              <GemButton variant="gem" gemType="rare" className="w-full">
-                <BookOpen className="w-4 h-4 mr-2" />
-                View Lesson
-              </GemButton>
-            </Link>
-            <GemButton
-              onClick={() => window.history.back()}
-              variant="secondary"
-              className="w-full"
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <h2 className="text-xl font-semibold text-yellow-900 mb-2">
+              Practice Not Available
+            </h2>
+            <p className="text-yellow-700 mb-4">
+              {error || 'This practice is not yet available.'}
+            </p>
+            <Link
+              href={`/grammar/${params.language}/${params.category}/${params.topic}`}
+              className="inline-block px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              Go Back
-            </GemButton>
+              Return to Lesson
+            </Link>
           </div>
         </div>
       </div>
     );
   }
 
-  const languageInfo = LANGUAGE_INFO[language as keyof typeof LANGUAGE_INFO];
-
-  const handleModeSelect = (mode: 'quick' | 'standard' | 'mastery', count: number) => {
-    setSelectedMode(mode);
-    setQuestionCount(count);
-  };
-
-  const getRandomizedQuestions = (allQuestions: any[], count: number) => {
-    if (count >= allQuestions.length) {
-      return allQuestions; // Return all questions if count is greater than available
-    }
-
-    // Shuffle array and take first 'count' items
-    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, count);
-  };
-
-  // Show mode selector if no mode is selected yet
-  if (!selectedMode && practiceContent) {
-    const allPracticeItems = transformPracticeData(practiceContent?.content_data, topic);
+  if (showPractice) {
     return (
-      <PracticeModeSelector
-        onModeSelect={handleModeSelect}
-        totalQuestions={allPracticeItems.length}
-        topicTitle={practiceContent.title}
+      <GrammarPractice
+        language={params.language}
+        category={params.category}
+        difficulty={practiceData.difficulty_level}
+        practiceItems={transformPracticeData(practiceData.questions, questionCount)}
+        topicTitle={practiceData.title}
+        isTestMode={false}
+        showHints={true}
+        trackProgress={false}
+        gamified={true}
+        onComplete={handlePracticeComplete}
+        onExit={handlePracticeExit}
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Link href={`/grammar/${language}/${category}/${topic}`}>
-            <GemButton variant="gem" gemType="rare" className="text-white hover:text-purple-300">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Topic
-            </GemButton>
-          </Link>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+      {/* Practice Header */}
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 border-b border-green-300 shadow-lg">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Link
+                href={`/grammar/${params.language}/${params.category}/${params.topic}`}
+                className="inline-flex items-center text-white/80 hover:text-white transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                <span className="font-medium">Exit Practice</span>
+              </Link>
 
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {practiceContent.title}
-            </h1>
-            <div className="flex items-center justify-center space-x-4 text-purple-200">
-              <span className="capitalize">{languageInfo?.name}</span>
-              <span>•</span>
-              <span className="capitalize">{category}</span>
-              <span>•</span>
-              <span>{practiceContent.estimated_duration} min</span>
+              <div className="border-l border-white/30 pl-4">
+                <h1 className="text-xl font-bold text-white">
+                  {topicName} Practice
+                </h1>
+                <p className="text-green-200 text-sm">
+                  {categoryName} • Practice Mode
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Choose Your Practice Mode
+            </h2>
+            <p className="text-xl text-gray-600">
+              {topicName} - Practice
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              {practiceData.questions.length} questions available
+            </p>
+          </div>
+
+          {/* Practice Mode Cards */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            {/* Quick Practice */}
+            <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-gray-200 hover:border-green-500 transition-all">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-1">Quick Practice</h3>
+                <p className="text-sm text-gray-600">Fast Review</p>
+              </div>
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center justify-center gap-2 text-gray-700">
+                  <span className="font-semibold">10 questions</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-gray-600 text-sm">
+                  <span>3-5 min</span>
+                </div>
+                <p className="text-sm text-gray-600 text-center mt-3">
+                  Perfect for maintaining streaks and quick reviews on-the-go
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setQuestionCount(10);
+                  setShowPractice(true);
+                }}
+                className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg"
+              >
+                Start Practice
+              </button>
+            </div>
+
+            {/* Standard Practice */}
+            <div className="bg-white rounded-lg shadow-xl p-6 border-2 border-green-500 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-1 rounded-full text-xs font-bold">
+                Recommended
+              </div>
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-1">Standard Practice</h3>
+                <p className="text-sm text-gray-600">Balanced Session</p>
+              </div>
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center justify-center gap-2 text-gray-700">
+                  <span className="font-semibold">15 questions</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-gray-600 text-sm">
+                  <span>8-12 min</span>
+                </div>
+                <p className="text-sm text-gray-600 text-center mt-3">
+                  Ideal balance of practice and time commitment
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setQuestionCount(15);
+                  setShowPractice(true);
+                }}
+                className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg"
+              >
+                Start Practice
+              </button>
+            </div>
+
+            {/* Full Mastery */}
+            <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-gray-200 hover:border-green-500 transition-all">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-1">Full Mastery Drill</h3>
+                <p className="text-sm text-gray-600">Complete Coverage</p>
+              </div>
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center justify-center gap-2 text-gray-700">
+                  <span className="font-semibold">20 questions</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-gray-600 text-sm">
+                  <span>15-20 min</span>
+                </div>
+                <p className="text-sm text-gray-600 text-center mt-3">
+                  Master every concept before taking the quiz
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setQuestionCount(20);
+                  setShowPractice(true);
+                }}
+                className="w-full px-6 py-3 bg-gradient-to-r from-green-700 to-emerald-700 text-white rounded-lg font-semibold hover:from-green-800 hover:to-emerald-800 transition-all shadow-md hover:shadow-lg"
+              >
+                Start Practice
+              </button>
             </div>
           </div>
 
-          <div className="w-24"></div> {/* Spacer for alignment */}
+          {/* Footer Note */}
+          <p className="text-center text-sm text-gray-500">
+            Questions are randomly selected from the complete question pool. Your progress is saved automatically.
+          </p>
         </div>
-
-        {/* Enhanced Practice Component */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <GrammarPractice
-            language={language}
-            category={category}
-            difficulty={practiceContent.difficulty_level}
-            practiceItems={getRandomizedQuestions(practiceItems, questionCount)}
-            topicTitle={practiceContent.title}
-            questionCount={questionCount}
-            // Practice mode settings
-            isTestMode={false}
-            showHints={true} // Always show hints in practice mode
-            trackProgress={false} // No progress tracking in practice mode
-            onComplete={async (score, gemsEarned, timeSpent) => {
-              console.log('Practice completed!', { score, gemsEarned, timeSpent });
-
-              // If this is an assignment, record assignment progress
-              if (assignmentId && user) {
-                try {
-                  await fetch('/api/assignments/progress', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      assignmentId: assignmentId,
-                      gameId: `grammar-practice-${practiceContent.id}`,
-                      completed: true,
-                      score: score,
-                      accuracy: score,
-                      timeSpent: timeSpent,
-                      wordsCompleted: 1,
-                      totalWords: 1,
-                      sessionData: {
-                        topic_id: practiceContent.topic_id,
-                        gems_earned: gemsEarned,
-                        completion_type: 'practice'
-                      }
-                    })
-                  });
-
-                  // Navigate back to assignment
-                  const previewParam = isPreview ? '?preview=true' : '';
-                  router.push(`/student-dashboard/assignments/${assignmentId}${previewParam}`);
-                } catch (error) {
-                  console.error('Error saving practice completion:', error);
-                }
-              } else {
-                // Navigate back to topic page
-                router.push(`/grammar/${language}/${category}/${topic}?completed=practice&score=${score}&gems=${gemsEarned}`);
-              }
-            }}
-            onExit={() => {
-              // Return to mode selection
-              setSelectedMode(null);
-              setQuestionCount(0);
-            }}
-          />
-        </motion.div>
       </div>
+
+      {/* Admin Edit Button */}
+      {isAdmin && practiceData && (
+        <>
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="fixed bottom-8 right-8 z-50 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-semibold"
+          >
+            <Edit className="w-5 h-5" />
+            <span>{contentId ? 'Edit Practice' : 'Create Practice'}</span>
+          </button>
+
+          {showEditModal && (
+            <GrammarTestEditModal
+              contentId={contentId || 'new'}
+              language={params.language}
+              category={params.category}
+              topic={params.topic}
+              initialData={practiceData}
+              onClose={() => setShowEditModal(false)}
+              onSave={() => {
+                setShowEditModal(false);
+                window.location.reload();
+              }}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }
+

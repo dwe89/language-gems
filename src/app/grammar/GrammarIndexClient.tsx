@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Target, Users, Star, ChevronRight, Clock, Award, Brain } from 'lucide-react';
+import { BookOpen, Target, Users, Star, ChevronRight, Clock, Award, Brain, FileText, Languages, Zap, PenTool } from 'lucide-react';
 import Link from 'next/link';
 import { GemCard, GemButton } from '../../components/ui/GemTheme';
 import FlagIcon from '../../components/ui/FlagIcon';
@@ -86,10 +86,11 @@ export default function GrammarIndexClient() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-gray-600 text-lg max-w-3xl mx-auto leading-relaxed"
+              className="text-gray-600 text-lg max-w-4xl mx-auto leading-relaxed px-4"
             >
-              Comprehensive grammar resources designed to help you understand and master the fundamental structures 
-              of your target language. From basic rules to advanced concepts, we've got you covered.
+              Master the building blocks of language with our comprehensive grammar guides. 
+              From verb conjugations to sentence structure, build confidence in Spanish, French, and German 
+              through interactive lessons and practical exercises.
             </motion.p>
           </div>
         </div>
@@ -105,7 +106,7 @@ export default function GrammarIndexClient() {
             transition={{ delay: 0.2 }}
             className="mb-16"
           >
-            <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Choose Your Language</h2>
+            <h2 className="text-3xl font-bold text-gray-800 mb-12 text-center">Choose Your Language</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {languages.map((language, index) => (
                 <motion.div
@@ -115,34 +116,31 @@ export default function GrammarIndexClient() {
                   transition={{ delay: 0.3 + index * 0.1 }}
                 >
                   <Link href={`/grammar/${language.code}`}>
-                    <GemCard className="h-full hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-gray-200 group">
-                      <div className="flex items-center space-x-4 mb-6">
+                    <GemCard className="h-full hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-gray-200 group p-8">
+                      <div className="flex items-start space-x-4 mb-6">
                         <FlagIcon countryCode={language.countryCode} size="xl" />
-                        <div className={`p-3 bg-gradient-to-r ${language.color} rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                          <BookOpen className="w-8 h-8 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold text-gray-800">{language.name}</h3>
-                          <p className="text-gray-600">Grammar Guide</p>
+                        <div className="flex-1">
+                          <h3 className="text-2xl font-bold text-gray-800 mb-1">{language.name}</h3>
+                          <p className="text-gray-600 text-sm">Interactive Grammar Lessons</p>
                         </div>
                       </div>
                       
-                      <p className="text-gray-600 mb-6 leading-relaxed">{language.description}</p>
+                      <p className="text-gray-600 mb-6 leading-relaxed text-base">{language.description}</p>
                       
                       <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
                         <div className="flex items-center">
                           <Star className="w-4 h-4 mr-1 text-yellow-500" />
-                          <span>{language.topics} Topics</span>
+                          <span className="font-medium">{language.topics} Topics</span>
                         </div>
                         <div className="flex items-center">
                           <Target className="w-4 h-4 mr-1" />
-                          <span>{language.difficulty}</span>
+                          <span className="font-medium">{language.difficulty}</span>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <span className="text-purple-600 font-semibold group-hover:text-purple-700">
-                          Start Learning
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                        <span className="text-purple-600 font-semibold group-hover:text-purple-700 text-base">
+                          Start Learning →
                         </span>
                         <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all duration-300" />
                       </div>
@@ -204,7 +202,7 @@ export default function GrammarIndexClient() {
                   onClick={() => window.location.href = '/grammar/spanish'}
                   className="px-8 py-4"
                 >
-                  <BookOpen className="w-5 h-5 mr-2" />
+                  <Zap className="w-5 h-5 mr-2" />
                   Start with Spanish
                 </GemButton>
                 <GemButton
@@ -213,7 +211,7 @@ export default function GrammarIndexClient() {
                   onClick={() => window.location.href = '/grammar/french'}
                   className="px-8 py-4"
                 >
-                  <BookOpen className="w-5 h-5 mr-2" />
+                  <Languages className="w-5 h-5 mr-2" />
                   Explore French
                 </GemButton>
                 <GemButton
@@ -222,7 +220,7 @@ export default function GrammarIndexClient() {
                   onClick={() => window.location.href = '/grammar/german'}
                   className="px-8 py-4"
                 >
-                  <BookOpen className="w-5 h-5 mr-2" />
+                  <Target className="w-5 h-5 mr-2" />
                   Try German
                 </GemButton>
               </div>

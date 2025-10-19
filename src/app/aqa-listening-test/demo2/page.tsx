@@ -23,7 +23,7 @@ export default function AQAListeningTestPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Link
-                href="/exam-style-assessment"
+                href="/assessments/gcse-listening"
                 className="flex items-center text-gray-600 hover:text-gray-900 mr-6"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />

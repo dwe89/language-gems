@@ -77,11 +77,10 @@ export default function SimpleGrammarEditModal({
         throw new Error(result.error || 'Failed to update');
       }
 
-      // Show success toast
-      alert('✅ Page edited successfully!');
-      
-      // Reload the page to show changes
+      // Success! Just reload the page to see changes
+      alert('✅ Page updated successfully!');
       window.location.reload();
+
     } catch (err: any) {
       alert('❌ Error: ' + err.message);
       setSaving(false);
@@ -201,7 +200,8 @@ export default function SimpleGrammarEditModal({
           <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              disabled={saving}
+              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
             >
               Cancel
             </button>

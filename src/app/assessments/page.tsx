@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { generateMetadata } from '../../components/seo/SEOWrapper';
@@ -7,14 +7,15 @@ import AssessmentsPageWrapper from '../../components/assessments/AssessmentsPage
 import {
   BookOpen,
   FileText,
-  GraduationCap,
   Clock,
   Award,
   ArrowRight,
   CheckCircle,
   Target,
   PenTool,
-  Info
+  Info,
+  Headphones,
+  MessageSquare
 } from 'lucide-react';
 import DevWarningDialog from '../../components/assessments/DevWarningDialog';
 
@@ -33,7 +34,8 @@ const AssessmentCard = ({
   features,
   estimatedTime,
   skillsAssessed,
-  color = "blue"
+  color = "blue",
+  compact = false
 }: {
   title: string;
   description: string;
@@ -43,19 +45,54 @@ const AssessmentCard = ({
   estimatedTime: string;
   skillsAssessed: string[];
   color?: string;
+  compact?: boolean;
 }) => {
   const colorClasses = {
     blue: "from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700",
     green: "from-green-500 to-green-600 hover:from-green-600 hover:to-green-700",
     purple: "from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700",
-    indigo: "from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700"
+    indigo: "from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700",
+    orange: "from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
   };
 
+  if (compact) {
+    return (
+      <Link href={href} className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+        <div className={`h-1.5 bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]}`}></div>
+        <div className="p-4">
+          <div className="flex items-center mb-3">
+            <div className={`p-2 rounded-lg bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]} text-white mr-3`}>
+              <Icon className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+              <p className="text-gray-600 text-xs">{description}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-xs text-gray-600 mb-3">
+            <div className="flex items-center">
+              <Clock className="h-3 w-3 mr-1" />
+              <span>{estimatedTime}</span>
+            </div>
+            <div className="flex items-center">
+              <Target className="h-3 w-3 mr-1" />
+              <span>{skillsAssessed.join(', ')}</span>
+            </div>
+          </div>
+          <div className={`flex items-center justify-center text-sm font-semibold text-${color}-600`}>
+            View Papers
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col"> {/* Added flex flex-col */}
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
       <div className={`h-2 bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]}`}></div>
 
-      <div className="p-6 flex flex-col flex-grow"> {/* Added flex flex-col flex-grow */}
+      <div className="p-6 flex flex-col flex-grow">
         <div className="flex items-center mb-4">
           <div className={`p-3 rounded-lg bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]} text-white mr-4`}>
             <Icon className="h-6 w-6" />
@@ -78,7 +115,7 @@ const AssessmentCard = ({
           </div>
         </div>
 
-        <div className="space-y-2 mb-6 flex-grow"> {/* Added flex-grow */}
+        <div className="space-y-2 mb-6 flex-grow">
           {features.map((feature, index) => (
             <div key={index} className="flex items-center text-sm text-gray-700">
               <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
@@ -89,7 +126,7 @@ const AssessmentCard = ({
 
         <Link
           href={href}
-          className={`w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]} text-white rounded-lg font-semibold transition-all hover:shadow-lg mt-auto`} // Added mt-auto
+          className={`w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]} text-white rounded-lg font-semibold transition-all hover:shadow-lg mt-auto`}
         >
           Start Assessment
           <ArrowRight className="h-4 w-4 ml-2" />
@@ -102,7 +139,50 @@ const AssessmentCard = ({
 export default function AssessmentsPage() {
   // Client-side development warning handled by DevWarningDialog component
 
-  const assessmentTypes = [
+  const gcseExams = [
+    {
+      title: "GCSE Reading Exam",
+      description: "AQA & Edexcel papers",
+      icon: BookOpen,
+      href: "/assessments/gcse-reading",
+      color: "blue",
+      estimatedTime: "45-60 min",
+      skillsAssessed: ["Reading"],
+      features: []
+    },
+    {
+      title: "GCSE Listening Exam",
+      description: "AQA & Edexcel papers",
+      icon: Headphones,
+      href: "/assessments/gcse-listening",
+      color: "green",
+      estimatedTime: "35-45 min",
+      skillsAssessed: ["Listening"],
+      features: []
+    },
+    {
+      title: "GCSE Writing Exam",
+      description: "AQA papers available",
+      icon: PenTool,
+      href: "/assessments/gcse-writing",
+      color: "purple",
+      estimatedTime: "60-75 min",
+      skillsAssessed: ["Writing"],
+      features: []
+    },
+    {
+      title: "GCSE Speaking Exam",
+      description: "Coming Soon",
+      icon: MessageSquare,
+      href: "/assessments/gcse-speaking",
+      color: "orange",
+      estimatedTime: "7-12 min",
+      skillsAssessed: ["Speaking"],
+      features: []
+    }
+  ];
+
+  const otherAssessments = [
     {
       title: "Reading Comprehension",
       description: "Test your understanding of written texts",
@@ -120,29 +200,13 @@ export default function AssessmentsPage() {
       ]
     },
     {
-      title: "Exam Practice",
-      description: "Prepare for official examinations with questions and tasks designed to reflect leading UK exam board formats.",
-      icon: GraduationCap,
-      href: "/exam-style-assessment",
-      color: "purple",
-      estimatedTime: "30-45 minutes",
-      skillsAssessed: ["Reading", "Writing", "Listening", "Speaking"],
-      features: [
-        "Question formats and structures reflecting AQA, Edexcel, and Eduqas examinations",
-        "Foundation and Higher tier questions",
-        "Original, exam-style tasks with clear rubrics",
-        "Exam technique tips and strategies",
-        "Simulated mock exam experience"
-      ]
-    },
-    {
-      title: "Topic-Based Assessments", // New Card Title
-      description: "Focused practice on specific AQA themes and topics (Reading Skill)", // New Card Description
-      icon: FileText, // Appropriate icon for assessments/topics
-      href: "/exam-style-assessment-topic", // Link to your new page
-      color: "indigo", // Assign a new color
-      estimatedTime: "15-25 minutes", // Estimated time for these assessments
-      skillsAssessed: ["Reading", "Vocabulary", "Grammar"], // Skills for topic-based
+      title: "Topic-Based Assessments",
+      description: "Focused practice on specific AQA themes and topics (Reading Skill)",
+      icon: FileText,
+      href: "/exam-style-assessment-topic",
+      color: "indigo",
+      estimatedTime: "15-25 minutes",
+      skillsAssessed: ["Reading", "Vocabulary", "Grammar"],
       features: [
         "Specific AQA themes: People & lifestyle, Popular culture, Communication & the world",
         "Targeted topics within each theme",
@@ -199,10 +263,31 @@ export default function AssessmentsPage() {
       </div>
 
 
-      {/* Assessment Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch"> {/* Added items-stretch */}
-          {assessmentTypes.map((assessment, index) => (
+      {/* GCSE Exam Papers Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">GCSE Exam Papers</h2>
+          <p className="text-gray-600">Official exam-style papers for AQA and Edexcel exam boards</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {gcseExams.map((assessment, index) => (
+            <AssessmentCard
+              key={index}
+              {...assessment}
+              compact={true}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Other Assessments Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Practice Assessments</h2>
+          <p className="text-gray-600">Additional practice materials and skill-building exercises</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+          {otherAssessments.map((assessment, index) => (
             <AssessmentCard
               key={index}
               {...assessment}
@@ -263,16 +348,16 @@ export default function AssessmentsPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/reading-comprehension"
+              href="/assessments/gcse-reading"
               className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
             >
-              Quick Start: Reading Comprehension
+              Quick Start: GCSE Reading Exam
             </Link>
             <Link
-              href="/exam-style-assessment-topic"
+              href="/assessments/gcse-listening"
               className="px-8 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
             >
-              Focused Practice: Topic-Based
+              Practice: GCSE Listening Exam
             </Link>
           </div>
         </div>

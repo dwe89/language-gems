@@ -19,7 +19,7 @@ export default function AQAListeningAssessmentPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Invalid Language</h1>
           <p className="text-gray-600 mb-4">Please select a valid language (Spanish, French, or German).</p>
-          <Link href="/exam-style-assessment" className="text-blue-600 hover:text-blue-800">
+          <Link href="/assessments/gcse-listening" className="text-blue-600 hover:text-blue-800">
             Back to Assessment Selection
           </Link>
         </div>
@@ -33,7 +33,7 @@ export default function AQAListeningAssessmentPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Invalid Tier</h1>
           <p className="text-gray-600 mb-4">Please select either Foundation or Higher tier.</p>
-          <Link href="/exam-style-assessment" className="text-blue-600 hover:text-blue-800">
+          <Link href="/assessments/gcse-listening" className="text-blue-600 hover:text-blue-800">
             Back to Assessment Selection
           </Link>
         </div>
@@ -47,7 +47,7 @@ export default function AQAListeningAssessmentPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Invalid Paper</h1>
           <p className="text-gray-600 mb-4">Please select a valid paper.</p>
-          <Link href="/exam-style-assessment" className="text-blue-600 hover:text-blue-800">
+          <Link href="/assessments/gcse-listening" className="text-blue-600 hover:text-blue-800">
             Back to Assessment Selection
           </Link>
         </div>
@@ -84,7 +84,7 @@ export default function AQAListeningAssessmentPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Link 
-                href="/exam-style-assessment"
+                href="/assessments/gcse-listening"
                 className="flex items-center text-gray-600 hover:text-gray-900 mr-6"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />

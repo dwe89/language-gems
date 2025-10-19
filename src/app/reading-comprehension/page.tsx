@@ -5,8 +5,13 @@ import { useRouter } from 'next/navigation';
 import {
   BookOpen,
   ArrowRight,
-  Filter
+  Filter,
+  Settings,
+  ArrowLeft
 } from 'lucide-react';
+import { useAuth } from '@/components/auth/AuthProvider';
+import ReadingComprehensionAdminModal from '@/components/admin/ReadingComprehensionAdminModal';
+import Link from 'next/link';
 
 // Simple flag components
 const SpanishFlag = () => (
@@ -90,8 +95,76 @@ const AQA_THEMES_TOPICS = {
   }
 };
 
+// Edexcel Themes and Topics structure
+const EDEXCEL_THEMES_TOPICS = {
+  my_personal_world: {
+    name: 'My personal world',
+    topics: [
+      { id: 'family', name: 'Family' },
+      { id: 'friends_relationships', name: 'Friends and relationships' },
+      { id: 'home', name: 'Home' },
+      { id: 'equality', name: 'Equality' }
+    ]
+  },
+  lifestyle_wellbeing: {
+    name: 'Lifestyle and wellbeing',
+    topics: [
+      { id: 'physical_wellbeing', name: 'Physical wellbeing' },
+      { id: 'mental_wellbeing', name: 'Mental wellbeing' },
+      { id: 'healthy_living', name: 'Healthy living' },
+      { id: 'food_drink', name: 'Food and drink' },
+      { id: 'sports', name: 'Sports' },
+      { id: 'illnesses', name: 'Illnesses' }
+    ]
+  },
+  my_neighbourhood: {
+    name: 'My neighbourhood',
+    topics: [
+      { id: 'home_local_area', name: 'Home and local area' },
+      { id: 'places_in_town', name: 'Places in town' },
+      { id: 'shopping', name: 'Shopping' },
+      { id: 'natural_world', name: 'The natural world' },
+      { id: 'environmental_issues', name: 'Environmental issues' }
+    ]
+  },
+  media_technology: {
+    name: 'Media and technology',
+    topics: [
+      { id: 'life_online', name: 'Life online - advantages and disadvantages' },
+      { id: 'technology', name: 'Technology' },
+      { id: 'tv_film', name: 'TV and film' },
+      { id: 'music', name: 'Music' },
+      { id: 'social_media', name: 'Social media' },
+      { id: 'gaming', name: 'Gaming' }
+    ]
+  },
+  studying_future: {
+    name: 'Studying and my future',
+    topics: [
+      { id: 'school_subjects', name: 'School subjects' },
+      { id: 'school_opinions', name: 'Opinions about school' },
+      { id: 'school_rules', name: 'School rules' },
+      { id: 'future_plans', name: 'Future plans' },
+      { id: 'current_employment', name: 'Current employment' },
+      { id: 'future_employment', name: 'Future employment' }
+    ]
+  },
+  travel_tourism: {
+    name: 'Travel and tourism',
+    topics: [
+      { id: 'holidays', name: 'Holidays' },
+      { id: 'transport', name: 'Transport' },
+      { id: 'accommodation', name: 'Accommodation' },
+      { id: 'planning_holidays', name: 'Planning and describing a holiday' },
+      { id: 'weather', name: 'Weather' },
+      { id: 'tourist_attractions', name: 'Tourist attractions' }
+    ]
+  }
+};
+
 export default function ReadingComprehensionPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [selectedLanguage, setSelectedLanguage] = useState<'spanish' | 'french' | 'german'>('spanish');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
@@ -103,10 +176,14 @@ export default function ReadingComprehensionPage() {
   const [availableTasks, setAvailableTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   // Dynamic categories loaded from database
   const [availableCategories, setAvailableCategories] = useState<KSCategory[]>([]);
   const [availableKS4Themes, setAvailableKS4Themes] = useState<any[]>([]);
+
+  // Check if user is admin
+  const isAdmin = user?.email === 'danieletienne89@gmail.com';
 
   // Load categories from API with caching
   const loadCategoriesFromAPI = async () => {
@@ -330,6 +407,23 @@ export default function ReadingComprehensionPage() {
     router.push(`/reading-comprehension/task?${params.toString()}`);
   };
 
+  const handleRefreshTasks = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/reading-comprehension/tasks');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tasks && data.tasks.length > 0) {
+          setAvailableTasks(data.tasks);
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing tasks:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const categories = getCategories();
   // No need to filter categories for display grid anymore, as it's removed.
   // The filtering for the dropdowns is handled implicitly by `getCategories`.
@@ -337,8 +431,39 @@ export default function ReadingComprehensionPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Admin Button */}
+        {isAdmin && (
+          <button
+            onClick={() => setShowAdminModal(true)}
+            className="fixed bottom-8 right-8 z-50 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-semibold"
+            title="Manage Reading Comprehension (Admin only)"
+          >
+            <Settings className="w-5 h-5" />
+            <span>Manage Assessments</span>
+          </button>
+        )}
+
+        {/* Admin Modal */}
+        {isAdmin && (
+          <ReadingComprehensionAdminModal
+            isOpen={showAdminModal}
+            onClose={() => setShowAdminModal(false)}
+            onRefresh={handleRefreshTasks}
+          />
+        )}
         {/* Header */}
         <div className="text-center mb-8">
+          {/* Back Button */}
+          <div className="flex justify-start mb-4">
+            <Link
+              href="/assessments"
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Assessments
+            </Link>
+          </div>
+
           <div className="flex items-center justify-center mb-4">
             <BookOpen className="h-12 w-12 text-blue-600 mr-3" />
             <h1 className="text-4xl font-bold text-gray-900">Reading Comprehension</h1>
@@ -447,6 +572,31 @@ export default function ReadingComprehensionPage() {
               </div>
             )}
 
+            {/* Edexcel Themes and Topics Filter (visible only for Edexcel) */}
+            {selectedExamBoard === 'edexcel' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Edexcel Theme/Topic
+                </label>
+                <select
+                  value={selectedThemeTopic}
+                  onChange={(e) => setSelectedThemeTopic(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Themes/Topics</option>
+                  {Object.entries(EDEXCEL_THEMES_TOPICS).map(([themeId, theme]) => (
+                    <optgroup key={themeId} label={theme.name}>
+                      {theme.topics.map(topic => (
+                        <option key={topic.id} value={`${themeId}:${topic.id}`}>
+                          {topic.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Category Filter (visible only if KS4 is NOT selected) */}
             {selectedCurriculumLevel !== 'ks4' && (
               <div>
@@ -541,77 +691,144 @@ export default function ReadingComprehensionPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTasks.map((task) => (
-                <div key={task.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200">
-                  <div className="p-6">
-                    {/* Task Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                          {task.title}
-                        </h3>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {task.language === 'spanish' ? (
-                              <>
-                                <SpanishFlag />
-                                <span className="ml-1">Spanish</span>
-                              </>
-                            ) : task.language === 'french' ? (
-                              <>
-                                <FrenchFlag />
-                                <span className="ml-1">French</span>
-                              </>
-                            ) : task.language === 'german' ? (
-                              <>
-                                <GermanFlag />
-                                <span className="ml-1">German</span>
-                              </>
-                            ) : (
-                              task.language
-                            )}
-                          </span>
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
-                            {task.difficulty}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+              {filteredTasks.map((task) => {
+                // Helper function to format theme/topic display
+                const formatThemeTopic = (themeTopic: string | undefined, examBoard: string | undefined) => {
+                  if (!themeTopic) return null;
 
-                    {/* Task Details */}
-                    <div className="space-y-2 mb-4">
-                      {task.curriculum_level && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <span className="font-medium mr-2">Level:</span>
-                          <span className="uppercase">{task.curriculum_level}</span>
-                        </div>
-                      )}
-                      {task.category && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <span className="font-medium mr-2">Category:</span>
-                          <span className="capitalize">{task.category.replace(/_/g, ' ')}</span>
-                        </div>
-                      )}
-                      {task.subcategory && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <span className="font-medium mr-2">Topic:</span>
-                          <span className="capitalize">{task.subcategory.replace(/_/g, ' ')}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <BookOpen className="h-4 w-4 mr-1" />
-                          <span>{task.word_count || 0} words</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span>{task.estimated_reading_time || 5} min read</span>
+                  if (examBoard === 'aqa') {
+                    // AQA format: theme_id_topic_id
+                    const parts = themeTopic.split('_');
+                    if (parts.length >= 2) {
+                      const themeId = parts[0] + '_' + parts[1]; // e.g., people_lifestyle
+                      const topicId = parts.slice(2).join('_'); // e.g., identity_relationships
+
+                      const theme = AQA_THEMES_TOPICS[themeId as keyof typeof AQA_THEMES_TOPICS];
+                      const topic = theme?.topics.find(t => t.id === topicId);
+
+                      return {
+                        theme: theme?.name || themeId,
+                        topic: topic?.name || topicId
+                      };
+                    }
+                  } else if (examBoard === 'edexcel') {
+                    // Edexcel format: theme_id:topic_id
+                    const [themeId, topicId] = themeTopic.split(':');
+
+                    const theme = EDEXCEL_THEMES_TOPICS[themeId as keyof typeof EDEXCEL_THEMES_TOPICS];
+                    const topic = theme?.topics.find(t => t.id === topicId);
+
+                    return {
+                      theme: theme?.name || themeId,
+                      topic: topic?.name || topicId
+                    };
+                  }
+
+                  return null;
+                };
+
+                const themeTopicInfo = formatThemeTopic(task.theme_topic, task.exam_board);
+
+                return (
+                  <div key={task.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200">
+                    <div className="p-6">
+                      {/* Task Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                            {task.title}
+                          </h3>
+                          <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {task.language === 'spanish' ? (
+                                <>
+                                  <SpanishFlag />
+                                  <span className="ml-1">Spanish</span>
+                                </>
+                              ) : task.language === 'french' ? (
+                                <>
+                                  <FrenchFlag />
+                                  <span className="ml-1">French</span>
+                                </>
+                              ) : task.language === 'german' ? (
+                                <>
+                                  <GermanFlag />
+                                  <span className="ml-1">German</span>
+                                </>
+                              ) : (
+                                task.language
+                              )}
+                            </span>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
+                              {task.difficulty}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <span className="font-medium mr-2">Questions:</span>
-                        <span>{task.reading_comprehension_questions?.length || 0}</span>
+
+                      {/* Task Details */}
+                      <div className="space-y-2 mb-4">
+                        {task.curriculum_level && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <span className="font-medium mr-2">Level:</span>
+                            <span className="uppercase">{task.curriculum_level}</span>
+                          </div>
+                        )}
+
+                        {/* KS3: Show Category and Subcategory */}
+                        {task.curriculum_level === 'ks3' && task.category && (
+                          <>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <span className="font-medium mr-2">Category:</span>
+                              <span className="capitalize">{task.category.replace(/_/g, ' ')}</span>
+                            </div>
+                            {task.subcategory && (
+                              <div className="flex items-center text-sm text-gray-600">
+                                <span className="font-medium mr-2">Topic:</span>
+                                <span className="capitalize">{task.subcategory.replace(/_/g, ' ')}</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        {/* KS4: Show Exam Board, Theme, and Topic */}
+                        {task.curriculum_level === 'ks4' && (
+                          <>
+                            {task.exam_board && (
+                              <div className="flex items-center text-sm text-gray-600">
+                                <span className="font-medium mr-2">Exam Board:</span>
+                                <span className="uppercase">{task.exam_board}</span>
+                              </div>
+                            )}
+                            {themeTopicInfo && (
+                              <>
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <span className="font-medium mr-2">Theme:</span>
+                                  <span>{themeTopicInfo.theme}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <span className="font-medium mr-2">Topic:</span>
+                                  <span>{themeTopicInfo.topic}</span>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        )}
+
+                        <div className="flex items-center justify-between text-sm text-gray-600">
+                          <div className="flex items-center">
+                            <BookOpen className="h-4 w-4 mr-1" />
+                            <span>{task.word_count || 0} words</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span>{task.estimated_reading_time || 5} min read</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <span className="font-medium mr-2">Questions:</span>
+                          <span>{task.reading_comprehension_questions?.length || 0}</span>
+                        </div>
                       </div>
-                    </div>
 
                     {/* Start Task Button */}
                     <button
@@ -623,7 +840,8 @@ export default function ReadingComprehensionPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>

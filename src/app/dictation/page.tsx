@@ -7,8 +7,10 @@ import {
   ArrowRight,
   Filter,
   Clock,
-  Volume2
+  Volume2,
+  ArrowLeft
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface DictationAssessment {
   id: string;
@@ -110,6 +112,17 @@ export default function DictationPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Link
+            href="/assessments"
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Assessments
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
