@@ -22,7 +22,7 @@ import { GemButton, GemCard } from '../ui/GemTheme';
 
 interface PracticeItem {
   id: string;
-  type: 'conjugation' | 'fill_blank' | 'word_order' | 'translation';
+  type: 'conjugation' | 'fill_blank' | 'word_order' | 'translation' | 'multiple_choice';
   question: string;
   answer: string;
   options?: string[];
@@ -174,98 +174,159 @@ export default function GrammarPractice({
     const accuracy = Math.round((correctAnswers / practiceItems.length) * 100);
     const minutes = Math.floor(totalTimeSpent / 60);
     const seconds = totalTimeSpent % 60;
+    const testFailed = isTestMode && lives <= 0;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
+      <div className={`min-h-screen flex items-center justify-center p-4 ${
+        testFailed
+          ? 'bg-gradient-to-br from-red-600 to-orange-600'
+          : 'bg-gradient-to-br from-purple-600 to-blue-600'
+      }`}>
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
           className="max-w-2xl w-full"
         >
-          <GemCard className="text-center p-12 border-4 border-yellow-300 shadow-2xl">
-            {/* Trophy Icon */}
+          <GemCard className={`text-center p-12 shadow-2xl ${
+            testFailed
+              ? 'border-4 border-red-300 bg-white'
+              : 'border-4 border-yellow-300 bg-white'
+          }`}>
+            {/* Icon */}
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
               className="mb-8"
             >
-              <Trophy className="w-24 h-24 text-yellow-500 mx-auto mb-4" />
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">
-                {isTestMode ? 'Test Complete!' : 'Practice Complete!'}
-              </h1>
-              <p className="text-xl text-gray-600">
-                {isTestMode
-                  ? `Excellent work on your ${topicTitle} test!`
-                  : `Great practice session with ${topicTitle}!`
-                }
-              </p>
+              {testFailed ? (
+                <>
+                  <XCircle className="w-24 h-24 text-red-500 mx-auto mb-4" />
+                  <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                    Test Failed
+                  </h1>
+                  <p className="text-xl text-gray-600">
+                    You ran out of lives! Don't worry, try again to master {topicTitle}.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Trophy className="w-24 h-24 text-yellow-500 mx-auto mb-4" />
+                  <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                    {isTestMode ? 'Test Complete!' : 'Practice Complete!'}
+                  </h1>
+                  <p className="text-xl text-gray-600">
+                    {isTestMode
+                      ? `Excellent work on your ${topicTitle} test!`
+                      : `Great practice session with ${topicTitle}!`
+                    }
+                  </p>
+                </>
+              )}
             </motion.div>
 
             {/* Stats */}
-            <div className={`grid gap-6 mb-8 ${isTestMode ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-3'}`}>
-              <div className="bg-blue-50 p-4 rounded-xl">
-                <Star className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-blue-600">{score}</p>
-                <p className="text-sm text-gray-600">Score</p>
-              </div>
-              <div className="bg-green-50 p-4 rounded-xl">
-                <Target className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-600">{accuracy}%</p>
-                <p className="text-sm text-gray-600">Accuracy</p>
-              </div>
-              {/* Only show Gems in test mode */}
-              {isTestMode && (
-                <div className="bg-purple-50 p-4 rounded-xl">
-                  <Gem className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-purple-600">{gemsEarned}</p>
-                  <p className="text-sm text-gray-600">Gems</p>
+            {!testFailed && (
+              <div className={`grid gap-6 mb-8 ${isTestMode ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-3'}`}>
+                <div className="bg-blue-50 p-4 rounded-xl">
+                  <Star className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-blue-600">{score}</p>
+                  <p className="text-sm text-gray-600">Score</p>
                 </div>
-              )}
-              <div className="bg-orange-50 p-4 rounded-xl">
-                <Clock className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-orange-600">
-                  {minutes}:{seconds.toString().padStart(2, '0')}
-                </p>
-                <p className="text-sm text-gray-600">Time</p>
+                <div className="bg-green-50 p-4 rounded-xl">
+                  <Target className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-green-600">{accuracy}%</p>
+                  <p className="text-sm text-gray-600">Accuracy</p>
+                </div>
+                {/* Only show Gems in test mode */}
+                {isTestMode && (
+                  <div className="bg-purple-50 p-4 rounded-xl">
+                    <Gem className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-purple-600">{gemsEarned}</p>
+                    <p className="text-sm text-gray-600">Gems</p>
+                  </div>
+                )}
+                <div className="bg-orange-50 p-4 rounded-xl">
+                  <Clock className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-orange-600">
+                    {minutes}:{seconds.toString().padStart(2, '0')}
+                  </p>
+                  <p className="text-sm text-gray-600">Time</p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <GemButton
-                variant="gem"
-                gemType="legendary"
-                onClick={() => {
-                  const totalTimeSpent = Math.round((Date.now() - startTime) / 1000);
-                  onComplete(score, gemsEarned, totalTimeSpent);
-                }}
-                className="px-8 py-3 text-lg"
-              >
-                <Award className="w-5 h-5 mr-2" />
-                Continue
-              </GemButton>
-              <GemButton
-                variant="secondary"
-                onClick={() => {
-                  // Reset for another round
-                  setShowCompletion(false);
-                  setCurrentItem(0);
-                  setUserAnswer('');
-                  setShowFeedback(false);
-                  setScore(0);
-                  setCorrectAnswers(0);
-                  setStreak(0);
-                  setLives(3);
-                  setGemsEarned(0);
-                  setCompletedItems(new Set());
-                }}
-                className="px-8 py-3 text-lg"
-              >
-                <RotateCcw className="w-5 h-5 mr-2" />
-                Practice Again
-              </GemButton>
+              {testFailed ? (
+                <>
+                  <GemButton
+                    variant="gem"
+                    gemType="legendary"
+                    onClick={() => {
+                      // Reset for another attempt
+                      setShowCompletion(false);
+                      setCurrentItem(0);
+                      setUserAnswer('');
+                      setShowFeedback(false);
+                      setScore(0);
+                      setCorrectAnswers(0);
+                      setStreak(0);
+                      setLives(3);
+                      setGemsEarned(0);
+                      setCompletedItems(new Set());
+                    }}
+                    className="px-8 py-3 text-lg"
+                  >
+                    <RotateCcw className="w-5 h-5 mr-2" />
+                    Try Again
+                  </GemButton>
+                  <GemButton
+                    variant="secondary"
+                    onClick={onExit}
+                    className="px-8 py-3 text-lg"
+                  >
+                    <ArrowLeft className="w-5 h-5 mr-2" />
+                    Go Back
+                  </GemButton>
+                </>
+              ) : (
+                <>
+                  <GemButton
+                    variant="gem"
+                    gemType="legendary"
+                    onClick={() => {
+                      const totalTimeSpent = Math.round((Date.now() - startTime) / 1000);
+                      onComplete(score, gemsEarned, totalTimeSpent);
+                    }}
+                    className="px-8 py-3 text-lg"
+                  >
+                    <Award className="w-5 h-5 mr-2" />
+                    Continue
+                  </GemButton>
+                  <GemButton
+                    variant="secondary"
+                    onClick={() => {
+                      // Reset for another round
+                      setShowCompletion(false);
+                      setCurrentItem(0);
+                      setUserAnswer('');
+                      setShowFeedback(false);
+                      setScore(0);
+                      setCorrectAnswers(0);
+                      setStreak(0);
+                      setLives(3);
+                      setGemsEarned(0);
+                      setCompletedItems(new Set());
+                    }}
+                    className="px-8 py-3 text-lg"
+                  >
+                    <RotateCcw className="w-5 h-5 mr-2" />
+                    Practice Again
+                  </GemButton>
+                </>
+              )}
             </div>
           </GemCard>
         </motion.div>
@@ -273,8 +334,30 @@ export default function GrammarPractice({
     );
   }
 
+  // Check if we have valid practice items before rendering
+  if (!hasValidItems || !practiceItems[currentItem]) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">No Practice Items Available</h2>
+          <p className="text-gray-600 mb-8">Unable to load practice content. Please try again.</p>
+          <button
+            onClick={onExit}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Function to provide clear instructions based on question content
   const getInstructionText = (item: any) => {
+    if (!item || !item.question) {
+      return "Complete the exercise:";
+    }
+
     const question = item.question.toLowerCase();
 
     // Check if it's a multiple choice question
@@ -391,8 +474,11 @@ export default function GrammarPractice({
       setAutoAdvanceTimer(null);
     }
 
-    if (isLastItem || (gamified && lives <= 0)) {
-      // Show completion screen instead of calling onComplete immediately
+    if (gamified && lives <= 0) {
+      // Test failed - show failure screen
+      setShowCompletion(true);
+    } else if (isLastItem) {
+      // Test passed - show completion screen
       setShowCompletion(true);
     } else {
       setCurrentItem(prev => {
@@ -500,6 +586,38 @@ export default function GrammarPractice({
               className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               onKeyPress={(e) => e.key === 'Enter' && checkAnswer()}
             />
+          </div>
+        );
+
+      case 'multiple_choice':
+        return (
+          <div className="space-y-4">
+            <div className="bg-pink-50 p-4 rounded-lg">
+              <p className="text-lg font-medium text-pink-900 mb-2">Complete the exercise:</p>
+              <p className="text-xl text-pink-800">{currentPracticeItem.question}</p>
+            </div>
+            {currentPracticeItem.options && (
+              <div className="grid grid-cols-2 gap-3">
+                {currentPracticeItem.options.map((option, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setUserAnswer(option)}
+                    className={`p-4 text-lg border-2 rounded-lg transition-all ${
+                      userAnswer === option
+                        ? 'border-purple-500 bg-purple-50 text-purple-900'
+                        : 'border-gray-300 bg-white hover:border-purple-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-gray-500">{index + 1}</span>
+                      <span>{option}</span>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            )}
           </div>
         );
 

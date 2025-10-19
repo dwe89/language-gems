@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import GrammarPractice from '@/components/grammar/GrammarPractice';
-import {Award, FlagIcon, ArrowLeft, Loader2, Edit } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import GrammarTestEditModal from '@/components/admin/GrammarTestEditModal';
 
 interface PageProps {
   params: {
@@ -30,19 +29,12 @@ export default function GrammarTestPage({ params }: PageProps) {
   const [topicName, setTopicName] = useState('');
   const [categoryName, setCategoryName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [contentId, setContentId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchTestData() {
       try {
         const supabase = createClient();
         const languageCode = languageCodeMap[params.language] || params.language;
-
-        // Check if user is admin
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        setIsAdmin(currentUser?.email === 'danieletienne89@gmail.com');
 
         // Get the grammar page title
         const { data: page } = await supabase
@@ -61,7 +53,7 @@ export default function GrammarTestPage({ params }: PageProps) {
         // Set category name
         setCategoryName(params.category.charAt(0).toUpperCase() + params.category.slice(1));
 
-        // Get the test content from grammar_content via grammar_topics
+        // Get the topic ID
         const { data: topic } = await supabase
           .from('grammar_topics')
           .select('id')
@@ -76,40 +68,29 @@ export default function GrammarTestPage({ params }: PageProps) {
           return;
         }
 
-        const { data: content } = await supabase
+        // Get PRACTICE content (not quiz) - we'll randomly select 20 questions from it
+        const { data: practiceContent } = await supabase
           .from('grammar_content')
           .select('*')
           .eq('topic_id', topic.id)
-          .eq('content_type', 'quiz')
+          .eq('content_type', 'practice')
           .single();
 
-        if (content && content.content_data) {
-          setContentId(content.id);
-          // Transform to GrammarPractice format
+        if (practiceContent && practiceContent.content_data && practiceContent.content_data.questions) {
+          const allQuestions = practiceContent.content_data.questions;
+
+          // Shuffle and select 20 random questions
+          const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+          const selectedQuestions = shuffled.slice(0, Math.min(20, allQuestions.length));
+
           setTestData({
-            difficulty_level: content.difficulty_level || 'intermediate',
-            title: content.title || `${pageTitle} Test`,
-            questions: content.content_data.questions || [],
-          });
-        } else if (content) {
-          // Content exists but no questions yet
-          setContentId(content.id);
-          setTestData({
-            difficulty_level: 'intermediate',
+            difficulty_level: practiceContent.difficulty_level || 'intermediate',
             title: `${pageTitle} Test`,
-            questions: [],
+            questions: selectedQuestions,
           });
         } else {
-          // No content at all - create placeholder for admin
-          if (currentUser?.email === 'danieletienne89@gmail.com') {
-            setTestData({
-              difficulty_level: 'intermediate',
-              title: `${pageTitle} Test`,
-              questions: [],
-            });
-          } else {
-            setError('Test content not available');
-          }
+          // No practice content available
+          setError('Test content not available - no practice questions found');
         }
       } catch (err) {
         console.error('Error fetching test data:', err);
@@ -125,17 +106,18 @@ export default function GrammarTestPage({ params }: PageProps) {
   // Transform test data to practice items format
   const transformTestData = (questions: any[]) => {
     return questions.map((q: any) => {
-      let type: 'conjugation' | 'fill_blank' | 'word_order' | 'translation' = 'fill_blank';
+      let type: 'conjugation' | 'fill_blank' | 'word_order' | 'translation' | 'multiple_choice' = 'fill_blank';
       if (q.type === 'fill_blank') type = 'fill_blank';
       else if (q.type === 'word_order') type = 'word_order';
       else if (q.type === 'translation') type = 'translation';
       else if (q.type === 'conjugation') type = 'conjugation';
+      else if (q.type === 'multiple_choice') type = 'multiple_choice';
 
       return {
         id: q.id,
         type,
-        question: q.question,
-        answer: q.correct_answer,
+        question: q.question_text || q.question || '',
+        answer: q.correct_answer || q.answer || '',
         options: q.options || [],
         hint: q.hint || q.explanation || '',
         difficulty: (q.difficulty || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
@@ -268,34 +250,6 @@ export default function GrammarTestPage({ params }: PageProps) {
           </div>
         </div>
       </div>
-
-      {/* Admin Edit Button */}
-      {isAdmin && testData && (
-        <>
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="fixed bottom-8 right-8 z-50 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-semibold"
-          >
-            <Edit className="w-5 h-5" />
-            <span>{contentId ? 'Edit Test' : 'Create Test'}</span>
-          </button>
-
-          {showEditModal && (
-            <GrammarTestEditModal
-              contentId={contentId || 'new'}
-              language={params.language}
-              category={params.category}
-              topic={params.topic}
-              initialData={testData}
-              onClose={() => setShowEditModal(false)}
-              onSave={() => {
-                setShowEditModal(false);
-                window.location.reload();
-              }}
-            />
-          )}
-        </>
-      )}
     </div>
   );
 }

@@ -11,6 +11,12 @@ export interface Product {
   stripe_price_id: string | null;
   tags: string[] | null;
   is_active: boolean;
+  language: string | null;
+  key_stage: string | null;
+  category_type: string | null;
+  topic_slug: string | null;
+  theme_number: number | null;
+  topic_number: number | null;
   created_at: string;
   updated_at: string;
 }

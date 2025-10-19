@@ -43,6 +43,7 @@ export default function GrammarTestEditModal({
   const [saving, setSaving] = useState(false);
   const [showJsonImport, setShowJsonImport] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
+  const [importMode, setImportMode] = useState<'replace' | 'add'>('replace');
 
   const addQuestion = () => {
     const newQuestion: Question = {
@@ -107,10 +108,19 @@ export default function GrammarTestEditModal({
           hint: q.hint || '',
           difficulty: q.difficulty || 'beginner',
         }));
-        setQuestions(importedQuestions);
+        
+        // Combine questions based on import mode
+        const finalQuestions = importMode === 'add' 
+          ? [...questions, ...importedQuestions] 
+          : importedQuestions;
+        
+        setQuestions(finalQuestions);
         setShowJsonImport(false);
         setJsonInput('');
-        alert(`✅ Successfully imported ${importedQuestions.length} questions!`);
+        setImportMode('replace'); // Reset to default
+        
+        const action = importMode === 'add' ? 'added' : 'imported';
+        alert(`✅ Successfully ${action} ${importedQuestions.length} questions! Total: ${finalQuestions.length}`);
       } else {
         alert('❌ JSON must be an array of questions');
       }
@@ -239,8 +249,43 @@ export default function GrammarTestEditModal({
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                 <h4 className="font-semibold text-purple-900 mb-2">Import Questions from JSON</h4>
                 <p className="text-sm text-purple-700 mb-3">
-                  Paste an array of question objects. This will replace all existing questions.
+                  Paste an array of question objects.
                 </p>
+                
+                {/* Import Mode Toggle */}
+                <div className="mb-4 flex gap-4 items-center">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-700">Import Mode:</label>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setImportMode('replace')}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        importMode === 'replace'
+                          ? 'bg-red-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      🔄 Replace All
+                    </button>
+                    <button
+                      onClick={() => setImportMode('add')}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        importMode === 'add'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      ➕ Add Questions
+                    </button>
+                  </div>
+                  {questions.length > 0 && importMode === 'add' && (
+                    <span className="text-sm text-gray-600">
+                      ({questions.length} current)
+                    </span>
+                  )}
+                </div>
+                
                 <textarea
                   value={jsonInput}
                   onChange={(e) => setJsonInput(e.target.value)}
@@ -253,12 +298,13 @@ export default function GrammarTestEditModal({
                     onClick={handleJsonImport}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
                   >
-                    Import
+                    {importMode === 'add' ? '➕ Add Questions' : '🔄 Replace All'}
                   </button>
                   <button
                     onClick={() => {
                       setShowJsonImport(false);
                       setJsonInput('');
+                      setImportMode('replace');
                     }}
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors text-sm"
                   >

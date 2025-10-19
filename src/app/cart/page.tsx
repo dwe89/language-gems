@@ -121,23 +121,26 @@ export default function CartPage() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
+        setLoading(false);
         throw new Error(`Failed to create checkout session: ${response.status} ${errorText}`);
       }
 
       const responseData = await response.json();
       console.log('API Response data:', responseData);
-      
+
       if (responseData.url) {
         console.log('Redirecting to Stripe checkout:', responseData.url);
+        // DON'T set loading to false - we're redirecting away
+        // The page will unmount, so no need to update state
         window.location.href = responseData.url;
       } else {
+        setLoading(false);
         throw new Error('No checkout URL received from API');
       }
     } catch (error) {
       console.error('Error during checkout:', error);
-      alert('There was an error processing your checkout. Please try again.');
-    } finally {
       setLoading(false);
+      alert('There was an error processing your checkout. Please try again.');
     }
   };
 

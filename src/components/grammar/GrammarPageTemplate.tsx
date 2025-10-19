@@ -311,7 +311,7 @@ export default function GrammarPageTemplate({
                 className="w-full text-sm sm:text-base"
               >
                 <Award className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                {user ? 'Take Quiz' : 'Free Quiz'}
+                {user ? 'Take Test' : 'Free Test'}
               </GemButton>
             )}
 

@@ -35,15 +35,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get topics that have BOTH practice AND quiz content (for challenge mode)
-    const { data: allTopics, error } = await supabase
-      .from('grammar_topics')
+    // Get all topics with practice content (for challenge/test mode)
+    const { data: practiceContent, error } = await supabase
+      .from('grammar_content')
       .select(`
-        id,
-        slug,
-        grammar_content(content_type)
+        topic_id,
+        grammar_topics!inner(slug, language)
       `)
-      .eq('language', dbLanguage);
+      .eq('grammar_topics.language', dbLanguage)
+      .eq('content_type', 'practice')
+      .not('content_data', 'is', null);
 
     if (error) {
       console.error('Database error:', error);
@@ -53,11 +54,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Filter topics that have BOTH practice AND quiz content
-    const practiceReadySlugs = allTopics?.filter(topic => {
-      const contentTypes = topic.grammar_content?.map((content: any) => content.content_type) || [];
-      return contentTypes.includes('practice') && contentTypes.includes('quiz');
-    }).map(topic => topic.slug) || [];
+    // Extract unique slugs from topics that have practice content
+    const practiceReadySlugs = practiceContent?.map((content: any) =>
+      content.grammar_topics.slug
+    ) || [];
 
     return NextResponse.json({
       success: true,

@@ -244,11 +244,21 @@ async function sendOrderConfirmationEmail(order: any, orderItems: any[], custome
       year: 'numeric'
     });
 
-    // Send email for first product (for now - can be enhanced to send multiple products in one email later)
-    const firstProduct = products[0];
-    const downloadUrl = `${BASE_URL}/api/orders/${order.id}/download/${firstProduct.id}`;
+    // Create download links for ALL products
+    const productList = products.map(product => ({
+      name: product.name,
+      download_url: `${BASE_URL}/api/orders/${order.id}/download/${product.id}`
+    }));
 
-    // Send email via Brevo
+    // Format products for email template
+    const productsHtml = productList.map(p =>
+      `<li style="margin-bottom: 15px;">
+        <strong>${p.name}</strong><br/>
+        <a href="${p.download_url}" style="color: #4F46E5; text-decoration: none;">Download Now</a>
+      </li>`
+    ).join('');
+
+    // Send email via Brevo with ALL products
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
@@ -265,15 +275,18 @@ async function sendOrderConfirmationEmail(order: any, orderItems: any[], custome
           order_id: order.id,
           order_date: orderDate,
           total: totalFormatted,
-          product_name: firstProduct.name,
-          download_url: downloadUrl,
+          product_count: products.length,
+          products_html: productsHtml,
+          // Legacy fields for backward compatibility with old template
+          product_name: products[0].name,
+          download_url: productList[0].download_url,
           account_url: `${BASE_URL}/account/orders`
         }
       }),
     });
 
     if (response.ok) {
-      console.log(`✅ Order confirmation email sent to ${customerEmail} for order ${order.id}`);
+      console.log(`✅ Order confirmation email sent to ${customerEmail} for order ${order.id} with ${products.length} product(s)`);
     } else {
       const errorData = await response.json();
       console.error('❌ Failed to send order confirmation email:', errorData);

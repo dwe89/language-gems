@@ -4,11 +4,15 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
-import { ArrowLeft, Star, Download, Shield, Clock, Tag, CreditCard } from 'lucide-react';
-import { loadStripe } from '@stripe/stripe-js';
+import { ArrowLeft, Star, Download, Shield, Clock, Tag, ShoppingCart, CheckCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import ImageModal from '../../../components/ui/ImageModal';
+import ProductEditButton from '../../../components/admin/ProductEditButton';
+import { useAuth } from '../../../components/auth/AuthProvider';
+import { isAdmin } from '../../../lib/adminCheck';
+import { useCart } from '../../../contexts/CartContext';
+import { CartSidebar } from '../../../components/cart/CartSidebar';
 
 interface Product {
   id: string;
@@ -31,19 +35,20 @@ interface Product {
   table_of_contents?: string[];
 }
 
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null;
-
 export default function ProductPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const { addItem, state, toggleCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [purchasing, setPurchasing] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImages, setModalImages] = useState<string[]>([]);
   const [modalIndex, setModalIndex] = useState(0);
+
+  // Admin functionality
+  const userIsAdmin = user?.email && isAdmin(user.email);
 
   useEffect(() => {
     if (params?.slug) {
@@ -98,87 +103,19 @@ export default function ProductPage() {
     // router.push(`/shop?tag=${encodeURIComponent(tag)}`);
   };
 
-  const handlePurchase = async () => {
+  const handleAddToCart = () => {
     if (!product) return;
 
-    setPurchasing(true);
+    // Add product to cart
+    addItem(product as any);
 
-    try {
-      // Handle free products
-      if (product.price_cents === 0) {
-        // For free products, directly provide download
-        const response = await fetch('/api/products/download', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            product_id: product.id
-          }),
-        });
+    // Show visual feedback
+    setAddedToCart(true);
 
-        if (!response.ok) {
-          throw new Error('Failed to get download link');
-        }
-
-        const data = await response.json();
-
-        if (data.download_url) {
-          // Create a temporary link element to trigger download with proper filename
-          const link = document.createElement('a');
-          link.href = data.download_url;
-          // Use the product_name from API which now includes display_filename
-          link.download = data.product_name;
-          link.target = '_blank';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-          // Show success message
-          alert(`✅ Download started! Check your downloads folder for "${data.product_name}"`);
-        } else {
-          throw new Error('No download URL received');
-        }
-        return;
-      }
-
-      // Handle paid products with Stripe
-      const response = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          items: [{
-            product_id: product.id,
-            quantity: 1
-          }],
-          customer_email: null // Guest checkout for now
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session');
-      }
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      // Use the checkout URL directly
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL received');
-      }
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
-      alert('Failed to start checkout. Please try again.');
-    } finally {
-      setPurchasing(false);
-    }
+    // Reset the "added" state after 2 seconds
+    setTimeout(() => {
+      setAddedToCart(false);
+    }, 2000);
   };
 
   if (loading) {
@@ -201,11 +138,11 @@ export default function ProductPage() {
             <h1 className="text-2xl font-bold text-slate-800 mb-4">Product Not Found</h1>
             <p className="text-slate-600 mb-8">The product you're looking for doesn't exist or is no longer available.</p>
             <Link
-              href="/shop"
+              href="/resources"
               className="inline-flex items-center text-indigo-600 font-semibold hover:text-indigo-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Shop
+              Back to Resources
             </Link>
           </div>
         </div>
@@ -215,15 +152,32 @@ export default function ProductPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30">
+      {/* Cart Sidebar */}
+      <CartSidebar />
+
+      {/* Floating Cart Icon */}
+      <button
+        onClick={toggleCart}
+        className="fixed top-24 right-8 z-50 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition-all hover:scale-110"
+        aria-label="Shopping Cart"
+      >
+        <ShoppingCart className="w-6 h-6" />
+        {state.items.length > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+            {state.items.reduce((sum: number, item: any) => sum + item.quantity, 0)}
+          </span>
+        )}
+      </button>
+
       <div className="container mx-auto px-6 py-12">
         {/* Back Button */}
         <div className="mb-8">
           <Link
-            href="/shop"
+            href="/resources"
             className="inline-flex items-center text-slate-600 hover:text-slate-800 transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Shop
+            Back to Resources
           </Link>
         </div>
 
@@ -426,37 +380,32 @@ export default function ProductPage() {
                 </div>
               )}
 
-              {/* Purchase Button */}
+              {/* Add to Cart Button */}
               <div className="space-y-4">
                 <button
-                  onClick={handlePurchase}
-                  disabled={purchasing || (product.price_cents > 0 && !product.stripe_price_id)}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  onClick={handleAddToCart}
+                  disabled={addedToCart}
+                  className={`w-full px-8 py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center ${
+                    addedToCart
+                      ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-xl'
+                  }`}
                 >
-                  {purchasing ? (
+                  {addedToCart ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-3"></div>
-                      {product.price_cents === 0 ? 'Downloading...' : 'Processing...'}
+                      <CheckCircle className="mr-3 h-5 w-5" />
+                      Added to Cart!
                     </>
                   ) : (
                     <>
-                      {product.price_cents === 0 ? (
-                        <>
-                          <Download className="mr-3 h-5 w-5" />
-                          Download Free
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="mr-3 h-5 w-5" />
-                          Buy Now - {formatPrice(product.price_cents)}
-                        </>
-                      )}
+                      <ShoppingCart className="mr-3 h-5 w-5" />
+                      {product.price_cents === 0 ? 'Add to Cart (Free)' : `Add to Cart - ${formatPrice(product.price_cents)}`}
                     </>
                   )}
                 </button>
-                
+
                 <p className="text-sm text-slate-500 text-center">
-                  Secure checkout powered by Stripe
+                  {product.price_cents === 0 ? 'Free resource - add to cart to download' : 'Add to cart and checkout securely with Stripe'}
                 </p>
               </div>
 
@@ -541,6 +490,14 @@ export default function ProductPage() {
         onNext={nextImage}
         title={product.name}
       />
+
+      {/* Admin Edit Button */}
+      {userIsAdmin && product && (
+        <ProductEditButton
+          productId={product.id}
+          onSave={() => fetchProduct(params.slug as string)}
+        />
+      )}
     </div>
   );
-} 
+}

@@ -4,307 +4,176 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { useAuth } from '../../components/auth/AuthProvider';
-import CurriculumNavigator from '../../components/freebies/CurriculumNavigator';
-import FreebiesNavTabs from '../../components/freebies/FreebiesNavTabs';
-import FreebiesBreadcrumb from '../../components/freebies/FreebiesBreadcrumb';
-import { 
-  Download, Search, Filter, Star, BookOpen, Users, 
-  GraduationCap, Globe, Music, Home, MapPin, Laptop,
-  Leaf, Plane, School, User, Calculator, Clock,
-  FileText, Gift, Lock, CheckCircle, ShoppingCart, ExternalLink
+import ResourceFilterSidebar, { FilterState } from '../../components/resources/ResourceFilterSidebar';
+import ResourceCard from '../../components/resources/ResourceCard';
+import ProductAdminModal from '../../components/resources/ProductAdminModal';
+import {
+  Search, Gift, ShoppingCart, Menu, BookOpen, Loader, Settings
 } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import Footer from '../../components/layout/Footer';
 import { CartSidebar } from '../../components/cart/CartSidebar';
-
+import { isAdmin } from '../../lib/adminCheck';
 import { Product } from '../../types/ecommerce';
-import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-
-// Remove WorksheetCategory and Worksheet interfaces
-// Remove YEAR_GROUPS and any worksheet-specific constants
-// Remove getAllProducts, getFilteredProducts, featuredProducts, and worksheet logic
-// Ensure export default function is ResourcesPage
-// Render product grid using only Product properties as previously described
-
-const LANGUAGES = ['Spanish', 'French', 'German', 'All Languages'];
 
 export default function ResourcesPage() {
   const { user } = useAuth();
-  const searchParams = useSearchParams();
-  const [activeView, setActiveView] = useState<'hub' | 'curriculum' | 'skills'>('hub');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string>('');
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedExamBoard, setSelectedExamBoard] = useState<string>('');
-  const [showFreeOnly, setShowFreeOnly] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
   const { addItem, toggleCart, getTotalItems } = useCart();
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const router = useRouter();
 
-  // Remove mock categories and worksheets data
+  // Filter state
+  const [filters, setFilters] = useState<FilterState>({
+    language: '',
+    keyStage: '',
+    examBoard: '',
+    category: '',
+    subcategory: '',
+    theme: '',
+    topic: '',
+    resourceType: '',
+    skill: '',
+    priceRange: 'all',
+    search: ''
+  });
+
+  // Admin functionality
+  const userIsAdmin = user?.email && isAdmin(user.email);
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
   const fetchProducts = async () => {
-    console.log('🔍 [RESOURCES] Starting to fetch products via API...');
     setLoading(true);
     try {
-      console.log('🔍 [RESOURCES] Calling /api/products endpoint...');
       const response = await fetch('/api/products');
-
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        throw new Error(`API request failed: ${response.status}`);
       }
-
       const result = await response.json();
-      console.log('🔍 [RESOURCES] API response:', result);
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
       const products = result.products || [];
-      console.log('✅ [RESOURCES] Successfully fetched', products.length, 'products via API');
       setProducts(products);
-
     } catch (error) {
-      console.error('❌ [RESOURCES] API request failed:', error);
-      // Set empty array so UI shows "No products available" instead of hanging
+      console.error('Failed to fetch products:', error);
       setProducts([]);
     } finally {
       setLoading(false);
-      console.log('🔍 [RESOURCES] Loading finished');
     }
   };
 
-  const handleDownload = (product: Product) => {
-    if (!product.file_path) {
-      alert('Product file path is not available.');
-      return;
-    }
-
-    if (product.price_cents > 0 && !user) {
-      setShowAuthPrompt(true);
-      return;
-    }
-
-    // For free products, allow direct download (they're public anyway)
-    if (product.price_cents === 0) {
-      // Create download link for free products
-      const link = document.createElement('a');
-      link.href = product.file_path;
-      link.download = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      return;
-    }
-
-    // For paid products, redirect to purchase flow
-    alert('This is a premium resource. Please add it to your cart and complete the purchase to download.');
+  const handleAddToCart = (product: Product) => {
+    addItem(product);
   };
 
-  const breadcrumbItems = [
-    { label: 'Resources', active: true }
-  ];
-
-  const handleReturnToHub = () => {
-    setActiveView('hub');
-  };
-
-  const renderHubContent = () => (
-    <>
-      {/* Featured Resources */}
-      {/* Filters and Search */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-800">Find Your Perfect Resource</h3>
-
-          {/* Free Only Toggle */}
-          <button
-            onClick={() => setShowFreeOnly(!showFreeOnly)}
-            className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center ${
-              showFreeOnly
-                ? 'bg-green-600 text-white shadow-md'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Gift className="h-4 w-4 mr-2" />
-            {showFreeOnly ? 'Showing Free Only' : 'Show Free Only'}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search resources..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-
-          {/* Category Filter */}
-          <select
-            value={selectedCategory || ''}
-            onChange={(e) => setSelectedCategory(e.target.value || '')}
-            className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="">All Categories</option>
-            <option value="themes">Themed Worksheets</option>
-            <option value="grammar">Grammar Essentials</option>
-            <option value="exam-prep">Exam Preparation</option>
-          </select>
-
-          {/* Language Filter */}
-          <select
-            value={selectedLanguage || ''}
-            onChange={(e) => setSelectedLanguage(e.target.value || '')}
-            className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="">All Languages</option>
-            {LANGUAGES.map(lang => (
-              <option key={lang} value={lang}>
-                {lang}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Clear Filters */}
-        {(searchTerm || selectedCategory || selectedLanguage) && (
-          <div className="mt-4">
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedCategory('');
-                setSelectedLanguage('');
-              }}
-              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
-            >
-              Clear all filters
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Results */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-        {products.map((product) => (
-          <div key={product.id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-200">
-          <div className="p-6">
-            <div className="flex items-start justify-between mb-3">
-              <h3 className="text-lg font-bold text-slate-800 line-clamp-2 flex-1">
-                  {product.name}
-              </h3>
-            </div>
-            
-            <p className="text-slate-600 mb-4 line-clamp-3 text-sm">
-                {product.description}
-            </p>
-            
-            <div className="flex flex-wrap gap-2 mb-4">
-              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full">
-                  {(product.tags || []).join(', ')}
-              </span>
-              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                  {formatPrice(product.price_cents)}
-              </span>
-            </div>
-            
-            <button
-                onClick={() => handleDownload(product)}
-              className={`w-full py-2 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center text-sm ${
-                  product.price_cents > 0 && !user
-                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
-              }`}
-            >
-                {product.price_cents > 0 && !user ? (
-                <>
-                    <Lock className="h-4 w-4 mr-2" />
-                    Sign In Required
-                </>
-              ) : (
-                <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-        ))}
-      </div>
-
-      {products.length === 0 && (
-        <div className="text-center py-12">
-          <div className="mb-4">
-            <BookOpen className="h-16 w-16 text-slate-400 mx-auto" />
-          </div>
-          <h3 className="text-xl font-medium text-slate-600 mb-2">
-            No worksheets found
-          </h3>
-          <p className="text-slate-500">
-            Try adjusting your search criteria or browse all categories
-          </p>
-        </div>
-      )}
-    </>
-  );
-
-  // Add formatPrice helper
-  const formatPrice = (priceCents: number | null | undefined) => {
-    if (priceCents === null || priceCents === undefined || isNaN(priceCents)) {
-      return 'FREE';
-    }
-    if (priceCents === 0) return 'FREE';
-    return `£${(priceCents / 100).toFixed(2)}`;
-  };
-
-  // Add getAllTags helper
-  const getAllTags = () => {
-    const tags = new Set<string>();
-    products.forEach((product: Product) => {
-      product.tags?.forEach((tag: string) => tags.add(tag));
+  const handleClearFilters = () => {
+    setFilters({
+      language: '',
+      keyStage: '',
+      examBoard: '',
+      category: '',
+      subcategory: '',
+      theme: '',
+      topic: '',
+      resourceType: '',
+      skill: '',
+      priceRange: 'all',
+      search: ''
     });
-    return Array.from(tags);
   };
 
-  // Helper to check if a product matches a tag (case-insensitive)
-  const hasTag = (product: Product, tag: string) =>
-    product.tags?.some((t: string) => t.toLowerCase() === tag.toLowerCase());
 
-  // Add filteredProducts logic
-  const filteredProducts = products.filter((product: Product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTag = !selectedTag || hasTag(product, selectedTag);
-    const matchesLanguage = !selectedLanguage || hasTag(product, selectedLanguage);
-    const matchesCategory = !selectedCategory || hasTag(product, selectedCategory);
-    const matchesExamBoard = !selectedExamBoard || hasTag(product, selectedExamBoard);
-    const matchesFree = !showFreeOnly || product.price_cents === 0;
-    return matchesSearch && matchesTag && matchesLanguage && matchesCategory && matchesExamBoard && matchesFree;
-  });
 
-  // Debug logging
-  console.log('🔍 [RESOURCES] Filter state:', {
-    searchTerm,
-    selectedTag,
-    selectedLanguage,
-    selectedCategory,
-    selectedExamBoard,
-    totalProducts: products.length,
-    filteredProducts: filteredProducts.length
+  // Filter products based on current filters
+  const filteredProducts = products.filter(product => {
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      const matchesSearch =
+        product.name.toLowerCase().includes(searchLower) ||
+        product.description?.toLowerCase().includes(searchLower) ||
+        product.tags?.some(tag => tag.toLowerCase().includes(searchLower));
+      if (!matchesSearch) return false;
+    }
+
+    // Language filter - check both language field and tags
+    if (filters.language) {
+      const matchesLanguage =
+        product.language?.toLowerCase() === filters.language.toLowerCase() ||
+        product.tags?.some(tag => tag.toLowerCase() === filters.language.toLowerCase());
+      if (!matchesLanguage) return false;
+    }
+
+    // Key Stage filter - check both key_stage field and tags
+    if (filters.keyStage) {
+      const matchesKeyStage =
+        product.key_stage?.toLowerCase() === filters.keyStage.toLowerCase() ||
+        product.tags?.some(tag => tag.toLowerCase() === filters.keyStage.toLowerCase());
+      if (!matchesKeyStage) return false;
+    }
+
+    // Category filter (only relevant for KS3)
+    if (filters.category && product.tags) {
+      if (!product.tags.some(tag => tag.toLowerCase().includes(filters.category.toLowerCase()))) {
+        return false;
+      }
+    }
+
+    // Subcategory filter (only relevant for KS3, within a category)
+    if (filters.subcategory && product.tags) {
+      if (!product.tags.some(tag => tag.toLowerCase().includes(filters.subcategory.toLowerCase()))) {
+        return false;
+      }
+    }
+
+    // Exam Board filter (only relevant for KS4)
+    if (filters.examBoard && product.tags) {
+      if (!product.tags.some(tag => tag.toLowerCase() === filters.examBoard.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // Theme filter (only relevant for KS4)
+    if (filters.theme && product.tags) {
+      if (!product.tags.some(tag => tag.toLowerCase().includes(filters.theme.toLowerCase()))) {
+        return false;
+      }
+    }
+
+    // Topic filter (only relevant for KS4, within a theme)
+    if (filters.topic && product.tags) {
+      if (!product.tags.some(tag => tag.toLowerCase().includes(filters.topic.toLowerCase()))) {
+        return false;
+      }
+    }
+
+    // Resource Type filter - check category_type field
+    if (filters.resourceType) {
+      const matchesResourceType =
+        product.category_type?.toLowerCase() === filters.resourceType.toLowerCase() ||
+        product.tags?.some(tag => tag.toLowerCase().includes(filters.resourceType.toLowerCase()));
+      if (!matchesResourceType) return false;
+    }
+
+    // Skill filter
+    if (filters.skill && product.tags) {
+      if (!product.tags.some(tag => tag.toLowerCase().includes(filters.skill.toLowerCase()))) {
+        return false;
+      }
+    }
+
+    // Price filter
+    if (filters.priceRange === 'free' && product.price_cents !== 0) {
+      return false;
+    }
+    if (filters.priceRange === 'paid' && product.price_cents === 0) {
+      return false;
+    }
+
+    return true;
   });
 
   return (
@@ -315,273 +184,180 @@ export default function ResourcesPage() {
         <meta name="keywords" content="GCSE language resources, Spanish worksheets, French learning materials, German education resources, KS3 language learning, KS4 MFL resources, language teaching materials" />
         <link rel="canonical" href="https://languagegems.com/resources" />
       </Head>
+
       <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Educational Resources</h1>
-              <p className="text-slate-600 mt-2">Premium materials to enhance your language learning journey</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/free-resources"
-                className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold text-lg shadow-lg hover:bg-green-700 transition-colors flex items-center"
-                style={{ minWidth: 160 }}
-              >
-                <Gift className="h-5 w-5 mr-2" />
-                Free Resources
-              </Link>
-              <button
-                onClick={toggleCart}
-                className="relative p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                <ShoppingCart className="h-6 w-6" />
-                {getTotalItems() > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
-                    {getTotalItems()}
-                  </span>
-                )}
-              </button>
+        {/* Header */}
+        <div className="bg-white border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">Educational Resources</h1>
+                <p className="text-slate-600 mt-2">Premium materials to enhance your language learning journey</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/free-resources"
+                  className="hidden md:flex px-6 py-3 bg-green-600 text-white rounded-lg font-bold text-lg shadow-lg hover:bg-green-700 transition-colors items-center"
+                >
+                  <Gift className="h-5 w-5 mr-2" />
+                  Free Resources
+                </Link>
+                <button
+                  onClick={toggleCart}
+                  className="relative p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  <ShoppingCart className="h-6 w-6" />
+                  {getTotalItems() > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
+                      {getTotalItems()}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Tab Navigation */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <FreebiesNavTabs 
-          activeTab={activeView} 
-          onTabChange={(tab) => {
-            if (tab === 'skills') {
-              router.push('/resources/skills');
-            } else {
-              setActiveView(tab as 'hub' | 'curriculum' | 'skills');
-            }
-          }}
-          className="mb-8"
-        />
-      </div>
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex gap-8">
+            {/* Desktop Sidebar */}
+            <div className="hidden lg:block w-64 flex-shrink-0">
+              <ResourceFilterSidebar
+                filters={filters}
+                onFilterChange={setFilters}
+                onClearFilters={handleClearFilters}
+              />
+            </div>
 
-      {/* Main Content: Curriculum, Hub, or Skills Hub */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeView === 'curriculum' ? (
-          <CurriculumNavigator onReturnToHub={handleReturnToHub} />
-        ) : activeView === 'skills' ? (
-          <SkillsHubLanding />
-        ) : (
-          <>
-            {/* Filters */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-              <div className="flex flex-col lg:flex-row gap-4 flex-wrap">
-                {/* Search */}
-                <div className="flex-1 relative min-w-[200px]">
+            {/* Main Content Area */}
+            <div className="flex-1 min-w-0">
+              {/* Mobile Filter Button + Search */}
+              <div className="lg:hidden mb-6 space-y-4">
+                <button
+                  onClick={() => setShowMobileFilters(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  <Menu className="h-5 w-5" />
+                  <span className="font-medium">Filters</span>
+                </button>
+
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search resources..."
+                    value={filters.search}
+                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                     className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
-                {/* Language Filter */}
-                <div className="relative min-w-[160px]">
-                  <select
-                    value={selectedLanguage}
-                    onChange={e => setSelectedLanguage(e.target.value)}
-                    className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none bg-white w-full"
-                  >
-                    <option value="">All Languages</option>
-                    {['French', 'Spanish', 'German'].map(lang => (
-                      <option key={lang} value={lang}>{lang}</option>
-                    ))}
-                  </select>
-                  <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
-                </div>
-                {/* Category Filter */}
-                <div className="relative min-w-[160px]">
-                  <select
-                    value={selectedCategory}
-                    onChange={e => setSelectedCategory(e.target.value)}
-                    className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none bg-white w-full"
-                  >
-                    <option value="">All Types</option>
-                    {['Grammar', 'Vocabulary', 'Worksheets', 'Listening', 'Reading', 'Writing', 'Speaking'].map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                  <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
-                </div>
-                {/* Exam Board Filter */}
-                <div className="relative min-w-[160px]">
-                  <select
-                    value={selectedExamBoard}
-                    onChange={e => setSelectedExamBoard(e.target.value)}
-                    className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none bg-white w-full"
-                  >
-                    <option value="">All Exam Boards</option>
-                    {['AQA', 'Edexcel', 'OCR', 'WJEC', 'CIE'].map(board => (
-                      <option key={board} value={board}>{board}</option>
-                    ))}
-                  </select>
-                  <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
-                </div>
-                {/* Tag Filter */}
-                <div className="relative min-w-[160px]">
-                  <select
-                    value={selectedTag || ''}
-                    onChange={(e) => setSelectedTag(e.target.value || '')}
-                    className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none bg-white w-full"
-                  >
-                    <option value="">All Categories</option>
-                    {getAllTags().map(tag => (
-                      <option key={tag} value={tag}>
-                        {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                  <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
+              </div>
+
+              {/* Desktop Search */}
+              <div className="hidden lg:block mb-6">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search resources..."
+                    value={filters.search}
+                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                    className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg"
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Products Grid */}
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="mb-4">
-                  <BookOpen className="h-16 w-16 text-slate-400 mx-auto" />
-                </div>
-                <h3 className="text-xl font-medium text-slate-600 mb-2">
-                  {searchTerm || selectedTag ? 'No products found' : 'No products available'}
-                </h3>
-                <p className="text-slate-500">
-                  {searchTerm || selectedTag
-                    ? 'Try adjusting your search or filter criteria'
-                    : 'Check back soon for new educational resources'
-                  }
+              {/* Results Count */}
+              <div className="mb-6">
+                <p className="text-slate-600">
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader className="h-4 w-4 animate-spin" />
+                      Loading resources...
+                    </span>
+                  ) : (
+                    <span>
+                      Showing <span className="font-semibold text-slate-900">{filteredProducts.length}</span> of{' '}
+                      <span className="font-semibold text-slate-900">{products.length}</span> resources
+                    </span>
+                  )}
                 </p>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredProducts.map((product) => (
-                  <div key={product.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
-                    {/* Clickable Product Image and Title */}
-                    <Link href={`/product/${product.slug}`} className="block">
-                      {/* Product Image */}
-                      <div className="h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
-                        {product.thumbnail_url ? (
-                          <img 
-                            src={product.thumbnail_url} 
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <BookOpen className="h-16 w-16 text-slate-400" />
-                        )}
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <ExternalLink className="h-5 w-5 text-indigo-600" />
-                        </div>
-                      </div>
 
-                      {/* Product Title and Description */}
-                      <div className="p-6 pb-2">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                          {product.name}
-                        </h3>
-                        
-                        <p className="text-slate-600 text-sm mb-0 line-clamp-3">
-                          {product.description}
-                        </p>
-                      </div>
-                    </Link>
+              {/* Product Grid */}
+              {loading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader className="h-12 w-12 text-indigo-600 animate-spin" />
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-xl border border-slate-200">
+                  <BookOpen className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2">No resources found</h3>
+                  <p className="text-slate-600 mb-6">Try adjusting your filters or search term</p>
+                  <button
+                    onClick={handleClearFilters}
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredProducts.map((product) => (
+                    <ResourceCard
+                      key={product.id}
+                      product={product}
+                      onAddToCart={handleAddToCart}
+                      isAuthenticated={!!user}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-                    {/* Non-clickable content */}
-                    <div className="px-6 pb-6">
-                      {/* Tags */}
-                      {product.tags && product.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {product.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {product.tags.length > 3 && (
-                            <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full">
-                              +{product.tags.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      )}
+        {/* Mobile Filter Modal */}
+        {showMobileFilters && (
+          <div className="fixed inset-0 bg-black/50 z-50 lg:hidden">
+            <div className="absolute inset-y-0 left-0 w-full max-w-sm bg-white shadow-xl overflow-y-auto">
+              <ResourceFilterSidebar
+                filters={filters}
+                onFilterChange={setFilters}
+                onClearFilters={handleClearFilters}
+                isMobile={true}
+                onClose={() => setShowMobileFilters(false)}
+              />
+            </div>
+          </div>
+        )}
 
-                      {/* Price and Add to Cart */}
-                      <div className="flex items-center justify-between">
-                        <div className="text-2xl font-bold text-indigo-600">
-                          {formatPrice(product.price_cents)}
-                        </div>
-                        
-                        <button
-                          onClick={() => addItem(product)}
-                          className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center space-x-2 ${
-                            product.price_cents === 0 
-                              ? 'bg-green-600 hover:bg-green-700' 
-                              : 'bg-indigo-600 hover:bg-indigo-700'
-                          }`}
-                        >
-                          <ShoppingCart className="h-4 w-4" />
-                          <span>{product.price_cents === 0 ? 'Get for FREE' : 'Add to Cart'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+        <CartSidebar />
+
+        {/* Floating Admin Button */}
+        {userIsAdmin && (
+          <button
+            onClick={() => setShowAdminModal(true)}
+            className="fixed bottom-8 left-8 flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg shadow-lg hover:bg-indigo-700 transition-all hover:shadow-xl z-40"
+            title="Manage Products"
+          >
+            <Settings className="w-5 h-5" />
+            <span className="font-medium">Manage Products</span>
+          </button>
+        )}
+
+        {/* Admin Modal */}
+        {userIsAdmin && (
+          <ProductAdminModal
+            isOpen={showAdminModal}
+            onClose={() => setShowAdminModal(false)}
+            onRefresh={fetchProducts}
+          />
         )}
       </div>
 
-      {/* Cart Sidebar */}
-      <CartSidebar />
-    </div>
+      <Footer />
     </>
   );
-} 
-
-function SkillsHubLanding() {
-  const router = useRouter();
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-8">
-      <h2 className="text-3xl font-bold mb-2 text-center">Skills Hub</h2>
-      <p className="text-slate-600 text-center mb-8">Master core language skills with targeted resources.</p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Grammar Card */}
-        <div className="bg-indigo-50 rounded-lg p-6 shadow text-center flex flex-col items-center cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/resources/skills/grammar')}>
-          <BookOpen className="h-10 w-10 text-indigo-500 mb-3" />
-          <h3 className="text-xl font-bold mb-2">Grammar</h3>
-          <p className="text-slate-700 mb-4">Verb conjugations, tenses, sentence structures</p>
-          <span className="inline-block mt-auto px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">Explore Grammar</span>
-        </div>
-        {/* Vocabulary Card */}
-        <div className="bg-green-50 rounded-lg p-6 shadow text-center flex flex-col items-center cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/resources/skills/vocabulary')}>
-          <Users className="h-10 w-10 text-green-500 mb-3" />
-          <h3 className="text-xl font-bold mb-2">Vocabulary</h3>
-          <p className="text-slate-700 mb-4">Word lists, vocab booklets, frequency-based packs</p>
-          <span className="inline-block mt-auto px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">Explore Vocabulary</span>
-        </div>
-        {/* Exam Practice Card */}
-        <div className="bg-yellow-50 rounded-lg p-6 shadow text-center flex flex-col items-center cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/resources/skills/exam-practice')}>
-          <FileText className="h-10 w-10 text-yellow-500 mb-3" />
-          <h3 className="text-xl font-bold mb-2">Exam Practice</h3>
-          <p className="text-slate-700 mb-4">Reading, listening, speaking, writing tasks</p>
-          <span className="inline-block mt-auto px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700 transition-colors">Explore Exam Practice</span>
-        </div>
-      </div>
-      
-      <Footer />
-    </div>
-  );
-} 
+}

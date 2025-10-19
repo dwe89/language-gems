@@ -9,7 +9,10 @@ import SocialShare from '@/components/blog/SocialShare';
 import RelatedPosts from '@/components/blog/RelatedPosts';
 import BlogSubscriptionSafe from '@/components/blog/BlogSubscriptionSafe';
 import BlogSubscriptionModal from '@/components/blog/BlogSubscriptionModal';
+import BlogEditButton from '@/components/admin/BlogEditButton';
 import { getRelatedPosts } from '@/utils/blog/getRelatedPosts';
+import { getColorScheme } from '@/lib/blog/colorSchemes';
+import * as LucideIcons from 'lucide-react';
 
 interface BlogPost {
   id: string;
@@ -23,6 +26,10 @@ interface BlogPost {
   seo_title: string | null;
   seo_description: string | null;
   reading_time_minutes: number;
+  category: string | null;
+  color_scheme: string | null;
+  icon_name: string | null;
+  keywords: string[] | null;
 }
 
 // Fetch blog post data
@@ -94,6 +101,12 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     notFound();
   }
 
+  // Check if current user is admin (server-side)
+  const cookieStore = await cookies();
+  const supabase = createServerSideClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAdmin = user?.email === 'danieletienne89@gmail.com';
+
   // Fetch related posts
   const relatedPosts = await getRelatedPosts(post.id, post.tags || [], 3);
 
@@ -105,6 +118,14 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     });
   };
 
+  // Get color scheme for this post
+  const colorScheme = getColorScheme(post.color_scheme);
+
+  // Get icon component dynamically
+  const IconComponent = post.icon_name && (LucideIcons as any)[post.icon_name]
+    ? (LucideIcons as any)[post.icon_name]
+    : BookOpen;
+
   return (
     <>
       {/* Subscription Modal - triggers on both exit-intent and 50% scroll */}
@@ -113,14 +134,14 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
       {/* Reading Progress Bar */}
       <ReadingProgress />
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className={`min-h-screen bg-gradient-to-br ${colorScheme.gradient}`}>
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <Link
                 href="/blog"
-                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+                className={`inline-flex items-center ${colorScheme.accentColor} ${colorScheme.accentHover} font-medium transition-colors duration-200`}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Blog
@@ -140,22 +161,35 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
             {/* Main Article */}
             <article className="lg:col-span-12">
               {/* Article Header */}
-              <header className="mb-12 bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+              <header className="mb-12 bg-white rounded-2xl p-8 shadow-lg border border-slate-200">
+                {/* Icon and Title Section */}
+                <div className="flex items-start gap-4 mb-6">
+                  <div className={`${colorScheme.iconBg} p-3 rounded-lg flex-shrink-0`}>
+                    <IconComponent className={`w-8 h-8 ${colorScheme.iconColor}`} />
+                  </div>
+                  <div className="flex-1">
+                    <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 leading-tight">
+                      {post.title}
+                    </h1>
+                    {post.category && (
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${colorScheme.tagBg} ${colorScheme.tagText}`}>
+                        {post.category}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex flex-wrap gap-2 mb-6">
                   {post.tags?.map((tag: string) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700"
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorScheme.tagBg} ${colorScheme.tagText}`}
                     >
                       <Tag className="h-3 w-3 mr-1" />
                       {tag}
                     </span>
                   ))}
                 </div>
-
-                <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 leading-tight">
-                  {post.title}
-                </h1>
 
                 <p className="text-xl text-slate-600 mb-8 leading-relaxed">
                   {post.excerpt}
@@ -244,6 +278,25 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           </div>
         </div>
       </div>
+
+      {/* Admin Edit Button - Only visible to admin users */}
+      {isAdmin && (
+        <BlogEditButton
+          postId={post.id}
+          slug={post.slug}
+          initialData={{
+            title: post.title,
+            slug: post.slug,
+            content: post.content,
+            excerpt: post.excerpt,
+            author: post.author,
+            tags: post.tags || [],
+            seo_title: post.seo_title,
+            seo_description: post.seo_description,
+            reading_time_minutes: post.reading_time_minutes,
+          }}
+        />
+      )}
     </>
   );
 }

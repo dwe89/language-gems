@@ -20,8 +20,12 @@ export function CartSidebar() {
   };
 
   const handleCheckout = () => {
-    router.push('/cart');
+    // Close cart first to prevent DOM conflicts
     toggleCart();
+    // Then navigate after a small delay
+    setTimeout(() => {
+      router.push('/cart');
+    }, 150);
   };
 
   if (!state.isOpen) return null;
@@ -59,8 +63,10 @@ export function CartSidebar() {
               <p className="text-slate-500 mb-6">Discover our educational resources to get started</p>
               <button
                 onClick={() => {
-                  router.push('/shop');
                   toggleCart();
+                  setTimeout(() => {
+                    router.push('/shop');
+                  }, 150);
                 }}
                 className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
@@ -145,8 +151,10 @@ export function CartSidebar() {
             
             <button
               onClick={() => {
-                router.push('/shop');
                 toggleCart();
+                setTimeout(() => {
+                  router.push('/shop');
+                }, 150);
               }}
               className="w-full py-2 px-4 text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
             >
