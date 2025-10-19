@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Clock, Calendar, Target, Users } from 'lucide-react';
+import { Clock, Calendar, Target, Users, Brain, BookOpen, Languages, Gamepad2, Film, MessageCircle, PenTool, Award, Zap, Music } from 'lucide-react';
 import SEOWrapper from '../../components/seo/SEOWrapper';
 import Footer from '../../components/layout/Footer';
 import { createClient } from '@/lib/supabase-server';
@@ -39,7 +39,219 @@ interface BlogPost {
   reading_time_minutes: number;
 }
 
-
+// Static blog posts (hardcoded directories that still exist)
+const staticBlogPosts = [
+  {
+    title: 'AQA GCSE Speaking: Complete Photocard Guide',
+    excerpt: 'Master the AQA GCSE Speaking exam photocard task with our comprehensive guide. Learn scoring criteria, strategies, and common pitfalls for exam success.',
+    slug: 'aqa-gcse-speaking-photocard-guide',
+    category: 'Exam Preparation',
+    readTime: '12 min read',
+    publishDate: 'September 27, 2025',
+    author: 'LanguageGems Team',
+    icon: Target
+  },
+  {
+    title: 'The 7 Best Vocabulary Learning Techniques for GCSE Success (2024)',
+    excerpt: 'Discover scientifically-proven vocabulary learning techniques that help GCSE students retain 40% more words.',
+    slug: 'best-vocabulary-learning-techniques-gcse',
+    category: 'Study Tips',
+    readTime: '8 min read',
+    publishDate: 'January 15, 2024',
+    author: 'Daniel Etienne',
+    icon: Brain
+  },
+  {
+    title: 'How Gamification Transforms Language Learning in the Classroom',
+    excerpt: 'Explore how gamification increases student engagement by 90% and improves vocabulary retention.',
+    slug: 'gamification-language-learning-classroom',
+    category: 'Teaching Strategies',
+    readTime: '10 min read',
+    publishDate: 'January 20, 2024',
+    author: 'Daniel Etienne',
+    icon: Gamepad2
+  },
+  {
+    title: 'Complete Guide to GCSE Spanish Vocabulary Themes (AQA, Edexcel, OCR)',
+    excerpt: 'Master all GCSE Spanish vocabulary themes with our comprehensive guide.',
+    slug: 'complete-guide-gcse-spanish-vocabulary-themes',
+    category: 'Study Tips',
+    readTime: '12 min read',
+    publishDate: 'January 25, 2024',
+    author: 'Daniel Etienne',
+    icon: Target
+  },
+  {
+    title: 'Language Learning Apps vs. Educational Software: What Schools Need to Know',
+    excerpt: 'Compare consumer language apps like Duolingo with educational platforms designed for schools.',
+    slug: 'language-learning-apps-vs-educational-software',
+    category: 'Educational Technology',
+    readTime: '9 min read',
+    publishDate: 'January 30, 2024',
+    author: 'Daniel Etienne',
+    icon: BookOpen
+  },
+  {
+    title: 'The Complete Guide to Spaced Repetition for Vocabulary Learning',
+    excerpt: 'Learn how spaced repetition can improve vocabulary retention by 200%.',
+    slug: 'complete-guide-spaced-repetition-vocabulary-learning',
+    category: 'Learning Science',
+    readTime: '11 min read',
+    publishDate: 'February 5, 2024',
+    author: 'Daniel Etienne',
+    icon: Brain
+  },
+  {
+    title: 'Ser vs Estar: The Ultimate Guide for Students',
+    excerpt: 'Master the most challenging Spanish grammar concept with this comprehensive guide.',
+    slug: 'ser-vs-estar-ultimate-guide-students',
+    category: 'Spanish Grammar',
+    readTime: '15 min read',
+    publishDate: 'March 10, 2024',
+    author: 'LanguageGems Team',
+    icon: Languages
+  },
+  {
+    title: 'German Cases Explained: Simple Guide for English Speakers',
+    excerpt: 'Demystify German cases with this authoritative guide.',
+    slug: 'german-cases-explained-simple-guide',
+    category: 'German Grammar',
+    readTime: '18 min read',
+    publishDate: 'March 15, 2024',
+    author: 'LanguageGems Team',
+    icon: Languages
+  },
+  {
+    title: 'Imparfait vs Passé Composé: Simple Guide for GCSE Students',
+    excerpt: 'Master French past tenses with this clear guide.',
+    slug: 'imparfait-vs-passe-compose-simple-guide',
+    category: 'French Grammar',
+    readTime: '12 min read',
+    publishDate: 'March 20, 2024',
+    author: 'LanguageGems Team',
+    icon: Languages
+  },
+  {
+    title: 'GCSE Spanish Speaking Exam Tips: Boost Your Grade',
+    excerpt: 'Ace your GCSE Spanish speaking exam with proven strategies.',
+    slug: 'gcse-spanish-speaking-exam-tips',
+    category: 'Exam Preparation',
+    readTime: '10 min read',
+    publishDate: 'March 25, 2024',
+    author: 'LanguageGems Team',
+    icon: MessageCircle
+  },
+  {
+    title: 'The Science of Gamification in Language Learning',
+    excerpt: 'Discover how gamification transforms language learning through behavioral science.',
+    slug: 'science-of-gamification-language-learning',
+    category: 'Learning Science',
+    readTime: '14 min read',
+    publishDate: 'April 1, 2024',
+    author: 'LanguageGems Team',
+    icon: Gamepad2
+  },
+  {
+    title: 'Spaced Repetition vs Cramming: What Works Best?',
+    excerpt: 'Compare spaced repetition vs cramming with scientific evidence.',
+    slug: 'spaced-repetition-vs-cramming',
+    category: 'Study Tips',
+    readTime: '11 min read',
+    publishDate: 'April 5, 2024',
+    author: 'LanguageGems Team',
+    icon: Brain
+  },
+  {
+    title: 'Por vs Para: Complete Guide for Spanish Learners',
+    excerpt: 'Master por vs para with this comprehensive guide.',
+    slug: 'por-vs-para-guide',
+    category: 'Spanish Grammar',
+    readTime: '13 min read',
+    publishDate: 'April 10, 2024',
+    author: 'LanguageGems Team',
+    icon: Languages
+  },
+  {
+    title: 'Jouer à vs Jouer de: Explained Simply',
+    excerpt: 'Clear up French preposition confusion with jouer à vs jouer de.',
+    slug: 'jouer-a-vs-jouer-de-explained',
+    category: 'French Grammar',
+    readTime: '8 min read',
+    publishDate: 'April 15, 2024',
+    author: 'LanguageGems Team',
+    icon: Music
+  },
+  {
+    title: 'GCSE German Writing Exam Tips: Get Top Marks',
+    excerpt: 'Master GCSE German writing with expert tips.',
+    slug: 'gcse-german-writing-exam-tips',
+    category: 'Exam Preparation',
+    readTime: '12 min read',
+    publishDate: 'April 20, 2024',
+    author: 'LanguageGems Team',
+    icon: PenTool
+  },
+  {
+    title: 'KS3 French: Word Blast Game Better Than Flashcards',
+    excerpt: 'Discover why interactive games like Word Blast outperform traditional flashcards.',
+    slug: 'ks3-french-word-blast-game-better-than-flashcards',
+    category: 'Teaching Strategies',
+    readTime: '9 min read',
+    publishDate: 'April 25, 2024',
+    author: 'LanguageGems Team',
+    icon: Zap
+  },
+  {
+    title: 'German Movies & TV Shows for Listening Skills',
+    excerpt: 'Build German listening skills with curated movies and TV shows.',
+    slug: 'german-movies-tv-shows-listening-skills',
+    category: 'Cultural Learning',
+    readTime: '10 min read',
+    publishDate: 'May 1, 2024',
+    author: 'LanguageGems Team',
+    icon: Film
+  },
+  {
+    title: 'Spanish 90-Word Response: TONICS Formula',
+    excerpt: 'Master the GCSE Spanish 90-word writing task with the TONICS formula.',
+    slug: 'spanish-90-word-response-tonics-formula',
+    category: 'Exam Preparation',
+    readTime: '10 min read',
+    publishDate: 'May 15, 2024',
+    author: 'LanguageGems Team',
+    icon: PenTool
+  },
+  {
+    title: 'Pronunciation in the Reading Aloud Task',
+    excerpt: 'Pronunciation in the Reading Aloud Task: Major vs Minor Errors Explained',
+    slug: 'pronunciation-in-the-reading-aloud-task',
+    category: 'Exam Preparation',
+    readTime: '8 min read',
+    publishDate: 'June 24, 2025',
+    author: 'LanguageGems Team',
+    icon: Target
+  },
+  {
+    title: 'Everything You Need to Know About the New AQA Speaking Exam',
+    excerpt: 'Understanding the New AQA Speaking Exam: What Students and Teachers Need to Know',
+    slug: 'everything-you-need-to-know-about-the-new-aqa-speaking-exam',
+    category: 'Exam Preparation',
+    readTime: '10 min read',
+    publishDate: 'June 24, 2025',
+    author: 'LanguageGems Team',
+    icon: BookOpen
+  },
+  {
+    title: 'Top Tips for GCSE Writing: The 6 Pillars Strategy',
+    excerpt: 'Master GCSE language writing with The Six Pillars strategy.',
+    slug: 'top-tips-gcse-writing-six-pillars',
+    category: 'Exam Preparation',
+    readTime: '15 min read',
+    publishDate: 'October 8, 2025',
+    author: 'Daniel Etienne',
+    icon: Award
+  }
+];
 
 
 
@@ -92,9 +304,35 @@ export default async function BlogPage() {
   // Combine database posts
   const dbPosts = [...(publishedPosts || []), ...(scheduledPosts || [])];
 
-  // Extract unique categories from database posts
+  // Convert static posts to match BlogPost interface
+  const staticPostsForDisplay = staticBlogPosts.map((post) => ({
+    id: `static-${post.slug}`,
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt,
+    category: post.category,
+    author: post.author,
+    tags: [post.category],
+    publish_date: post.publishDate,
+    reading_time_minutes: parseInt(post.readTime) || 5,
+    content: '',
+    is_published: true,
+    created_at: post.publishDate,
+    updated_at: post.publishDate,
+    scheduled_for: null,
+    status: 'published',
+    seo_title: post.title,
+    seo_description: post.excerpt,
+    featured_image_url: null,
+    // Don't include icon - can't be serialized to client
+  }));
+
+  // Combine database posts and static posts
+  const allPosts = [...dbPosts, ...staticPostsForDisplay];
+
+  // Extract unique categories from all posts
   const categoryMap = new Map<string, number>();
-  dbPosts.forEach(post => {
+  allPosts.forEach(post => {
     // Add category if it exists
     if (post.category) {
       categoryMap.set(post.category, (categoryMap.get(post.category) || 0) + 1);
@@ -149,8 +387,8 @@ export default async function BlogPage() {
     ogImage: '/images/blog-og.jpg',
   };
 
-  // Sort database posts by publish date (newest first)
-  const sortedPosts = dbPosts.sort((a, b) => {
+  // Sort all posts by publish date (newest first)
+  const sortedPosts = allPosts.sort((a, b) => {
     const dateA = new Date(a.publish_date);
     const dateB = new Date(b.publish_date);
     return dateB.getTime() - dateA.getTime();

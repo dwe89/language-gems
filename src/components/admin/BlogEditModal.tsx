@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Save, Loader2, AlertCircle, CheckCircle, FileText, User, Tag, Clock } from 'lucide-react';
+import { X, Save, Loader2, AlertCircle, CheckCircle, FileText, User, Tag, Clock, Code } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import TiptapEditor from '../editor/TiptapEditor';
 
@@ -21,6 +21,9 @@ interface BlogEditModalProps {
     seo_description: string | null;
     reading_time_minutes: number;
     featured_image_url?: string | null;
+    category?: string | null;
+    color_scheme?: string | null;
+    icon_name?: string | null;
   };
 }
 
@@ -43,10 +46,14 @@ export default function BlogEditModal({
     seo_description: initialData.seo_description || '',
     reading_time_minutes: initialData.reading_time_minutes,
     featured_image_url: initialData.featured_image_url || '',
+    category: initialData.category || '',
+    color_scheme: initialData.color_scheme || 'blue',
+    icon_name: initialData.icon_name || 'BookOpen',
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isHtmlMode, setIsHtmlMode] = useState(false);
 
   if (!isOpen) return null;
 
@@ -67,6 +74,9 @@ export default function BlogEditModal({
         seo_description: formData.seo_description.trim() || formData.excerpt.trim(),
         reading_time_minutes: formData.reading_time_minutes,
         featured_image_url: formData.featured_image_url.trim() || null,
+        category: formData.category.trim() || null,
+        color_scheme: formData.color_scheme || 'blue',
+        icon_name: formData.icon_name || 'BookOpen',
         updated_at: new Date().toISOString(),
       };
 
@@ -171,15 +181,50 @@ export default function BlogEditModal({
 
             {/* Content Editor */}
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Content
-              </label>
-              <div className="border border-gray-300 rounded-lg overflow-hidden">
-                <TiptapEditor
-                  content={formData.content}
-                  onChange={(content) => setFormData({ ...formData, content })}
-                />
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Content
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsHtmlMode(!isHtmlMode)}
+                  className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    isHtmlMode
+                      ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Code className="w-4 h-4" />
+                  {isHtmlMode ? 'HTML Mode' : 'Visual Mode'}
+                </button>
               </div>
+
+              {isHtmlMode ? (
+                <textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  rows={20}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                  placeholder="Paste your HTML content here with all Tailwind classes..."
+                  spellCheck={false}
+                />
+              ) : (
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  <TiptapEditor
+                    content={formData.content}
+                    onChange={(content) => setFormData({ ...formData, content })}
+                  />
+                </div>
+              )}
+
+              {isHtmlMode && (
+                <p className="mt-2 text-sm text-purple-600 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    HTML Mode: Paste content with all Tailwind classes preserved. Perfect for migrating from static pages!
+                  </span>
+                </p>
+              )}
             </div>
 
             {/* Author and Tags Row */}
@@ -210,6 +255,56 @@ export default function BlogEditModal({
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Study Tips, GCSE, Spanish"
                 />
+              </div>
+            </div>
+
+            {/* Category, Color Scheme, Icon Row */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Exam Preparation"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Color Scheme
+                </label>
+                <select
+                  value={formData.color_scheme}
+                  onChange={(e) => setFormData({ ...formData, color_scheme: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="blue">Blue</option>
+                  <option value="indigo">Indigo</option>
+                  <option value="purple">Purple</option>
+                  <option value="green">Green</option>
+                  <option value="orange">Orange</option>
+                  <option value="red">Red</option>
+                  <option value="teal">Teal</option>
+                  <option value="slate">Slate</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Icon Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.icon_name}
+                  onChange={(e) => setFormData({ ...formData, icon_name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Camera, Brain, Target"
+                />
+                <p className="mt-1 text-xs text-gray-500">Lucide icon name</p>
               </div>
             </div>
 
