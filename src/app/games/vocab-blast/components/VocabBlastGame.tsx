@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Pause, Play, Volume2, VolumeX, Settings } from 'lucide-react';
 import { GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
@@ -119,23 +119,20 @@ export default function VocabBlastGame({
     }
   };
 
-  // Game state
+  // Game state - using refs for values that don't need to trigger re-renders
   const [gameActive, setGameActive] = useState(false);
   const [gameEnded, setGameEnded] = useState(false);
   const [gameResult, setGameResult] = useState<'win' | 'loss' | 'timeout' | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [currentWord, setCurrentWord] = useState<GameVocabularyWord | null>(null);
-  const [currentWordStartTime, setCurrentWordStartTime] = useState<number>(0);
-  // Calculate win condition targets - fixed values as requested
-  const calculateTargets = () => {
-    return {
-      targetScore: 1500,
-      targetWordsLearned: 15,
-      targetCombo: 7
-    };
-  };
+  const currentWordStartTimeRef = useRef<number>(0);
 
-  const targets = calculateTargets();
+  // Calculate win condition targets - fixed values as requested
+  const targets = useMemo(() => ({
+    targetScore: 1500,
+    targetWordsLearned: 15,
+    targetCombo: 7
+  }), []);
 
   const [gameStats, setGameStats] = useState<GameStats>({
     score: 0,
@@ -157,23 +154,37 @@ export default function VocabBlastGame({
   // Detailed analytics tracking
   const [wordAttempts, setWordAttempts] = useState<WordAttempt[]>([]);
 
-  // Vocabulary management
-  const [usedWords, setUsedWords] = useState<Set<string>>(new Set());
+  // Vocabulary management - use refs for non-rendering state
+  const usedWordsRef = useRef<Set<string>>(new Set());
   const [availableWords, setAvailableWords] = useState<GameVocabularyWord[]>([]);
 
   // 🎯 LAYER 1: Session deduplication - track words used in this session (assignment mode only)
-  const [usedWordsThisSession, setUsedWordsThisSession] = useState<Set<string>>(new Set());
+  const usedWordsThisSessionRef = useRef<Set<string>>(new Set());
 
   // Game timers (removed main countdown timer)
   const wordSpawnRef = useRef<NodeJS.Timeout | null>(null);
   const winCheckRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Refs for preventing race conditions
+  const gameStatsRef = useRef(gameStats);
+  const isProcessingAnswerRef = useRef(false);
+  const gameEndedRef = useRef(false);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    gameStatsRef.current = gameStats;
+  }, [gameStats]);
+
+  useEffect(() => {
+    gameEndedRef.current = gameEnded;
+  }, [gameEnded]);
 
   // 🎯 LAYER 2: Record word exposures on unmount (assignment mode only)
   useEffect(() => {
     return () => {
       if (isAssignmentMode && gameSessionId) {
         // Extract assignmentId from gameSessionId or use a prop
-        const exposedWordIds = Array.from(usedWordsThisSession);
+        const exposedWordIds = Array.from(usedWordsThisSessionRef.current);
         if (exposedWordIds.length > 0) {
           console.log('📝 [LAYER 2] Recording word exposures on unmount:', {
             gameSessionId,
@@ -186,7 +197,7 @@ export default function VocabBlastGame({
         }
       }
     };
-  }, [isAssignmentMode, gameSessionId, usedWordsThisSession]);
+  }, [isAssignmentMode, gameSessionId]);
 
   // Initialize game
   useEffect(() => {
@@ -250,10 +261,10 @@ export default function VocabBlastGame({
     }
   };
 
-  const selectNextWord = () => {
+  const selectNextWord = useCallback(() => {
     try {
       // 🛑 CRITICAL: Don't select words if game has ended (prevents crash on win)
-      if (gameEnded || !gameActive) {
+      if (gameEndedRef.current || !gameActive) {
         console.log('🛑 [WORD SELECT] Game ended or inactive, skipping word selection');
         return;
       }
@@ -263,32 +274,32 @@ export default function VocabBlastGame({
         return;
       }
 
-      const unused = availableWords.filter(word => word && word.id && !usedWords.has(word.id));
+      const unused = availableWords.filter(word => word && word.id && !usedWordsRef.current.has(word.id));
 
       let selectedWord: GameVocabularyWord;
-      
+
       if (unused.length === 0) {
         // Reset if we've used all words
         console.log('🔄 All words used, resetting pool');
-        setUsedWords(new Set());
+        usedWordsRef.current = new Set();
         const randomIndex = Math.floor(Math.random() * availableWords.length);
         selectedWord = availableWords[randomIndex];
       } else {
         const randomIndex = Math.floor(Math.random() * unused.length);
         selectedWord = unused[randomIndex];
       }
-      
+
       // Always set the word, even if it doesn't have an ID (log warning)
       if (!selectedWord || !selectedWord.id) {
         console.error('⚠️ Selected word is invalid:', selectedWord);
         // Fallback to first available word with an ID
         selectedWord = availableWords.find(w => w && w.id) || availableWords[0];
       }
-      
+
       if (selectedWord) {
         console.log('✅ Next word selected:', selectedWord.word);
         setCurrentWord(selectedWord);
-        setCurrentWordStartTime(Date.now());
+        currentWordStartTimeRef.current = Date.now();
       } else {
         console.error('❌ CRITICAL: No valid words available!');
       }
@@ -299,23 +310,31 @@ export default function VocabBlastGame({
         const fallbackWord = availableWords[0];
         console.log('🔧 Using fallback word:', fallbackWord?.word);
         setCurrentWord(fallbackWord);
-        setCurrentWordStartTime(Date.now());
+        currentWordStartTimeRef.current = Date.now();
       }
     }
-  };
+  }, [availableWords, gameActive]);
 
-  const handleCorrectAnswer = async (word: GameVocabularyWord) => {
+  const handleCorrectAnswer = useCallback(async (word: GameVocabularyWord) => {
     try {
+      // Prevent duplicate processing
+      if (isProcessingAnswerRef.current) {
+        console.log('⚠️ Already processing an answer, skipping');
+        return;
+      }
+
       if (!word || !word.id) {
         console.warn('Invalid word object passed to handleCorrectAnswer');
         return;
       }
 
+      isProcessingAnswerRef.current = true;
+
       startMusicOnInteraction(); // Start music on first interaction
       playSFX('correct-answer');
       playThemeSFX(settings.theme);
 
-      const responseTime = Date.now() - currentWordStartTime;
+      const responseTime = Date.now() - currentWordStartTimeRef.current;
 
       // Track detailed word attempt
       const attempt: WordAttempt = {
@@ -345,101 +364,26 @@ export default function VocabBlastGame({
         };
       });
 
-      setUsedWords(prev => new Set([...prev, word.id]));
+      usedWordsRef.current.add(word.id);
 
       // 🎯 LAYER 1: Mark word as used in this session (assignment mode only)
       if (isAssignmentMode && word.id) {
-        setUsedWordsThisSession(prev => {
-          const newSet = new Set(prev);
-          newSet.add(word.id);
-          console.log(`🎯 [LAYER 1] Marked word as used: ${word.id} (total: ${newSet.size})`);
-          return newSet;
-        });
+        usedWordsThisSessionRef.current.add(word.id);
+        console.log(`🎯 [LAYER 1] Marked word as used: ${word.id} (total: ${usedWordsThisSessionRef.current.size})`);
       }
 
       // ⚡ INSTANT: Move to next word immediately
       selectNextWord();
 
+      // Reset processing flag
+      isProcessingAnswerRef.current = false;
+
       // Background processing - don't await, let it run async
       Promise.resolve().then(async () => {
-        // Record word practice with FSRS system (works in both assignment and free play modes)
-        if (word) {
-          try {
-            const wordData = {
-              id: word.id || `${word.word}-${word.translation}`,
-              word: word.word,
-              translation: word.translation,
-              language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
-            };
-
-            // ✅ VOCABULARY TRACKING: Handled by GameAssignmentWrapper in assignment mode
-            console.log('✅ [VOCAB BLAST] Vocabulary tracking handled by unified system');
-          } catch (error) {
-            console.error('Error in vocabulary tracking:', error);
-          }
-        }
-
         // Record gems in both assignment and free play modes
-        if (gameSessionId) {
+        if (gameSessionId && word.id) {
           try {
-            // 🔍 INSTRUMENTATION: Log vocabulary tracking details
-            console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
-              wordId: word.id,
-              wordIdType: typeof word.id,
-              word: word.word,
-              translation: word.translation,
-              isCorrect: true,
-              gameSessionId,
-              responseTimeMs: responseTime
-            });
-
             const sessionService = new EnhancedGameSessionService();
-            const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-blast', {
-              vocabularyId: word.id, // Use UUID directly, not parseInt
-              wordText: word.word,
-              translationText: word.translation,
-              responseTimeMs: responseTime,
-              wasCorrect: true,
-              hintUsed: false, // No hints in vocab-blast
-              streakCount: gameStats.combo + 1, // Use combo as streak
-              masteryLevel: 1, // Default mastery for action games
-              maxGemRarity: 'rare', // Cap at rare for fast-paced games
-              gameMode: 'action_click',
-              difficultyLevel: settings.difficulty
-            }, true); // 🚀 FAST: Skip FSRS processing for instant feedback
-
-            // 🔍 INSTRUMENTATION: Log gem event result
-            console.log('🔍 [VOCAB TRACKING] Gem event result:', {
-              gemEventExists: !!gemEvent,
-              gemEvent: gemEvent ? {
-                rarity: gemEvent.rarity,
-                xpValue: gemEvent.xpValue,
-                vocabularyId: gemEvent.vocabularyId,
-                wordText: gemEvent.wordText
-              } : null,
-              wasCorrect: true
-            });
-
-            // Show gem feedback if gem was awarded
-            if (gemEvent) {
-              console.log(`🔮 Vocab Blast earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${word.word}"`);
-            }
-          } catch (error) {
-            console.error('Failed to record vocabulary interaction:', error);
-          }
-        } else if (gameSessionId && word.id) {
-          // Record gem for assignment mode using EnhancedGameSessionService
-          console.log('🎮 [VOCAB BLAST] Attempting to record gem:', {
-            vocabularyId: word.id,
-            gameSessionId,
-            word: word.word,
-            isCorrect: true
-          });
-
-          try {
-            const { EnhancedGameSessionService } = await import('../../../../services/rewards/EnhancedGameSessionService');
-            const sessionService = new EnhancedGameSessionService();
-
             const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-blast', {
               vocabularyId: word.id,
               wordText: word.word,
@@ -447,43 +391,18 @@ export default function VocabBlastGame({
               responseTimeMs: responseTime,
               wasCorrect: true,
               hintUsed: false,
-              streakCount: gameStats.correctAnswers,
+              streakCount: gameStatsRef.current.combo,
               masteryLevel: 1,
-              maxGemRarity: 'common',
-              gameMode: 'typing',
+              maxGemRarity: 'rare',
+              gameMode: 'action_click',
               difficultyLevel: settings.difficulty
-            }, true); // Skip FSRS for speed
+            }, true); // Skip FSRS for instant feedback
 
             if (gemEvent) {
-              console.log('✅ [VOCAB BLAST] Gem awarded successfully:', gemEvent);
-            } else {
-              console.warn('⚠️ [VOCAB BLAST] No gem event returned');
+              console.log(`🔮 Vocab Blast earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${word.word}"`);
             }
           } catch (error) {
-            console.error('🚨 [VOCAB BLAST] Gem recording failed:', error);
-          }
-        } else {
-          console.warn('⚠️ [VOCAB BLAST] Skipping gem recording:', {
-            hasGameSessionId: !!gameSessionId,
-            hasVocabularyId: !!word.id,
-            gameSessionId,
-            vocabularyId: word.id
-          });
-        }
-
-        // DEPRECATED: Old assignment mode tracking - replaced by EnhancedGameSessionService above
-        if (false && isAssignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
-          try {
-            await (window as any).recordVocabularyInteraction(
-              word.word,
-              word.translation,
-              true, // wasCorrect
-              responseTime, // responseTimeMs
-              false, // hintUsed
-              gameStats.combo + 1 // streakCount
-            );
-          } catch (error) {
-            console.error('Failed to record vocabulary interaction for assignment:', error);
+            console.error('Failed to record vocabulary interaction:', error);
           }
         }
       }).catch(error => {
@@ -492,16 +411,17 @@ export default function VocabBlastGame({
     } catch (error) {
       console.error('Error handling correct answer:', error);
       // Continue game flow even if there's an error
+      isProcessingAnswerRef.current = false;
       selectNextWord();
     }
-  };
+  }, [selectNextWord, playSFX, playThemeSFX, settings.theme, settings.difficulty, settings.language, gameSessionId, isAssignmentMode, startMusicOnInteraction]);
 
-  const handleIncorrectAnswer = async () => {
+  const handleIncorrectAnswer = useCallback(async () => {
     try {
       startMusicOnInteraction(); // Start music on first interaction
       playSFX('wrong-answer');
 
-      const responseTime = Date.now() - currentWordStartTime;
+      const responseTime = Date.now() - currentWordStartTimeRef.current;
 
       // Record word practice with FSRS system for incorrect answer (works in both assignment and free play modes)
       if (currentWord) {
@@ -594,17 +514,17 @@ export default function VocabBlastGame({
       });
 
       // Continue spawning new words even after wrong answer
-      if (gameStats.lives > 1) {
+      if (gameStatsRef.current.lives > 1) {
         selectNextWord();
       }
     } catch (error) {
       console.error('Error handling incorrect answer:', error);
       // Continue game flow even if there's an error
-      if (gameStats.lives > 1) {
+      if (gameStatsRef.current.lives > 1) {
         selectNextWord();
       }
     }
-  };
+  }, [selectNextWord, playSFX, currentWord, settings.language, gameSessionId, startMusicOnInteraction]);
 
   const togglePause = () => {
     setIsPaused(!isPaused);
@@ -618,13 +538,14 @@ export default function VocabBlastGame({
     }
   };
 
-  const restartGame = () => {
+  const restartGame = useCallback(() => {
     // Reset all game state
     setGameEnded(false);
+    gameEndedRef.current = false;
     setGameResult(null);
     setGameActive(true);
     setIsPaused(false);
-    
+
     // Reset game stats
     setGameStats({
       score: 0,
@@ -638,19 +559,19 @@ export default function VocabBlastGame({
       incorrectAnswers: 0,
       totalAttempts: 0,
       progressPercentage: 0,
-      ...calculateTargets()
+      ...targets
     });
-    
+
     // Reset word tracking
-    setUsedWords(new Set());
+    usedWordsRef.current = new Set();
     setAvailableWords([...vocabulary]);
     setWordAttempts([]);
-    
+
     // Select new word and restart game loops
     selectNextWord();
     startWordSpawning();
     startWinConditionCheck();
-  };
+  }, [vocabulary, targets, selectNextWord]);
 
   const endGame = (outcome: 'win' | 'loss' | 'timeout') => {
     // Prevent multiple calls to endGame

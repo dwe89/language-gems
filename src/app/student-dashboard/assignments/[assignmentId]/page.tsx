@@ -10,6 +10,7 @@ import { AssignmentProgressTrackingService, GameActivityMetrics } from '../../..
 import { MasteryScoreService, MasteryScoreBreakdown } from '../../../../services/MasteryScoreService';
 import { calculateRemainingTime, getTimeCategory } from '../../../../utils/assignmentTimeEstimation';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
+import AssessmentAssignmentView from '../../../../components/student-dashboard/AssessmentAssignmentView';
 
 // Map game types to actual game directory paths
 const mapGameTypeToPath = (gameType: string | null): string => {
@@ -94,6 +95,7 @@ export default function StudentAssignmentDetailPage() {
             description,
             due_date,
             game_type,
+            assignment_mode,
             game_config,
             vocabulary_count,
             repetitions_required
@@ -109,6 +111,23 @@ export default function StudentAssignmentDetailPage() {
 
         if (!assignmentData) {
           setError('Assignment not found');
+          return;
+        }
+
+        // Check if this is an assessment-only assignment
+        const isAssessmentOnly = assignmentData.game_type === 'assessment' &&
+                                 assignmentData.assignment_mode === 'single_game';
+
+        // If it's an assessment-only assignment, use the dedicated component
+        if (isAssessmentOnly) {
+          setAssignment({
+            id: assignmentData.id,
+            title: assignmentData.title,
+            description: assignmentData.description,
+            dueDate: assignmentData.due_date ? new Date(assignmentData.due_date).toLocaleDateString() : undefined,
+            isAssessmentOnly: true
+          });
+          setLoading(false);
           return;
         }
 
@@ -137,11 +156,32 @@ export default function StudentAssignmentDetailPage() {
           // Continue without game progress data
         }
 
+        // Get grammar assignment sessions for skills (grammar topics)
+        const { data: grammarSessionsData, error: grammarSessionsError } = await supabase
+          .from('grammar_assignment_sessions')
+          .select(`
+            topic_id,
+            completion_status,
+            final_score,
+            accuracy_percentage,
+            duration_seconds,
+            ended_at,
+            grammar_topics (
+              title
+            )
+          `)
+          .eq('assignment_id', assignmentId)
+          .eq('student_id', user.id);
+
+        if (grammarSessionsError) {
+          console.error('Error fetching grammar sessions:', grammarSessionsError);
+        }
+
         // Check if this is a multi-activity assignment (games, assessments, or skills)
         const isMultiGame = assignmentData.game_type === 'multi-game' ||
                            assignmentData.game_type === 'mixed-mode' ||
                            assignmentData.game_type === 'skills' ||
-                           assignmentData.game_type === 'assessment' ||
+                           (assignmentData.game_type === 'assessment' && !isAssessmentOnly) ||
                            (assignmentData.game_config?.multiGame && assignmentData.game_config?.selectedGames?.length > 1) ||
                            (assignmentData.game_config?.gameConfig?.selectedGames && assignmentData.game_config.gameConfig.selectedGames.length > 1);
         
@@ -239,9 +279,44 @@ export default function StudentAssignmentDetailPage() {
           const selectedSkills = assignmentData.game_config?.skillsConfig?.selectedSkills || [];
 
           skills = selectedSkills.map((skill: any) => {
-            // Find individual skill progress
-            const skillProgress = gameProgressData?.find(gp => gp.game_id === skill.id);
-            const isCompleted = skillProgress?.status === 'completed';
+            // Find grammar session progress for this skill's topics
+            const topicIds = skill.instanceConfig?.topicIds || [];
+            const topicSessions = grammarSessionsData?.filter(session =>
+              topicIds.includes(session.topic_id)
+            ) || [];
+
+            console.log('🔍 [SKILL MAPPING]', {
+              skillName: skill.name,
+              topicIds,
+              totalGrammarSessions: grammarSessionsData?.length,
+              filteredSessions: topicSessions.length,
+              sessionTopicIds: topicSessions.map(s => s.topic_id)
+            });
+
+            // Calculate aggregate stats from all topic sessions
+            const totalSessions = topicSessions.length;
+            const completedSessions = topicSessions.filter(s => s.completion_status === 'completed').length;
+
+            // Count unique topics that have at least one completed session
+            const completedTopicIds = new Set(
+              topicSessions
+                .filter(s => s.completion_status === 'completed')
+                .map(s => s.topic_id)
+            );
+            const uniqueTopicsCompleted = completedTopicIds.size;
+            const avgScore = totalSessions > 0
+              ? topicSessions.reduce((sum, s) => sum + (s.final_score || 0), 0) / totalSessions
+              : 0;
+            const avgAccuracy = totalSessions > 0
+              ? topicSessions.reduce((sum, s) => sum + (s.accuracy_percentage || 0), 0) / totalSessions
+              : 0;
+            const totalTime = topicSessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+            const lastCompleted = topicSessions
+              .filter(s => s.ended_at)
+              .sort((a, b) => new Date(b.ended_at!).getTime() - new Date(a.ended_at!).getTime())[0]?.ended_at;
+
+            // Consider skill completed if at least one session per topic is completed
+            const isCompleted = topicIds.length > 0 && completedSessions >= topicIds.length;
 
             return {
               id: skill.id,
@@ -253,10 +328,12 @@ export default function StudentAssignmentDetailPage() {
               topicIds: skill.instanceConfig?.topicIds,
               language: skill.instanceConfig?.language,
               completed: isCompleted,
-              score: skillProgress?.score || 0,
-              accuracy: skillProgress?.accuracy || 0,
-              timeSpent: skillProgress?.time_spent || 0,
-              completedAt: skillProgress?.completed_at
+              score: Math.round(avgScore),
+              accuracy: Math.round(avgAccuracy),
+              timeSpent: totalTime,
+              completedAt: lastCompleted,
+              sessionsCompleted: uniqueTopicsCompleted,  // Use unique topics instead of total sessions
+              totalTopics: topicIds.length
             };
           });
         } else {
@@ -286,30 +363,86 @@ export default function StudentAssignmentDetailPage() {
           a.status === 'not_started' || (a.progressPercentage === 0 && !a.completed)
         ).length;
 
-        // Calculate mastery score
-        const masteryService = new MasteryScoreService(supabase);
-        const masteryData = await masteryService.calculateAssignmentMasteryScore(assignmentId, user.id);
-        setMasteryScore(masteryData);
+        // For assessment-only assignments, use different progress calculation
+        let overallProgress = 0;
+        let masteryData: any = null;
+        let timeEstimation: any = null;
+        let timeCategory: any = null;
+        let vocabularyCount = 0;
+        let repetitionsRequired = 0;
+        let totalRequiredExposures = 0;
+        let completedExposures = 0;
+        let exposureProgress: any = null;
+        let assessmentData: any = null;
 
-        // Calculate time estimation
-        const vocabularyCount = assignmentData.vocabulary_count || 10;
-        const repetitionsRequired = assignmentData.repetitions_required || 5;
-        const totalRequiredExposures = vocabularyCount * repetitionsRequired;
-        const completedExposures = masteryData.wordsAttempted;
-        const timeEstimation = calculateRemainingTime(totalRequiredExposures, completedExposures);
-        const timeCategory = getTimeCategory(timeEstimation.estimatedMinutes);
+        if (isAssessmentOnly) {
+          // For assessments, progress is based on completion status
+          const assessmentProgress = gameProgressData?.find(gp => gp.game_id === 'reading-comprehension');
+          overallProgress = assessmentProgress?.status === 'completed' ? 100 :
+                           assessmentProgress?.status === 'in_progress' ? 50 : 0;
 
-        // Get assignment-level exposure progress (Layer 2)
-        const exposureProgress = await assignmentExposureService.getAssignmentProgress(
-          assignmentId,
-          user.id
-        );
+          // Get the latest session data for detailed assessment info
+          const { data: latestSession } = await supabase
+            .from('enhanced_game_sessions')
+            .select('session_data, final_score, accuracy_percentage, duration_seconds')
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
 
-        // Overall progress is based on EXPOSURE, not average of game progress
-        // This shows: "How many words have been exposed out of the total?"
-        const overallProgress = vocabularyCount > 0
-          ? Math.round((exposureProgress.exposedWords / vocabularyCount) * 100)
-          : 0;
+          // Get all sessions to count attempts
+          const { data: allSessions } = await supabase
+            .from('enhanced_game_sessions')
+            .select('id')
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', user.id);
+
+          // Store assessment-specific data
+          if (latestSession) {
+            const sessionData = latestSession.session_data as any;
+            assessmentData = {
+              score: latestSession.final_score || 0,
+              accuracy: parseFloat(latestSession.accuracy_percentage || '0'),
+              timeSpent: latestSession.duration_seconds || 0,
+              status: assessmentProgress?.status || 'not_started',
+              questionsCorrect: sessionData?.correctAnswers || 0,
+              totalQuestions: sessionData?.totalQuestions || 10,
+              maxAttempts: assignmentData.game_config?.assessmentConfig?.generalMaxAttempts || 3,
+              attemptsUsed: allSessions?.length || 0
+            };
+            vocabularyCount = sessionData?.totalQuestions || 10;
+            completedExposures = sessionData?.correctAnswers || 0;
+          }
+
+          // Don't calculate mastery score for assessments
+          setMasteryScore(null);
+        } else {
+          // Calculate mastery score for vocabulary-based assignments
+          const masteryService = new MasteryScoreService(supabase);
+          masteryData = await masteryService.calculateAssignmentMasteryScore(assignmentId, user.id);
+          setMasteryScore(masteryData);
+
+          // Calculate time estimation
+          vocabularyCount = assignmentData.vocabulary_count || 10;
+          repetitionsRequired = assignmentData.repetitions_required || 5;
+          totalRequiredExposures = vocabularyCount * repetitionsRequired;
+          completedExposures = masteryData.wordsAttempted;
+          timeEstimation = calculateRemainingTime(totalRequiredExposures, completedExposures);
+          timeCategory = getTimeCategory(timeEstimation.estimatedMinutes);
+
+          // Get assignment-level exposure progress (Layer 2)
+          exposureProgress = await assignmentExposureService.getAssignmentProgress(
+            assignmentId,
+            user.id
+          );
+
+          // Overall progress is based on EXPOSURE, not average of game progress
+          // This shows: "How many words have been exposed out of the total?"
+          overallProgress = vocabularyCount > 0
+            ? Math.round((exposureProgress.exposedWords / vocabularyCount) * 100)
+            : 0;
+        }
 
         console.log('📊 [ASSIGNMENT PROGRESS] Exposure-based calculation:', {
           vocabularyCount,
@@ -338,6 +471,7 @@ export default function StudentAssignmentDetailPage() {
           description: assignmentData.description,
           dueDate: assignmentData.due_date ? new Date(assignmentData.due_date).toLocaleDateString() : undefined,
           isMultiGame,
+          isAssessmentOnly,
           games,
           assessments,
           skills,
@@ -358,7 +492,9 @@ export default function StudentAssignmentDetailPage() {
           totalRequiredExposures,
           completedExposures,
           timeEstimation,
-          timeCategory
+          timeCategory,
+          // Assessment-specific data
+          assessmentData
         });
 
       } catch (err) {
@@ -434,8 +570,24 @@ export default function StudentAssignmentDetailPage() {
 
   const handlePlaySkill = async (skill: any) => {
     const previewParam = isPreviewMode ? '&preview=true' : '';
-    const language = skill.language || 'spanish';
-    const languageCode = language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'de';
+
+    // Map incoming language identifiers (ISO codes or names) to the
+    // route-friendly language slug used by the grammar pages.
+    // Examples: 'es' -> 'spanish', 'spanish' -> 'spanish', 'fr' -> 'french'
+    const mapLanguageToRoute = (lang: string) => {
+      const map: Record<string, string> = {
+        'es': 'spanish',
+        'spanish': 'spanish',
+        'fr': 'french',
+        'french': 'french',
+        'de': 'german',
+        'german': 'german',
+        'it': 'italian',
+        'italian': 'italian'
+      };
+
+      return map[lang] || lang; // fallback to the original value if unknown
+    };
 
     // Get the first topic ID for the skill
     const topicId = skill.topicIds?.[0];
@@ -445,10 +597,10 @@ export default function StudentAssignmentDetailPage() {
     }
 
     try {
-      // Fetch the topic slug from the database using the topic ID
+      // Fetch the topic slug, category, and language from the database
       const { data: topicData, error } = await supabaseBrowser
         .from('grammar_topics')
-        .select('slug')
+        .select('slug, category, language')
         .eq('id', topicId)
         .single();
 
@@ -459,23 +611,32 @@ export default function StudentAssignmentDetailPage() {
       }
 
       const topicSlug = topicData.slug;
+      const categorySlug = topicData.category; // Already a slug (e.g., "verbs", "adjectives")
+
+      // Map the language from ISO code to full name for the route
+      const languageSlug = mapLanguageToRoute(topicData.language);
+
       let skillUrl = '';
 
       switch (skill.skillType) {
         case 'lesson':
-          skillUrl = `/grammar/${languageCode}/${skill.category}/${topicSlug}/lesson?assignment=${assignmentId}&mode=assignment${previewParam}`;
+          // Lesson pages - go to main grammar page with assignment tracking
+          skillUrl = `/grammar/${languageSlug}/${categorySlug}/${topicSlug}?assignment=${assignmentId}&mode=assignment${previewParam}`;
           break;
         case 'practice':
-          skillUrl = `/grammar/${languageCode}/${skill.category}/${topicSlug}/practice?assignment=${assignmentId}&mode=assignment${previewParam}`;
+          skillUrl = `/grammar/${languageSlug}/${categorySlug}/${topicSlug}/practice?assignment=${assignmentId}&mode=assignment${previewParam}`;
           break;
         case 'quiz':
-          skillUrl = `/grammar/${languageCode}/${skill.category}/${topicSlug}/quiz?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        case 'test':
+          // Both quiz and test should go to /test route
+          skillUrl = `/grammar/${languageSlug}/${categorySlug}/${topicSlug}/test?assignment=${assignmentId}&mode=assignment${previewParam}`;
           break;
         default:
           alert(`Skill type "${skill.skillType}" is not yet supported.`);
           return;
       }
 
+      console.log('🔗 [GRAMMAR ASSIGNMENT] Navigating to:', skillUrl);
       router.push(skillUrl);
     } catch (error) {
       console.error('Error in handlePlaySkill:', error);
@@ -507,6 +668,19 @@ export default function StudentAssignmentDetailPage() {
           Back to Assignments
         </Link>
       </div>
+    );
+  }
+
+  // If this is an assessment-only assignment, use the dedicated component
+  if (assignment.isAssessmentOnly) {
+    return (
+      <AssessmentAssignmentView
+        assignmentId={assignmentId as string}
+        studentId={user!.id}
+        assignmentTitle={assignment.title}
+        assignmentDescription={assignment.description}
+        dueDate={assignment.dueDate}
+      />
     );
   }
 
@@ -640,7 +814,7 @@ export default function StudentAssignmentDetailPage() {
             ></div>
           </div>
 
-          {assignment.overallProgress === 100 && (
+          {assignment.overallProgress === 100 && !assignment.isAssessmentOnly && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-800 font-medium">
                 🎉 Congratulations! You've completed all games in this assignment.
@@ -648,8 +822,96 @@ export default function StudentAssignmentDetailPage() {
             </div>
           )}
 
-          {/* Mastery Score Card - NEW HYBRID MODEL */}
-          {masteryScore && masteryScore.wordsAttempted > 0 && (
+          {/* Assessment Results Card - For Assessment-Only Assignments */}
+          {assignment.isAssessmentOnly && assignment.assessmentData && assignment.assessmentData.status !== 'not_started' && (
+            <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 shadow-md">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Target className="h-6 w-6 text-blue-600" />
+                  <h3 className="text-lg font-bold text-gray-900">Assessment Results</h3>
+                </div>
+                <div className="text-right">
+                  <div className={`text-4xl font-bold ${
+                    assignment.assessmentData.score >= 70 ? 'text-green-600' :
+                    assignment.assessmentData.score >= 50 ? 'text-yellow-600' :
+                    'text-red-600'
+                  }`}>
+                    {assignment.assessmentData.score}%
+                  </div>
+                  <div className="text-sm font-medium text-gray-600">Final Score</div>
+                </div>
+              </div>
+
+              {/* Score Breakdown - Assessment Metrics */}
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="bg-white rounded-lg p-3 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-xs text-gray-600">Correct Answers</span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-900">
+                    {assignment.assessmentData.questionsCorrect}/{assignment.assessmentData.totalQuestions}
+                  </div>
+                  <div className="text-xs text-gray-500">{assignment.assessmentData.accuracy}% accuracy</div>
+                </div>
+
+                <div className="bg-white rounded-lg p-3 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="h-4 w-4 text-blue-500" />
+                    <span className="text-xs text-gray-600">Time Spent</span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-900">
+                    {Math.floor(assignment.assessmentData.timeSpent / 60)}:{String(assignment.assessmentData.timeSpent % 60).padStart(2, '0')}
+                  </div>
+                  <div className="text-xs text-gray-500">minutes</div>
+                </div>
+
+                <div className="bg-white rounded-lg p-3 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="h-4 w-4 text-purple-500" />
+                    <span className="text-xs text-gray-600">Attempts</span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-900">
+                    {assignment.assessmentData.attemptsUsed}/{assignment.assessmentData.maxAttempts}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {assignment.assessmentData.attemptsUsed < assignment.assessmentData.maxAttempts ?
+                      `${assignment.assessmentData.maxAttempts - assignment.assessmentData.attemptsUsed} remaining` :
+                      'All used'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Feedback */}
+              <div className="bg-white rounded-lg p-4 border border-blue-100">
+                <div className="text-sm font-semibold text-gray-700 mb-2">Performance Summary</div>
+                <div className="text-sm text-gray-600">
+                  {assignment.assessmentData.score >= 70 ? (
+                    <>
+                      <span className="text-green-600 font-medium">Excellent work!</span> You demonstrated strong comprehension skills.
+                      {assignment.assessmentData.attemptsUsed < assignment.assessmentData.maxAttempts &&
+                        ' You can retake this assessment to improve your score further.'}
+                    </>
+                  ) : assignment.assessmentData.score >= 50 ? (
+                    <>
+                      <span className="text-yellow-600 font-medium">Good effort!</span> You're making progress.
+                      {assignment.assessmentData.attemptsUsed < assignment.assessmentData.maxAttempts &&
+                        ' Consider reviewing the material and trying again to improve your score.'}
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-red-600 font-medium">Keep practicing!</span> This material needs more review.
+                      {assignment.assessmentData.attemptsUsed < assignment.assessmentData.maxAttempts &&
+                        ' Take some time to study the content and try again.'}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Mastery Score Card - NEW HYBRID MODEL (Only for vocabulary assignments) */}
+          {!assignment.isAssessmentOnly && masteryScore && masteryScore.wordsAttempted > 0 && (
             <div className="mt-6 bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-6 shadow-md">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -925,6 +1187,21 @@ export default function StudentAssignmentDetailPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Grammar-specific progress for skills */}
+                  {activity.type === 'skill' && activity.sessionsCompleted !== undefined && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="text-xs text-gray-600 mb-1">
+                        Topics Progress: {activity.sessionsCompleted}/{activity.totalTopics} completed
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${activity.totalTopics > 0 ? (activity.sessionsCompleted / activity.totalTopics) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

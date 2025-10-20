@@ -29,6 +29,34 @@ const getThemeProvider = (gameId: string) => {
 // Re-export types for backward compatibility
 export type { StandardVocabularyItem, AssignmentData, GameProgress };
 
+// Helper function to calculate standardized score
+export function calculateStandardScore(
+  correctAnswers: number,
+  totalWords: number,
+  timeSpent: number,
+  baseScore: number
+): { score: number; accuracy: number; maxScore: number } {
+  const accuracy = totalWords > 0 ? (correctAnswers / totalWords) * 100 : 0;
+  const maxScore = totalWords * 100;
+
+  // Base score calculation
+  let score = correctAnswers * 100;
+
+  // Time bonus (faster completion gets bonus points)
+  const averageTimePerWord = timeSpent / totalWords;
+  if (averageTimePerWord < 5) { // Less than 5 seconds per word
+    score += Math.floor(score * 0.2); // 20% bonus
+  } else if (averageTimePerWord < 10) { // Less than 10 seconds per word
+    score += Math.floor(score * 0.1); // 10% bonus
+  }
+
+  return {
+    score: Math.min(score, maxScore),
+    accuracy,
+    maxScore
+  };
+}
+
 interface MetaBadgeProps {
   icon: LucideIcon;
   label: string;

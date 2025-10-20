@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
@@ -76,6 +76,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
   // Enhanced game service integration
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const sessionStartedRef = useRef(false); // Prevent duplicate session starts
 
   // Use assignment gameSessionId when provided, otherwise use own session
   const effectiveGameSessionId = props.assignmentId ? props.gameSessionId : gameSessionId;
@@ -150,13 +151,14 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
 
   // Start game session when vocabulary is loaded (only for free play mode)
   useEffect(() => {
-    if (gameService && props.userId && gameVocabulary.length > 0 && !gameSessionId && !props.assignmentId) {
+    if (gameService && props.userId && gameVocabulary.length > 0 && !gameSessionId && !props.assignmentId && !sessionStartedRef.current) {
+      sessionStartedRef.current = true;
       startGameSession();
     }
-  }, [gameService, props.userId, gameVocabulary, gameSessionId, props.assignmentId]);
+  }, [gameService, props.userId, gameVocabulary.length, gameSessionId, props.assignmentId]);
 
   const startGameSession = async () => {
-    if (!gameService || !props.userId) return;
+    if (!gameService || !props.userId || sessionStartedRef.current === false) return;
 
     try {
       const sessionId = await gameService.startGameSession({
@@ -175,6 +177,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
       console.log('Vocab blast game session started:', sessionId);
     } catch (error) {
       console.error('Failed to start vocab blast game session:', error);
+      sessionStartedRef.current = false; // Reset on error to allow retry
     }
   };
 

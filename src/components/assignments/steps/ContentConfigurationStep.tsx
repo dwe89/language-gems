@@ -327,7 +327,24 @@ export default function ContentConfigurationStep({
     if (hasAssessments) {
       assessmentConfigComplete = assessmentConfig.selectedAssessments.every(assessment => {
         const config = assessment.instanceConfig;
-        return config?.language && config?.difficulty && config?.category;
+        if (!config?.language || !config?.level) return false;
+
+        // For KS3, require category and subcategory
+        if (config.level === 'KS3') {
+          return config.category && config.subcategory;
+        }
+
+        // For KS4 with exam board, require theme, topic, and difficulty
+        if (config.level === 'KS4' && config.examBoard && config.examBoard !== 'General') {
+          return config.theme && config.topic && config.difficulty;
+        }
+
+        // For KS4 General, require category and subcategory
+        if (config.level === 'KS4' && config.examBoard === 'General') {
+          return config.category && config.subcategory;
+        }
+
+        return false;
       });
     }
 

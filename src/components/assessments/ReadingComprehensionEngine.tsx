@@ -845,7 +845,7 @@ export default function ReadingComprehensionEngine({
   const currentQuestion = assessment.questions[currentQuestionIndex];
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className={`max-w-6xl mx-auto p-6 ${assignmentMode ? 'text-gray-900' : ''}`}>
       {/* Header with timer and progress */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
         <div className="flex justify-between items-center">

@@ -12,6 +12,7 @@ import { useDemoAuth } from '../../components/auth/DemoAuthProvider';
 import Footer from '../../components/layout/Footer';
 import DemoBanner from '../../components/demo/DemoBanner';
 import SmartSignupSelector from '../../components/auth/SmartSignupSelector';
+import GamesDevWarningDialog from '../../components/games/GamesDevWarningDialog';
 
 
 // Login Required Component
@@ -538,6 +539,7 @@ export default function GamesPage() {
         onClose={() => setShowSignupSelector(false)}
         triggerRef={buttonRef}
       />
+      <GamesDevWarningDialog />
     </div>
     </>
   );

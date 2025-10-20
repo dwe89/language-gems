@@ -19,6 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 import { GemButton, GemCard } from '../ui/GemTheme';
+import { GrammarSessionService } from '@/services/grammar/GrammarSessionService';
 
 interface PracticeItem {
   id: string;
@@ -45,6 +46,11 @@ interface GrammarPracticeProps {
   isTestMode?: boolean;
   showHints?: boolean;
   trackProgress?: boolean;
+  // NEW: Assignment tracking props
+  assignmentId?: string;
+  topicId?: string;
+  contentId?: string;
+  userId?: string;
 }
 
 export default function GrammarPractice({
@@ -60,7 +66,12 @@ export default function GrammarPractice({
   // NEW: Test mode props with defaults
   isTestMode = false,
   showHints = true,
-  trackProgress = false
+  trackProgress = false,
+  // NEW: Assignment tracking props
+  assignmentId,
+  topicId,
+  contentId,
+  userId
 }: GrammarPracticeProps) {
   const [currentItem, setCurrentItem] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
@@ -76,11 +87,53 @@ export default function GrammarPractice({
   const [completedItems, setCompletedItems] = useState<Set<number>>(new Set());
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState<NodeJS.Timeout | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const sessionServiceRef = useRef<GrammarSessionService | null>(null);
 
   // Check if we have valid practice items
   const hasValidItems = practiceItems && practiceItems.length > 0;
+
+  // Initialize session service and start session if in assignment mode
+  useEffect(() => {
+    const initializeSession = async () => {
+      // Only initialize once when all required data is available
+      if (assignmentId && topicId && contentId && userId && !sessionId && practiceItems.length > 0) {
+        try {
+          const service = new GrammarSessionService();
+          sessionServiceRef.current = service;
+
+          // Determine practice mode based on question count
+          let practiceMode: 'quick' | 'standard' | 'mastery' | undefined;
+          if (questionCount === 10) practiceMode = 'quick';
+          else if (questionCount === 15) practiceMode = 'standard';
+          else if (questionCount === 30) practiceMode = 'mastery';
+
+          const newSessionId = await service.startSession({
+            student_id: userId,
+            assignment_id: assignmentId,
+            topic_id: topicId,
+            content_id: contentId,
+            session_type: isTestMode ? 'test' : 'practice',
+            session_mode: 'assignment',
+            practice_mode: practiceMode,
+            total_questions: practiceItems.length
+          });
+
+          setSessionId(newSessionId);
+          console.log('✅ Grammar session started:', newSessionId);
+        } catch (error) {
+          console.error('❌ Failed to start grammar session:', error);
+        }
+      }
+    };
+
+    initializeSession();
+    // Only run once when component mounts with required data
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignmentId, topicId, contentId, userId]);
 
   // Keyboard navigation for multiple choice - always call hooks
   useEffect(() => {
@@ -296,8 +349,32 @@ export default function GrammarPractice({
                   <GemButton
                     variant="gem"
                     gemType="legendary"
-                    onClick={() => {
+                    onClick={async () => {
                       const totalTimeSpent = Math.round((Date.now() - startTime) / 1000);
+
+                      // End session if in assignment mode
+                      if (sessionId && sessionServiceRef.current) {
+                        try {
+                          const accuracy = practiceItems.length > 0
+                            ? (correctAnswers / practiceItems.length) * 100
+                            : 0;
+
+                          await sessionServiceRef.current.endSession(sessionId, {
+                            questions_attempted: practiceItems.length,
+                            questions_correct: correctAnswers,
+                            accuracy_percentage: accuracy,
+                            final_score: score,
+                            duration_seconds: totalTimeSpent,
+                            average_response_time_ms: Math.round((totalTimeSpent * 1000) / practiceItems.length),
+                            hints_used: 0, // TODO: Track hints
+                            streak_count: streak
+                          });
+                          console.log('✅ Grammar session ended successfully');
+                        } catch (error) {
+                          console.error('❌ Failed to end grammar session:', error);
+                        }
+                      }
+
                       onComplete(score, gemsEarned, totalTimeSpent);
                     }}
                     className="px-8 py-3 text-lg"
@@ -387,7 +464,7 @@ export default function GrammarPractice({
     }
   };
 
-  const checkAnswer = () => {
+  const checkAnswer = async () => {
     if (!userAnswer.trim()) return;
 
     // Handle multiple correct answers (e.g., "un/una")
@@ -397,6 +474,22 @@ export default function GrammarPractice({
 
     setIsCorrect(correct);
     setShowFeedback(true);
+
+    // Record question attempt if in assignment mode
+    if (sessionId && sessionServiceRef.current) {
+      const responseTime = Date.now() - questionStartTime;
+      await sessionServiceRef.current.recordQuestionAttempt(sessionId, {
+        question_id: currentPracticeItem.id,
+        question_text: currentPracticeItem.question,
+        question_type: currentPracticeItem.type,
+        student_answer: userAnswer,
+        correct_answer: currentPracticeItem.answer,
+        is_correct: correct,
+        response_time_ms: responseTime,
+        hint_used: false, // TODO: Track hint usage
+        difficulty_level: currentPracticeItem.difficulty
+      });
+    }
 
     if (correct) {
       const basePoints = getDifficultyPoints(currentPracticeItem.difficulty);
@@ -409,8 +502,8 @@ export default function GrammarPractice({
       setStreak(prev => prev + 1);
       setTimeBonus(speedBonus);
 
-      // Award gems based on performance (only in test mode)
-      if (isTestMode) {
+      // Award gems based on performance (in both practice and test modes for assignments)
+      if (isTestMode || sessionId) {
         const gemsAwarded = calculateGemsAwarded(correct, streak, speedBonus);
         setGemsEarned(prev => prev + gemsAwarded);
       }

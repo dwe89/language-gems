@@ -127,6 +127,17 @@ export class GameCompletionService {
       // Check completion status
       const status = await this.checkGameCompletion(assignmentId, studentId, gameId);
 
+      // Get the most recent session data for score/accuracy
+      const { data: latestSession } = await this.supabase
+        .from('enhanced_game_sessions')
+        .select('final_score, max_score_possible, accuracy_percentage, duration_seconds')
+        .eq('assignment_id', assignmentId)
+        .eq('student_id', studentId)
+        .eq('game_type', gameId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
       // Update assignment_game_progress table
       const { error } = await this.supabase
         .from('assignment_game_progress')
@@ -135,8 +146,16 @@ export class GameCompletionService {
           student_id: studentId,
           game_id: gameId,
           status: status.isComplete ? 'completed' : 'in_progress',
+          score: latestSession?.final_score || 0,
+          max_score: latestSession?.max_score_possible || 100,
+          accuracy: latestSession?.accuracy_percentage || 0,
+          time_spent: latestSession?.duration_seconds || 0,
+          words_completed: status.wordsExposed,
+          total_words: status.totalWords,
           completed_at: status.isComplete ? new Date().toISOString() : null,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'assignment_id,student_id,game_id'
         });
 
       if (error) throw error;
@@ -146,7 +165,9 @@ export class GameCompletionService {
         studentId,
         isComplete: status.isComplete,
         activityMet: status.activityMet,
-        exposureMet: status.exposureMet
+        exposureMet: status.exposureMet,
+        score: latestSession?.final_score,
+        accuracy: latestSession?.accuracy_percentage
       });
     } catch (error) {
       console.error('Error updating game completion status:', error);

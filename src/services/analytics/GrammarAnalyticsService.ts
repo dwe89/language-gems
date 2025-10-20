@@ -552,4 +552,160 @@ export class GrammarAnalyticsService {
 
     return recommendations.slice(0, 5); // Limit to 5 recommendations
   }
+
+  // ============================================================================
+  // ASSIGNMENT-SPECIFIC ANALYTICS
+  // ============================================================================
+
+  /**
+   * Get grammar assignment performance for a student
+   */
+  async getAssignmentGrammarPerformance(
+    studentId: string,
+    assignmentId: string
+  ): Promise<any> {
+    try {
+      const { data, error } = await this.supabase
+        .from('student_grammar_assignment_performance')
+        .select('*')
+        .eq('student_id', studentId)
+        .eq('assignment_id', assignmentId);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching assignment grammar performance:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get topic mastery for a grammar assignment
+   */
+  async getAssignmentTopicMastery(
+    studentId: string,
+    assignmentId: string
+  ): Promise<any[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('grammar_assignment_topic_mastery')
+        .select('*')
+        .eq('student_id', studentId)
+        .eq('assignment_id', assignmentId)
+        .order('mastery_percentage', { ascending: false });
+
+      if (error) throw error;
+
+      // Add proficiency indicators
+      return (data || []).map(topic => ({
+        ...topic,
+        proficiency_icon: topic.proficiency_level === 'proficient' ? '🟢' :
+                         topic.proficiency_level === 'learning' ? '🟡' : '🔴',
+        proficiency_label: topic.proficiency_level === 'proficient' ? 'Proficient' :
+                          topic.proficiency_level === 'learning' ? 'Learning' : 'Struggling'
+      }));
+    } catch (error) {
+      console.error('Error fetching assignment topic mastery:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get all grammar sessions for an assignment
+   */
+  async getAssignmentGrammarSessions(
+    studentId: string,
+    assignmentId: string
+  ): Promise<any[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('grammar_assignment_sessions')
+        .select(`
+          *,
+          grammar_topics (
+            title,
+            category,
+            difficulty_level
+          )
+        `)
+        .eq('student_id', studentId)
+        .eq('assignment_id', assignmentId)
+        .order('started_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching assignment grammar sessions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get grammar assignment completion status
+   */
+  async getAssignmentCompletion(
+    studentId: string,
+    assignmentId: string
+  ): Promise<any> {
+    try {
+      const { data, error } = await this.supabase
+        .rpc('get_grammar_assignment_completion', {
+          p_assignment_id: assignmentId,
+          p_student_id: studentId
+        });
+
+      if (error) throw error;
+      return data?.[0] || {
+        is_complete: false,
+        sessions_completed: 0,
+        topics_practiced: 0,
+        average_accuracy: 0,
+        total_time_spent: 0
+      };
+    } catch (error) {
+      console.error('Error fetching assignment completion:', error);
+      return {
+        is_complete: false,
+        sessions_completed: 0,
+        topics_practiced: 0,
+        average_accuracy: 0,
+        total_time_spent: 0
+      };
+    }
+  }
+
+  /**
+   * Get comprehensive assignment analytics
+   */
+  async getAssignmentAnalytics(
+    studentId: string,
+    assignmentId: string
+  ): Promise<any> {
+    try {
+      const [performance, topicMastery, sessions, completion] = await Promise.all([
+        this.getAssignmentGrammarPerformance(studentId, assignmentId),
+        this.getAssignmentTopicMastery(studentId, assignmentId),
+        this.getAssignmentGrammarSessions(studentId, assignmentId),
+        this.getAssignmentCompletion(studentId, assignmentId)
+      ]);
+
+      return {
+        performance,
+        topicMastery,
+        sessions,
+        completion,
+        summary: {
+          totalSessions: sessions.length,
+          completedSessions: sessions.filter(s => s.completion_status === 'completed').length,
+          averageAccuracy: completion.average_accuracy || 0,
+          totalTimeSpent: completion.total_time_spent || 0,
+          topicsPracticed: completion.topics_practiced || 0,
+          isComplete: completion.is_complete || false
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching assignment analytics:', error);
+      return null;
+    }
+  }
 }

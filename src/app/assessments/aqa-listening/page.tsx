@@ -3,16 +3,22 @@
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AQAListeningAssessment from '../../../components/assessments/AQAListeningAssessment';
-import AQAAssignmentWrapper from '../../../components/assessments/AQAAssignmentWrapper';
 
 function AQAListeningPageContent() {
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
+  // If assignment mode was used previously, the wrapper was removed. Show fallback message.
   if (assignmentId && mode === 'assignment') {
-    return <AQAAssignmentWrapper assignmentId={assignmentId} assessmentType="listening" />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
+        <div className="text-center text-white max-w-lg p-8">
+          <h2 className="text-2xl font-semibold mb-2">Assignment mode unavailable</h2>
+          <p className="opacity-90">This assessment was opened in assignment mode, but the assignment wrapper component is not available. Please open the standalone assessment or restore the assignment component.</p>
+        </div>
+      </div>
+    );
   }
 
   // Otherwise render standalone assessment

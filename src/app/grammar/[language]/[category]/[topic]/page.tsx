@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import GrammarPageTemplate from '@/components/grammar/GrammarPageTemplate';
 import GrammarEditButton from '@/components/admin/GrammarEditButton';
+import GrammarLessonTracker from '@/components/grammar/GrammarLessonTracker';
 
 interface PageProps {
   params: {
@@ -76,6 +77,22 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
     .eq('topic_slug', params.topic)
     .single();
 
+  // Fetch topic ID and content ID for assignment tracking
+  const { data: topicData } = await supabase
+    .from('grammar_topics')
+    .select('id')
+    .eq('slug', params.topic)
+    .eq('category', params.category)
+    .eq('language', params.language)
+    .single();
+
+  const { data: contentData } = await supabase
+    .from('grammar_content')
+    .select('id')
+    .eq('topic_id', topicData?.id)
+    .eq('content_type', 'lesson')
+    .maybeSingle();
+
   // Handle not found - show different message for admin vs regular users
   if (error || !page) {
     console.error('Error fetching grammar page:', error);
@@ -94,6 +111,14 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
 
   return (
     <>
+      {/* Assignment Tracker (invisible, only tracks when in assignment mode) */}
+      {topicData && contentData && (
+        <GrammarLessonTracker
+          topicId={topicData.id}
+          contentId={contentData.id}
+        />
+      )}
+
       <GrammarPageTemplate
         language={languageMap[page.language] || page.language}
         category={page.category}

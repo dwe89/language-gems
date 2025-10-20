@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import GrammarPractice from '@/components/grammar/GrammarPractice';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
+import { GrammarSessionService } from '@/services/grammar/GrammarSessionService';
 
 interface PageProps {
   params: {
@@ -22,6 +24,10 @@ const languageCodeMap: Record<string, string> = {
 };
 
 export default function GrammarTestPage({ params }: PageProps) {
+  const searchParams = useSearchParams();
+  const assignmentId = searchParams.get('assignment');
+  const isAssignmentMode = !!assignmentId;
+
   const [showTest, setShowTest] = useState(false);
   const [loading, setLoading] = useState(true);
   const [testData, setTestData] = useState<any>(null);
@@ -29,12 +35,20 @@ export default function GrammarTestPage({ params }: PageProps) {
   const [topicName, setTopicName] = useState('');
   const [categoryName, setCategoryName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [topicId, setTopicId] = useState<string | null>(null);
+  const [contentId, setContentId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [sessionService] = useState(() => new GrammarSessionService());
 
   useEffect(() => {
     async function fetchTestData() {
       try {
         const supabase = createClient();
         const languageCode = languageCodeMap[params.language] || params.language;
+
+        // Get user ID
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        setUserId(currentUser?.id || null);
 
         // Get the grammar page title
         const { data: page } = await supabase
@@ -68,6 +82,9 @@ export default function GrammarTestPage({ params }: PageProps) {
           return;
         }
 
+        // Store topic ID for session tracking
+        setTopicId(topic.id);
+
         // Get PRACTICE content (not quiz) - we'll randomly select 20 questions from it
         const { data: practiceContent } = await supabase
           .from('grammar_content')
@@ -78,6 +95,9 @@ export default function GrammarTestPage({ params }: PageProps) {
 
         if (practiceContent && practiceContent.content_data && practiceContent.content_data.questions) {
           const allQuestions = practiceContent.content_data.questions;
+
+          // Store content ID for session tracking
+          setContentId(practiceContent.id);
 
           // Shuffle and select 20 random questions
           const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
@@ -190,6 +210,11 @@ export default function GrammarTestPage({ params }: PageProps) {
         gamified={true}
         onComplete={handleTestComplete}
         onExit={handleTestExit}
+        assignmentId={assignmentId || undefined}
+        topicId={topicId || undefined}
+        contentId={contentId || undefined}
+        userId={userId || undefined}
+        questionCount={20}
       />
     );
   }

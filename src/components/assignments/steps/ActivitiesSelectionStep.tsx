@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Gamepad2, FileCheck, Plus, X, Brain } from 'lucide-react';
+import { Gamepad2, FileCheck, Plus, X, Brain, Settings } from 'lucide-react';
 import { StepProps } from '../types/AssignmentTypes';
 import MultiGameSelector from '../MultiGameSelector';
+import AssessmentConfigModal from '../AssessmentConfigModal';
 
 // Available assessment types - matches the main ASSESSMENT_TYPES list
 const AVAILABLE_ASSESSMENTS = [
@@ -17,20 +18,34 @@ const AVAILABLE_ASSESSMENTS = [
     description: 'Text-based comprehension with multiple question types and automated marking'
   },
   {
-    id: 'aqa-reading',
-    name: 'AQA Reading Assessment',
+    id: 'gcse-reading',
+    name: 'GCSE Reading Exam',
     type: 'reading',
-    estimatedTime: '45-60 minutes',
+    estimatedTime: '45-60 min',
     skills: ['Reading'],
-    description: 'Official AQA-style reading assessment with authentic exam questions'
+    description: 'AQA & Edexcel papers',
+    requiresExamBoard: true,
+    requiresPaper: true
   },
   {
-    id: 'aqa-listening',
-    name: 'AQA Listening Assessment',
+    id: 'gcse-listening',
+    name: 'GCSE Listening Exam',
     type: 'listening',
-    estimatedTime: '35-45 minutes',
+    estimatedTime: '35-45 min',
     skills: ['Listening'],
-    description: 'Official AQA-style listening assessment with audio materials'
+    description: 'AQA & Edexcel papers',
+    requiresExamBoard: true,
+    requiresPaper: true
+  },
+  {
+    id: 'gcse-writing',
+    name: 'GCSE Writing Exam',
+    type: 'writing',
+    estimatedTime: '60-75 min',
+    skills: ['Writing'],
+    description: 'AQA papers available',
+    requiresExamBoard: true,
+    requiresPaper: false
   },
   {
     id: 'dictation',
@@ -105,6 +120,9 @@ export default function ActivitiesSelectionStep({
   isAdvancedMode = true, // Default to advanced mode for backward compatibility
 }: StepProps & { isAdvancedMode?: boolean }) {
   const [activeTab, setActiveTab] = useState<'games' | 'assessments' | 'skills'>('games');
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [selectedAssessmentForConfig, setSelectedAssessmentForConfig] = useState<typeof AVAILABLE_ASSESSMENTS[0] | null>(null);
+  const [editingAssessmentId, setEditingAssessmentId] = useState<string | null>(null);
 
   // Check if step is completed
   useEffect(() => {
@@ -115,28 +133,49 @@ export default function ActivitiesSelectionStep({
     onStepComplete('activities', isCompleted);
   }, [gameConfig.selectedGames, assessmentConfig.selectedAssessments, skillsConfig.selectedSkills, onStepComplete]);
 
-  const addAssessmentToBasket = (assessmentType: typeof AVAILABLE_ASSESSMENTS[0]) => {
-    const instanceId = `${assessmentType.id}-${Date.now()}`;
-    const newAssessment = {
-      id: instanceId,
-      type: assessmentType.id,
-      name: assessmentType.name,
-      estimatedTime: assessmentType.estimatedTime,
-      skills: assessmentType.skills,
-      instanceConfig: {
-        language: assessmentConfig.generalLanguage,
-        difficulty: assessmentConfig.generalDifficulty,
-        timeLimit: assessmentConfig.generalTimeLimit,
-        maxAttempts: assessmentConfig.generalMaxAttempts,
-        autoGrade: assessmentConfig.generalAutoGrade,
-        feedbackEnabled: assessmentConfig.generalFeedbackEnabled,
-      }
-    };
+  const openConfigModal = (assessmentType: typeof AVAILABLE_ASSESSMENTS[0]) => {
+    setSelectedAssessmentForConfig(assessmentType);
+    setEditingAssessmentId(null);
+    setConfigModalOpen(true);
+  };
 
-    setAssessmentConfig(prev => ({
-      ...prev,
-      selectedAssessments: [...prev.selectedAssessments, newAssessment]
-    }));
+  const openEditModal = (assessment: any) => {
+    const assessmentType = AVAILABLE_ASSESSMENTS.find(a => a.id === assessment.type);
+    if (assessmentType) {
+      setSelectedAssessmentForConfig(assessmentType);
+      setEditingAssessmentId(assessment.id);
+      setConfigModalOpen(true);
+    }
+  };
+
+  const handleConfigSave = (config: any) => {
+    if (editingAssessmentId) {
+      // Update existing assessment
+      setAssessmentConfig(prev => ({
+        ...prev,
+        selectedAssessments: prev.selectedAssessments.map(a =>
+          a.id === editingAssessmentId
+            ? { ...a, instanceConfig: config }
+            : a
+        )
+      }));
+    } else if (selectedAssessmentForConfig) {
+      // Add new assessment
+      const instanceId = `${selectedAssessmentForConfig.id}-${Date.now()}`;
+      const newAssessment = {
+        id: instanceId,
+        type: selectedAssessmentForConfig.id,
+        name: selectedAssessmentForConfig.name,
+        estimatedTime: selectedAssessmentForConfig.estimatedTime,
+        skills: selectedAssessmentForConfig.skills,
+        instanceConfig: config
+      };
+
+      setAssessmentConfig(prev => ({
+        ...prev,
+        selectedAssessments: [...prev.selectedAssessments, newAssessment]
+      }));
+    }
   };
 
   const removeAssessmentFromBasket = (assessmentId: string) => {
@@ -281,7 +320,7 @@ export default function ActivitiesSelectionStep({
                         </div>
                       </div>
                       <button
-                        onClick={() => addAssessmentToBasket(assessment)}
+                        onClick={() => openConfigModal(assessment)}
                         className="flex items-center px-3 py-1 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700 transition-colors"
                       >
                         <Plus className="h-3 w-3 mr-1" />
@@ -303,22 +342,55 @@ export default function ActivitiesSelectionStep({
                   {assessmentConfig.selectedAssessments.map((assessment, index) => (
                     <div key={assessment.id} className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 flex-1">
                           <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
                             {index + 1}
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <h4 className="font-semibold text-gray-900">{assessment.name}</h4>
                             <p className="text-sm text-gray-600">{assessment.estimatedTime} • {assessment.skills.join(', ')}</p>
+                            {assessment.instanceConfig && (
+                              <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                                {assessment.instanceConfig.language && (
+                                  <span className="px-2 py-0.5 bg-white rounded-full text-purple-700 border border-purple-200">
+                                    {assessment.instanceConfig.language}
+                                  </span>
+                                )}
+                                {assessment.instanceConfig.level && (
+                                  <span className="px-2 py-0.5 bg-white rounded-full text-purple-700 border border-purple-200">
+                                    {assessment.instanceConfig.level}
+                                  </span>
+                                )}
+                                {assessment.instanceConfig.examBoard && assessment.instanceConfig.examBoard !== 'General' && (
+                                  <span className="px-2 py-0.5 bg-white rounded-full text-purple-700 border border-purple-200">
+                                    {assessment.instanceConfig.examBoard}
+                                  </span>
+                                )}
+                                {assessment.instanceConfig.difficulty && (
+                                  <span className="px-2 py-0.5 bg-white rounded-full text-purple-700 border border-purple-200">
+                                    {assessment.instanceConfig.difficulty}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <button
-                          onClick={() => removeAssessmentFromBasket(assessment.id)}
-                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors"
-                          title="Remove assessment"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => openEditModal(assessment)}
+                            className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-100 rounded-lg transition-colors"
+                            title="Configure assessment"
+                          >
+                            <Settings className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => removeAssessmentFromBasket(assessment.id)}
+                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Remove assessment"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -413,6 +485,25 @@ export default function ActivitiesSelectionStep({
           <p className="text-sm text-amber-600 mt-2">⚠️ Please select at least one activity to continue.</p>
         )}
       </div>
+
+      {/* Assessment Configuration Modal */}
+      {selectedAssessmentForConfig && (
+        <AssessmentConfigModal
+          isOpen={configModalOpen}
+          onClose={() => {
+            setConfigModalOpen(false);
+            setSelectedAssessmentForConfig(null);
+            setEditingAssessmentId(null);
+          }}
+          assessmentType={selectedAssessmentForConfig}
+          currentConfig={
+            editingAssessmentId
+              ? assessmentConfig.selectedAssessments.find(a => a.id === editingAssessmentId)?.instanceConfig
+              : undefined
+          }
+          onSave={handleConfigSave}
+        />
+      )}
     </motion.div>
   );
 }

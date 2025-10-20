@@ -7,8 +7,8 @@ import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import {
   User, ShoppingBag, Settings, Crown, ArrowRight, School, BookOpen, Users,
-  ClipboardList, TrendingUp, Sparkles, Zap, Target,
-  BarChart3, Star, ChevronRight, Activity, Plus, Award
+  ClipboardList, Target,
+  BarChart3, Star, ChevronRight, Activity, Plus
 } from 'lucide-react';
 
 export default function AccountPage() {
@@ -194,6 +194,20 @@ export default function AccountPage() {
 
   // Define account sections, conditionally showing Teacher Dashboard based on subscription
   const accountSections = [
+    // Conditionally add School Management as a regular account card for school owners
+    ...(isTeacher && hasSubscription && schoolInfo && schoolInfo.isOwner ? [{
+      title: 'School Management',
+      description: 'Add teachers to your school and manage memberships',
+      icon: School,
+      href: '/account/school',
+      color: 'from-green-500 to-emerald-500',
+      // meta items will be rendered as small badges under description
+      meta: [
+        { icon: School, text: schoolInfo.schoolCode },
+        { icon: Users, text: `${schoolInfo.memberCount} ${schoolInfo.memberCount === 1 ? 'Teacher' : 'Teachers'}` },
+        { text: schoolInfo.isOwner ? 'Owner' : 'Member', badge: true }
+      ]
+    }] : []),
     {
       title: 'My Orders',
       description: 'View your purchase history and download your resources',
@@ -282,61 +296,7 @@ export default function AccountPage() {
         )}
 
 
-        {/* School Management - Prominent Feature for School Owners Only */}
-        {isTeacher && hasSubscription && schoolInfo && schoolInfo.isOwner && (
-          <div className="mb-8">
-            <Link
-              href="/account/school"
-              className="group relative overflow-hidden bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 p-8 block"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-              <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
-                SCHOOL ADMIN
-              </div>
-
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center space-x-6">
-                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <School className="h-8 w-8 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-2 flex items-center">
-                      School Management
-                      <Crown className="h-6 w-6 ml-2 text-yellow-300" />
-                    </h2>
-                    <p className="text-white/90 text-lg">
-                      Add teachers to your school and manage memberships
-                    </p>
-                    <div className="flex items-center space-x-4 mt-3">
-                      <span className="flex items-center text-white/80 text-sm">
-                        <School className="h-4 w-4 mr-1" />
-                        {schoolInfo.schoolCode}
-                      </span>
-                      <span className="flex items-center text-white/80 text-sm">
-                        <Users className="h-4 w-4 mr-1" />
-                        {schoolInfo.memberCount} {schoolInfo.memberCount === 1 ? 'Teacher' : 'Teachers'}
-                      </span>
-                      <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full font-medium">
-                        {schoolInfo.isOwner ? 'Owner' : 'Member'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <div className="hidden md:flex flex-col items-center text-white/80">
-                    <Users className="h-8 w-8 mb-1" />
-                    <span className="text-xs">Manage Team</span>
-                  </div>
-                  <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl group-hover:bg-white/30 transition-colors">
-                    <ChevronRight className="h-8 w-8 text-white group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </div>
-        )}
+        
 
         {/* Teacher Dashboard - Prominent Feature for Subscribed Teachers */}
         {isTeacher && hasSubscription && (
@@ -544,6 +504,21 @@ export default function AccountPage() {
                   {section.description}
                 </p>
 
+                {/* Optional meta badges (e.g. school code, counts, owner badge) */}
+                {section.meta && (
+                  <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
+                    {section.meta.map((m: any, idx: number) => {
+                      const MetaIcon = m.icon;
+                      return (
+                        <span key={idx} className={`inline-flex items-center gap-2 ${m.badge ? 'px-2 py-1 bg-slate-100 text-slate-700 rounded-full' : ''}`}>
+                          {MetaIcon ? <MetaIcon className="h-4 w-4 text-slate-400" /> : null}
+                          <span>{m.text}</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {isUpgrade && (
                   <div className="mt-4 flex items-center text-purple-600 text-sm font-medium">
                     <Star className="h-4 w-4 mr-1" />
@@ -557,100 +532,7 @@ export default function AccountPage() {
 
 
 
-        {/* Teaching Performance Stats */}
-        {isTeacher && (
-          <div className="mt-8 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl shadow-lg p-8 border border-slate-200">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center">
-                  <TrendingUp className="h-7 w-7 text-indigo-600 mr-3" />
-                  Your Teaching Impact
-                </h2>
-                <p className="text-slate-600">Track your progress and student engagement</p>
-              </div>
-              <div className="hidden md:block">
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-slate-600 font-medium">Live Data</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                    <BookOpen className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-slate-800">{teacherStats.totalClasses}</div>
-                    <div className="text-xs text-green-600 font-medium">+2 this month</div>
-                  </div>
-                </div>
-                <div className="text-slate-600 font-medium">Classes Created</div>
-                <div className="w-full bg-slate-200 rounded-full h-2 mt-3">
-                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full" style={{width: '75%'}}></div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-slate-800">{teacherStats.activeStudents}</div>
-                    <div className="text-xs text-green-600 font-medium">+5 this week</div>
-                  </div>
-                </div>
-                <div className="text-slate-600 font-medium">Active Students</div>
-                <div className="w-full bg-slate-200 rounded-full h-2 mt-3">
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full" style={{width: '85%'}}></div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <ClipboardList className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-slate-800">{teacherStats.assignmentsCreated}</div>
-                    <div className="text-xs text-green-600 font-medium">+3 today</div>
-                  </div>
-                </div>
-                <div className="text-slate-600 font-medium">Assignments Created</div>
-                <div className="w-full bg-slate-200 rounded-full h-2 mt-3">
-                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style={{width: '90%'}}></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Achievement Badges */}
-            <div className="mt-8 p-6 bg-white rounded-xl border border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-                <Award className="h-5 w-5 text-yellow-500 mr-2" />
-                Recent Achievements
-              </h3>
-              <div className="flex flex-wrap gap-3">
-                <div className="flex items-center bg-yellow-50 text-yellow-700 px-3 py-2 rounded-lg border border-yellow-200">
-                  <Star className="h-4 w-4 mr-2" />
-                  <span className="text-sm font-medium">Class Creator</span>
-                </div>
-                <div className="flex items-center bg-green-50 text-green-700 px-3 py-2 rounded-lg border border-green-200">
-                  <Target className="h-4 w-4 mr-2" />
-                  <span className="text-sm font-medium">Assignment Master</span>
-                </div>
-                <div className="flex items-center bg-blue-50 text-blue-700 px-3 py-2 rounded-lg border border-blue-200">
-                  <Users className="h-4 w-4 mr-2" />
-                  <span className="text-sm font-medium">Student Mentor</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        
 
 
       </div>

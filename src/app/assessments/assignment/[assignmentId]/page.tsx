@@ -21,7 +21,7 @@ import {
 interface Assessment {
   id: string;
   name: string;
-  type: 'reading-comprehension' | 'aqa-reading' | 'aqa-listening' | 'dictation' | 'four-skills';
+  type: 'reading-comprehension' | 'aqa-reading' | 'aqa-listening' | 'dictation' | 'four-skills' | 'gcse-reading' | 'gcse-listening' | 'gcse-writing';
   description: string;
   estimatedTime: string;
   skills: string[];
@@ -64,6 +64,27 @@ const ASSESSMENT_INFO: Record<string, Omit<Assessment, 'id' | 'completed' | 'sco
     description: 'Official AQA-style listening assessment',
     estimatedTime: '35-45 min',
     skills: ['Listening']
+  },
+  'gcse-reading': {
+    name: 'GCSE Reading Exam',
+    type: 'gcse-reading',
+    description: 'AQA & Edexcel papers',
+    estimatedTime: '45-60 min',
+    skills: ['Reading']
+  },
+  'gcse-listening': {
+    name: 'GCSE Listening Exam',
+    type: 'gcse-listening',
+    description: 'AQA & Edexcel papers',
+    estimatedTime: '35-45 min',
+    skills: ['Listening']
+  },
+  'gcse-writing': {
+    name: 'GCSE Writing Exam',
+    type: 'gcse-writing',
+    description: 'AQA papers available',
+    estimatedTime: '60-75 min',
+    skills: ['Writing']
   },
   'dictation': {
     name: 'Dictation Assessment',
@@ -167,7 +188,7 @@ export default function AssessmentAssignmentPage() {
   const handleAssessmentClick = (assessment: Assessment) => {
     // Navigate to the appropriate assessment wrapper with assignment parameters
     let assessmentUrl = '';
-    
+
     switch (assessment.type) {
       case 'reading-comprehension':
         assessmentUrl = `/assessments/reading-comprehension?assignment=${assignmentId}&mode=assignment`;
@@ -177,6 +198,15 @@ export default function AssessmentAssignmentPage() {
         break;
       case 'aqa-listening':
         assessmentUrl = `/assessments/aqa-listening?assignment=${assignmentId}&mode=assignment`;
+        break;
+      case 'gcse-reading':
+        assessmentUrl = `/assessments/gcse-reading?assignment=${assignmentId}&mode=assignment`;
+        break;
+      case 'gcse-listening':
+        assessmentUrl = `/assessments/gcse-listening?assignment=${assignmentId}&mode=assignment`;
+        break;
+      case 'gcse-writing':
+        assessmentUrl = `/assessments/gcse-writing?assignment=${assignmentId}&mode=assignment`;
         break;
       case 'dictation':
         assessmentUrl = `/assessments/dictation?assignment=${assignmentId}&mode=assignment`;
@@ -188,7 +218,7 @@ export default function AssessmentAssignmentPage() {
         alert(`${assessment.name} is not yet implemented. This feature is coming soon!`);
         return;
     }
-    
+
     router.push(assessmentUrl);
   };
 
@@ -196,9 +226,13 @@ export default function AssessmentAssignmentPage() {
     switch (type) {
       case 'reading-comprehension':
       case 'aqa-reading':
+      case 'gcse-reading':
         return <BookOpen className="w-6 h-6" />;
       case 'aqa-listening':
+      case 'gcse-listening':
         return <Headphones className="w-6 h-6" />;
+      case 'gcse-writing':
+        return <PenTool className="w-6 h-6" />;
       case 'dictation':
         return <PenTool className="w-6 h-6" />;
       case 'four-skills':

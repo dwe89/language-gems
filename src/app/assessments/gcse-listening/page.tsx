@@ -1,13 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Headphones, ArrowLeft, Clock, FileText, Award, CheckCircle, Settings } from 'lucide-react';
 import FlagIcon from '../../../components/ui/FlagIcon';
 import { AQAListeningAssessmentService, type AQAListeningAssessmentDefinition } from '../../../services/aqaListeningAssessmentService';
 import { EdexcelListeningAssessmentService, type EdexcelListeningAssessmentDefinition } from '../../../services/edexcelListeningAssessmentService';
 import AQAListeningAdminModal from '../../../components/admin/AQAListeningAdminModal';
 import { useAuth } from '../../../components/auth/AuthProvider';
+import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
+import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
+import AQAListeningAssessment from '../../../components/assessments/AQAListeningAssessment';
+import EdexcelListeningAssessment from '../../../components/assessments/EdexcelListeningAssessment';
 
 const AVAILABLE_LANGUAGES = [
   { code: 'es', countryCode: 'ES', name: 'Spanish' },
@@ -15,7 +20,23 @@ const AVAILABLE_LANGUAGES = [
   { code: 'de', countryCode: 'DE', name: 'German' },
 ];
 
-export default function GCSEListeningExamPage() {
+function GCSEListeningExamContent() {
+  const searchParams = useSearchParams();
+  const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
+
+  // Check if in assignment mode
+  const isAssignmentMode = assignmentId && mode === 'assignment';
+
+  if (isAssignmentMode) {
+    return <GCSEListeningAssignmentMode assignmentId={assignmentId} />;
+  }
+
+  // Otherwise, show the standalone exam selection page
+  return <GCSEListeningStandalonePage />;
+}
+
+function GCSEListeningStandalonePage() {
   const { user } = useAuth();
   const isAdmin = user?.email === 'danieletienne89@gmail.com';
 
@@ -366,3 +387,183 @@ export default function GCSEListeningExamPage() {
   );
 }
 
+export default function GCSEListeningExamPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+        </div>
+      </div>
+    }>
+      <GCSEListeningExamContent />
+    </Suspense>
+  );
+}
+
+// Assignment Mode Component
+function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string }) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load assignment data
+  const { assignment, vocabulary, loading, error: assignmentError } =
+    useAssignmentVocabulary(assignmentId, 'gcse-listening', false);
+
+  useEffect(() => {
+    const initializeSession = async () => {
+      if (!user?.id || !assignment || loading) return;
+
+      try {
+        setIsLoading(true);
+        console.log('📖 [LISTENING] Creating assignment session...');
+
+        const sessionService = new EnhancedGameSessionService();
+        const sessionId = await sessionService.startGameSession({
+          student_id: user.id,
+          assignment_id: assignmentId,
+          game_type: 'gcse-listening',
+          session_mode: 'assignment',
+          session_data: {
+            assignmentId,
+            assessmentType: 'gcse-listening',
+            examBoard: (assignment.game_config as any)?.assessmentConfig?.examBoard,
+            difficulty: (assignment.game_config as any)?.assessmentConfig?.difficulty,
+            identifier: (assignment.game_config as any)?.assessmentConfig?.identifier
+          }
+        });
+
+        setGameSessionId(sessionId);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error initializing session:', err);
+        setError('Failed to initialize assessment session');
+        setIsLoading(false);
+      }
+    };
+
+    initializeSession();
+  }, [user?.id, assignment, assignmentId, loading]);
+
+  const handleComplete = async (results: any) => {
+    if (!user?.id || !gameSessionId) return;
+
+    try {
+      console.log('📖 [LISTENING] Assessment completed:', results);
+
+      const sessionService = new EnhancedGameSessionService();
+
+      // Calculate scores
+      const totalQuestions = results.totalQuestions || results.questionsCompleted || 0;
+      const correctAnswers = results.correctAnswers || results.score || 0;
+      const percentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+      const score = percentage; // Use percentage as score
+
+      await sessionService.endGameSession(gameSessionId, {
+        student_id: user.id,
+        assignment_id: assignmentId,
+        game_type: 'gcse-listening',
+        session_mode: 'assignment',
+        final_score: score,
+        max_score_possible: 100,
+        accuracy_percentage: percentage,
+        completion_percentage: 100,
+        words_attempted: totalQuestions,
+        words_correct: correctAnswers,
+        unique_words_practiced: totalQuestions,
+        duration_seconds: results.totalTimeSpent || 0,
+        session_data: results
+      });
+
+      console.log('✅ [LISTENING] Progress recorded successfully');
+
+      // Redirect back to assignment
+      router.push(`/student-dashboard/assignments/${assignmentId}`);
+    } catch (err) {
+      console.error('Error recording progress:', err);
+    }
+  };
+
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-green-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading Assessment...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || assignmentError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-green-50">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-xl">
+          <h2 className="text-xl font-semibold mb-2 text-red-600">Error</h2>
+          <p className="text-gray-600">{error || assignmentError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!assignment) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-green-50">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-xl">
+          <h2 className="text-xl font-semibold mb-2">Assignment Not Found</h2>
+          <p className="text-gray-600">Could not load assignment data.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Extract assessment config from assignment
+  const assessmentConfig = (assignment.game_config as any)?.assessmentConfig;
+  if (!assessmentConfig) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-green-50">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-xl">
+          <h2 className="text-xl font-semibold mb-2">Invalid Configuration</h2>
+          <p className="text-gray-600">Assessment configuration is missing.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { examBoard, difficulty, identifier, language, level } = assessmentConfig;
+
+  // Render the appropriate assessment component
+  if (examBoard === 'AQA') {
+    return (
+      <AQAListeningAssessment
+        language={language}
+        level={level}
+        difficulty={difficulty}
+        identifier={identifier}
+        onComplete={handleComplete}
+      />
+    );
+  } else if (examBoard === 'Edexcel') {
+    return (
+      <EdexcelListeningAssessment
+        language={language}
+        level={level}
+        difficulty={difficulty}
+        identifier={identifier}
+        onComplete={handleComplete}
+        onQuestionComplete={() => {}}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-green-50">
+      <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-xl">
+        <h2 className="text-2xl font-semibold mb-2">Unsupported Exam Board</h2>
+        <p className="text-gray-600">Exam board "{examBoard}" is not supported.</p>
+      </div>
+    </div>
+  );
+}

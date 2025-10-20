@@ -1,12 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { BookOpen, ArrowLeft, Clock, FileText, Award, CheckCircle, Settings } from 'lucide-react';
 import FlagIcon from '../../../components/ui/FlagIcon';
 import { AQAReadingAssessmentService, type AQAAssessmentDefinition } from '../../../services/aqaReadingAssessmentService';
 import { useAuth } from '@/components/auth/AuthProvider';
 import AQAReadingAdminModal from '@/components/admin/AQAReadingAdminModal';
+import AQAReadingAssessment from '@/components/assessments/AQAReadingAssessment';
+import { useAssignmentVocabulary } from '@/hooks/useAssignmentVocabulary';
+import { EnhancedGameSessionService } from '@/services/rewards/EnhancedGameSessionService';
+import { supabaseBrowser } from '@/components/auth/AuthProvider';
 
 const AVAILABLE_LANGUAGES = [
   { code: 'es', countryCode: 'ES', name: 'Spanish' },
@@ -14,7 +19,173 @@ const AVAILABLE_LANGUAGES = [
   { code: 'de', countryCode: 'DE', name: 'German' },
 ];
 
-export default function GCSEReadingExamPage() {
+function GCSEReadingExamContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user } = useAuth();
+  const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
+
+  const isAssignmentMode = assignmentId && mode === 'assignment';
+
+  // Load assignment data if in assignment mode
+  const { assignment, vocabulary, loading: assignmentLoading, error: assignmentError } =
+    useAssignmentVocabulary(assignmentId || '', 'gcse-reading', false);
+
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [sessionService, setSessionService] = useState<EnhancedGameSessionService | null>(null);
+
+  // Initialize session service
+  useEffect(() => {
+    if (user) {
+      const service = new EnhancedGameSessionService(supabaseBrowser);
+      setSessionService(service);
+    }
+  }, [user]);
+
+  // Create game session for assignment mode
+  useEffect(() => {
+    const createSession = async () => {
+      if (isAssignmentMode && sessionService && user && assignment && !gameSessionId) {
+        try {
+          console.log('📖 [GCSE READING] Creating assignment session...');
+          const sessionId = await sessionService.startGameSession({
+            student_id: user.id,
+            assignment_id: assignmentId!,
+            game_type: 'gcse-reading',
+            session_mode: 'assignment',
+            session_data: {
+              assignmentId: assignmentId,
+              assessmentType: 'gcse-reading'
+            }
+          });
+          setGameSessionId(sessionId);
+          console.log('✅ [GCSE READING] Assignment session created:', sessionId);
+        } catch (error) {
+          console.error('🚨 [GCSE READING] Failed to create session:', error);
+        }
+      }
+    };
+    createSession();
+  }, [isAssignmentMode, sessionService, user, assignment, gameSessionId, assignmentId]);
+
+  // Handle assessment completion
+  const handleComplete = async (results: any) => {
+    console.log('📖 [GCSE READING] Assessment completed:', results);
+
+    if (isAssignmentMode && sessionService && gameSessionId && user) {
+      try {
+        // Record completion with EnhancedGameSessionService
+        // Note: AQA Reading Assessment returns { answers, questionsCompleted, totalTimeSpent, difficulty, language }
+        // It doesn't have scoring data yet, so we'll use questionsCompleted as a proxy
+        const totalQuestions = results.questionsCompleted || 0;
+        const totalTimeSpent = results.totalTimeSpent || 0;
+
+        // For now, we can't calculate accuracy without proper scoring in AQA Reading Assessment
+        // This is a known limitation that needs to be fixed in the AQA Reading Assessment component
+        const percentage = 0; // TODO: Fix AQA Reading Assessment to return proper scoring
+
+        await sessionService.endGameSession(gameSessionId, {
+          student_id: user.id,
+          assignment_id: assignmentId!,
+          game_type: 'gcse-reading',
+          session_mode: 'assignment',
+          final_score: 0, // TODO: Fix AQA Reading Assessment to return proper scoring
+          max_score_possible: totalQuestions * 100,
+          accuracy_percentage: percentage,
+          completion_percentage: 100,
+          words_attempted: totalQuestions,
+          words_correct: 0, // TODO: Fix AQA Reading Assessment to return proper scoring
+          unique_words_practiced: totalQuestions,
+          duration_seconds: totalTimeSpent,
+          session_data: results
+        });
+
+        console.log('✅ [GCSE READING] Progress recorded successfully');
+
+        // Redirect to assignment page after a delay
+        setTimeout(() => {
+          router.push(`/student-dashboard/assignments/${assignmentId}`);
+        }, 3000);
+      } catch (error) {
+        console.error('🚨 [GCSE READING] Failed to record progress:', error);
+      }
+    }
+  };
+
+  // If assignment mode, extract configuration and render with assignment data
+  if (isAssignmentMode) {
+    if (!user) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-center">
+            <p className="text-lg">Please log in to access this assessment.</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (assignmentLoading) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-lg">Loading assignment...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (assignmentError || !assignment) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-center">
+            <p className="text-lg text-red-300">Error loading assignment: {assignmentError || 'Assignment not found'}</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Extract configuration from assignment
+    const config = assignment.game_config || {};
+    const assessmentConfig = config.assessmentConfig || {};
+    const selectedAssessments = assessmentConfig.selectedAssessments || [];
+    const gcsReadingAssessment = selectedAssessments.find((a: any) =>
+      a.type === 'gcse-reading' || a.type === 'aqa-reading'
+    );
+    const instanceConfig = gcsReadingAssessment?.instanceConfig || {};
+
+    const language = instanceConfig.language || 'spanish';
+    const difficulty = instanceConfig.difficulty || 'foundation';
+    const identifier = instanceConfig.paper || instanceConfig.identifier || 'paper-1';
+
+    console.log('📖 [GCSE READING] Assignment config:', {
+      language,
+      difficulty,
+      identifier,
+      examBoard: instanceConfig.examBoard
+    });
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
+        <AQAReadingAssessment
+          language={language as 'es' | 'fr' | 'de'}
+          level="KS4"
+          difficulty={difficulty as 'foundation' | 'higher'}
+          identifier={identifier}
+          studentId={user.id}
+          assignmentId={assignmentId}
+          onComplete={handleComplete}
+        />
+      </div>
+    );
+  }
+
+  // Otherwise, show the standalone exam selection page
+  return <GCSEReadingStandalonePage />;
+}
+
+function GCSEReadingStandalonePage() {
   const { user } = useAuth();
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [selectedTier, setSelectedTier] = useState('');
@@ -293,3 +464,16 @@ export default function GCSEReadingExamPage() {
   );
 }
 
+export default function GCSEReadingExamPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+        </div>
+      </div>
+    }>
+      <GCSEReadingExamContent />
+    </Suspense>
+  );
+}

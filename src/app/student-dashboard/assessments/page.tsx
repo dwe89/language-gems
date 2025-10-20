@@ -65,12 +65,24 @@ export default function AssessmentsAnalyticsPage() {
     try {
       setLoading(true);
 
-      // Query actual assessment results from the database
-      const { data: assessmentResults, error: assessmentError } = await supabase
-        .from('assessment_results')
+      // Query assessment sessions from enhanced_game_sessions
+      // Assessment types: reading-comprehension, gcse-reading, gcse-listening, gcse-writing, dictation, four-skills
+      const assessmentTypes = [
+        'reading-comprehension',
+        'gcse-reading',
+        'gcse-listening',
+        'gcse-writing',
+        'dictation',
+        'four-skills'
+      ];
+
+      const { data: assessmentSessions, error: assessmentError } = await supabase
+        .from('enhanced_game_sessions')
         .select('*')
         .eq('student_id', user.id)
-        .order('completed_at', { ascending: false });
+        .in('game_type', assessmentTypes)
+        .not('ended_at', 'is', null)
+        .order('ended_at', { ascending: false });
 
       if (assessmentError) {
         console.error('Error loading assessments:', assessmentError);
@@ -98,7 +110,7 @@ export default function AssessmentsAnalyticsPage() {
       }
 
       // If no assessment results found, show empty state
-      if (!assessmentResults || assessmentResults.length === 0) {
+      if (!assessmentSessions || assessmentSessions.length === 0) {
         setAnalytics({
           totalAssessments: 0,
           averageScore: 0,
@@ -121,18 +133,18 @@ export default function AssessmentsAnalyticsPage() {
         return;
       }
 
-      // Process real assessment data
-      const totalAssessments = assessmentResults.length;
+      // Process real assessment data from sessions
+      const totalAssessments = assessmentSessions.length;
       const averageScore = totalAssessments > 0
-        ? assessmentResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / totalAssessments
+        ? assessmentSessions.reduce((sum, session) => sum + (session.accuracy_percentage || 0), 0) / totalAssessments
         : 0;
       const bestScore = totalAssessments > 0
-        ? Math.max(...assessmentResults.map(result => result.percentage || 0))
+        ? Math.max(...assessmentSessions.map(session => session.accuracy_percentage || 0))
         : 0;
 
       // Calculate trend (simplified)
       const recentTrend = totalAssessments >= 2
-        ? (assessmentResults[0].percentage || 0) > (assessmentResults[1].percentage || 0) ? 'improving' : 'declining'
+        ? (assessmentSessions[0].accuracy_percentage || 0) > (assessmentSessions[1].accuracy_percentage || 0) ? 'improving' : 'declining'
         : 'stable';
 
       // Group by type
@@ -143,12 +155,22 @@ export default function AssessmentsAnalyticsPage() {
         writing: { count: 0, average: 0, best: 0 }
       };
 
-      assessmentResults.forEach(result => {
-        const type = result.assessment_type as keyof typeof byType;
+      // Map game_type to assessment type
+      const mapGameTypeToAssessmentType = (gameType: string): string => {
+        if (gameType === 'reading-comprehension' || gameType === 'gcse-reading') return 'reading';
+        if (gameType === 'gcse-listening') return 'listening';
+        if (gameType === 'gcse-writing') return 'writing';
+        if (gameType === 'dictation') return 'listening'; // Dictation is a listening skill
+        if (gameType === 'four-skills') return 'reading'; // Default to reading
+        return 'reading';
+      };
+
+      assessmentSessions.forEach(session => {
+        const type = mapGameTypeToAssessmentType(session.game_type) as keyof typeof byType;
         if (byType[type]) {
           byType[type].count++;
-          byType[type].average += result.percentage || 0;
-          byType[type].best = Math.max(byType[type].best, result.percentage || 0);
+          byType[type].average += session.accuracy_percentage || 0;
+          byType[type].best = Math.max(byType[type].best, session.accuracy_percentage || 0);
         }
       });
 
@@ -160,17 +182,19 @@ export default function AssessmentsAnalyticsPage() {
         }
       });
 
-      // Group by level
+      // Group by level - extract from session_data
       const byLevel = {
         foundation: { count: 0, average: 0 },
         higher: { count: 0, average: 0 }
       };
 
-      assessmentResults.forEach(result => {
-        const level = result.difficulty as keyof typeof byLevel;
+      assessmentSessions.forEach(session => {
+        const sessionData = session.session_data as any;
+        const difficulty = sessionData?.difficulty || 'foundation';
+        const level = difficulty as keyof typeof byLevel;
         if (byLevel[level]) {
           byLevel[level].count++;
-          byLevel[level].average += result.percentage || 0;
+          byLevel[level].average += session.accuracy_percentage || 0;
         }
       });
 
@@ -189,20 +213,23 @@ export default function AssessmentsAnalyticsPage() {
         recentTrend,
         byType,
         byLevel,
-        recentResults: assessmentResults.slice(0, 5).map(result => ({
-          id: result.id,
-          assessment_type: result.assessment_type,
-          curriculum_level: result.curriculum_level,
-          exam_board: result.exam_board,
-          difficulty: result.difficulty,
-          score: result.score,
-          max_score: result.max_score,
-          percentage: result.percentage,
-          completed_at: result.completed_at,
-          time_taken: result.time_taken,
-          questions_correct: result.questions_correct,
-          questions_total: result.questions_total
-        })),
+        recentResults: assessmentSessions.slice(0, 5).map(session => {
+          const sessionData = session.session_data as any;
+          return {
+            id: session.id,
+            assessment_type: mapGameTypeToAssessmentType(session.game_type),
+            curriculum_level: sessionData?.level || 'KS3',
+            exam_board: sessionData?.examBoard || 'General',
+            difficulty: sessionData?.difficulty || 'foundation',
+            score: session.final_score || 0,
+            max_score: session.max_score_possible || 100,
+            percentage: session.accuracy_percentage || 0,
+            completed_at: session.ended_at || session.created_at,
+            time_taken: session.duration_seconds || 0,
+            questions_correct: session.words_correct || 0,
+            questions_total: session.words_attempted || 0
+          };
+        }),
         weakAreas: [], // Could be calculated from detailed results
         strongAreas: [] // Could be calculated from detailed results
       };

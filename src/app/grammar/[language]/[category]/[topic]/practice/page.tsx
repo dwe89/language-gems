@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import GrammarPractice from '@/components/grammar/GrammarPractice';
 import { ArrowLeft, Loader2, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import GrammarTestEditModal from '@/components/admin/GrammarTestEditModal';
+import { GrammarSessionService } from '@/services/grammar/GrammarSessionService';
 
 interface PageProps {
   params: {
@@ -23,6 +25,10 @@ const languageCodeMap: Record<string, string> = {
 };
 
 export default function GrammarPracticePage({ params }: PageProps) {
+  const searchParams = useSearchParams();
+  const assignmentId = searchParams.get('assignment');
+  const isAssignmentMode = !!assignmentId;
+
   const [showPractice, setShowPractice] = useState(false);
   const [loading, setLoading] = useState(true);
   const [practiceData, setPracticeData] = useState<any>(null);
@@ -34,6 +40,9 @@ export default function GrammarPracticePage({ params }: PageProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [contentId, setContentId] = useState<string | null>(null);
   const [questionCount, setQuestionCount] = useState(15); // Default to Standard Practice
+  const [topicId, setTopicId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [sessionService] = useState(() => new GrammarSessionService());
 
   useEffect(() => {
     async function fetchPracticeData() {
@@ -41,9 +50,10 @@ export default function GrammarPracticePage({ params }: PageProps) {
         const supabase = createClient();
         const languageCode = languageCodeMap[params.language] || params.language;
 
-        // Check if user is admin
+        // Check if user is admin and get user ID
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         setIsAdmin(currentUser?.email === 'danieletienne89@gmail.com');
+        setUserId(currentUser?.id || null);
 
         // Get the grammar page title
         const { data: page } = await supabase
@@ -76,6 +86,9 @@ export default function GrammarPracticePage({ params }: PageProps) {
           setLoading(false);
           return;
         }
+
+        // Store topic ID for session tracking
+        setTopicId(topic.id);
 
         const { data: content } = await supabase
           .from('grammar_content')
@@ -149,8 +162,12 @@ export default function GrammarPracticePage({ params }: PageProps) {
     });
   };
 
-  const handlePracticeComplete = (score: number, gemsEarned: number, timeSpent: number) => {
+  const handlePracticeComplete = async (score: number, gemsEarned: number, timeSpent: number) => {
     console.log('Practice completed!', { score, gemsEarned, timeSpent });
+
+    // If in assignment mode, the session is already tracked by GrammarSessionService
+    // via the GrammarPractice component
+
     setShowPractice(false);
   };
 
@@ -209,10 +226,15 @@ export default function GrammarPracticePage({ params }: PageProps) {
         topicTitle={practiceData.title}
         isTestMode={false}
         showHints={true}
-        trackProgress={false}
+        trackProgress={isAssignmentMode}
         gamified={true}
         onComplete={handlePracticeComplete}
         onExit={handlePracticeExit}
+        assignmentId={assignmentId || undefined}
+        topicId={topicId || undefined}
+        contentId={contentId || undefined}
+        userId={userId || undefined}
+        questionCount={questionCount}
       />
     );
   }

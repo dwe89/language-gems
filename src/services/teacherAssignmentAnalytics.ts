@@ -131,44 +131,81 @@ export class TeacherAssignmentAnalyticsService {
         ? completedSessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0) / completedSessions.length
         : 0;
 
-      // Get class success score from gem_events
+      // Get class success score from gem_events OR assessment scores
       const sessionIds = sessions?.map(s => s.id) || [];
 
       let classSuccessScore = 0;
       let studentsNeedingHelp = 0;
 
+      // Check if this is an assessment assignment (quiz type)
+      const isAssessment = assignment &&
+        ((assignment as any).type === 'quiz' ||
+        (assignment as any).game_config?.assessmentConfig);
+
       if (sessionIds.length > 0) {
-        const gemData = await this.fetchGemEvents<{
-          session_id: string;
-          gem_rarity: string;
-          student_id: string;
-        }>(sessionIds, 'session_id, gem_rarity, student_id');
+        if (isAssessment) {
+          // For assessments, calculate success from accuracy_percentage in sessions
+          console.log('📊 [ASSESSMENT] Calculating success from session accuracy');
 
-        console.log('📊 Gem events found:', gemData.length);
+          const sessionsWithAccuracy = sessions?.filter(s => s.ended_at) || [];
+          if (sessionsWithAccuracy.length > 0) {
+            const totalAccuracy = sessionsWithAccuracy.reduce((sum, s) => {
+              const sessionData = s as any;
+              return sum + (sessionData.accuracy_percentage || 0);
+            }, 0);
+            classSuccessScore = Math.round(totalAccuracy / sessionsWithAccuracy.length);
 
-        const totalGems = gemData.length;
-        const strongWeakGems = gemData.filter(g =>
-          ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)
-        ).length;
-        classSuccessScore = totalGems > 0 ? Math.round((strongWeakGems / totalGems) * 100) : 0;
+            // Students needing help: accuracy < 50%
+            const studentAccuracyMap = new Map<string, number[]>();
+            sessionsWithAccuracy.forEach(s => {
+              const sessionData = s as any;
+              const accuracies = studentAccuracyMap.get(s.student_id) || [];
+              accuracies.push(sessionData.accuracy_percentage || 0);
+              studentAccuracyMap.set(s.student_id, accuracies);
+            });
 
-        console.log('📊 Success score:', classSuccessScore, '% (', strongWeakGems, '/', totalGems, ')');
+            studentsNeedingHelp = Array.from(studentAccuracyMap.values()).filter(accuracies => {
+              const avgAccuracy = accuracies.reduce((sum, acc) => sum + acc, 0) / accuracies.length;
+              return avgAccuracy < 50;
+            }).length;
+          }
 
-        // Count students with high failure rate
-        const studentFailureRates = new Map<string, { total: number; failures: number }>();
-        gemData.forEach(gem => {
-          if (!gem.student_id) return;
-          const current = studentFailureRates.get(gem.student_id) || { total: 0, failures: 0 };
-          current.total++;
-          if (gem.gem_rarity === 'common') current.failures++;
-          studentFailureRates.set(gem.student_id, current);
-        });
+          console.log('📊 [ASSESSMENT] Success score:', classSuccessScore, '%');
+          console.log('📊 [ASSESSMENT] Students needing help:', studentsNeedingHelp);
+        } else {
+          // For games, use gem_events
+          const gemData = await this.fetchGemEvents<{
+            session_id: string;
+            gem_rarity: string;
+            student_id: string;
+          }>(sessionIds, 'session_id, gem_rarity, student_id');
 
-        studentsNeedingHelp = Array.from(studentFailureRates.values())
-          .filter(stats => stats.total > 0 && (stats.failures / stats.total) > 0.3)
-          .length;
+          console.log('📊 Gem events found:', gemData.length);
 
-        console.log('📊 Students needing help:', studentsNeedingHelp);
+          const totalGems = gemData.length;
+          const strongWeakGems = gemData.filter(g =>
+            ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)
+          ).length;
+          classSuccessScore = totalGems > 0 ? Math.round((strongWeakGems / totalGems) * 100) : 0;
+
+          console.log('📊 Success score:', classSuccessScore, '% (', strongWeakGems, '/', totalGems, ')');
+
+          // Count students with high failure rate
+          const studentFailureRates = new Map<string, { total: number; failures: number }>();
+          gemData.forEach(gem => {
+            if (!gem.student_id) return;
+            const current = studentFailureRates.get(gem.student_id) || { total: 0, failures: 0 };
+            current.total++;
+            if (gem.gem_rarity === 'common') current.failures++;
+            studentFailureRates.set(gem.student_id, current);
+          });
+
+          studentsNeedingHelp = Array.from(studentFailureRates.values())
+            .filter(stats => stats.total > 0 && (stats.failures / stats.total) > 0.3)
+            .length;
+
+          console.log('📊 Students needing help:', studentsNeedingHelp);
+        }
       }
 
       return {
@@ -449,7 +486,7 @@ export class TeacherAssignmentAnalyticsService {
           );
         }
 
-        // Get gem events for this student's sessions
+        // Get performance metrics - either from gem events (games) or session data (assessments)
         const studentSessionIds = studentSessions?.map(s => s.id) || [];
 
         let successScore = 0;
@@ -458,42 +495,65 @@ export class TeacherAssignmentAnalyticsService {
         let keyStruggleWords: string[] = [];
         let lastAttempt: string | null = null;
 
+        // Check if this is an assessment
+        const { data: assignmentData } = await this.supabase
+          .from('assignments')
+          .select('type, game_config')
+          .eq('id', assignmentId)
+          .single();
+
+        const isAssessment = assignmentData &&
+          (assignmentData.type === 'quiz' || assignmentData.game_config?.assessmentConfig);
+
         if (studentSessionIds.length > 0) {
-          const gems = await this.fetchGemEvents<{
-            session_id: string;
-            gem_rarity: string;
-            word_text: string | null;
-            created_at: string;
-          }>(studentSessionIds, 'session_id, gem_rarity, word_text, created_at');
+          if (isAssessment) {
+            // For assessments, use accuracy_percentage from sessions
+            const sessionsWithData = studentSessions?.filter(s => s.ended_at) || [];
+            if (sessionsWithData.length > 0) {
+              const latestSession = sessionsWithData[sessionsWithData.length - 1] as any;
+              successScore = Math.round(latestSession.accuracy_percentage || 0);
+              failureRate = 100 - successScore;
+              weakRetrievalPercent = failureRate;
+              lastAttempt = latestSession.ended_at;
+            }
+          } else {
+            // For games, use gem events
+            const gems = await this.fetchGemEvents<{
+              session_id: string;
+              gem_rarity: string;
+              word_text: string | null;
+              created_at: string;
+            }>(studentSessionIds, 'session_id, gem_rarity, word_text, created_at');
 
-          if (gems.length > 0) {
-            gems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            if (gems.length > 0) {
+              gems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-            const total = gems.length;
-            const strongWeak = gems.filter(g => ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)).length;
-            const weak = gems.filter(g => ['uncommon', 'common'].includes(g.gem_rarity)).length;
-            const failures = gems.filter(g => g.gem_rarity === 'common').length;
+              const total = gems.length;
+              const strongWeak = gems.filter(g => ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)).length;
+              const weak = gems.filter(g => ['uncommon', 'common'].includes(g.gem_rarity)).length;
+              const failures = gems.filter(g => g.gem_rarity === 'common').length;
 
-            successScore = Math.round((strongWeak / total) * 100);
-            weakRetrievalPercent = Math.round((weak / total) * 100);
-            failureRate = Math.round((failures / total) * 100);
-            lastAttempt = gems[0].created_at;
+              successScore = Math.round((strongWeak / total) * 100);
+              weakRetrievalPercent = Math.round((weak / total) * 100);
+              failureRate = Math.round((failures / total) * 100);
+              lastAttempt = gems[0].created_at;
 
-            // Get struggle words (words with high failure rate)
-            const wordFailures = new Map<string, { total: number; failures: number }>();
-            gems.forEach(gem => {
-              if (!gem.word_text) return;
-              const current = wordFailures.get(gem.word_text) || { total: 0, failures: 0 };
-              current.total++;
-              if (gem.gem_rarity === 'common') current.failures++;
-              wordFailures.set(gem.word_text, current);
-            });
+              // Get struggle words (words with high failure rate)
+              const wordFailures = new Map<string, { total: number; failures: number }>();
+              gems.forEach(gem => {
+                if (!gem.word_text) return;
+                const current = wordFailures.get(gem.word_text) || { total: 0, failures: 0 };
+                current.total++;
+                if (gem.gem_rarity === 'common') current.failures++;
+                wordFailures.set(gem.word_text, current);
+              });
 
-            keyStruggleWords = Array.from(wordFailures.entries())
-              .filter(([_, stats]) => stats.total >= 2 && (stats.failures / stats.total) > 0.5)
-              .sort((a, b) => (b[1].failures / b[1].total) - (a[1].failures / a[1].total))
-              .slice(0, 3)
-              .map(([word]) => word);
+              keyStruggleWords = Array.from(wordFailures.entries())
+                .filter(([_, stats]) => stats.total >= 2 && (stats.failures / stats.total) > 0.5)
+                .sort((a, b) => (b[1].failures / b[1].total) - (a[1].failures / a[1].total))
+                .slice(0, 3)
+                .map(([word]) => word);
+            }
           }
         }
 
