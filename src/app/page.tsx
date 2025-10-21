@@ -3,24 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import {
-  Gamepad2,
-  BookOpen,
-  Users,
-  Award,
-  ArrowRight,
-  Play,
-  CheckCircle,
-  Trophy,
-  Globe,
-  Brain,
-  Zap,
-  Target,
-  School,
-  GraduationCap,
-  Heart,
-  Sparkles
-} from 'lucide-react';
+import { ArrowRight, Play, CheckCircle, Trophy, Globe, School, GraduationCap, Heart, Gamepad2 } from 'lucide-react';
 import Footer from '../components/layout/Footer';
 import SEOWrapper from '../components/seo/SEOWrapper';
 import { useAuth } from '../components/auth/AuthProvider';
