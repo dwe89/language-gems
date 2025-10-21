@@ -2,7 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import FourSkillsAssessment from '../../../components/;
+import FourSkillsAssessment from '../../../components/';
 
 function FourSkillsPageContent() {
   const searchParams = useSearchParams();
