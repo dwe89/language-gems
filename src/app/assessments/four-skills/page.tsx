@@ -2,8 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import FourSkillsAssessment from '../../../components/assessments/FourSkillsAssessment';
-import FourSkillsAssignmentWrapper from '../../../components/assessments/FourSkillsAssignmentWrapper';
+import FourSkillsAssessment from '../../../components/;
 
 function FourSkillsPageContent() {
   const searchParams = useSearchParams();
