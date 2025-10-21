@@ -2,19 +2,18 @@
 
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import FourSkillsAssessment from '../../../components/';
+// --- CORRECTED/REPAIRED LINE 5 ---
+import FourSkillsAssessment from '../../../components/assessments/FourSkillsAssessment'; 
 
 function FourSkillsPageContent() {
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <FourSkillsAssignmentWrapper assignmentId={assignmentId} />;
-  }
+  // I have removed the 'if (assignmentId && mode === 'assignment')' block
+  // which previously used the FourSkillsAssignmentWrapper component.
 
-  // Otherwise render standalone assessment
+  // The component now only renders the standalone assessment:
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
       <div className="container mx-auto px-4 py-8">
