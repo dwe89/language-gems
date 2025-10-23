@@ -1,7 +1,7 @@
 import { getBaseStyles } from '../shared/base-styles';
 
 export function generateWorksheetHTML(worksheet: any): string {
-  console.log('📝 [STANDARD GENERATOR] Generating standard worksheet HTML for:', worksheet.title);
+  console.log('[STANDARD GENERATOR] Generating standard worksheet HTML for:', worksheet.title);
 
   const { title, subject, topic, difficulty, content, estimated_time_minutes } = worksheet;
 
@@ -9,10 +9,10 @@ export function generateWorksheetHTML(worksheet: any): string {
   const sections = content?.sections || worksheet.sections || [];
   const instructions = content?.instructions || worksheet.instructions || 'Complete all activities below.';
 
-  console.log('📝 [STANDARD GENERATOR] Found sections:', sections.length);
+  console.log('[STANDARD GENERATOR] Found sections:', sections.length);
 
   if (sections.length === 0) {
-    console.log('📝 [STANDARD GENERATOR] No sections found, creating fallback HTML');
+  console.log('[STANDARD GENERATOR] No sections found, creating fallback HTML');
     return createFallbackHTML(worksheet);
   }
 

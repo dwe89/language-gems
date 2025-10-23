@@ -29,19 +29,21 @@ export class LanguagesHandler extends WorksheetHandler {
     this.updateJobProgress(jobId, 'aiProcessing', 40, 'Generating language worksheet with AI');
 
     try {
+      // Stronger system + user instructions to get richer, validated JSON output
       const completion = await this.openai.chat.completions.create({
         model: 'gpt-5-nano',
         messages: [
           {
             role: 'system',
-            content: `You are an expert ${targetLanguage} language teacher creating educational worksheets. Always respond with valid JSON that follows the exact format specified.`
+            content: `You are an expert ${targetLanguage} language teacher and assessment designer. Produce ONLY a single JSON object which exactly matches the schema required by the user prompt. Do NOT include any commentary, explanation, or text outside of the JSON object. Use stable, short question IDs (q1, q2, ...). For multiple-choice questions provide exactly 3–4 options with one correct answer. For all questions include an estimated_time_seconds, a difficulty ('easy'|'medium'|'hard'), and a marks integer. Also return a top-level "answerKey" object mapping question_id -> { answer: <value or index>, explanation: <brief explanation>, marks: <int>, type: <question_type> }.
+If the worksheet includes language text (e.g., Spanish), include an English translation where appropriate. Ensure options are plausible distractors and avoid repeating the correct answer verbatim in options. The JSON must parse with standard JSON.parse().`
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_completion_tokens: 8000
+        max_completion_tokens: 12000
       });
 
       const content = completion.choices[0]?.message?.content;
@@ -72,7 +74,12 @@ export class LanguagesHandler extends WorksheetHandler {
 
       this.updateJobProgress(jobId, 'formatting', 80, 'Converting to worksheet format');
 
-      // Convert to our worksheet format
+      // Convert to our worksheet format; preserve answerKey if provided by the model
+      if (worksheetData.answerKey && typeof worksheetData.answerKey === 'object') {
+        // Normalize keys - ensure all question ids are strings like 'q1'
+        // (leave data as-is; convertToLanguageWorksheet will copy through)
+      }
+
       const worksheet = this.convertToLanguageWorksheet(worksheetData, request, targetLanguage);
       
       return {
@@ -195,6 +202,11 @@ Respond with valid JSON in this exact format:
         ]
       }
     };
+
+    // If the AI provided an explicit answerKey, attach it to the worksheet
+    if (data.answerKey && typeof data.answerKey === 'object') {
+      (worksheet as any).answerKey = data.answerKey;
+    }
 
     return worksheet;
   }

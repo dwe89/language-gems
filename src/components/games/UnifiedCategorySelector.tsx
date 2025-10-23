@@ -1069,6 +1069,29 @@ const CustomVocabularyLists: React.FC<{
   const [loading, setLoading] = useState(false);
   const [selectedListDetails, setSelectedListDetails] = useState<any>(null);
 
+  const normalizeLanguageFilter = (languageCode: string) => {
+    if (!languageCode || languageCode === 'all') return null;
+    const mapping: Record<string, string> = {
+      es: 'spanish',
+      fr: 'french',
+      de: 'german'
+    };
+    const normalized = mapping[languageCode.toLowerCase()];
+    return normalized || languageCode.toLowerCase();
+  };
+
+  const normalizeContentTypeFilter = (type: 'vocabulary' | 'sentences' | 'mixed') => {
+    switch (type) {
+      case 'vocabulary':
+        return 'words';
+      case 'sentences':
+        return 'sentences';
+      case 'mixed':
+      default:
+        return 'mixed';
+    }
+  };
+
   // Load user's custom vocabulary lists
   useEffect(() => {
     const loadCustomLists = async () => {
@@ -1100,11 +1123,18 @@ const CustomVocabularyLists: React.FC<{
         if (error) throw error;
 
         // Filter by language and content type if needed
+        const languageFilter = normalizeLanguageFilter(language);
+        const contentTypeFilter = normalizeContentTypeFilter(contentType);
+
         const filteredLists = (data || []).filter((list: any) => {
-          if (language && language !== 'all' && list.language !== language) {
+          if (languageFilter && list.language?.toLowerCase() !== languageFilter) {
             return false;
           }
-          if (contentType !== 'mixed' && list.content_type && list.content_type !== contentType) {
+          if (
+            contentTypeFilter !== 'mixed' &&
+            list.content_type &&
+            list.content_type !== contentTypeFilter
+          ) {
             return false;
           }
           return true;

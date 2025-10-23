@@ -62,17 +62,26 @@ export async function POST(request: NextRequest) {
       console.warn('Lucide icons failed to load, continuing with PDF generation:', iconError);
     }
 
-    // Generate PDF
+    // Generate PDF with optimized settings for worksheet layout
     console.log('Generating PDF...');
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '20mm',
-        right: '15mm',
-        bottom: '20mm',
-        left: '15mm'
-      }
+        top: '15mm',
+        right: '12mm',
+        bottom: '15mm',
+        left: '12mm'
+      },
+      preferCSSPageSize: true,
+      displayHeaderFooter: false,
+      // Optimize for worksheet content
+      width: '210mm', // A4 width
+      height: '297mm', // A4 height
+      // Ensure sections don't break awkwardly
+      pageRanges: undefined, // Generate all pages
+      // Better rendering options
+      timeout: 60000, // 60 second timeout
     });
     console.log('PDF generated successfully, size:', pdfBuffer.length);
 

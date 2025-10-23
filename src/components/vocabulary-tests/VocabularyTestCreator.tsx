@@ -13,6 +13,7 @@ import {
   ArrowRight,
   CheckCircle,
   AlertCircle,
+  AlertTriangle,
   Volume2,
   Shuffle,
   Target,
@@ -54,6 +55,7 @@ interface TestFormData {
 }
 
 interface VocabularyTestCreatorProps {
+  existingTest?: any; // VocabularyTest object when editing
   onTestCreated?: (testId: string) => void;
   onCancel?: () => void;
   classId?: string;
@@ -66,12 +68,14 @@ interface VocabularyCategory {
 }
 
 export default function VocabularyTestCreator({
+  existingTest,
   onTestCreated,
   onCancel,
   classId
 }: VocabularyTestCreatorProps) {
   const { user } = useAuth();
   const { supabase } = useSupabase();
+  const isEditMode = !!existingTest;
   
   // Form state
   const [currentStep, setCurrentStep] = useState(1);
@@ -119,6 +123,36 @@ export default function VocabularyTestCreator({
   useEffect(() => {
     console.log('🔍 [VocabularyTestCreator] Component mounted, user:', !!user, 'supabase:', !!supabase);
   }, []);
+
+  // Initialize form with existing test data when editing
+  useEffect(() => {
+    if (existingTest) {
+      setTestData({
+        title: existingTest.title || '',
+        description: existingTest.description || '',
+        language: existingTest.language || 'es',
+        curriculum_level: existingTest.curriculum_level || 'KS3',
+        test_type: existingTest.test_type || 'mixed',
+        question_count: existingTest.word_count || 20,
+        vocabulary_source: existingTest.vocabulary_source || 'category',
+        vocabulary_criteria: existingTest.vocabulary_criteria || {
+          categories: [],
+          subcategories: [],
+          custom_vocabulary: []
+        },
+        settings: {
+          time_limit_minutes: existingTest.time_limit_minutes || 30,
+          max_attempts: existingTest.max_attempts || 3,
+          show_correct_answers: existingTest.show_correct_answers ?? true,
+          randomize_questions: existingTest.randomize_questions ?? true,
+          randomize_options: existingTest.randomize_options ?? true,
+          allow_hints: existingTest.allow_hints ?? false,
+          immediate_feedback: existingTest.immediate_feedback ?? false,
+          passing_score: existingTest.passing_score_percentage || 70
+        }
+      });
+    }
+  }, [existingTest]);
 
   // Load vocabulary categories
   useEffect(() => {
@@ -258,7 +292,7 @@ export default function VocabularyTestCreator({
         throw new Error('Test title is required');
       }
 
-      if (selectedClasses.length === 0) {
+      if (!isEditMode && selectedClasses.length === 0) {
         throw new Error('Please select at least one class to assign the test to');
       }
 
@@ -292,42 +326,70 @@ export default function VocabularyTestCreator({
         time_bonus_enabled: true // Default value
       };
 
-      // Create test
+      // Create or update test
       if (!supabase) throw new Error('Database connection not available');
       if (!user?.id) throw new Error('User not authenticated');
       const testService = new VocabularyTestService(supabase);
-      const testId = await testService.createTest(user.id, transformedTestData);
 
-      // Create assignments for each selected class
-      for (const classId of selectedClasses) {
-        const assignmentData = {
-          title: testData.title,
-          description: testData.description || 'Vocabulary Test Assignment',
-          created_by: user.id,
-          class_id: classId,
-          game_type: 'vocabulary_test',
-          type: 'vocabulary_test',
-          curriculum_level: testData.curriculum_level,
-          due_date: dueDate || null,
-          points: testData.question_count * 5, // 5 points per question
-          time_limit: testData.settings.time_limit_minutes,
-          max_attempts: testData.settings.max_attempts,
-          game_config: {
-            vocabulary_test_id: testId,
-            test_type: testData.test_type,
-            question_count: testData.question_count,
+      let testId: string;
+      if (isEditMode && existingTest?.id) {
+        // Update existing test
+        const { error: updateError } = await supabase
+          .from('vocabulary_tests')
+          .update({
+            ...transformedTestData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingTest.id);
+
+        if (updateError) throw updateError;
+        testId = existingTest.id;
+
+        // Delete old questions and regenerate
+        await supabase
+          .from('vocabulary_test_questions')
+          .delete()
+          .eq('test_id', existingTest.id);
+
+        // Regenerate questions with new criteria
+        await testService.generateTestQuestions(existingTest.id);
+      } else {
+        // Create new test
+        testId = await testService.createTest(user.id, transformedTestData);
+      }
+
+      // Create assignments for each selected class (only when creating new test)
+      if (!isEditMode) {
+        for (const classId of selectedClasses) {
+          const assignmentData = {
+            title: testData.title,
+            description: testData.description || 'Vocabulary Test Assignment',
+            created_by: user.id,
+            class_id: classId,
+            game_type: 'vocabulary_test',
+            type: 'vocabulary_test',
+            curriculum_level: testData.curriculum_level,
+            due_date: dueDate || null,
+            points: testData.question_count * 5, // 5 points per question
+            time_limit: testData.settings.time_limit_minutes,
             max_attempts: testData.settings.max_attempts,
-            passing_score: testData.settings.passing_score
+            game_config: {
+              vocabulary_test_id: testId,
+              test_type: testData.test_type,
+              question_count: testData.question_count,
+              max_attempts: testData.settings.max_attempts,
+              passing_score: testData.settings.passing_score
+            }
+          };
+
+          const { error: assignmentError } = await supabase
+            .from('assignments')
+            .insert(assignmentData);
+
+          if (assignmentError) {
+            console.error('Error creating assignment for class:', classId, assignmentError);
+            throw new Error(`Failed to create assignment for class: ${assignmentError.message}`);
           }
-        };
-
-        const { error: assignmentError } = await supabase
-          .from('assignments')
-          .insert(assignmentData);
-
-        if (assignmentError) {
-          console.error('Error creating assignment for class:', classId, assignmentError);
-          throw new Error(`Failed to create assignment for class: ${assignmentError.message}`);
         }
       }
 
@@ -335,8 +397,8 @@ export default function VocabularyTestCreator({
         onTestCreated(testId);
       }
     } catch (err) {
-      console.error('Error creating test:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create test');
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} test:`, err);
+      setError(err instanceof Error ? err.message : `Failed to ${isEditMode ? 'update' : 'create'} test`);
     } finally {
       setLoading(false);
     }
@@ -512,7 +574,13 @@ export default function VocabularyTestCreator({
             </button>
 
             <button
-              onClick={() => setShowCustomUpload(true)}
+              onClick={() => {
+                setTestData(prev => ({
+                  ...prev,
+                  vocabulary_source: 'custom_list'
+                }));
+                setShowCustomUpload(true);
+              }}
               className={`p-4 border-2 rounded-xl text-left transition-colors ${
                 testData.vocabulary_source === 'custom_list'
                   ? 'border-blue-500 bg-blue-50'
@@ -598,16 +666,42 @@ export default function VocabularyTestCreator({
         )}
 
         {/* Custom Vocabulary Summary */}
-        {testData.vocabulary_source === 'custom_list' && testData.vocabulary_criteria?.custom_vocabulary && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <h4 className="font-medium text-green-800">Custom Vocabulary Added</h4>
-            </div>
-            <p className="text-green-700">
-              {testData.vocabulary_criteria.custom_vocabulary.length} words ready for testing
-            </p>
-          </div>
+        {testData.vocabulary_source === 'custom_list' && (
+          <>
+            {testData.vocabulary_criteria?.custom_vocabulary && testData.vocabulary_criteria.custom_vocabulary.length > 0 ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <h4 className="font-medium text-green-800">Custom Vocabulary Added</h4>
+                </div>
+                <p className="text-green-700">
+                  {testData.vocabulary_criteria.custom_vocabulary.length} words ready for testing
+                </p>
+                <button
+                  onClick={() => setShowCustomUpload(true)}
+                  className="mt-2 text-sm text-green-700 hover:text-green-800 underline"
+                >
+                  Edit vocabulary
+                </button>
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                  <h4 className="font-medium text-yellow-800">No Custom Vocabulary Added Yet</h4>
+                </div>
+                <p className="text-yellow-700 mb-3">
+                  Please click the button above to add your custom vocabulary before proceeding.
+                </p>
+                <button
+                  onClick={() => setShowCustomUpload(true)}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm"
+                >
+                  Add Custom Vocabulary
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -838,8 +932,12 @@ export default function VocabularyTestCreator({
               <BookOpen className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create Vocabulary Test</h1>
-              <p className="text-gray-600">Design a comprehensive vocabulary assessment</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isEditMode ? 'Edit Vocabulary Test' : 'Create Vocabulary Test'}
+              </h1>
+              <p className="text-gray-600">
+                {isEditMode ? 'Update your vocabulary assessment' : 'Design a comprehensive vocabulary assessment'}
+              </p>
             </div>
           </div>
           {onCancel && (
@@ -907,18 +1005,18 @@ export default function VocabularyTestCreator({
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={loading || selectedClasses.length === 0}
+                disabled={loading || (!isEditMode && selectedClasses.length === 0)}
                 className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Creating...</span>
+                    <span>{isEditMode ? 'Updating...' : 'Creating...'}</span>
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4" />
-                    <span>Create Test & Assign</span>
+                    <span>{isEditMode ? 'Update Test' : 'Create Test & Assign'}</span>
                   </>
                 )}
               </button>

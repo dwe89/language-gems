@@ -52,6 +52,7 @@ export default function InlineVocabularyCreator({
   const [title, setTitle] = useState(initialData?.name || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [language, setLanguage] = useState(initialData?.language || 'french');
+  const [isPublic, setIsPublic] = useState(initialData?.is_public || false);
   const [vocabularyPairs, setVocabularyPairs] = useState<VocabularyPair[]>(
     initialData?.items && initialData.items.length > 0
       ? initialData.items
@@ -108,14 +109,17 @@ export default function InlineVocabularyCreator({
         });
 
       if (files && files.length > 0) {
-        // Found existing audio file
-        const audioUrl = `${supabase.supabaseUrl}/storage/v1/object/public/audio/audio/vocabulary/${files[0].name}`;
+        const { data: publicUrlData } = supabase.storage
+          .from('audio')
+          .getPublicUrl(`audio/vocabulary/${files[0].name}`);
 
-        // Cache the result
-        setAudioCache(prev => new Map(prev).set(audioKey, audioUrl));
+        const audioUrl = publicUrlData?.publicUrl;
 
-        console.log(`Found existing audio for "${text}":`, audioUrl);
-        return audioUrl;
+        if (audioUrl) {
+          setAudioCache(prev => new Map(prev).set(audioKey, audioUrl));
+          console.log(`Found existing audio for "${text}":`, audioUrl);
+          return audioUrl;
+        }
       }
 
       return null;
@@ -321,15 +325,18 @@ export default function InlineVocabularyCreator({
 
     try {
       if (mode === 'edit' && initialData?.id) {
-        // Update existing vocabulary list
+        const enhancedService = new EnhancedVocabularyService(supabase);
+
         const updateData = {
           name: title,
           description: description || '',
           language: language as 'spanish' | 'french' | 'german',
+          is_public: isPublic,
           word_count: validPairs.length
         };
 
         const updateItems = validPairs.map(pair => ({
+          type: 'word' as const,
           term: pair.learningWord.trim(),
           translation: pair.supportWord.trim(),
           part_of_speech: pair.partOfSpeech || 'noun',
@@ -340,25 +347,7 @@ export default function InlineVocabularyCreator({
           tags: pair.tags || []
         }));
 
-        // Use EnhancedVocabularyService to update
-        const enhancedService = new EnhancedVocabularyService(supabase);
-        await enhancedService.updateVocabularyList(initialData.id, updateData);
-
-        // Delete existing items and create new ones
-        await supabase
-          .from('enhanced_vocabulary_items')
-          .delete()
-          .eq('list_id', initialData.id);
-
-        const itemsWithListId = updateItems.map(item => ({
-          ...item,
-          list_id: initialData.id
-        }));
-
-        await supabase
-          .from('enhanced_vocabulary_items')
-          .insert(itemsWithListId);
-
+        await enhancedService.updateVocabularyList(initialData.id, updateData, updateItems);
       } else {
         // Create new vocabulary list
         const uploadData: UploadedVocabularyList = {
@@ -367,7 +356,7 @@ export default function InlineVocabularyCreator({
           language: language as 'spanish' | 'french' | 'german',
           difficulty_level: 'intermediate',
           content_type: 'words',
-          is_public: false,
+          is_public: isPublic,
           items: validPairs.map(pair => ({
             type: 'word' as const,
             term: pair.learningWord.trim(),
@@ -432,7 +421,7 @@ export default function InlineVocabularyCreator({
               </label>
               <select
                 value={language}
-                onChange={(e) => setLanguage(e.target.value)}
+                onChange={(e) => setLanguage(e.target.value as 'spanish' | 'french' | 'german')}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
               >
                 <option value="french">🇫🇷 French</option>
@@ -452,6 +441,21 @@ export default function InlineVocabularyCreator({
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
                 placeholder="Brief description of this vocabulary collection"
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-gray-700">Make this collection public</span>
+                  <p className="text-xs text-gray-500">Allow other teachers to discover and use this vocabulary collection</p>
+                </div>
+              </label>
             </div>
           </div>
         </div>
@@ -640,7 +644,7 @@ export default function InlineVocabularyCreator({
                   Creating Collection...
                 </div>
               ) : (
-                'Create Collection'
+                'Save Collection'
               )}
             </button>
           </div>

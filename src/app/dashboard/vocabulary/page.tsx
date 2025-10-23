@@ -24,6 +24,9 @@ import {
   Play,
   X,
   ArrowLeft,
+  Grid3X3,
+  Sparkles,
+  Shuffle,
 
 } from 'lucide-react';
 import Link from 'next/link';
@@ -39,83 +42,160 @@ interface VocabularyCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onDuplicate?: () => void;
+  onMoveToRoot?: () => void;
+  onDragStart?: (id: string) => void;
+  onDragEnd?: () => void;
   showActions: boolean;
   isPublic?: boolean;
 }
 
-function VocabularyCard({ list, onView, onEdit, onDelete, onDuplicate, showActions, isPublic }: VocabularyCardProps) {
+function VocabularyCard({
+  list,
+  onView,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onMoveToRoot,
+  onDragStart,
+  onDragEnd,
+  showActions,
+  isPublic
+}: VocabularyCardProps) {
+  const getLanguageColor = (language: string) => {
+    switch (language) {
+      case 'spanish': return 'from-orange-400 to-red-500';
+      case 'french': return 'from-blue-400 to-indigo-500';
+      case 'german': return 'from-gray-600 to-yellow-500';
+      default: return 'from-purple-400 to-pink-500';
+    }
+  };
+
+  const getContentTypeColor = (contentType: string) => {
+    switch (contentType) {
+      case 'words': return 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800';
+      case 'sentences': return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800';
+      default: return 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800';
+    }
+  };
+
   return (
     <div
-      className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all cursor-move"
+      className="group bg-white rounded-xl border border-gray-100 p-6 hover:shadow-2xl hover:shadow-indigo-100/50 transition-all duration-300 cursor-move transform hover:-translate-y-1 hover:border-indigo-200"
       draggable={showActions}
       onDragStart={(e) => {
+        if (!showActions) return;
         e.dataTransfer.setData('text/plain', list.id);
         e.dataTransfer.effectAllowed = 'move';
+        onDragStart?.(list.id);
+      }}
+      onDragEnd={() => {
+        onDragEnd?.();
       }}
     >
+      {/* Color accent bar */}
+      <div className={`h-1 bg-gradient-to-r ${getLanguageColor(list.language)} rounded-full mb-4`}></div>
+
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 mb-1 truncate">{list.name}</h3>
-          <p className="text-xs text-gray-600 mb-2 line-clamp-1">{list.description}</p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-8 h-8 bg-gradient-to-r ${getLanguageColor(list.language)} rounded-lg flex items-center justify-center`}>
+              <BookOpen className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="font-bold text-gray-900 text-lg truncate group-hover:text-indigo-700 transition-colors">
+              {list.name}
+            </h3>
+          </div>
 
-          <div className="flex items-center gap-1 mb-2">
-            <span className={`px-1.5 py-0.5 text-xs rounded ${
-              list.content_type === 'words' ? 'bg-blue-100 text-blue-700' :
-              list.content_type === 'sentences' ? 'bg-green-100 text-green-700' :
-              'bg-purple-100 text-purple-700'
-            }`}>
-              {list.content_type === 'words' ? 'Words' :
-               list.content_type === 'sentences' ? 'Sentences' : 'Mixed'}
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">{list.description}</p>
+
+          <div className="flex items-center gap-2 mb-3">
+            <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getContentTypeColor(list.content_type)}`}>
+              {list.content_type === 'words' ? (
+                <span className="flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Words
+                </span>
+              ) : list.content_type === 'sentences' ? (
+                <span className="flex items-center gap-1">
+                  <MessageSquare className="h-3 w-3" />
+                  Sentences
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <Shuffle className="h-3 w-3" />
+                  Mixed
+                </span>
+              )}
             </span>
 
             {isPublic && (
-              <span className="px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700">
-                Public
+              <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-cyan-100 to-cyan-200 text-cyan-800">
+                <span className="flex items-center gap-1">
+                  <Globe className="h-3 w-3" />
+                  Public
+                </span>
               </span>
             )}
           </div>
 
-          <div className="text-xs text-gray-500">
-            {list.word_count} items • {list.language}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500 font-medium">
+              <span className="inline-flex items-center gap-1">
+                <span className="text-indigo-600 font-bold">{list.word_count}</span>
+                <span>pairs</span>
+              </span>
+              <span className="mx-2 text-gray-300">•</span>
+              <span className="capitalize font-medium text-gray-700">{list.language}</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-1 ml-2">
+        <div className="flex gap-1 ml-4">
           <button
             onClick={onView}
-            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
+            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 group-hover:shadow-md"
             title="View list"
           >
-            <Eye className="h-3 w-3" />
+            <Eye className="h-4 w-4" />
           </button>
 
           {showActions && onEdit && (
             <button
               onClick={onEdit}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded transition-all"
+              className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all duration-200 group-hover:shadow-md"
               title="Edit list"
             >
-              <Edit className="h-3 w-3" />
+              <Edit className="h-4 w-4" />
             </button>
           )}
 
           {showActions && onDelete && (
             <button
               onClick={onDelete}
-              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 group-hover:shadow-md"
               title="Delete list"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-4 w-4" />
             </button>
           )}
 
           {isPublic && onDuplicate && (
             <button
               onClick={onDuplicate}
-              className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded transition-all"
+              className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all duration-200 group-hover:shadow-md"
               title="Duplicate list"
             >
-              <Copy className="h-3 w-3" />
+              <Copy className="h-4 w-4" />
+            </button>
+          )}
+
+          {showActions && onMoveToRoot && list.folder_id && (
+            <button
+              onClick={onMoveToRoot}
+              className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all duration-200 group-hover:shadow-md"
+              title="Move to root folder"
+            >
+              <ArrowLeft className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -149,6 +229,8 @@ export default function VocabularyPage() {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [dragHoverFolder, setDragHoverFolder] = useState<string | null>(null);
+  const [draggedListId, setDraggedListId] = useState<string | null>(null);
+  const [isRootDropHover, setIsRootDropHover] = useState(false);
 
   // Initialize services
   useEffect(() => {
@@ -190,6 +272,20 @@ export default function VocabularyPage() {
     };
   }, [vocabularyService, uploadService, user]);
 
+  useEffect(() => {
+    if (draggedListId) {
+      document.body.classList.add('select-none', 'cursor-grabbing');
+    } else {
+      document.body.classList.remove('select-none', 'cursor-grabbing');
+      setIsRootDropHover(false);
+      setDragHoverFolder(null);
+    }
+
+    return () => {
+      document.body.classList.remove('select-none', 'cursor-grabbing');
+    };
+  }, [draggedListId]);
+
   const loadData = async () => {
     if (!vocabularyService || !uploadService || !user) return;
 
@@ -205,7 +301,7 @@ export default function VocabularyPage() {
       const publicLists = await vocabularyService.getVocabularyLists({
         is_public: true
       });
-      setPublicLists(publicLists.filter(list => list.teacher_id !== user.id));
+      setPublicLists(publicLists);
 
       // Load folders
       const folderData = await uploadService.getFolders(user.id);
@@ -308,17 +404,38 @@ export default function VocabularyPage() {
     return path;
   };
 
+  const handleMoveToRoot = async (list: EnhancedVocabularyList) => {
+    await handleMoveToFolder(list.id, null);
+  };
+
   // Move vocabulary list to folder
   const handleMoveToFolder = async (listId: string, folderId: string | null) => {
     if (!vocabularyService) return;
 
     try {
-      await vocabularyService.updateVocabularyList(listId, { folder_id: folderId || undefined });
+      await vocabularyService.updateVocabularyList(listId, { folder_id: folderId ?? null });
       await loadData();
     } catch (error) {
       console.error('Error moving list to folder:', error);
       alert('Failed to move vocabulary list. Please try again.');
     }
+  };
+
+  const handleCardDragStart = (listId: string) => {
+    setDraggedListId(listId);
+  };
+
+  const handleCardDragEnd = () => {
+    setDraggedListId(null);
+  };
+
+  const handleRootDrop = async (listId?: string) => {
+    const targetId = listId || draggedListId;
+    if (!targetId) return;
+
+    await handleMoveToFolder(targetId, null);
+    setDraggedListId(null);
+    setIsRootDropHover(false);
   };
 
   // Delete folder
@@ -330,7 +447,7 @@ export default function VocabularyPage() {
       // Move all lists in this folder to root
       const listsInFolder = myLists.filter(list => list.folder_id === folderId);
       for (const list of listsInFolder) {
-        await vocabularyService.updateVocabularyList(list.id, { folder_id: undefined });
+        await vocabularyService.updateVocabularyList(list.id, { folder_id: null });
       }
 
       // Delete the folder from database
@@ -400,7 +517,7 @@ export default function VocabularyPage() {
             {/* List Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="text-sm text-gray-600">Items</div>
+                <div className="text-sm text-gray-600">Pairs</div>
                 <div className="text-2xl font-bold text-gray-900">{selectedList.word_count}</div>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
@@ -409,9 +526,9 @@ export default function VocabularyPage() {
               </div>
             </div>
 
-            {/* Vocabulary Items */}
+            {/* Vocabulary Pairs */}
             <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Vocabulary Items</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Vocabulary Pairs</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {selectedList.items?.map((item: any, index: number) => (
                   <div key={index} className="group bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all hover:border-indigo-300">
@@ -444,7 +561,7 @@ export default function VocabularyPage() {
               {(!selectedList.items || selectedList.items.length === 0) && (
                 <div className="text-center py-12 bg-gray-50 rounded-lg">
                   <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No vocabulary items found</p>
+                  <p className="text-gray-600">No vocabulary pairs found</p>
                 </div>
               )}
             </div>
@@ -455,46 +572,105 @@ export default function VocabularyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/50">
+      {draggedListId && (
+        <div className="fixed inset-0 z-40 pointer-events-none">
+          <div className="absolute inset-0 bg-slate-900/10 backdrop-blur-sm"></div>
+          <div
+            className={`pointer-events-auto fixed top-6 left-1/2 -translate-x-1/2 w-[92vw] max-w-3xl rounded-3xl border-2 ${
+              isRootDropHover
+                ? 'border-green-400 bg-green-100 shadow-2xl scale-105'
+                : 'border-indigo-200 bg-white/90 shadow-xl'
+            } transition-all duration-300 p-6 flex flex-col items-center gap-3`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              setIsRootDropHover(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              setIsRootDropHover(false);
+            }}
+            onDrop={async (e) => {
+              e.preventDefault();
+              const listId = e.dataTransfer.getData('text/plain') || undefined;
+              await handleRootDrop(listId);
+            }}
+          >
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+              isRootDropHover ? 'bg-green-500 text-white' : 'bg-indigo-100 text-indigo-600'
+            } transition-colors duration-300`}>
+              <ArrowLeft className="h-6 w-6" />
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-gray-800">Drop here to move back to the main collection</p>
+              <p className="text-sm text-gray-500">Release to remove this list from its current folder</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+        {/* Enhanced Header */}
         <div className="mb-8">
           <Link
             href="/dashboard"
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium mb-4"
+            className="inline-flex items-center text-gray-600 hover:text-indigo-700 transition-all duration-200 text-sm font-medium mb-6 hover:translate-x-1"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Return to Dashboard
           </Link>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                  Vocabulary Management
-                </h1>
-                <p className="text-gray-600">Create and manage your vocabulary collections</p>
-              </div>
-            </div>
+          <div className="relative">
+            {/* Background decoration */}
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowFolderModal(true)}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <FolderPlus className="h-4 w-4" />
-                New Folder
-              </button>
-              <Link
-                href="/vocabulary/new"
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all font-semibold shadow-lg hover:shadow-xl"
-              >
-                <Plus className="h-5 w-5" />
-                Create New 
-              </Link>
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <BookOpen className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                      <Sparkles className="h-3 w-3 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 via-indigo-700 to-purple-700 bg-clip-text text-transparent mb-2">
+                      Vocabulary Studio
+                    </h1>
+                    <p className="text-gray-600 text-lg">Create, organize, and manage your language learning collections</p>
+                    <div className="flex items-center gap-4 mt-3">
+                      <div className="flex items-center gap-1 text-sm text-gray-500">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>{myLists.length} collections</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-gray-500">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>{myLists.reduce((acc, list) => acc + list.word_count, 0)} total pairs</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowFolderModal(true)}
+                    className="flex items-center gap-2 px-4 py-3 text-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl hover:from-gray-100 hover:to-gray-200 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                  >
+                    <FolderPlus className="h-5 w-5" />
+                    New Folder
+                  </button>
+                  <Link
+                    href="/vocabulary/new"
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-xl hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
+                  >
+                    <Plus className="h-5 w-5" />
+                    Save Collection
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -522,65 +698,103 @@ export default function VocabularyPage() {
           </div>
         )}
 
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Enhanced Tab Navigation */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden mb-6">
           <div className="flex">
             <button
               onClick={() => setActiveTab('my-content')}
-              className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
+              className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${
                 activeTab === 'my-content'
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/50'
               }`}
             >
-              My Content
+              {activeTab === 'my-content' && (
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600"></div>
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <FileText className="h-5 w-5" />
+                My Collections
+                {myLists.length > 0 && (
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    activeTab === 'my-content'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-indigo-100 text-indigo-700'
+                  }`}>
+                    {myLists.length}
+                  </span>
+                )}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('content-library')}
-              className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
+              className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${
                 activeTab === 'content-library'
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/50'
               }`}
             >
-              Public Content
+              {activeTab === 'content-library' && (
+                <div className="absolute inset-0 bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600"></div>
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Globe className="h-5 w-5" />
+                Public Library
+                {publicLists.length > 0 && (
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    activeTab === 'content-library'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-teal-100 text-teal-700'
+                  }`}>
+                    {publicLists.length}
+                  </span>
+                )}
+              </span>
             </button>
-
           </div>
 
-          {/* Filters */}
-          <div className="p-6 border-t border-gray-200">
+          {/* Enhanced Filters */}
+          <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-gray-50/50 to-white/50">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <select
-                value={languageFilter}
-                onChange={(e) => setLanguageFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                <option value="all">All Languages</option>
-                <option value="french">French</option>
-                <option value="spanish">Spanish</option>
-                <option value="german">German</option>
-              </select>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                <select
+                  value={languageFilter}
+                  onChange={(e) => setLanguageFilter(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  <option value="all">All Languages</option>
+                  <option value="french">🇫🇷 French</option>
+                  <option value="spanish">🇪🇸 Spanish</option>
+                  <option value="german">🇩🇪 German</option>
+                </select>
+              </div>
 
-              <select
-                value={contentTypeFilter}
-                onChange={(e) => setContentTypeFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                <option value="all">All Types</option>
-                <option value="words">Vocabulary</option>
-                <option value="sentences">Sentences</option>
-              </select>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
+                <select
+                  value={contentTypeFilter}
+                  onChange={(e) => setContentTypeFilter(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  <option value="all">All Types</option>
+                  <option value="words">Vocabulary</option>
+                  <option value="sentences">Sentences</option>
+                </select>
+              </div>
 
               <div className="md:col-span-2 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search collections..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-12 w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -588,9 +802,24 @@ export default function VocabularyPage() {
           {/* Content Area */}
           <div className="p-6">
             {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
-                <p className="text-gray-600 mt-4">Loading vocabulary lists...</p>
+              <div className="text-center py-20">
+                <div className="relative mb-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                    <Sparkles className="h-3 w-3 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Loading Your Collections</h3>
+                <p className="text-gray-600 max-w-sm mx-auto leading-relaxed">
+                  We're gathering your vocabulary collections and organizing them beautifully
+                </p>
+                <div className="flex justify-center gap-1 mt-6">
+                  <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -601,36 +830,6 @@ export default function VocabularyPage() {
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="font-semibold text-gray-900">Folders</h3>
                         <span className="text-xs text-gray-500">{myLists.length} total lists</span>
-                      </div>
-
-                      {/* Root folder drop zone */}
-                      <div
-                        className={`mb-4 p-3 border-2 border-dashed rounded-lg text-center text-sm transition-all ${
-                          dragHoverFolder === 'root'
-                            ? 'border-green-400 bg-green-50 text-green-700'
-                            : 'border-gray-300 text-gray-500 hover:border-gray-400'
-                        }`}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = 'move';
-                          setDragHoverFolder('root');
-                        }}
-                        onDragLeave={() => setDragHoverFolder(null)}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const listId = e.dataTransfer.getData('text/plain');
-                          handleMoveToFolder(listId, null);
-                          setDragHoverFolder(null);
-                        }}
-                      >
-                        {dragHoverFolder === 'root' ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Plus className="h-4 w-4 text-green-600" />
-                            <span className="font-medium">Drop to move to root</span>
-                          </div>
-                        ) : (
-                          'Drop here to remove from folders'
-                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -658,6 +857,8 @@ export default function VocabularyPage() {
                                   const listId = e.dataTransfer.getData('text/plain');
                                   handleMoveToFolder(listId, folder.id);
                                   setDragHoverFolder(null);
+                                  setDraggedListId(null);
+                                  setIsRootDropHover(false);
                                 }}
                               >
                                 <button
@@ -748,28 +949,48 @@ export default function VocabularyPage() {
                 <div className={activeTab === 'my-content' ? 'lg:col-span-3' : 'lg:col-span-5'}>
                   {activeTab === 'my-content' ? (
                   filteredMyLists.length === 0 && myLists.length === 0 ? (
-                    <div className="text-center py-12">
-                      <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No vocabulary lists yet</h3>
-                      <p className="text-gray-600 mb-6">Create your first vocabulary collection to get started</p>
+                    <div className="text-center py-16">
+                      <div className="relative mb-8">
+                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                          <BookOpen className="h-12 w-12 text-indigo-600" />
+                        </div>
+                        <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                          <Sparkles className="h-4 w-4 text-white" />
+                        </div>
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-3">Start Your Vocabulary Journey</h3>
+                      <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                        Create your first vocabulary collection and begin building personalized learning materials for your students
+                      </p>
                       <Link
                         href="/vocabulary/new"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-300 font-semibold shadow-xl hover:shadow-2xl hover:scale-105"
                       >
-                        <Plus className="h-4 w-4" />
-                        Create New Content
+                        <Plus className="h-6 w-6" />
+                        Create Your First Collection
                       </Link>
                     </div>
                   ) : filteredMyLists.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No lists in this view</h3>
-                      <p className="text-gray-600 mb-6">
-                        {currentFolder ? 'This folder is empty' : 'All your lists are organized in folders'}
+                    <div className="text-center py-16">
+                      <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <Folder className="h-10 w-10 text-gray-500" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">No Collections Found</h3>
+                      <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+                        {currentFolder ? 'This folder is empty. Try creating a new collection or moving items here.' : 'All your collections are organized in folders. Try adjusting your filters.'}
                       </p>
+                      {!currentFolder && (
+                        <Link
+                          href="/vocabulary/new"
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                        >
+                          <Plus className="h-5 w-5" />
+                          Create New Collection
+                        </Link>
+                      )}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {filteredMyLists.map(list => (
                         <VocabularyCard
                           key={list.id}
@@ -777,6 +998,9 @@ export default function VocabularyPage() {
                           onView={() => setSelectedList(list)}
                           onEdit={() => handleEditList(list)}
                           onDelete={() => handleDeleteList(list.id)}
+                          onMoveToRoot={() => handleMoveToRoot(list)}
+                          onDragStart={handleCardDragStart}
+                          onDragEnd={handleCardDragEnd}
                           showActions={true}
                         />
                       ))}
@@ -784,13 +1008,17 @@ export default function VocabularyPage() {
                   )
                 ) : (
                   filteredPublicLists.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No public content found</h3>
-                      <p className="text-gray-600">Try adjusting your search or filters</p>
+                    <div className="text-center py-16">
+                      <div className="w-20 h-20 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <Globe className="h-10 w-10 text-teal-600" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">No Public Collections Found</h3>
+                      <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+                        Try adjusting your search terms or filters to discover more public vocabulary collections
+                      </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {filteredPublicLists.map(list => (
                         <VocabularyCard
                           key={list.id}
@@ -811,63 +1039,71 @@ export default function VocabularyPage() {
         </div>
       </div>
 
-      {/* Folder Creation Modal */}
+      {/* Enhanced Folder Creation Modal */}
       {showFolderModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md">
-            <div className="p-6 border-b border-gray-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-white/20 overflow-hidden">
+            <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Create New Folder</h3>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <FolderPlus className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Create New Folder</h3>
+                    <p className="text-sm text-gray-600">Organize your vocabulary collections</p>
+                  </div>
+                </div>
                 <button
                   onClick={() => setShowFolderModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors duration-200"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4 text-gray-600" />
                 </button>
               </div>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-8 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 mb-3">
                   Folder Name
                 </label>
                 <input
                   type="text"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
-                  placeholder="Enter folder name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  placeholder="Enter folder name..."
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 hover:bg-white transition-all duration-200 shadow-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description (Optional)
+                <label className="block text-sm font-semibold text-gray-800 mb-3">
+                  Description <span className="text-gray-500 font-normal">(Optional)</span>
                 </label>
                 <textarea
                   value={newFolderDescription}
                   onChange={(e) => setNewFolderDescription(e.target.value)}
-                  placeholder="Enter folder description"
+                  placeholder="Add a description for this folder..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 hover:bg-white transition-all duration-200 shadow-sm resize-none"
                 />
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+            <div className="p-8 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
               <button
                 onClick={() => setShowFolderModal(false)}
-                className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+                className="px-6 py-3 text-gray-700 hover:text-gray-900 transition-colors duration-200 font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateFolder}
                 disabled={!newFolderName.trim()}
-                className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:shadow-none"
               >
-                <FolderPlus className="h-4 w-4" />
+                <FolderPlus className="h-5 w-5" />
                 Create Folder
               </button>
             </div>

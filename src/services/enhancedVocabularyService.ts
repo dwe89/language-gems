@@ -29,7 +29,7 @@ export interface EnhancedVocabularyList {
   content_type: 'words' | 'sentences' | 'mixed';
   is_public: boolean;
   word_count: number;
-  folder_id?: string;
+  folder_id?: string | null;
   items?: EnhancedVocabularyItem[];
   created_at: string;
   updated_at: string;
@@ -207,18 +207,37 @@ export class EnhancedVocabularyService {
    */
   async updateVocabularyList(
     listId: string,
-    listData: Partial<Omit<EnhancedVocabularyList, 'id' | 'created_at' | 'updated_at'>>,
-    items?: Omit<EnhancedVocabularyItem, 'created_at' | 'updated_at'>[]
+  listData: Partial<Omit<EnhancedVocabularyList, 'id' | 'created_at' | 'updated_at'>>,
+  items?: Omit<EnhancedVocabularyItem, 'id' | 'created_at' | 'updated_at'>[]
   ): Promise<EnhancedVocabularyList> {
     try {
+      let existingItems: EnhancedVocabularyItem[] = [];
+
+      if (items) {
+        const { data: currentItems, error: fetchItemsError } = await this.supabase
+          .from('enhanced_vocabulary_items')
+          .select('*')
+          .eq('list_id', listId);
+
+        if (fetchItemsError) throw fetchItemsError;
+        existingItems = (currentItems as EnhancedVocabularyItem[]) || [];
+      }
+
       // Update the vocabulary list
+      const updatePayload: Record<string, unknown> = {
+        ...listData,
+        updated_at: new Date().toISOString()
+      };
+
+      if (items) {
+        updatePayload.word_count = items.length;
+      } else if (listData.word_count !== undefined) {
+        updatePayload.word_count = listData.word_count;
+      }
+
       const { data: list, error: listError } = await this.supabase
         .from('enhanced_vocabulary_lists')
-        .update({
-          ...listData,
-          word_count: items?.length || listData.word_count,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatePayload)
         .eq('id', listId)
         .select()
         .single();
@@ -228,10 +247,12 @@ export class EnhancedVocabularyService {
       // If items are provided, replace all items
       if (items) {
         // Delete existing items
-        await this.supabase
+        const { error: deleteError } = await this.supabase
           .from('enhanced_vocabulary_items')
           .delete()
           .eq('list_id', listId);
+
+        if (deleteError) throw deleteError;
 
         // Insert new items
         const itemsWithListId = items.map(item => ({
@@ -244,10 +265,23 @@ export class EnhancedVocabularyService {
           .insert(itemsWithListId)
           .select();
 
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+          if (existingItems.length > 0) {
+            await this.supabase
+              .from('enhanced_vocabulary_items')
+              .insert(
+                existingItems.map(item => ({
+                  ...item,
+                  list_id: listId
+                }))
+              );
+          }
+          throw itemsError;
+        }
 
         return {
           ...list,
+          word_count: items.length,
           items: createdItems
         };
       }
@@ -318,10 +352,13 @@ export class EnhancedVocabularyService {
 
       if (error) throw error;
 
-      return data?.map(list => ({
-        ...list,
-        items: list.enhanced_vocabulary_items || []
-      })) || [];
+      return (
+        data?.map(list => ({
+          ...list,
+          word_count: (list.enhanced_vocabulary_items || []).length,
+          items: list.enhanced_vocabulary_items || []
+        })) || []
+      );
     } catch (error) {
       console.error('Error fetching vocabulary lists:', error);
       throw error;
@@ -346,6 +383,7 @@ export class EnhancedVocabularyService {
 
       return data ? {
         ...data,
+        word_count: (data.enhanced_vocabulary_items || []).length,
         items: data.enhanced_vocabulary_items || []
       } : null;
     } catch (error) {

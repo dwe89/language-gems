@@ -300,7 +300,10 @@ const AssignmentCard = ({
 
         {/* Action Button */}
         <Link
-          href={`/student-dashboard/assignments/${assignment.id}`}
+          href={assignment.type === 'vocabulary-test'
+            ? `/student/test/${assignment.id}`
+            : `/student-dashboard/assignments/${assignment.id}`
+          }
           className={`
             group/btn w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl
             font-semibold text-sm transition-all duration-200
@@ -310,7 +313,12 @@ const AssignmentCard = ({
             }
           `}
         >
-          <span>{assignment.status === 'completed' ? 'Review' : 'Start'} Assignment</span>
+          <span>
+            {assignment.type === 'vocabulary-test'
+              ? (assignment.status === 'completed' ? 'View Results' : 'Take Test')
+              : (assignment.status === 'completed' ? 'Review' : 'Start') + ' Assignment'
+            }
+          </span>
           <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
         </Link>
       </div>
@@ -365,37 +373,72 @@ function AssignmentsPageContent() {
 
         const classIds = enrollments.map(e => e.class_id);
 
-        const { data: assignments, error: assignmentError } = await supabase
-          .from('assignments')
-          .select(`
-            id,
-            title,
-            description,
-            due_date,
-            points,
-            status,
-            game_type,
-            game_config,
-            class_id,
-            curriculum_level,
-            vocabulary_count
-          `)
-          .in('class_id', classIds)
-          .order('created_at', { ascending: false });
+        // Fetch regular assignments and vocabulary test assignments in parallel
+        const [
+          { data: assignments, error: assignmentError },
+          { data: assignmentProgress, error: progressError },
+          { data: vocabTestAssignments, error: vocabTestError }
+        ] = await Promise.all([
+          supabase
+            .from('assignments')
+            .select(`
+              id,
+              title,
+              description,
+              due_date,
+              points,
+              status,
+              game_type,
+              game_config,
+              class_id,
+              curriculum_level,
+              vocabulary_count
+            `)
+            .in('class_id', classIds)
+            .order('created_at', { ascending: false }),
 
-        const { data: assignmentProgress, error: progressError } = await supabase
-          .from('enhanced_assignment_progress')
-          .select(`
-            assignment_id,
-            status,
-            best_score,
-            best_accuracy,
-            total_time_spent,
-            completed_at,
-            session_count,
-            progress_data
-          `)
-          .eq('student_id', user.id);
+          supabase
+            .from('enhanced_assignment_progress')
+            .select(`
+              assignment_id,
+              status,
+              best_score,
+              best_accuracy,
+              total_time_spent,
+              completed_at,
+              session_count,
+              progress_data
+            `)
+            .eq('student_id', user.id),
+
+          // Fetch vocabulary test assignments
+          supabase
+            .from('vocabulary_test_assignments')
+            .select(`
+              id,
+              test_id,
+              assignment_id,
+              class_id,
+              due_date,
+              custom_instructions,
+              status,
+              vocabulary_tests (
+                id,
+                title,
+                description,
+                language,
+                curriculum_level,
+                word_count,
+                time_limit_minutes,
+                max_attempts,
+                passing_score_percentage,
+                points_per_question
+              )
+            `)
+            .in('class_id', classIds)
+            .eq('status', 'assigned')
+            .order('assigned_date', { ascending: false })
+        ]);
 
         if (assignmentError) {
           logError('Error fetching assignments:', assignmentError);
@@ -408,6 +451,23 @@ function AssignmentsPageContent() {
 
         if (progressError) {
           logError('Error fetching assignment progress:', progressError);
+        }
+
+        if (vocabTestError) {
+          logError('Error fetching vocabulary test assignments:', vocabTestError);
+        }
+
+        // Fetch vocabulary test results for progress tracking
+        let vocabTestResults: any[] = [];
+        if (vocabTestAssignments && vocabTestAssignments.length > 0) {
+          const testIds = vocabTestAssignments.map((vta: any) => vta.test_id);
+          const { data: results } = await supabase
+            .from('vocabulary_test_results')
+            .select('test_id, percentage_score, passed, completion_time, attempt_number, status')
+            .eq('student_id', user.id)
+            .in('test_id', testIds);
+
+          vocabTestResults = results || [];
         }
 
         const classNameMap = new Map();
@@ -506,10 +566,75 @@ function AssignmentsPageContent() {
           };
         });
 
-        const currentAssignments = processedAssignments.filter(assignment =>
+        // Process vocabulary test assignments
+        const processedVocabTests: Assignment[] = (vocabTestAssignments || []).map((vta: any, index: number) => {
+          const test = vta.vocabulary_tests;
+          if (!test) return null;
+
+          // Find student's results for this test
+          const studentResults = vocabTestResults.filter((r: any) => r.test_id === vta.test_id);
+          const completedResults = studentResults.filter((r: any) => r.status === 'completed');
+          const inProgressResults = studentResults.filter((r: any) => r.status === 'in_progress');
+
+          let status: 'not-started' | 'in-progress' | 'completed' = 'not-started';
+          let bestScore = 0;
+          let attemptsCount = studentResults.length;
+          let completedAt: string | null = null;
+
+          if (completedResults.length > 0) {
+            // Has completed attempts
+            const passedAttempts = completedResults.filter((r: any) => r.passed);
+            if (passedAttempts.length > 0) {
+              status = 'completed';
+              bestScore = Math.max(...completedResults.map((r: any) => r.percentage_score));
+              const latestCompleted = completedResults.sort((a: any, b: any) =>
+                new Date(b.completion_time).getTime() - new Date(a.completion_time).getTime()
+              )[0];
+              completedAt = latestCompleted.completion_time;
+            } else {
+              // Has attempts but none passed
+              status = 'in-progress';
+              bestScore = Math.max(...completedResults.map((r: any) => r.percentage_score));
+            }
+          } else if (inProgressResults.length > 0) {
+            status = 'in-progress';
+          }
+
+          const totalPoints = test.word_count * test.points_per_question;
+
+          return {
+            id: vta.test_id, // Use test_id as the assignment ID for navigation
+            title: test.title,
+            description: test.description || `${test.language} vocabulary test - ${test.word_count} words`,
+            dueDate: vta.due_date ? new Date(vta.due_date).toLocaleDateString('en-GB') : 'No due date',
+            status,
+            gemType: ['purple', 'blue', 'yellow', 'green', 'red'][(processedAssignments.length + index) % 5] as any,
+            gameCount: 1,
+            activities: ['Vocabulary Test'],
+            className: classNameMap.get(vta.class_id) || 'Your Class',
+            points: totalPoints,
+            type: 'vocabulary-test',
+            curriculum_level: test.curriculum_level as 'KS3' | 'KS4',
+            vocabulary_count: test.word_count,
+            progress: studentResults.length > 0 ? {
+              bestScore,
+              bestAccuracy: bestScore, // For tests, score and accuracy are the same
+              completedAt,
+              attemptsCount,
+              totalTimeSpent: 0, // Not tracked in current schema
+              completedGames: status === 'completed' ? 1 : 0,
+              totalGames: 1
+            } : null
+          };
+        }).filter(Boolean) as Assignment[];
+
+        // Combine regular assignments and vocabulary tests
+        const allAssignments = [...processedAssignments, ...processedVocabTests];
+
+        const currentAssignments = allAssignments.filter(assignment =>
           assignment.status === 'not-started' || assignment.status === 'in-progress'
         );
-        const completedAssignments = processedAssignments.filter(assignment =>
+        const completedAssignments = allAssignments.filter(assignment =>
           assignment.status === 'completed'
         );
 

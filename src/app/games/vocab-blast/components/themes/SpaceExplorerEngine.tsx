@@ -431,52 +431,83 @@ export default function SpaceExplorerEngine({
             exit={{ opacity: 0, scale: 0 }}
             onClick={() => handleCometClick(comet)}
             // Disable pointer events if already answered, to prevent multiple clicks
-            className={`absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none ${comet.isAnswered ? 'pointer-events-none' : ''}`}
+            className={`absolute cursor-pointer hover:scale-110 select-none ${comet.isAnswered ? 'pointer-events-none' : ''}`}
             style={{ x: comet.x, y: comet.y }} // Explicitly setting for Framer Motion
           >
             <div className="relative">
               {/* Realistic Comet Design */}
               <div className="relative">
-                {/* Comet Trail */}
+                {/* Comet Trail - More realistic tapered design */}
                 <div
-                  className="absolute bg-gradient-to-r from-transparent via-blue-300 to-white opacity-80 blur-sm"
+                  className="absolute opacity-90"
                   style={{
                     width: `${comet.trailLength}px`,
-                    height: '3px',
+                    height: '20px',
                     left: `-${comet.trailLength}px`,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    background: 'linear-gradient(90deg, transparent 0%, rgba(147, 197, 253, 0.6) 30%, rgba(255, 255, 255, 0.9) 100%)'
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(147, 197, 253, 0.8) 20%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.9) 80%, transparent 100%)',
+                    borderRadius: '50% 0 0 50%',
+                    filter: 'blur(1px)',
+                    clipPath: 'polygon(0% 30%, 70% 20%, 100% 50%, 70% 80%, 0% 70%)'
                   }}
                 />
 
-                {/* Secondary Trail */}
+                {/* Secondary Dust Trail */}
                 <div
-                  className="absolute bg-gradient-to-r from-transparent via-purple-300 to-cyan-200 opacity-60 blur-md"
+                  className="absolute opacity-60"
                   style={{
-                    width: `${comet.trailLength * 0.7}px`,
-                    height: '6px',
-                    left: `-${comet.trailLength * 0.7}px`,
+                    width: `${comet.trailLength * 0.8}px`,
+                    height: '12px',
+                    left: `-${comet.trailLength * 0.8}px`,
                     top: '50%',
                     transform: 'translateY(-50%)',
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, 0.4) 30%, rgba(6, 182, 212, 0.5) 70%, transparent 100%)',
+                    borderRadius: '50% 0 0 50%',
+                    filter: 'blur(2px)',
+                    clipPath: 'polygon(0% 40%, 60% 30%, 100% 50%, 60% 70%, 0% 60%)'
                   }}
                 />
 
-                {/* Comet Head */}
-                <div className="relative w-16 h-16 bg-gradient-radial from-white via-blue-200 to-purple-400 rounded-full shadow-2xl">
-                  {/* Inner Core */}
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-gradient-radial from-white to-blue-100 rounded-full"></div>
+                {/* Comet Nucleus */}
+                <div className="relative w-12 h-12">
+                  {/* Main Nucleus */}
+                  <div className="absolute inset-0 bg-gradient-radial from-yellow-100 via-orange-200 to-red-400 rounded-full shadow-2xl">
+                    {/* Rocky Surface Texture */}
+                    <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/20 rounded-full"></div>
+                    {/* Bright Core */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-gradient-radial from-white to-yellow-200 rounded-full"></div>
+                  </div>
 
-                  {/* Glow Effect */}
+                  {/* Comet Atmosphere/Glow */}
                   <div
-                    className="absolute inset-0 bg-blue-300 rounded-full blur-lg opacity-70"
-                    style={{ opacity: comet.glowIntensity }}
+                    className="absolute inset-0 bg-gradient-radial from-cyan-200/60 via-blue-300/40 to-purple-400/20 rounded-full blur-md"
+                    style={{
+                      opacity: comet.glowIntensity,
+                      transform: 'scale(1.8)'
+                    }}
                   />
+                </div>
+
+                {/* Ice Particles Effect */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="absolute w-1 h-1 bg-white/80 rounded-full"
+                      style={{
+                        left: `${20 + Math.random() * 60}%`,
+                        top: `${20 + Math.random() * 60}%`,
+                        animationDelay: `${Math.random() * 2}s`,
+                        opacity: Math.random() * 0.8 + 0.2
+                      }}
+                    />
+                  ))}
                 </div>
 
                 {/* Vocabulary Text - Counter-rotated to stay upright */}
                 <div
-                  className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-gray-900/90 text-white px-3 py-1 rounded-lg border border-blue-400 font-bold text-sm shadow-lg backdrop-blur-sm"
+                  className="absolute top-full left-1/2 transform -translate-x-1/2 mt-3 bg-gray-900/95 text-white px-3 py-1.5 rounded-lg border border-cyan-400/50 font-bold text-sm shadow-xl backdrop-blur-sm"
                   style={{ transform: `translateX(-50%) rotate(-${comet.rotation}deg)` }}
                 >
                   {comet.translation}

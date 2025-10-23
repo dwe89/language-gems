@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import 'server-only';
+
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import OpenAI from 'openai';
-import { writeFile, readFile } from 'fs/promises';
-import path from 'path';
-import fs from 'fs';
+
+import { renderWorksheetToHtml } from '@/lib/html/render';
+
 // Removed puppeteer/chromium - using client-side html2pdf.js instead
 
 // Initialize OpenAI with project-based API key support
@@ -14,6 +16,8 @@ const openai = new OpenAI({
   project: process.env.OPENAI_PROJECT_ID, // Optional: for project-scoped keys
   dangerouslyAllowBrowser: false,
 });
+import type { WorksheetContent } from '@/types/worksheet';
+
 
 interface WorksheetRequest {
   subject: string;
@@ -25,61 +29,6 @@ interface WorksheetRequest {
   customPrompt?: string;
 }
 
-interface WorksheetContent {
-  title: string;
-  studentInfo: {
-    nameField: boolean;
-    dateField: boolean;
-    classField: boolean;
-  };
-  introductoryExplanation?: {
-    title: string;
-    content: string;
-  };
-  referenceSection?: {
-    title: string;
-    conjugationTables?: Array<{
-      verb: string;
-      type: string;
-      english: string;
-      conjugations?: {
-        [pronoun: string]: string;
-      };
-    }>;
-    content?: string;
-    endingPatterns?: Array<{
-      type: string;
-      endings: string[];
-      color: 'yellow' | 'blue' | 'green';
-    }>;
-  };
-  exercises: Array<{
-    type: 'fill_in_blanks' | 'multiple_choice' | 'error_correction' | 'translation' | 'matching' | 'word_order' | 'translation_both_ways';
-    title: string;
-    instructions: string;
-    questions: Array<{
-      number?: number;
-      sentence?: string;
-      verb?: string;
-      options?: string[];
-      answer?: string;
-      english?: string;
-      spanish?: string;
-      incorrect?: string;
-      correct?: string;
-      scrambled?: string;
-      section?: string;
-      items?: Array<{
-        spanish?: string;
-        english?: string;
-        sentence?: string;
-      }>;
-      original?: string; // For error correction
-      error?: string; // For error correction
-      text?: string; // For error correction
-    }>;
-  }>;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -126,7 +75,9 @@ export async function POST(request: NextRequest) {
     // Generate worksheet content using OpenAI
     const systemPrompt = `You are an expert ${language} teacher. Create a ${level} level worksheet on "${topic}".
 
-Return ONLY valid JSON. Use "${topic}" tense consistently throughout.
+CRITICAL: Return ONLY valid JSON. All quotes within string values MUST be properly escaped with backslashes. For example: "content": "This is a \\"quoted\\" word in the text."
+
+Use "${topic}" tense consistently throughout.
 
 Structure:
 {
@@ -143,7 +94,7 @@ Structure:
   "exercises": [
     {
       "type": "fill_in_blanks",
-      "title": "Fill in the Blanks", 
+      "title": "Fill in the Blanks",
       "instructions": "Complete with the correct ${topic} form.",
       "questions": [
         {"sentence": "Yo ___ (hablar) español."},
@@ -176,7 +127,7 @@ Structure:
       ]
     },
     {
-      "type": "error_correction", 
+      "type": "error_correction",
       "title": "Error Correction",
       "instructions": "Fix the error - write the correct ${topic} form.",
       "questions": [
@@ -228,7 +179,7 @@ Structure:
     },
     {
       "type": "translation_both_ways",
-      "title": "Translation Practice", 
+      "title": "Translation Practice",
       "instructions": "Translate between Spanish and English.",
       "questions": [
         {"section": "spanish_to_english", "items": [
@@ -258,7 +209,9 @@ Structure:
       ]
     }
   ]
-}`;
+}
+
+IMPORTANT: Ensure all quotes in string values are properly escaped. For example, if you need to include quotes in explanations, use \\" instead of ".`;
 
     let completion;
     try {
@@ -278,14 +231,14 @@ Structure:
         type: apiError.type,
         message: apiError.message
       });
-      
+
       if (apiError.status === 401) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'OpenAI API authentication failed. Please check your API key configuration.',
           details: 'This appears to be a project-based API key. Ensure it has the correct permissions and is not expired.'
         }, { status: 500 });
       }
-      
+
       throw apiError; // Re-throw for other errors
     }
 
@@ -295,61 +248,79 @@ Structure:
       console.log('OpenAI Response Text Length:', responseText.length);
       console.log('OpenAI Response Text Preview:', responseText.substring(0, 500), '...');
       console.log('OpenAI Response Text End:', responseText.substring(responseText.length - 200));
-      
+
       // Check if response was truncated
       if (completion.choices[0].finish_reason === 'length') {
         console.warn('OpenAI response was truncated due to max_tokens limit');
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'Response was truncated. Try reducing complexity or increasing max_tokens.',
           details: 'The OpenAI response was cut off due to token limits.',
           responsePreview: responseText.substring(0, 1000)
         }, { status: 500 });
       }
-      
+
       // Clean the response text and extract JSON
       let jsonText = responseText.trim();
-      
+
       // Log the cleaning process
       console.log('Original response starts with:', jsonText.substring(0, 50));
       console.log('Original response ends with:', jsonText.substring(jsonText.length - 50));
-      
+
       // Remove any markdown code blocks if present
       if (jsonText.startsWith('```json')) {
         jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
       } else if (jsonText.startsWith('```')) {
         jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
       }
-      
+
       // Find the main JSON object (first { to last })
       const firstBrace = jsonText.indexOf('{');
       const lastBrace = jsonText.lastIndexOf('}');
-      
+
       console.log('First brace at:', firstBrace, 'Last brace at:', lastBrace);
-      
+
       if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
         jsonText = jsonText.substring(firstBrace, lastBrace + 1);
       } else {
         throw new Error('No valid JSON structure found in response');
       }
-      
+
       console.log('Extracted JSON:', jsonText.substring(0, 200), '...');
       console.log('Extracted JSON length:', jsonText.length);
-      
-      worksheetContent = JSON.parse(jsonText);
-      
+
+      // Try to parse JSON, with fallback for common issues
+      try {
+        worksheetContent = JSON.parse(jsonText);
+      } catch (firstParseError) {
+        console.log('First JSON parse failed, trying to fix common issues...');
+
+        // Try to fix common JSON issues
+        let fixedJson = jsonText
+          // Remove trailing commas before closing braces/brackets
+          .replace(/,(\s*[}\]])/g, '$1');
+
+        try {
+          worksheetContent = JSON.parse(fixedJson);
+          console.log('JSON parsing succeeded with fixes');
+        } catch (secondParseError) {
+          console.error('JSON parsing failed even with fixes:', secondParseError);
+          throw firstParseError; // Throw original error
+        }
+      }
+
       // Validate that we have exercises
       if (!worksheetContent.exercises || worksheetContent.exercises.length === 0) {
         throw new Error('No exercises found in generated content');
       }
-      
+
       console.log('Successfully parsed worksheet with', worksheetContent.exercises.length, 'exercises');
     } catch (parseError: any) {
       console.error('Failed to parse OpenAI response:', parseError);
       console.error('Response length:', completion.choices[0].message.content?.length);
       console.error('Finish reason:', completion.choices[0].finish_reason);
       console.error('Raw response:', completion.choices[0].message.content);
-      
-      return NextResponse.json({ 
+
+      return NextResponse.json({
         error: 'Failed to generate worksheet content',
         details: `JSON Parse Error: ${parseError.message}`,
         responsePreview: completion.choices[0].message.content?.substring(0, 1000),
@@ -359,7 +330,7 @@ Structure:
     }
 
     // Generate HTML using our beautiful template
-    const html = generateWorksheetHTML(worksheetContent);
+    const html = renderWorksheetToHtml(worksheetContent);
 
     // Return HTML for client-side PDF generation using html2pdf.js
     const timestamp = new Date().toISOString().split('T')[0];
@@ -374,12 +345,12 @@ Structure:
 
   } catch (error) {
     console.error('Worksheet generation error:', error);
-    
+
     // Ensure we always return proper JSON
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('Full error details:', errorMessage);
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       success: false,
       error: 'Failed to generate worksheet',
       details: process.env.NODE_ENV === 'development' ? errorMessage : 'Internal server error'
@@ -391,11 +362,11 @@ function generateWorksheetHTML(content: WorksheetContent): string {
     // Helper function to get correct verb endings based on topic
     const getVerbEndings = (topic: string) => {
         const topicLower = topic.toLowerCase();
-        
+
         if (topicLower.includes('future') || topicLower.includes('futuro')) {
             return {
                 ar: ['-é', '-ás', '-á', '-emos', '-éis', '-án'],
-                er: ['-é', '-ás', '-á', '-emos', '-éis', '-án'], 
+                er: ['-é', '-ás', '-á', '-emos', '-éis', '-án'],
                 ir: ['-é', '-ás', '-á', '-emos', '-éis', '-án']
             };
         } else if (topicLower.includes('past') || topicLower.includes('preterite') || topicLower.includes('pasado')) {
@@ -430,310 +401,273 @@ function generateWorksheetHTML(content: WorksheetContent): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${content.title}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Open+Sans:wght@400;600;700&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Open Sans', sans-serif;
-            background: linear-gradient(135deg, #f5f3f0 0%, #ede8e3 100%);
-            color: #333;
-            line-height: 1.4;
-        }
-        
-        .page {
-            width: 8.5in;
-            height: 11in;
-            margin: 0 auto;
-            background: white;
-            padding: 0.4in;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            page-break-after: always;
-            border: 3px solid #8B5CF6;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .page:last-child {
-            page-break-after: avoid;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-            color: white;
-            text-align: center;
-            padding: 15px;
-            margin: -0.4in -0.4in 15px -0.4in;
-            border-bottom: 3px solid #8B5CF6;
-        }
-        
-        .header h1 {
-            font-family: 'Fredoka One', cursive;
-            font-size: 2em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            letter-spacing: 2px;
-        }
-        
-        .name-date {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        
-        .name-date span {
-            border-bottom: 2px solid #333;
-            padding-bottom: 2px;
-            min-width: 320px;
-        }
+        /* --- New $10x CSS --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto+Mono:wght@400;600&display=swap');
 
-        .content {
-            flex: 1;
-        }
+:root {
+    --color-primary: #172554; /* Deep Navy Blue */
+    --color-accent: #F59E0B; /* Vibrant Amber/Gold */
+    --color-light: #F8FAFC; /* Lightest Gray */
+    --color-text: #374151; /* Dark Gray Text */
+    --color-border: #E5E7EB;
+}
 
-        .intro-section {
-            margin-bottom: 15px;
-            padding: 15px;
-            background: #F8FAFC;
-            border: 2px dashed #8B5CF6;
-            border-radius: 8px;
-        }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        .intro-section h3 {
-            color: #8B5CF6;
-            margin-bottom: 8px;
-            font-size: 16px;
-        }
+body {
+    font-family: 'Poppins', sans-serif;
+    color: var(--color-text);
+    line-height: 1.6;
+    background-color: #f0f0f0; /* Slight off-white background */
+}
 
-        .intro-section p {
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        
-        .section {
-            border: 2px dashed #666;
-            margin: 15px 0;
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .section-number {
-            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 16px;
-            float: left;
-            margin-right: 12px;
-            margin-top: -3px;
-            box-shadow: 0 3px 6px rgba(139, 92, 246, 0.3);
-        }
-        
-        .section h3 {
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #374151;
-            font-size: 15px;
-        }
+.page {
+    width: 8.5in;
+    height: 11in;
+    margin: 0 auto;
+    background: white;
+    padding: 0.7in 0.8in 0.6in 0.8in;
+    box-shadow: 0 0 30px rgba(0,0,0,0.1); /* Deeper shadow for premium feel */
+    page-break-after: always;
+    position: relative;
+    border-top: 6px solid var(--color-primary); /* Strong top accent line */
+}
 
-        .instructions {
-            font-style: italic;
-            color: #6B7280;
-            margin-bottom: 10px;
-            font-size: 13px;
-        }
-        
-        .two-column {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        
-        .exercise-item {
-            margin: 6px 0;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .exercise-item .number {
-            font-weight: 600;
-            color: #8B5CF6;
-            min-width: 25px;
-        }
-        
-        .blank {
-            border-bottom: 2px solid #333;
-            display: inline-block;
-            min-width: 120px;
-            margin: 0 5px;
-            padding: 2px 5px;
-        }
+/* --- HEADER / BRANDING --- */
 
-        .reference-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin: 15px 0;
-            text-align: center;
-        }
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 20px;
+}
 
-        .reference-card {
-            padding: 15px;
-            border-radius: 8px;
-            border: 2px solid;
-            font-size: 14px;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-        }
+.title-block {
+    text-align: left;
+}
 
-        .ar-verbs {
-            background: #FEF3C7;
-            border-color: #F59E0B;
-            color: #92400E;
-        }
+.title-block h1 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 1.8em;
+    color: var(--color-primary);
+    line-height: 1.1;
+}
 
-        .er-verbs {
-            background: #DBEAFE;
-            border-color: #3B82F6;
-            color: #1E40AF;
-        }
+.title-block h2 {
+    font-size: 0.9em;
+    font-weight: 400;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
 
-        .ir-verbs {
-            background: #D1FAE5;
-            border-color: #10B981;
-            color: #047857;
-        }
+.logo-stamp {
+    width: 40px;
+    height: 40px;
+    background: var(--color-accent);
+    clip-path: polygon(50% 0%, 100% 35%, 100% 70%, 50% 100%, 0% 70%, 0% 35%); /* Gem Shape */
+}
 
-        .reference-card h4 {
-            font-weight: 700;
-            margin-bottom: 8px;
-            font-size: 15px;
-        }
-        
-        .footer {
-            margin-top: auto;
-            text-align: center;
-            padding: 15px 0;
-            border-top: 2px solid #E5E7EB;
-            background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
-            margin-left: -0.4in;
-            margin-right: -0.4in;
-            margin-bottom: -0.4in;
-            font-weight: 600;
-            color: #8B5CF6;
-            font-size: 14px;
-        }
-        
-        .gem-accent {
-            color: #F59E0B;
-            font-weight: 700;
-        }
+.name-date {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4B5563;
+}
 
-        .footer-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-weight: 600;
-            color: #8B5CF6;
-            font-size: 14px;
-        }
+.name-date div {
+    flex-basis: 30%;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
 
-        .gem-icon {
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
+.name-date span {
+    flex-grow: 1;
+    border-bottom: 1px dashed var(--color-text); /* Dashed line for writing */
+    height: 18px;
+}
 
-        .slogan {
-            font-style: italic;
-            color: #6B7280;
-            font-size: 12px;
-            margin-top: 5px;
-            font-weight: 400;
-        }
+/* --- INTRO & REFERENCE SECTIONS --- */
 
-        .matching-table {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin: 15px 0;
-        }
+.intro-section {
+    margin-bottom: 25px;
+    padding: 15px 20px;
+    background: var(--color-light); /* Off-white card */
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Subtle lift */
+}
 
-        .matching-column {
-            border: 2px solid #8B5CF6;
-            border-radius: 8px;
-            padding: 15px;
-            background: #F8FAFC;
-        }
+.intro-section h3 {
+    color: var(--color-primary);
+    margin-bottom: 8px;
+    font-size: 1.1em;
+    font-weight: 700;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 4px;
+}
 
-        .matching-item {
-            margin: 8px 0;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+.intro-section p {
+    font-family: 'Roboto Mono', monospace; /* Monospace for explanation clarity */
+    font-size: 13px;
+    line-height: 1.6;
+}
 
-        .word-order-item {
-            margin: 15px 0;
-            padding: 10px;
-            background: #F3F4F6;
-            border-radius: 6px;
-            border-left: 4px solid #8B5CF6;
-        }
+/* --- EXERCISES --- */
 
-        .scrambled-words {
-            font-weight: 600;
-            color: #8B5CF6;
-            margin-bottom: 5px;
-        }
+.section {
+    margin-bottom: 30px;
+    padding-top: 10px;
+}
 
-        .answer-line {
-            border-bottom: 2px solid #374151;
-            height: 25px;
-            margin: 8px 0;
-            position: relative;
-        }
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
 
-        .answer-line::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 3px;
-            height: 3px;
-            background: #8B5CF6;
-            border-radius: 50%;
-            transform: translateY(-50%);
-        }
-        
-        @media print {
-            body {
-                background: white;
-            }
-            .page {
-                box-shadow: none;
-                margin: 0;
-                border: none;
-            }
-        }
+.section-number {
+    background: var(--color-primary);
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.section h3 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 1.1em;
+    color: var(--color-primary);
+}
+
+.instructions {
+    font-style: italic;
+    color: #6B7280;
+    margin: 5px 0 15px 30px;
+    font-size: 13px;
+}
+
+/* Grid for exercises (questions will be inside these) */
+.exercise-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px 30px;
+}
+
+.exercise-item {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.exercise-item .number {
+    font-weight: 600;
+    color: var(--color-accent);
+    min-width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.question-content {
+    line-height: 1.8; /* Increased line-height for better writing space */
+    display: inline;
+}
+
+.blank {
+    border-bottom: 1px solid var(--color-text);
+    display: inline-block;
+    min-width: 100px;
+    height: 20px;
+    padding: 0 5px;
+    vertical-align: middle;
+}
+
+/* Multiple Choice Styling */
+.options-list {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #6B7280;
+}
+.option {
+    margin-right: 15px;
+}
+
+/* Word Order / Error Correction Input Line */
+.answer-line {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    height: 35px;
+    margin-top: 8px;
+    background: white;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* --- FOOTER --- */
+
+.footer {
+    position: absolute;
+    bottom: 0.3in;
+    left: 0.8in;
+    right: 0.8in;
+    text-align: center;
+    border-top: 1px solid var(--color-border);
+    padding-top: 10px;
+}
+
+.footer-content {
+    font-size: 12px;
+    color: var(--color-primary);
+}
+
+.footer-content strong {
+    font-weight: 600;
+    color: var(--color-accent);
+}
+
+.footer-link {
+    font-size: 11px;
+    color: #9CA3AF;
+    margin-top: 4px;
+}
+
+@media print {
+    /* Optimization for printing */
+    .page {
+        box-shadow: none;
+        border-top: 6px solid #000; /* Use black for max contrast on print */
+        margin: 0;
+        padding: 0.5in;
+    }
+    .header {
+        margin-top: -0.2in;
+    }
+    .footer {
+        position: fixed;
+    }
+}
     </style>
 </head>
 <body>
@@ -742,7 +676,7 @@ function generateWorksheetHTML(content: WorksheetContent): string {
         <div class="header">
             <h1>${content.title.toUpperCase()}</h1>
         </div>
-        
+
         <div class="name-date">
             <div>NAME: <span></span></div>
             <div>DATE: <span></span></div>
@@ -778,7 +712,7 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             </div>
         </div>
         ` : ''}
-        
+
         <div class="two-column">
             ${content.exercises.slice(0, 2).map((exercise, index) => `
             <div class="section">
@@ -787,8 +721,8 @@ function generateWorksheetHTML(content: WorksheetContent): string {
                 <div class="instructions">${exercise.instructions}</div>
                 ${exercise.questions.map((q, qIndex) => `
                 <div class="exercise-item">
-                    <span class="number">${qIndex + 1}.</span> 
-                                         ${exercise.type === 'multiple_choice' ? 
+                    <span class="number">${qIndex + 1}.</span>
+                                         ${exercise.type === 'multiple_choice' ?
                          `${q.sentence || ''} (${q.options ? q.options.join(' / ') : 'a / b / c'})` :
                      exercise.type === 'error_correction' ?
                          `${q.incorrect || q.original || q.error || q.sentence || q.text || ''} <span class="blank"></span>` :
@@ -802,7 +736,7 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             `).join('')}
         </div>
         </div>
-        
+
         <div class="footer">
             <div class="footer-content">
                 <div class="gem-icon"></div>
@@ -812,18 +746,18 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             <div class="slogan">Unlock the Gems of Language Learning</div>
         </div>
     </div>
-    
+
     <!-- PAGE 2 -->
     <div class="page">
         <div class="header">
             <h1>MORE PRACTICE</h1>
         </div>
-        
+
         <div class="name-date">
             <div>NAME: <span></span></div>
             <div>DATE: <span></span></div>
         </div>
-        
+
         <div class="content">
         ${content.exercises.slice(2).map((exercise, index) => {
             if (exercise.type === 'matching') {
@@ -844,7 +778,7 @@ function generateWorksheetHTML(content: WorksheetContent): string {
                         </div>
                         <div class="matching-column">
                             <h4>English</h4>
-                            ${(() => { const shuffledEng = [...exercise.questions.slice(0, 10)].sort(() => 0.5 - Math.random()); return shuffledEng; })().map((q, qIndex) => `
+                            ${exercise.questions.slice(0, 10).map((q, qIndex) => `
                             <div class="matching-item">
                                 <span class="number">${qIndex + 1}.</span>
                                 <span>${q.english || q.answer || ''}</span>
@@ -901,8 +835,8 @@ function generateWorksheetHTML(content: WorksheetContent): string {
                     <div class="instructions">${exercise.instructions}</div>
                     ${exercise.questions.map((q, qIndex) => `
                     <div class="exercise-item">
-                        <span class="number">${qIndex + 1}.</span> 
-                        ${exercise.type === 'multiple_choice' ? 
+                        <span class="number">${qIndex + 1}.</span>
+                        ${exercise.type === 'multiple_choice' ?
                              `${q.sentence || ''} (${q.options ? q.options.join(' / ') : 'a / b / c'})` :
                          exercise.type === 'error_correction' ?
                              `${q.incorrect || q.original || q.error || q.sentence || q.text || ''} <span class="blank"></span>` :
@@ -916,7 +850,7 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             }
         }).join('')}
         </div>
-        
+
         <div class="footer">
             <div class="footer-content">
                 <div class="gem-icon"></div>
@@ -978,4 +912,4 @@ function getEnglishTranslation(pronoun: string, verb: string): string {
 async function saveAndGeneratePdf(worksheet: WorksheetContent, htmlContent: string) {
     // This function is no longer needed as PDF generation is handled by the browser.
     // Keeping it for now, but it will be removed in a future edit.
-} 
+}

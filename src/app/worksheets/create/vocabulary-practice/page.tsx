@@ -510,13 +510,13 @@ export default function VocabularyPracticePage() {
                         })}
                       </select>
                       {availableCategories.length > 0 && (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3" key={`categories-${vocabularyConfig.curriculumLevel}`}>
                           {availableCategories.map((category) => {
                             const IconComponent = category.icon;
                             const isSelected = vocabularyConfig.categoryId === category.id;
                             return (
                               <button
-                                key={category.id}
+                                key={`${vocabularyConfig.curriculumLevel}-${category.id}`}
                                 type="button"
                                 onClick={() =>
                                   setVocabularyConfig((prev: VocabularyConfig) => ({
@@ -531,7 +531,7 @@ export default function VocabularyPracticePage() {
                                     : 'bg-background border-border hover:border-primary/50 hover:shadow-md'
                                 }`}
                               >
-                                <IconComponent className="h-4 w-4" />
+                                {IconComponent && <IconComponent className="h-4 w-4" />}
                                 <span className="truncate">{category.displayName}</span>
                               </button>
                             );
@@ -564,12 +564,12 @@ export default function VocabularyPracticePage() {
                             </option>
                           ))}
                         </select>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4" key={`subcategories-${vocabularyConfig.categoryId}`}>
                           {availableSubcategories.map((subcategory) => {
                             const isSelected = vocabularyConfig.subcategoryId === subcategory.id;
                             return (
                               <button
-                                key={subcategory.id}
+                                key={`${vocabularyConfig.categoryId}-${subcategory.id}`}
                                 type="button"
                                 onClick={() =>
                                   setVocabularyConfig((prev: VocabularyConfig) => ({

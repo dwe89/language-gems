@@ -24,7 +24,8 @@ import {
   Search,
   RefreshCw,
   Flame,
-  Gamepad2
+  Gamepad2,
+  AlertTriangle
 } from 'lucide-react';
 
 import { useAuth } from '../../../components/auth/AuthProvider';
@@ -51,7 +52,7 @@ const DEFAULT_SUMMARY: TeacherLeaderboardsResponse['summary'] = {
   totalClasses: 0,
   totalXP: 0,
   totalGems: 0,
-  timePeriod: 'weekly',
+  timePeriod: 'all_time',
   generatedAt: new Date().toISOString()
 };
 
@@ -63,8 +64,9 @@ export default function LeaderboardsPage() {
   const [selectedClass, setSelectedClass] = useState<'all' | string>('all');
   const [view, setView] = useState<ViewMode>('cross-game');
   const [searchQuery, setSearchQuery] = useState('');
-  const [timePeriod, setTimePeriod] = useState<LeaderboardTimePeriod>('weekly');
+  const [timePeriod, setTimePeriod] = useState<LeaderboardTimePeriod>('all_time');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hideInactive, setHideInactive] = useState(true);
 
   const fetchLeaderboards = async () => {
     if (!user?.id) return;
@@ -130,9 +132,10 @@ export default function LeaderboardsPage() {
         query.length === 0 ||
         student.studentName.toLowerCase().includes(query) ||
         student.email.toLowerCase().includes(query);
-      return matchesClass && matchesSearch;
+      const hasActivity = !hideInactive || student.stats.points > 0;
+      return matchesClass && matchesSearch && hasActivity;
     });
-  }, [students, selectedClass, searchQuery]);
+  }, [students, selectedClass, searchQuery, hideInactive]);
 
   const filteredClasses = useMemo(() => {
     if (selectedClass === 'all') return classes;
@@ -140,9 +143,12 @@ export default function LeaderboardsPage() {
   }, [classes, selectedClass]);
 
   const filteredCrossEntries = useMemo(() => {
-    if (selectedClass === 'all') return crossEntries;
-    return crossEntries.filter(entry => entry.class_id === selectedClass);
-  }, [crossEntries, selectedClass]);
+    let filtered = selectedClass === 'all' ? crossEntries : crossEntries.filter(entry => entry.class_id === selectedClass);
+    if (hideInactive) {
+      filtered = filtered.filter(entry => entry.total_points > 0);
+    }
+    return filtered;
+  }, [crossEntries, selectedClass, hideInactive]);
 
   const summaryForSelection = useMemo(() => {
     if (selectedClass === 'all') {
@@ -252,6 +258,16 @@ export default function LeaderboardsPage() {
                 </select>
                 <Calendar className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
               </div>
+
+              <label className="flex items-center gap-2 px-4 py-3 border border-slate-300/60 rounded-xl bg-white/90 cursor-pointer hover:bg-slate-50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={hideInactive}
+                  onChange={e => setHideInactive(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                />
+                <span className="text-sm font-medium text-slate-700">Hide inactive</span>
+              </label>
             </div>
 
             <div className="flex items-center gap-3">
@@ -295,7 +311,7 @@ export default function LeaderboardsPage() {
         )}
 
         {view === 'students' && (
-          <StudentLeaderboard students={filteredStudents} loading={loading} />
+          <StudentLeaderboard students={filteredStudents} loading={loading} timePeriod={timePeriod} />
         )}
 
         {view === 'classes' && (
@@ -406,7 +422,7 @@ function SummaryCards({
   );
 }
 
-function StudentLeaderboard({ students, loading }: { students: StudentLeaderboardEntry[]; loading: boolean }) {
+function StudentLeaderboard({ students, loading, timePeriod }: { students: StudentLeaderboardEntry[]; loading: boolean; timePeriod: LeaderboardTimePeriod }) {
   if (loading) {
     return (
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
@@ -447,9 +463,9 @@ function StudentLeaderboard({ students, loading }: { students: StudentLeaderboar
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-8">
           <h3 className="text-xl font-bold text-slate-900 mb-6 text-center">🏆 Top Performers</h3>
           <div className="flex justify-center items-end gap-6">
-            {topThree[1] && <PodiumCard student={topThree[1]} position={2} />}
-            {topThree[0] && <PodiumCard student={topThree[0]} position={1} />}
-            {topThree[2] && <PodiumCard student={topThree[2]} position={3} />}
+            {topThree[1] && <PodiumCard student={topThree[1]} position={2} timePeriod={timePeriod} />}
+            {topThree[0] && <PodiumCard student={topThree[0]} position={1} timePeriod={timePeriod} />}
+            {topThree[2] && <PodiumCard student={topThree[2]} position={3} timePeriod={timePeriod} />}
           </div>
         </div>
       )}
@@ -484,7 +500,18 @@ function StudentLeaderboard({ students, loading }: { students: StudentLeaderboar
                       {student.avatarInitials}
                     </div>
                     <div>
-                      <div className="font-semibold text-slate-900">{student.studentName}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold text-slate-900">{student.studentName}</div>
+                        {student.dataQualityWarnings && student.dataQualityWarnings.length > 0 && (
+                          <div
+                            className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs"
+                            title={student.dataQualityWarnings.join('; ')}
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>Data issue</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="text-sm text-slate-500">{student.className}</div>
                     </div>
                   </div>
@@ -607,7 +634,7 @@ function ClassLeaderboard({ classes, loading }: { classes: ClassLeaderboardEntry
   );
 }
 
-function PodiumCard({ student, position }: { student: StudentLeaderboardEntry; position: 1 | 2 | 3 }) {
+function PodiumCard({ student, position, timePeriod }: { student: StudentLeaderboardEntry; position: 1 | 2 | 3; timePeriod: LeaderboardTimePeriod }) {
   const podiumStyles = {
     1: {
       container: 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200',
@@ -636,10 +663,16 @@ function PodiumCard({ student, position }: { student: StudentLeaderboardEntry; p
       <div className={`px-6 py-4 rounded-xl border ${style.container}`}>
         <div className="font-bold text-slate-900">{student.studentName}</div>
         <div className="text-sm text-slate-600">{student.className}</div>
-        <div className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-slate-800">
-          <Trophy className="h-4 w-4 text-amber-500" />
-          {student.stats.points.toLocaleString()} pts
-        </div>
+        {student.stats.points === 0 ? (
+          <div className="mt-3 text-xs text-slate-500 italic">
+            No activity {timePeriod !== 'all_time' ? `this ${timePeriod === 'daily' ? 'day' : timePeriod === 'weekly' ? 'week' : 'month'}` : 'yet'}
+          </div>
+        ) : (
+          <div className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-slate-800">
+            <Trophy className="h-4 w-4 text-amber-500" />
+            {student.stats.points.toLocaleString()} pts
+          </div>
+        )}
         <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 text-white text-xs">
           {position === 1 ? <Crown className="h-5 w-5" /> : <MedalIcon rank={position} />}
           {position === 1 ? 'Champion' : `Rank ${position}`}

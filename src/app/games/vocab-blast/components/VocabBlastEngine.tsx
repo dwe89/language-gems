@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import TokyoNightsEngine from './themes/TokyoNightsEngine';
@@ -82,10 +82,24 @@ function DefaultEngine({
 }: Omit<VocabBlastEngineProps, 'theme'>) {
   const [vocabObjects, setVocabObjects] = useState<VocabObject[]>([]);
   const [particles, setParticles] = useState<any[]>([]);
+  const [starPositions, setStarPositions] = useState<Array<{left: string, top: string}>>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
   const [screenWidth, setScreenWidth] = useState(0); // State to store screen width
   const [screenHeight, setScreenHeight] = useState(0); // State to store screen height
+
+  // Generate star positions once on mount
+  useEffect(() => {
+    const positions = Array.from({ length: 30 }, () => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`
+    }));
+    setStarPositions(positions);
+  }, []);
+  
+  // Refs for decoupled physics and DOM manipulation
+  const physicsObjectsRef = useRef<VocabObject[]>([]);
+  const objectRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // Effect to update screen dimensions on mount and resize
   useEffect(() => {
@@ -210,27 +224,51 @@ function DefaultEngine({
       };
     });
 
-    setVocabObjects(checkObjectCollisions(newObjects));
+    const collisionAdjusted = checkObjectCollisions(newObjects);
+    setVocabObjects(collisionAdjusted);
+    physicsObjectsRef.current = collisionAdjusted;
   }, [currentWord, isPaused, gameActive, screenWidth, generateDecoys, checkObjectCollisions, difficulty]);
+
+  // Callback ref function to manage the DOM elements map
+  const setRef = useCallback((element: HTMLDivElement | null, id: string) => {
+    if (element) {
+      objectRefsMap.current.set(id, element);
+    } else {
+      objectRefsMap.current.delete(id);
+    }
+  }, []);
 
   // Update object positions with collision avoidance
   const updateObjects = useCallback(() => {
     if (isPaused || !gameActive || screenHeight === 0) return;
 
-    setVocabObjects(prev => {
-      // Filter objects that are off the bottom of the screen
-      const livingObjects = prev.filter(obj => obj.y < (screenHeight + 100));
+    // Use the mutable ref for physics calculations
+    let livingObjects = physicsObjectsRef.current.filter(obj => obj.y < (screenHeight + 100));
 
-      const updatedObjects = livingObjects.map(obj => ({
-        ...obj,
-        y: obj.y + obj.speed,
-        rotation: obj.rotation + 1
-      }));
+    let updatedObjects = livingObjects.map(obj => ({
+      ...obj,
+      y: obj.y + obj.speed,
+      rotation: obj.rotation + 1
+    }));
+    
+    let adjustedObjects = checkObjectCollisions(updatedObjects);
 
-      // Apply collision detection to moving objects
-      return checkObjectCollisions(updatedObjects);
+    // Update the mutable ref for the next frame
+    physicsObjectsRef.current = adjustedObjects;
+    
+    // Apply transform directly to DOM using the refs map
+    adjustedObjects.forEach(obj => {
+      const element = objectRefsMap.current.get(obj.id);
+      if (element) {
+        element.style.transform = `translate3d(${obj.x}px, ${obj.y}px, 0) rotate(${obj.rotation}deg)`;
+      }
     });
-  }, [isPaused, gameActive, screenHeight, checkObjectCollisions]);
+
+    // Update state only when objects are removed (for React to re-render with correct count)
+    if (adjustedObjects.length !== vocabObjects.length) {
+      setVocabObjects(adjustedObjects);
+    }
+  }, [isPaused, gameActive, screenHeight, checkObjectCollisions, vocabObjects.length]);
 
   // Handle object click
   const handleObjectClick = useCallback((obj: VocabObject) => {
@@ -238,6 +276,7 @@ function DefaultEngine({
       // ✅ CRITICAL FIX: Clear ALL objects when correct answer is clicked
       // This prevents the user from being forced to click wrong answers (old decoys)
       setVocabObjects([]);
+      physicsObjectsRef.current = [];
       onCorrectAnswer(currentWord);
       // Create success particles
       createParticles(obj.x, obj.y, 'success');
@@ -245,8 +284,10 @@ function DefaultEngine({
       onIncorrectAnswer();
       // Create error particles
       createParticles(obj.x, obj.y, 'error');
-      // Only remove the clicked wrong object
-      setVocabObjects(prev => prev.filter(o => o.id !== obj.id));
+      // Only remove the clicked wrong object from both state and physics ref
+      const filtered = physicsObjectsRef.current.filter(o => o.id !== obj.id);
+      setVocabObjects(filtered);
+      physicsObjectsRef.current = filtered;
     }
   }, [onCorrectAnswer, onIncorrectAnswer, currentWord]);
 
@@ -273,7 +314,7 @@ function DefaultEngine({
   }, []);
 
   // Animation loop with error handling
-  useEffect(() => {
+  useLayoutEffect(() => {
     const animate = () => {
       try {
         if (gameActive && !isPaused) {
@@ -313,14 +354,13 @@ function DefaultEngine({
     >
       {/* Background Effects */}
       <div className="absolute inset-0">
-        {Array.from({ length: 30 }, (_, i) => (
+        {starPositions.map((position, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+            className="absolute w-1 h-1 bg-white rounded-full opacity-50"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`
+              left: position.left,
+              top: position.top
             }}
           />
         ))}
@@ -331,18 +371,21 @@ function DefaultEngine({
         {vocabObjects.map((obj) => (
           <motion.div
             key={obj.id}
-            initial={{ opacity: 0, scale: 0, x: obj.x, y: obj.y, rotate: obj.rotation }}
+            ref={(element) => setRef(element, obj.id)}
+            initial={{ 
+              opacity: 0, 
+              scale: 0
+            }}
             animate={{
               opacity: 1,
-              scale: obj.scale,
-              x: obj.x,
-              y: obj.y,
-              rotate: obj.rotation
+              scale: obj.scale
             }}
             exit={{ opacity: 0, scale: 0 }}
             onClick={() => handleObjectClick(obj)}
-            className="absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-3 border-blue-300 shadow-2xl shadow-blue-400/80 rounded-xl px-6 py-3 font-bold backdrop-blur-sm bg-opacity-95"
-            style={{ x: obj.x, y: obj.y }} // Explicitly set x, y for motion to pick up, and for correct initial placement before animation
+            className="absolute cursor-pointer hover:scale-110 select-none bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-3 border-blue-300 shadow-2xl shadow-blue-400/80 rounded-xl px-6 py-3 font-bold backdrop-blur-sm bg-opacity-95"
+            style={{
+              transform: `translate3d(${obj.x}px, ${obj.y}px, 0) rotate(${obj.rotation}deg)`
+            }}
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl drop-shadow-lg">💎</span>
@@ -350,7 +393,7 @@ function DefaultEngine({
             </div>
 
             {/* Glow effect */}
-            <div className="absolute inset-0 rounded-xl border-2 border-blue-200/50 animate-pulse"></div>
+            <div className="absolute inset-0 rounded-xl border-2 border-blue-200/50"></div>
           </motion.div>
         ))}
       </AnimatePresence>

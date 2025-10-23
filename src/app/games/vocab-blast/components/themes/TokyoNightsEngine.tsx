@@ -377,7 +377,7 @@ export default function TokyoNightsEngine({
             exit={{ opacity: 0, scale: 0 }}
             onClick={() => handlePacketClick(packet)}
             // Disable pointer events if already answered, to prevent multiple clicks
-            className={`absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none ${
+            className={`absolute cursor-pointer hover:scale-110 select-none ${
               packet.glitchEffect ? 'animate-pulse' : ''
             } ${packet.isAnswered ? 'pointer-events-none' : ''}`}
           >

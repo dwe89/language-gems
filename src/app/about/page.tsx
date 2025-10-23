@@ -8,12 +8,11 @@ import Footer from '../../components/layout/Footer';
 
 export const metadata: Metadata = generateMetadata({
   title: 'About Daniel Etienne - MFL Teacher, Language Gems Founder, EdTech Innovator',
-  description: 'Meet Daniel Etienne, experienced MFL teacher, GCSE examiner, and founder of Language Gems, LingoSongs, and TeachWhizz. Discover his passion for innovative language learning and student success.',
+  description: 'Meet Daniel Etienne, experienced MFL teacher, GCSE examiner, and founder of Language Gems and TeachWhizz. Discover his passion for innovative language learning and student success.',
   keywords: [
     'Daniel Etienne',
     'MFL teacher',
     'Language Gems founder',
-    'LingoSongs',
     'TeachWhizz',
     'GCSE examiner',
     'language learning expert',
@@ -50,8 +49,8 @@ export default function AboutPage() {
     },
     {
       icon: Music,
-      title: "Founder of LingoSongs",
-      description: "Creating engaging language learning songs and resources via LingoSongs.com"
+      title: "Language Gems TikTok Creator",
+      description: "Creating engaging language learning songs and resources via the LanguageGems TikTok channel"
     },
     {
       icon: Brain,
@@ -140,7 +139,7 @@ export default function AboutPage() {
               Meet Daniel Etienne
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Passionate Modern Foreign Languages teacher, educational innovator, and creator of LanguageGems, LingoSongs, and TeachWhizz
+              Passionate Modern Foreign Languages teacher, educational innovator, and creator of LanguageGems and TeachWhizz
             </p>
             
             {/* Quick Stats */}
@@ -197,11 +196,11 @@ export default function AboutPage() {
                   </p>
 
                   <p className="text-lg text-slate-600 leading-relaxed mb-6">
-                    Beyond the classroom and LanguageGems, I am the founder of <strong>LingoSongs.com</strong> and run the associated TikTok channel, where I create engaging songs to help students learn languages in a fun and memorable way. I also developed <strong>TeachWhizz.com</strong>, a platform dedicated to providing AI-powered tools designed to support and empower fellow educators.
+                    Beyond the classroom and LanguageGems, I run the LanguageGems TikTok channel, where I create engaging songs to help students learn languages in a fun and memorable way. I also developed <strong>TeachWhizz.com</strong>, a platform dedicated to providing AI-powered tools designed to support and empower fellow educators.
                   </p>
                   
                   <p className="text-lg text-slate-600 leading-relaxed">
-                    I am dedicated to supporting both learners and educators by providing high-quality resources and innovative teaching strategies tailored to the needs of today's digital-native classrooms. Through LanguageGems, LingoSongs, and TeachWhizz, I aim to make language learning more accessible, engaging, and effective for students worldwide.
+                    I am dedicated to supporting both learners and educators by providing high-quality resources and innovative teaching strategies tailored to the needs of today's digital-native classrooms. Through LanguageGems and TeachWhizz, I aim to make language learning more accessible, engaging, and effective for students worldwide.
                   </p>
                 </div>
               </div>
@@ -324,13 +323,10 @@ export default function AboutPage() {
               </Link>
             </div>
 
-            {/* Added links to LingoSongs and TeachWhizz */}
+            {/* Added link to TeachWhizz */}
             <div className="mt-8 text-slate-700 text-lg">
                 <p className="mb-4">Also explore my other projects:</p>
                 <div className="flex flex-wrap justify-center gap-4">
-                  <a href="https://lingosongs.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-indigo-700 hover:text-indigo-900 font-medium transition-colors">
-                    <Music className="h-5 w-5 mr-2" /> LingoSongs.com
-                  </a>
                   <a href="https://teachwhizz.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-indigo-700 hover:text-indigo-900 font-medium transition-colors">
                     <Brain className="h-5 w-5 mr-2" /> TeachWhizz.com
                   </a>
@@ -352,7 +348,7 @@ export default function AboutPage() {
                   <h3 className="text-2xl font-bold text-slate-900 mb-4">Important Disclaimer</h3>
                   <div className="prose prose-slate max-w-none">
                     <p className="text-slate-700 mb-4">
-                      LanguageGems.com, LingoSongs.com, and TeachWhizz.com are independent educational resources 
+                      LanguageGems.com and TeachWhizz.com are independent educational resources 
                       created and managed by Daniel Etienne, a qualified Modern Foreign Languages teacher with 
                       extensive experience in language teaching and assessment.
                     </p>

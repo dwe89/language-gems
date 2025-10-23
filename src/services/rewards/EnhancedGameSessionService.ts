@@ -67,6 +67,8 @@ export class EnhancedGameSessionService {
    */
   async startGameSession(sessionData: Partial<GameSessionData>): Promise<string> {
     try {
+      const startedAt = new Date().toISOString();
+
       const { data, error } = await this.supabase
         .from('enhanced_game_sessions')
         .insert({
@@ -74,19 +76,46 @@ export class EnhancedGameSessionService {
           assignment_id: sessionData.assignment_id,
           game_type: sessionData.game_type,
           session_mode: sessionData.session_mode || 'free_play',
-          started_at: new Date().toISOString(),
+          started_at: startedAt,
           gems_total: 0,
           gems_by_rarity: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 },
           gem_events_count: 0
         })
         .select('id')
         .single();
-      
-      if (error) throw error;
-      
+
+      if (error) {
+        // Check if it's a duplicate session error (unique constraint violation)
+        if (error.code === '23505' && error.message?.includes('unique_game_session_per_student')) {
+          console.warn('⚠️ Duplicate session detected, prevented by database constraint:', {
+            student_id: sessionData.student_id,
+            game_type: sessionData.game_type,
+            started_at: startedAt
+          });
+
+          // Try to find the existing session instead of creating a duplicate
+          const { data: existingSession, error: findError } = await this.supabase
+            .from('enhanced_game_sessions')
+            .select('id')
+            .eq('student_id', sessionData.student_id)
+            .eq('game_type', sessionData.game_type)
+            .eq('started_at', startedAt)
+            .single();
+
+          if (existingSession && !findError) {
+            console.log('✅ Using existing session instead:', existingSession.id);
+            this.currentSessionId = existingSession.id;
+            this.gemEvents = [];
+            return existingSession.id;
+          }
+        }
+
+        throw error;
+      }
+
       this.currentSessionId = data.id;
       this.gemEvents = [];
-      
+
       return data.id;
     } catch (error) {
       console.error('Error starting game session:', error);

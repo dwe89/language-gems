@@ -67,8 +67,9 @@ export default function VocabularyTestsPage() {
   const [tests, setTests] = useState<TestWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'list' | 'create' | 'analytics'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'create' | 'edit' | 'analytics'>('list');
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
+  const [editingTest, setEditingTest] = useState<VocabularyTest | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'active' | 'archived'>('all');
 
@@ -144,7 +145,62 @@ export default function VocabularyTestsPage() {
 
   const handleTestCreated = (testId: string) => {
     setCurrentView('list');
+    setEditingTest(null);
     loadTests(); // Refresh the list
+  };
+
+  const handleEditTest = async (testId: string) => {
+    if (!testService) return;
+
+    try {
+      // Fetch the full test data
+      const testData = await testService.getTestWithQuestions(testId);
+      if (testData) {
+        setEditingTest(testData.test);
+        setCurrentView('edit');
+      }
+    } catch (error) {
+      console.error('Error loading test for editing:', error);
+      alert('Failed to load test data');
+    }
+  };
+
+  const handleDuplicateTest = async (testId: string) => {
+    if (!testService || !user) return;
+
+    try {
+      // Fetch the test data
+      const testData = await testService.getTestWithQuestions(testId);
+      if (!testData) return;
+
+      // Create a copy with modified title
+      const duplicateData = {
+        ...testData.test,
+        title: `${testData.test.title} (Copy)`,
+        status: 'draft' as const,
+        created_by: user.id
+      };
+
+      // Remove fields that shouldn't be copied
+      delete (duplicateData as any).id;
+      delete (duplicateData as any).created_at;
+      delete (duplicateData as any).updated_at;
+
+      // Create the duplicate test
+      const newTestId = await testService.createTest(user.id, duplicateData);
+
+      // Reload tests
+      await loadTests();
+      alert('Test duplicated successfully!');
+    } catch (error) {
+      console.error('Error duplicating test:', error);
+      alert('Failed to duplicate test');
+    }
+  };
+
+  const handlePreviewTest = (testId: string) => {
+    // Open test in new tab for preview
+    window.open(`/student/test/${testId}`, '_blank');
   };
 
   const handleDeleteTest = async (testId: string) => {
@@ -209,11 +265,15 @@ export default function VocabularyTestsPage() {
     });
   };
 
-  if (currentView === 'create') {
+  if (currentView === 'create' || currentView === 'edit') {
     return (
       <VocabularyTestCreator
+        existingTest={editingTest || undefined}
         onTestCreated={handleTestCreated}
-        onCancel={() => setCurrentView('list')}
+        onCancel={() => {
+          setCurrentView('list');
+          setEditingTest(null);
+        }}
       />
     );
   }
@@ -451,7 +511,10 @@ export default function VocabularyTestsPage() {
                     <span>Analytics</span>
                   </button>
                   
-                  <button className="flex items-center space-x-1 text-gray-600 hover:text-gray-700 text-sm">
+                  <button
+                    onClick={() => handlePreviewTest(test.id)}
+                    className="flex items-center space-x-1 text-gray-600 hover:text-gray-700 text-sm"
+                  >
                     <Eye className="h-4 w-4" />
                     <span>Preview</span>
                   </button>
@@ -459,17 +522,29 @@ export default function VocabularyTestsPage() {
 
                 <div className="flex items-center space-x-1">
                   <button
+                    onClick={() => handleEditTest(test.id)}
+                    className="p-1 text-gray-400 hover:text-blue-600"
+                    title="Edit"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+
+                  <button
                     onClick={() => handleToggleStatus(test.id, test.status)}
                     className="p-1 text-gray-400 hover:text-gray-600"
                     title={test.status === 'active' ? 'Archive' : 'Activate'}
                   >
                     {test.status === 'active' ? <Settings className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                   </button>
-                  
-                  <button className="p-1 text-gray-400 hover:text-gray-600" title="Duplicate">
+
+                  <button
+                    onClick={() => handleDuplicateTest(test.id)}
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                    title="Duplicate"
+                  >
                     <Copy className="h-4 w-4" />
                   </button>
-                  
+
                   <button
                     onClick={() => handleDeleteTest(test.id)}
                     className="p-1 text-gray-400 hover:text-red-600"

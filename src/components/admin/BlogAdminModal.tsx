@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit, Trash2, Eye, EyeOff, Calendar, Tag, User, ExternalLink } from 'lucide-react';
+import { X, Plus, Edit, Trash2, Eye, EyeOff, Calendar, Tag, User, ExternalLink, Send, Loader2, CheckCircle } from 'lucide-react';
 import { supabaseBrowser } from '../auth/AuthProvider';
 import Link from 'next/link';
 
@@ -21,6 +21,8 @@ interface BlogPost {
   is_published: boolean;
   status: string;
   publish_date: string;
+  email_sent?: boolean;
+  email_sent_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +32,7 @@ export default function BlogAdminModal({ isOpen, onClose, onRefresh }: BlogAdmin
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'published' | 'draft'>('all');
+  const [publishingPostId, setPublishingPostId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -80,7 +83,7 @@ export default function BlogAdminModal({ isOpen, onClose, onRefresh }: BlogAdmin
     try {
       const { error: updateError } = await supabaseBrowser
         .from('blog_posts')
-        .update({ 
+        .update({
           is_published: !currentStatus,
           status: !currentStatus ? 'published' : 'draft',
           updated_at: new Date().toISOString()
@@ -94,6 +97,44 @@ export default function BlogAdminModal({ isOpen, onClose, onRefresh }: BlogAdmin
     } catch (err: any) {
       console.error('Error updating blog post status:', err);
       alert(`Error updating blog post: ${err.message}`);
+    }
+  };
+
+  const publishAndNotifyNow = async (post: BlogPost) => {
+    if (!confirm(`Publish "${post.title}" immediately and send email notifications to all subscribers?`)) {
+      return;
+    }
+
+    setPublishingPostId(post.id);
+
+    try {
+      const response = await fetch('/api/blog/publish-now', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postId: post.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to publish post');
+      }
+
+      const emailStatus = result.emailSent
+        ? `✅ Published and ${result.emailDetails?.results?.[0]?.sentTo || 0} emails sent!`
+        : '✅ Published! (Email notifications may have failed - check logs)';
+
+      alert(`${emailStatus}\n\nPost: ${result.post.title}`);
+
+      await fetchPosts();
+      onRefresh();
+    } catch (error: any) {
+      console.error('Error publishing post:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setPublishingPostId(null);
     }
   };
 
@@ -234,6 +275,32 @@ export default function BlogAdminModal({ isOpen, onClose, onRefresh }: BlogAdmin
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
+                      {/* Publish & Notify Now Button */}
+                      {(!post.is_published || post.status !== 'published') && (
+                        <button
+                          onClick={() => publishAndNotifyNow(post)}
+                          disabled={publishingPostId === post.id}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Publish & send email notifications now"
+                        >
+                          {publishingPostId === post.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
+
+                      {/* Email sent indicator */}
+                      {post.email_sent && (
+                        <div
+                          className="p-2 text-emerald-600"
+                          title={`Email sent: ${post.email_sent_at ? new Date(post.email_sent_at).toLocaleString() : 'Yes'}`}
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </div>
+                      )}
+
                       <Link
                         href={`/blog/${post.slug}`}
                         target="_blank"

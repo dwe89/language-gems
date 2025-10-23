@@ -390,6 +390,99 @@ function generateWorksheetHTML(worksheet: Worksheet): string {
   const sections = worksheet.sections || [];
   const instructions = worksheet.instructions || 'Complete all sections carefully.';
 
+  // Max items per server-generated sub-section to avoid page overflow when
+  // converting HTML -> PDF in the browser. Tune these values as needed.
+  const maxItemsByType: Record<string, number> = {
+    matching: 10,
+    fill_in_blank: 10,
+    multiple_choice: 6,
+    error_correction: 8,
+    translation: 6,
+    translation_both_ways: 5,
+    word_order: 6,
+  };
+
+  function chunk(arr: any[], size: number) {
+    const out: any[] = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  }
+
+  function renderQuestion(q: any, qIndex: number, exerciseType?: string) {
+    const qNum = qIndex + 1;
+    if (exerciseType === 'multiple_choice') {
+      return `
+        <div class="question">
+          <div class="question-number">${qNum}.</div>
+          <div class="question-text">${q.question || q.text || q.sentence || ''}</div>
+          ${q.options && q.options.length ? `
+            <ul class="options">
+              ${q.options.map((opt: string, oi: number) => `<li>${String.fromCharCode(65 + oi)}. ${opt}</li>`).join('')}
+            </ul>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    if (exerciseType === 'matching') {
+      return `
+        <div class="matching-item">
+          <span>${q.left || q.spanish || q.term || q.question || ''}</span>
+          <span>__________</span>
+        </div>
+      `;
+    }
+
+    // Default: show sentence and an answer line
+    return `
+      <div class="question">
+        <div class="question-number">${qNum}.</div>
+        <div class="question-text">${q.question || q.text || q.sentence || ''}</div>
+        <div class="answer-space"></div>
+      </div>
+    `;
+  }
+
+  // Build body sections, splitting large exercise lists into smaller "sub-sections"
+  const bodySections: string[] = [];
+  sections.forEach((section: any, sIndex: number) => {
+    const exType = section.type || section.template || 'generic';
+    // Use slightly more conservative defaults to reduce page overflow
+    const max = maxItemsByType[exType] || 6;
+    const questions = section.questions || [];
+    const chunks = chunk(questions, max);
+
+    chunks.forEach((qChunk, chunkIndex) => {
+      bodySections.push(`
+        <div class="section">
+          <div class="section-title">Section ${sIndex + 1}${chunkIndex > 0 ? ` — continued (${chunkIndex})` : ''}: ${section.title || exType}</div>
+          ${section.instructions ? `<p><em>${section.instructions}</em></p>` : ''}
+          ${qChunk.map((q: any, qi: number) => renderQuestion(q, qi + (chunkIndex * max), exType)).join('')}
+        </div>
+      `);
+    });
+  });
+
+  // If an answerKey exists on the worksheet, render a hidden teacher answers section
+  let answersSection = '';
+  if ((worksheet as any).answerKey) {
+    const ak = (worksheet as any).answerKey;
+    const answersHtml = Object.keys(ak).map(k => {
+      const item = ak[k];
+      const answerText = typeof item.answer === 'string' ? item.answer : (Array.isArray(item.answer) ? item.answer.join(', ') : String(item.answer));
+      const explanation = item.explanation ? `<div class="explanation">${item.explanation}</div>` : '';
+      return `<div class="answer-row"><strong>${k}</strong>: ${answerText}${explanation}</div>`;
+    }).join('');
+
+    answersSection = `
+      <div class="section teacher-answers" id="answers">
+        <div class="section-title">Teacher Answer Key (hidden)</div>
+        <div class="instruction">This section is for teachers. It can be revealed in the editor or printed separately.</div>
+        ${answersHtml}
+      </div>
+    `;
+  }
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -398,168 +491,253 @@ function generateWorksheetHTML(worksheet: Worksheet): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${worksheet.title}</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Open+Sans:wght@300;400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: white;
+          font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          color: #1f2937;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          margin: 0;
+          padding: 20px;
+          line-height: 1.6;
         }
-
+        .container {
+          max-width: 8.5in;
+          margin: 0 auto;
+          background: #ffffff;
+          padding: 32px;
+          border-radius: 16px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          border: 1px solid #e5e7eb;
+        }
         .header {
-            text-align: center;
-            border-bottom: 3px solid #4f46e5;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+          text-align: center;
+          padding-bottom: 24px;
+          border-bottom: 3px solid linear-gradient(90deg, #3b82f6, #8b5cf6);
+          border-bottom-style: solid;
+          margin-bottom: 32px;
         }
-
         .title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 10px;
+          font-family: 'Fredoka One', cursive;
+          font-size: 36px;
+          color: #1e40af;
+          margin: 0 0 8px 0;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
-
-        .subtitle {
-            font-size: 16px;
-            color: #64748b;
-            margin-bottom: 15px;
+        .meta {
+          color: #6b7280;
+          font-size: 14px;
+          margin-top: 8px;
+          font-weight: 500;
         }
-
-        .meta-info {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            font-size: 14px;
-            color: #64748b;
-        }
-
         .instructions {
-            background: #f8fafc;
-            border-left: 4px solid #4f46e5;
-            padding: 15px 20px;
-            margin-bottom: 30px;
-            border-radius: 0 8px 8px 0;
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border: 2px solid #f59e0b;
+          border-left: 6px solid #f59e0b;
+          padding: 20px 24px;
+          margin: 24px 0 32px 0;
+          border-radius: 12px;
+          font-weight: 600;
+          color: #92400e;
+          box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1);
         }
-
+        .instructions strong {
+          color: #78350f;
+          font-size: 18px;
+          display: block;
+          margin-bottom: 8px;
+        }
         .section {
-            margin-bottom: 40px;
-            page-break-inside: avoid;
+          margin-bottom: 28px;
+          padding: 24px;
+          background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+          border-radius: 12px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+          border: 1px solid #e5e7eb;
+          page-break-inside: avoid;
+          break-inside: avoid;
+          transition: transform 0.2s ease;
         }
-
+        .section:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
         .section-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e2e8f0;
+          font-size: 18px;
+          color: #1f2937;
+          font-weight: 700;
+          margin-bottom: 16px;
+          padding-bottom: 8px;
+          border-bottom: 2px solid #e5e7eb;
+          display: flex;
+          align-items: center;
         }
-
+        .section-title:before {
+          content: '📝';
+          margin-right: 8px;
+          font-size: 20px;
+        }
         .question {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #fefefe;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+          margin-bottom: 16px;
+          padding: 16px 20px;
+          border-radius: 8px;
+          background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+          border: 1px solid #e2e8f0;
+          transition: all 0.2s ease;
         }
-
+        .question:hover {
+          background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+          border-color: #cbd5e1;
+        }
         .question-number {
-            font-weight: bold;
-            color: #4f46e5;
-            margin-bottom: 8px;
+          font-weight: 700;
+          color: #3b82f6;
+          margin-bottom: 6px;
+          font-size: 16px;
         }
-
         .question-text {
-            margin-bottom: 10px;
-            font-size: 16px;
+          margin-bottom: 10px;
+          font-weight: 500;
+          color: #374151;
         }
-
         .options {
-            list-style: none;
-            padding: 0;
+          list-style: none;
+          padding: 0;
+          margin: 12px 0;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
         }
-
         .options li {
-            margin-bottom: 8px;
-            padding: 8px 12px;
-            background: #f8fafc;
-            border-radius: 4px;
-            border-left: 3px solid #cbd5e1;
+          padding: 10px 14px;
+          background: #ffffff;
+          border-radius: 6px;
+          border: 2px solid #e2e8f0;
+          font-weight: 500;
+          color: #475569;
+          transition: all 0.2s ease;
         }
-
+        .options li:hover {
+          border-color: #3b82f6;
+          background: #eff6ff;
+        }
         .answer-space {
-            border-bottom: 1px solid #cbd5e1;
-            min-height: 30px;
-            margin: 10px 0;
+          min-height: 32px;
+          border-bottom: 3px solid #3b82f6;
+          margin-top: 8px;
+          border-radius: 2px;
+          background: linear-gradient(90deg, transparent 0%, #eff6ff 50%, transparent 100%);
         }
-
         .matching-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          background: #ffffff;
+          border-radius: 8px;
+          border: 2px solid #e2e8f0;
+          margin-bottom: 8px;
+          transition: all 0.2s ease;
         }
-
+        .matching-item:hover {
+          border-color: #8b5cf6;
+          background: #faf5ff;
+        }
+        .matching-item span:first-child {
+          font-weight: 600;
+          color: #7c3aed;
+        }
+        .matching-item span:last-child {
+          font-weight: 500;
+          color: #6b7280;
+          border-bottom: 2px dashed #cbd5e1;
+          padding-bottom: 2px;
+          min-width: 120px;
+          text-align: center;
+        }
+        .teacher-answers {
+          display: none;
+          margin-top: 40px;
+          padding: 24px;
+          background: #fef3c7;
+          border: 2px solid #f59e0b;
+          border-radius: 12px;
+        }
+        .answer-row {
+          padding: 8px 12px;
+          background: #ffffff;
+          border-radius: 6px;
+          border: 1px dashed #d97706;
+          margin-bottom: 8px;
+          font-family: 'Courier New', monospace;
+        }
+        .explanation {
+          font-size: 12px;
+          color: #92400e;
+          margin-top: 4px;
+          font-style: italic;
+        }
         @media print {
-            body { margin: 0; padding: 15px; }
-            .section { page-break-inside: avoid; }
+          body {
+            background: #fff;
+            padding: 0;
+          }
+          .container {
+            box-shadow: none;
+            border: none;
+            padding: 20px;
+            border-radius: 0;
+          }
+          .section {
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-bottom: 20px;
+          }
+          .teacher-answers {
+            display: block;
+            page-break-before: always;
+          }
+        }
+        @media (max-width: 768px) {
+          .container {
+            padding: 20px;
+          }
+          .title {
+            font-size: 28px;
+          }
+          .options {
+            grid-template-columns: 1fr;
+          }
+          .matching-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+          .matching-item span:last-child {
+            min-width: auto;
+            text-align: left;
+          }
         }
     </style>
 </head>
 <body>
+  <div class="container">
     <div class="header">
-        <div class="title">${worksheet.title}</div>
-        <div class="subtitle">${worksheet.subject}${worksheet.topic ? ` • ${worksheet.topic}` : ''}</div>
-        <div class="meta-info">
-            <span>Difficulty: <strong>${worksheet.difficulty}</strong></span>
-            <span>Time: <strong>${worksheet.estimatedTimeMinutes} minutes</strong></span>
-            <span>Date: <strong>_____________</strong></span>
-        </div>
+      <div class="title">${worksheet.title}</div>
+      <div class="meta">${worksheet.subject || ''}${worksheet.topic ? ` • ${worksheet.topic}` : ''} — Difficulty: ${worksheet.difficulty || 'N/A'} — Time: ${worksheet.estimatedTimeMinutes || '—'} mins</div>
     </div>
 
-    <div class="instructions">
-        <strong>Instructions:</strong> ${instructions}
-    </div>
+    <div class="instructions"><strong>Instructions:</strong> ${instructions}</div>
 
-    ${sections.map((section: any, index: number) => `
-        <div class="section">
-            <div class="section-title">Section ${index + 1}: ${section.title || section.type}</div>
-            ${section.instructions ? `<p><em>${section.instructions}</em></p>` : ''}
+    ${bodySections.join('')}
 
-            ${section.questions?.map((question: any, qIndex: number) => `
-                <div class="question">
-                    <div class="question-number">${qIndex + 1}.</div>
-                    <div class="question-text">${question.question || question.text}</div>
+  ${answersSection}
 
-                    ${question.type === 'multiple_choice' && question.options ? `
-                        <ul class="options">
-                            ${question.options.map((option: string, oIndex: number) => `
-                                <li>${String.fromCharCode(65 + oIndex)}. ${option}</li>
-                            `).join('')}
-                        </ul>
-                    ` : ''}
-
-                    ${question.type === 'fill_in_blank' || question.type === 'translation' ? `
-                        <div class="answer-space"></div>
-                    ` : ''}
-
-                    ${question.type === 'matching' ? `
-                        <div class="matching-item">
-                            <span>${question.left || question.term}</span>
-                            <span>_____________</span>
-                        </div>
-                    ` : ''}
-                </div>
-            `).join('') || ''}
-        </div>
-    `).join('')}
+  </div>
 </body>
 </html>`;
 }

@@ -43,6 +43,7 @@ export default function CustomVocabularyUpload({
     { target_word: '', english_translation: '', category: 'Custom', subcategory: 'Test Vocabulary', difficulty: 'intermediate' }
   ]);
   const [csvText, setCsvText] = useState('');
+  const [pasteText, setPasteText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -87,6 +88,40 @@ export default function CustomVocabularyUpload({
     return items;
   };
 
+  const parsePasteText = (text: string): VocabularyItem[] => {
+    const lines = text.trim().split('\n');
+    const items: VocabularyItem[] = [];
+
+    lines.forEach((line, index) => {
+      if (line.trim()) {
+        // Try tab-separated first, then comma-separated
+        let parts = line.split('\t').map(part => part.trim());
+        
+        // If only one part found with tabs, try commas
+        if (parts.length < 2) {
+          parts = line.split(',').map(part => part.trim().replace(/"/g, ''));
+        }
+        
+        // Also try semicolons as a fallback
+        if (parts.length < 2) {
+          parts = line.split(';').map(part => part.trim());
+        }
+        
+        if (parts.length >= 2) {
+          items.push({
+            target_word: parts[0],
+            english_translation: parts[1],
+            category: parts[2] || 'Custom',
+            subcategory: parts[3] || 'Test Vocabulary',
+            difficulty: parts[4] || 'intermediate'
+          });
+        }
+      }
+    });
+
+    return items;
+  };
+
   const handleCsvImport = () => {
     try {
       const items = parseCsvText(csvText);
@@ -99,6 +134,21 @@ export default function CustomVocabularyUpload({
       setError(null);
     } catch (error) {
       setError('Error parsing CSV text. Please check the format.');
+    }
+  };
+
+  const handlePasteImport = () => {
+    try {
+      const items = parsePasteText(pasteText);
+      if (items.length === 0) {
+        setError('No valid vocabulary items found in pasted text');
+        return;
+      }
+      setVocabularyItems(items);
+      setUploadMethod('manual'); // Switch to manual view to show imported items
+      setError(null);
+    } catch (error) {
+      setError('Error parsing pasted text. Please check the format.');
     }
   };
 
@@ -129,39 +179,23 @@ export default function CustomVocabularyUpload({
     setError(null);
 
     try {
-      // Prepare vocabulary items for database insertion
+      // Prepare vocabulary items - these will be stored in the test's vocabulary_criteria JSONB field
+      // NOT in centralized_vocabulary table (which is for permanent, curated vocabulary)
       const vocabularyData = vocabularyItems.map(item => ({
+        id: crypto.randomUUID(), // Generate UUID for tracking
         language: language,
-        target_word: item.target_word.trim(),
-        english_translation: item.english_translation.trim(),
+        word: item.target_word.trim(),
+        translation: item.english_translation.trim(),
         category: item.category || 'Custom',
         subcategory: item.subcategory || 'Test Vocabulary',
-        difficulty_level: item.difficulty || 'intermediate',
-        curriculum_level: 'KS3', // Default for custom vocabulary
-        created_by: user.id,
-        is_custom: true
+        difficulty: item.difficulty || 'intermediate'
       }));
 
-      // Insert vocabulary items into centralized_vocabulary table
-      const { data, error } = await supabase
-        .from('centralized_vocabulary')
-        .insert(vocabularyData)
-        .select('*');
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
       setSuccess(true);
-      
-      // Return the created vocabulary data to parent component
-      onVocabularyCreated({
-        source: 'custom_list',
-        custom_vocabulary: data,
-        word_count: data.length,
-        category: 'Custom',
-        subcategory: 'Test Vocabulary'
-      });
+
+      // Return the vocabulary data array to parent component
+      // Parent expects just the array, not an object
+      onVocabularyCreated(vocabularyData);
 
     } catch (error: any) {
       setError(error.message || 'Failed to save vocabulary');
@@ -320,6 +354,43 @@ comer,to eat`;
               className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
             >
               Import CSV Data
+            </button>
+          </div>
+        )}
+
+        {/* Bulk Paste */}
+        {uploadMethod === 'paste' && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium text-gray-900">Bulk Paste</h4>
+            </div>
+            
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+              <div className="flex items-start space-x-2">
+                <Info className="h-4 w-4 text-green-600 mt-0.5" />
+                <div className="text-sm text-green-800">
+                  <p className="font-medium">Supported Formats:</p>
+                  <p>• Tab-separated: word1[tab]translation1</p>
+                  <p>• Comma-separated: word1, translation1</p>
+                  <p>• Semicolon-separated: word1; translation1</p>
+                  <p className="mt-1">Example: hola[tab]hello</p>
+                  <p className="mt-1">Or: hola, hello</p>
+                </div>
+              </div>
+            </div>
+
+            <textarea
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              className="w-full h-32 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              placeholder="Paste your vocabulary data here (one pair per line)..."
+            />
+            
+            <button
+              onClick={handlePasteImport}
+              className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+            >
+              Import Pasted Data
             </button>
           </div>
         )}

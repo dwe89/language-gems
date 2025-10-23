@@ -35,6 +35,7 @@ export interface StudentLeaderboardEntry {
   };
   lastActivity: string | null;
   rank: number;
+  dataQualityWarnings?: string[]; // Warnings about suspicious activity patterns
 }
 
 export interface ClassLeaderboardEntry {
@@ -87,6 +88,7 @@ export interface CrossGameLeaderboardEntry {
     games_played: number;
     last_played: string | null;
   }>;
+  data_quality_warnings?: string[]; // Warnings about suspicious activity patterns
 }
 
 export interface TeacherLeaderboardsResponse {
@@ -257,6 +259,9 @@ export class TeacherLeaderboardsService {
 
       const avatarInitials = this.getInitials(profile?.display_name || profile?.email || 'Student');
 
+      // Validate data quality
+      const dataQualityWarnings = this.validateSessionQuality(sessionsForStudent);
+
       return {
         studentId,
         studentName: profile?.display_name || 'Unknown Student',
@@ -278,7 +283,8 @@ export class TeacherLeaderboardsService {
         },
         achievements: achievementSummary,
         lastActivity,
-        rank: 0
+        rank: 0,
+        dataQualityWarnings: dataQualityWarnings.length > 0 ? dataQualityWarnings : undefined
       } satisfies StudentLeaderboardEntry;
     });
 
@@ -358,13 +364,22 @@ export class TeacherLeaderboardsService {
       .from('enhanced_game_sessions')
       .select('id, student_id, game_type, final_score, accuracy_percentage, completion_percentage, duration_seconds, started_at, ended_at, gems_total, xp_earned')
       .in('student_id', studentIds)
-      .gte('started_at', startDate.toISOString());
+      .gte('started_at', startDate.toISOString())
+      .not('ended_at', 'is', null); // Only include completed sessions
 
     if (error) {
       throw error;
     }
 
-    return data || [];
+    // Filter out sessions with suspicious durations
+    // Max 2 hours per session (most games should be 5-15 minutes)
+    const MAX_REASONABLE_DURATION = 7200; // 2 hours in seconds
+    const validSessions = (data || []).filter(session => {
+      const duration = this.toNumber(session.duration_seconds);
+      return duration > 0 && duration <= MAX_REASONABLE_DURATION;
+    });
+
+    return validSessions;
   }
 
   private async fetchRecentAchievements(studentIds: string[], timePeriod: LeaderboardTimePeriod): Promise<AchievementRow[]> {
@@ -548,6 +563,9 @@ export class TeacherLeaderboardsService {
       const streakAggregate = streakMap.get(student.studentId);
       const masteredWords = masteredWordsMap.get(student.studentId) ?? 0;
 
+      // Validate data quality and get warnings
+      const dataQualityWarnings = this.validateSessionQuality(sessions);
+
       const gameScores: CrossGameLeaderboardEntry['game_scores'] = {};
 
       sessions.forEach(session => {
@@ -599,7 +617,8 @@ export class TeacherLeaderboardsService {
         class_rank: classRankMap.get(student.studentId),
         weekly_rank: undefined,
         monthly_rank: undefined,
-        game_scores: gameScores
+        game_scores: gameScores,
+        data_quality_warnings: dataQualityWarnings.length > 0 ? dataQualityWarnings : undefined
       } satisfies CrossGameLeaderboardEntry;
     });
 
@@ -660,6 +679,42 @@ export class TeacherLeaderboardsService {
       return parts[0].slice(0, 2).toUpperCase();
     }
     return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+
+  /**
+   * Validates session data quality and flags suspicious patterns
+   * Returns warnings for unrealistic activity (e.g., >8 hours/day, >100 sessions/day)
+   */
+  private validateSessionQuality(sessions: SessionRow[]): string[] {
+    const warnings: string[] = [];
+
+    // Group sessions by date
+    const sessionsByDate = new Map<string, SessionRow[]>();
+    sessions.forEach(session => {
+      const date = new Date(session.started_at).toISOString().split('T')[0];
+      if (!sessionsByDate.has(date)) {
+        sessionsByDate.set(date, []);
+      }
+      sessionsByDate.get(date)!.push(session);
+    });
+
+    // Check for unrealistic daily activity
+    sessionsByDate.forEach((daySessions, date) => {
+      const totalHours = daySessions.reduce((sum, s) => sum + this.toNumber(s.duration_seconds), 0) / 3600;
+      const sessionCount = daySessions.length;
+
+      // Flag if more than 8 hours in a single day
+      if (totalHours > 8) {
+        warnings.push(`${totalHours.toFixed(1)}h on ${date} (>8h/day)`);
+      }
+
+      // Flag if more than 100 sessions in a single day (likely bulk import)
+      if (sessionCount > 100) {
+        warnings.push(`${sessionCount} sessions on ${date} (bulk import?)`);
+      }
+    });
+
+    return warnings;
   }
 
   private getEmptyResponse(timePeriod: LeaderboardTimePeriod, classes: ClassInfo[] = []): TeacherLeaderboardsResponse {

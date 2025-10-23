@@ -264,6 +264,12 @@ export class VocabularyTestService {
    * Get vocabulary for test based on criteria
    */
   private async getVocabularyForTest(testData: TestCreationData): Promise<any[]> {
+    // Handle custom vocabulary (stored directly in vocabulary_criteria)
+    if (testData.vocabulary_source === 'custom_list' && testData.vocabulary_criteria.custom_vocabulary) {
+      console.log('Using custom vocabulary from vocabulary_criteria:', testData.vocabulary_criteria.custom_vocabulary);
+      return testData.vocabulary_criteria.custom_vocabulary;
+    }
+
     let query = this.supabase
       .from('centralized_vocabulary')
       .select('*')
@@ -279,10 +285,10 @@ export class VocabularyTestService {
           query = query.eq('subcategory', testData.vocabulary_criteria.subcategory);
         }
         break;
-      
+
       case 'custom_list':
         if (testData.vocabulary_criteria.list_id) {
-          // Query custom vocabulary list
+          // Query custom vocabulary list from database
           const { data: listItems } = await this.supabase
             .from('vocabulary_items')
             .select('*')
@@ -290,7 +296,7 @@ export class VocabularyTestService {
           return listItems || [];
         }
         break;
-      
+
       case 'assignment_vocabulary':
         if (testData.vocabulary_criteria.assignment_id) {
           // Get vocabulary from existing assignment
@@ -720,7 +726,7 @@ export class VocabularyTestService {
         .from('vocabulary_test_questions')
         .select('*')
         .eq('test_id', attempt.test_id)
-        .order('question_order');
+        .order('question_number');
 
       if (questionsError || !questions) {
         throw new Error('Test questions not found');
@@ -742,21 +748,24 @@ export class VocabularyTestService {
       const accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
       const score = correctAnswers * 5; // 5 points per correct answer
 
-      // Update the attempt
+      // Update the attempt with correct column names
       const { error: updateError } = await this.supabase
         .from('vocabulary_test_results')
         .update({
-          answers,
-          score,
-          accuracy,
+          responses: answers,
+          raw_score: score,
+          percentage_score: accuracy,
           questions_correct: correctAnswers,
           questions_incorrect: totalQuestions - correctAnswers,
-          time_spent: timeSpent,
-          completed_at: new Date().toISOString()
+          total_time_seconds: timeSpent,
+          completion_time: new Date().toISOString(),
+          status: 'completed',
+          submission_date: new Date().toISOString()
         })
         .eq('id', attemptId);
 
       if (updateError) {
+        console.error('Update error details:', updateError);
         throw new Error('Failed to update test results');
       }
 
@@ -942,13 +951,14 @@ export class VocabularyTestService {
       .from('vocabulary_test_analytics')
       .select('*')
       .eq('test_id', testId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 rows
 
     if (error) {
       console.error('Error fetching test analytics:', error);
       return null;
     }
 
+    // If no analytics exist yet, return null (not an error)
     return data;
   }
 

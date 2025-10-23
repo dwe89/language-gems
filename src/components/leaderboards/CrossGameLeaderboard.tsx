@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Trophy, 
-  Medal, 
-  Award, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  Trophy,
+  Medal,
+  Award,
+  TrendingUp,
+  TrendingDown,
   Minus,
   Crown,
   Star,
@@ -17,7 +17,8 @@ import {
   Users,
   Filter,
   Calendar,
-  ChevronDown
+  ChevronDown,
+  AlertTriangle
 } from 'lucide-react';
 import { CompetitionService, CrossGameLeaderboard as LeaderboardEntry } from '../../services/competitionService';
 import { useAuth } from '../auth/AuthProvider';
@@ -312,6 +313,12 @@ export default function CrossGameLeaderboard({
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
                           <span>{formatTime(entry.total_time_played)}</span>
+                        </div>
+                      )}
+                      {entry.data_quality_warnings && entry.data_quality_warnings.length > 0 && (
+                        <div className="flex items-center gap-1 text-amber-600" title={entry.data_quality_warnings.join(', ')}>
+                          <AlertTriangle className="h-4 w-4" />
+                          <span className="text-xs">Data issue</span>
                         </div>
                       )}
                     </div>

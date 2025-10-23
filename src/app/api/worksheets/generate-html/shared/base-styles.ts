@@ -1,149 +1,310 @@
 export function getBaseStyles(): string {
   return `
-        /* --- Import a playful and readable font --- */
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        /* --- PREMIUM FONTS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-        /* --- LanguageGems Theme Variables --- */
+        /* --- PREMIUM LANGUAGEGEMS THEME --- */
         :root {
-            --font-primary: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            
-            /* A vibrant, educational-themed color palette */
-            --brand-primary: #6d28d9; /* Deep Violet */
-            --brand-secondary: #10b981; /* Bright Emerald */
-            --brand-accent: #f59e0b;  /* Warm Amber */
-            
-            --color-text-heading: #1e293b; /* Dark Slate */
-            --color-text-body: #334155;   /* Medium Slate */
-            --color-text-light: #64748b;  /* Light Slate */
-            
-            --color-bg: #f8fafc;        /* Very light gray background */
-            --color-surface: #ffffff;    /* White for cards and surfaces */
-            --color-border: #e2e8f0;     /* Soft border color */
-            
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --border-radius: 8px; /* Softer, more modern corners */
+            --font-heading: 'Poppins', sans-serif;
+            --font-body: 'Inter', sans-serif;
+
+            /* PREMIUM COLOR PALETTE */
+            --brand-primary: #1E40AF;      /* Rich Blue */
+            --brand-secondary: #3B82F6;    /* Bright Blue */
+            --brand-accent: #F59E0B;       /* Vibrant Gold */
+            --brand-accent-light: #FCD34D; /* Light Gold */
+            --brand-success: #10B981;      /* Emerald Green */
+
+            --color-text-heading: #0F172A;
+            --color-text-body: #1F2937;
+            --color-text-light: #6B7280;
+
+            --color-surface: #FFFFFF;
+            --color-card-bg: #F9FAFB;
+            --color-border: #E5E7EB;
+            --color-border-dark: #D1D5DB;
+
+            /* PREMIUM SHADOWS */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+            --border-radius: 8px;
+            --border-radius-sm: 6px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: var(--font-primary);
-            line-height: 1.6;
+            font-family: var(--font-body);
+            line-height: 1.55;
             color: var(--color-text-body);
             width: 100%;
             margin: 0;
-            padding: 24px;
-            background: var(--color-bg);
-            font-size: 15px;
-            -webkit-font-smoothing: antialiased; /* Smoother font rendering */
+            padding: 0;
+            background: linear-gradient(135deg, #EEF2FF 0%, #F8FAFC 50%, #E0F2FE 100%);
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* --- Header: Clean, modern, and branded --- */
+        .page {
+            max-width: 910px;
+            margin: 0 auto;
+            padding: 0 26px 28px 26px;
+            background: white;
+            border: 2px solid rgba(30, 64, 175, 0.16);
+            border-radius: 18px;
+            box-shadow: 0 20px 45px -20px rgba(30, 64, 175, 0.3);
+            min-height: 100vh;
+        }
+
+        /* --- PREMIUM HEADER --- */
         .header {
-            text-align: center;
-            border-bottom: 2px solid var(--brand-primary);
-            padding-bottom: 16px;
-            margin-bottom: 32px;
+            padding: 18px 22px 16px;
+            margin: 0 0 20px 0;
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border: 2px solid var(--brand-primary);
+            border-radius: var(--border-radius);
+            position: relative;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Ensure subsequent pages leave a clear gap under the header */
+        .page + .page .header {
+            /* Adds extra breathing room for print/page breaks */
+            margin-top: 20px;
+        }
+
+        @media print {
+            /* Use print-friendly units for PDFs */
+            .page + .page .header {
+                margin-top: 14pt;
+            }
+        }
+
+        /* Inner header layout: left logo, center title, right meta */
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .worksheet-logo {
+            width: 84px;
+            height: auto;
+            display: inline-block;
+            object-fit: contain;
+        }
+
+        .header-center {
+            flex: 1 1 auto;
+            text-align: left;
+            padding-left: 8px;
+        }
+
+        .header-right {
+            text-align: right;
+            font-size: 12px;
+            color: var(--color-text-light);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
         }
 
         .title {
-            font-size: 28px;
+            font-family: var(--font-heading);
+            font-size: 26px;
             font-weight: 700;
-            color: var(--color-text-heading);
-            margin-bottom: 4px;
+            color: var(--brand-primary);
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
         }
 
         .subtitle {
-            font-size: 16px;
-            color: var(--color-text-light);
+            font-family: var(--font-heading);
+            font-size: 14px;
+            color: var(--brand-accent);
             margin-bottom: 12px;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .meta-info {
             display: flex;
             justify-content: center;
-            gap: 24px;
-            font-size: 13px;
-            color: var(--color-text-light);
+            gap: 12px;
+            font-size: 12px;
+            color: var(--color-text-body);
+            flex-wrap: wrap;
         }
 
-        /* --- Custom Callout Blocks --- */
+        .meta-info span {
+            background: white;
+            padding: 6px 12px;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--color-border);
+            font-weight: 500;
+        }
+
+        /* --- PREMIUM CALLOUT BLOCKS --- */
         .instructions, .reading-passage {
-            padding: 16px 20px;
-            margin-bottom: 24px;
+            padding: 18px;
+            margin-bottom: 20px;
             border-radius: var(--border-radius);
-            border-left: 4px solid;
+            border: 2px solid;
             background: var(--color-surface);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+
+        .instructions::before, .reading-passage::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
         }
 
         .instructions {
             border-color: var(--brand-primary);
-            background-color: #f5f3ff; /* Light violet background */
+            background: #EFF6FF;
+        }
+
+        .instructions::before {
+            background: var(--brand-primary);
         }
 
         .reading-passage {
-            border-color: var(--brand-secondary);
-            background-color: #f0fdfa; /* Light emerald background */
+            border-color: var(--brand-success);
+            background: #F0FDF4;
         }
-        
+
+        .reading-passage::before {
+            background: var(--brand-success);
+        }
+
         .reading-passage p:last-child {
             margin-bottom: 0;
         }
 
-        /* --- Section Styling --- */
+        /* --- PREMIUM SECTION STYLING --- */
         .section {
-            margin-bottom: 12px;
-            page-break-inside: avoid;
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--color-text-heading);
-            margin-bottom: 10px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid var(--color-border);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        /* A little "gem" icon for branding */
-        .section-title::before {
-            content: '💎';
-            font-size: 14px;
-        }
-
-        /* --- Modern Card-Based Question Design --- */
-        .question, .question-compact {
-            margin-bottom: 8px;
-            padding: 10px;
-            background: var(--color-surface);
+            margin-bottom: 24px;
+            padding: 18px;
+            background: white;
             border: 1px solid var(--color-border);
-            border-radius: 6px;
+            border-radius: var(--border-radius);
             box-shadow: var(--shadow-sm);
             page-break-inside: avoid;
-            transition: transform 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
         }
-        .question:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 10px -3px rgb(0 0 0 / 0.08), 0 3px 4px -4px rgb(0 0 0 / 0.08);
+
+        /* Worksheet top title in body (large, elegant) */
+        .worksheet-container h1 {
+            font-family: var(--font-heading);
+            font-size: 28px;
+            color: var(--color-text-heading);
+            margin-bottom: 4px;
+            letter-spacing: -0.4px;
         }
+
+        .worksheet-container .student-info-header {
+            display:flex;
+            justify-content: flex-start;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        /* Matching activity styles */
+    .matching-grid { background: var(--color-card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--color-border); }
+        .matching-row { display:flex; align-items:center; gap:12px; padding:6px 4px; border-bottom:1px dashed var(--color-border); }
+        .matching-number { width: 20px; font-weight:700; color:var(--brand-primary); }
+        .matching-word { flex:1; }
+        .matching-input { width:40px; padding:6px; border:1px solid var(--color-border); border-radius:6px; }
+        .matching-right .definition-row { padding:6px 4px; border-bottom:1px dashed var(--color-border); }
+
+        /* Crossword grid styles */
+        .crossword-grid { border-collapse: collapse; margin: 12px 0; width: 100%; aspect-ratio: 1 / 1; }
+    .crossword-grid td { border:1px solid rgba(15,23,42,0.18); text-align:center; vertical-align:middle; position: relative; background: #F8FAFC; }
+        .crossword-cell.black { background: #111827; }
+        .crossword-cell-number { position: absolute; font-size:10px; color:#1f2937; top:2px; left:4px; }
+
+        /* Exercise card visual polish */
+    .exercise-section { background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%); padding: 12px 14px; border-radius: 10px; border:1px solid var(--color-border); box-shadow: var(--shadow-sm); margin-bottom: 12px; }
+
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--brand-primary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--brand-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Replace emoji with a simple inline SVG 'book' icon (lucide-like) via data-uri */
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231E40AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 19.5A2.5 2.5 0 0 1 5.5 17H21'/><path d='M3 5.5A2.5 2.5 0 0 1 5.5 3H21v18H5.5A2.5 2.5 0 0 1 3 19.5z'/></svg>");
+        }
+
+        /* --- PREMIUM QUESTION CARDS --- */
+        .question, .question-compact {
+            margin-bottom: 12px;
+            padding: 12px;
+            background: white;
+            border: 1px solid var(--color-border);
+            border-left: 3px solid var(--brand-primary);
+            border-radius: var(--border-radius-sm);
+            page-break-inside: avoid;
+        }
+
         .question-compact {
-            padding: 8px;
-            margin-bottom: 6px;
+            padding: 9px;
+            margin-bottom: 8px;
         }
 
         .question-number {
+            font-family: var(--font-heading);
             font-weight: 700;
             color: var(--brand-primary);
             margin-bottom: 4px;
-            font-size: 13px;
+            font-size: 14px;
         }
 
         .question-text {
             margin-bottom: 6px;
-            font-size: 15px;
-            line-height: 1.4;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--color-text-body);
         }
 
         /* --- Enhanced Options/Inputs --- */
@@ -157,14 +318,14 @@ export function getBaseStyles(): string {
         }
 
         .options li {
-            padding: 8px 10px;
+            padding: 7px 9px;
             background: var(--color-bg);
             border-radius: 6px;
             border: 1px solid var(--color-border);
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             transition: border-color 0.12s, background-color 0.12s;
         }
@@ -221,8 +382,8 @@ export function getBaseStyles(): string {
         }
 
         .answer-space {
-            border-bottom: 2px dotted #94a3b8;
-            min-height: 18px;
+            border-bottom: 1px solid var(--color-border-dark);
+            min-height: 16px;
             margin: 8px 0;
         }
 
@@ -240,8 +401,8 @@ export function getBaseStyles(): string {
         /* --- Grid Layouts --- */
         .questions-grid, .questions-grid-three, .true-false-grid, .vocabulary-grid, .multiple-choice-grid {
             display: grid;
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 14px;
+            margin-bottom: 18px;
         }
         .questions-grid, .true-false-grid, .vocabulary-grid, .multiple-choice-grid {
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -250,41 +411,134 @@ export function getBaseStyles(): string {
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         }
 
-        /* --- Print-Friendly Styles --- */
+        /* Screen footer styling */
+        .footer {
+            margin-top: 18px;
+            padding: 10px 16px;
+            border-top: 1px solid var(--color-border);
+            text-align: center;
+            font-size: 11px;
+            color: var(--color-text-light);
+            background: transparent;
+        }
+
+        .footer a { color: var(--brand-primary); text-decoration: none; font-weight: 600; }
+
+        /* --- PRINT STYLES --- */
         @media print {
+            @page {
+                margin: 0;
+            }
+
             body {
                 margin: 0;
-                padding: 12px;
-                font-size: 12pt;
-                line-height: 1.4;
-                color: #000 !important; /* Force black text */
-                background: #fff !important;
+                padding: 0;
+                background: white !important;
+                font-size: 10.2pt;
+                line-height: 1.35;
             }
 
-            .header, .section-title {
-                border-color: #000 !important;
-            }
-
-            .question, .instructions, .reading-passage, .options li {
+            .page {
+                margin: 0 !important;
+                padding: 0 0.48in 0.5in 0.48in !important;
+                border: none !important;
                 box-shadow: none !important;
-                border: 1px solid #bbb !important;
-                background: #fff !important;
+                min-height: auto !important;
             }
-            
+
+            /* Add top padding for pages after the first to leave margin before content */
+            .page + .page {
+                padding-top: 0.5in !important;
+            }
+
+            .header {
+                background: white !important;
+                border: none !important;
+                border-bottom: 2px solid #000 !important;
+                padding: 14px 0 !important;
+                margin-bottom: 18px !important;
+                box-shadow: none !important;
+            }
+
+            .header::before {
+                display: none !important;
+            }
+
+            .title {
+                color: #000 !important;
+                font-size: 24pt !important;
+            }
+
+            .subtitle {
+                color: #333 !important;
+                font-size: 12pt !important;
+            }
+
+            .meta-info span {
+                background: white !important;
+                border: 1px solid #999 !important;
+                color: #000 !important;
+            }
+
+            .section {
+                box-shadow: none !important;
+                page-break-inside: avoid;
+                border: 1px solid #ccc !important;
+                background: white !important;
+                padding: 13px !important;
+                margin-bottom: 16px !important;
+            }
+
+            .section-title {
+                border-bottom: 2px solid #000 !important;
+                color: #000 !important;
+                font-size: 12pt !important;
+            }
+
+            .question {
+                border: 1px solid #ddd !important;
+                border-left: 2px solid #000 !important;
+                background: white !important;
+                padding: 9px !important;
+                margin-bottom: 8px !important;
+            }
+
+            .question-number {
+                color: #000 !important;
+                font-size: 10pt !important;
+            }
+
+            .question-text {
+                font-size: 10pt !important;
+                line-height: 1.4 !important;
+            }
+
+            /* Ensure footer prints at bottom of page */
+            .footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 8px 24px;
+                border-top: 1px solid #e5e7eb;
+                background: white;
+                font-size: 10px;
+                color: #6b7280;
+            }
             .instructions, .reading-passage {
+                border: 1px solid #999 !important;
                 border-left: 3px solid #000 !important;
+                background: white !important;
+                padding: 12px !important;
             }
 
-            .question:hover {
-                transform: none;
-            }
-
-            .section-title::before {
-                content: ''; /* Remove emoji for print */
+            .instructions::before, .reading-passage::before {
+                display: none !important;
             }
 
             .answer-space {
-                border-bottom: 1px solid #000 !important;
+                border-bottom: 1px solid #999 !important;
+                min-height: 16px !important;
             }
 
             /* Make multiple choice questions much more compact for printing */

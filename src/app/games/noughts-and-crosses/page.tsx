@@ -12,8 +12,9 @@ import { useAudio } from './hooks/useAudio';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import AssignmentThemeSelector from '../../../components/games/AssignmentThemeSelector';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
+import ChunkLoadErrorBoundary from '../../../components/errors/ChunkLoadErrorBoundary';
 
-export default function UnifiedNoughtsAndCrossesPage() {
+function UnifiedNoughtsAndCrossesPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -383,4 +384,14 @@ export default function UnifiedNoughtsAndCrossesPage() {
 
   // Fallback
   return null;
+}
+
+// Wrap the component with ChunkLoadErrorBoundary to handle chunk loading errors
+// This is especially important for Windows PC users experiencing 403 chunk errors
+export default function NoughtsAndCrossesPageWithErrorBoundary() {
+  return (
+    <ChunkLoadErrorBoundary>
+      <UnifiedNoughtsAndCrossesPage />
+    </ChunkLoadErrorBoundary>
+  );
 }

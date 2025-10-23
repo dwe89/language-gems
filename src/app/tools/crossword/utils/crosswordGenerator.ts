@@ -190,14 +190,14 @@ function isValidPlacement(
 ): boolean {
   const gridSize = grid.length;
 
-  // Check bounds
   if (direction === 'across') {
-    if (col + word.length > gridSize || row < 0 || row >= gridSize) return false;
+    if (row < 0 || row >= gridSize) return false;
+    if (col < 0 || col + word.length > gridSize) return false;
   } else {
-    if (row + word.length > gridSize || col < 0 || col >= gridSize) return false;
+    if (col < 0 || col >= gridSize) return false;
+    if (row < 0 || row + word.length > gridSize) return false;
   }
 
-  // Check each position
   for (let i = 0; i < word.length; i++) {
     const currentRow = direction === 'across' ? row : row + i;
     const currentCol = direction === 'across' ? col + i : col;
@@ -205,46 +205,30 @@ function isValidPlacement(
     const existingLetter = grid[currentRow][currentCol];
 
     if (existingLetter !== null && existingLetter !== currentLetter) {
-      return false; // Conflict
+      return false;
     }
 
-    // Check perpendicular neighbors to avoid adjacent parallel words
     if (existingLetter === null) {
       if (direction === 'across') {
-        // Check above and below
-        if ((grid[currentRow - 1]?.[currentCol] !== null && grid[currentRow - 1]?.[currentCol] !== undefined) ||
-            (grid[currentRow + 1]?.[currentCol] !== null && grid[currentRow + 1]?.[currentCol] !== undefined)) {
-          // Only allow if this creates a valid intersection
-          const hasValidIntersection = 
-            (i > 0 && grid[currentRow][currentCol - 1] !== null) ||
-            (i < word.length - 1 && grid[currentRow][currentCol + 1] !== null);
-          if (!hasValidIntersection) return false;
+        if ((currentRow > 0 && grid[currentRow - 1][currentCol] !== null) ||
+            (currentRow < gridSize - 1 && grid[currentRow + 1][currentCol] !== null)) {
+          return false;
         }
       } else {
-        // Check left and right
-        if ((grid[currentRow]?.[currentCol - 1] !== null && grid[currentRow]?.[currentCol - 1] !== undefined) ||
-            (grid[currentRow]?.[currentCol + 1] !== null && grid[currentRow]?.[currentCol + 1] !== undefined)) {
-          // Only allow if this creates a valid intersection
-          const hasValidIntersection = 
-            (i > 0 && grid[currentRow - 1]?.[currentCol] !== null) ||
-            (i < word.length - 1 && grid[currentRow + 1]?.[currentCol] !== null);
-          if (!hasValidIntersection) return false;
+        if ((currentCol > 0 && grid[currentRow][currentCol - 1] !== null) ||
+            (currentCol < gridSize - 1 && grid[currentRow][currentCol + 1] !== null)) {
+          return false;
         }
       }
     }
   }
 
-  // Check that the word doesn't extend existing words
   if (direction === 'across') {
-    if ((col > 0 && grid[row][col - 1] !== null) || 
-        (col + word.length < gridSize && grid[row][col + word.length] !== null)) {
-      return false;
-    }
+    if (col > 0 && grid[row][col - 1] !== null) return false;
+    if (col + word.length < gridSize && grid[row][col + word.length] !== null) return false;
   } else {
-    if ((row > 0 && grid[row - 1][col] !== null) || 
-        (row + word.length < gridSize && grid[row + word.length][col] !== null)) {
-      return false;
-    }
+    if (row > 0 && grid[row - 1][col] !== null) return false;
+    if (row + word.length < gridSize && grid[row + word.length][col] !== null) return false;
   }
 
   return true;
@@ -276,7 +260,10 @@ function findBestWordPlacement(
             direction
           );
           
-          if (placement && isValidPlacement(state.grid, word, placement.row, placement.col, direction)) {
+          if (placement &&
+              placement.row >= 0 && placement.row < state.grid.length &&
+              placement.col >= 0 && placement.col < state.grid[0].length &&
+              isValidPlacement(state.grid, word, placement.row, placement.col, direction)) {
             const score = scorePlacement(state, word, placement.row, placement.col, direction);
             if (score > bestScore) {
               bestScore = score;
@@ -299,45 +286,57 @@ function findBestWordPlacement(
 
 function findIntersections(word1: string, word2: string) {
   const intersections = [];
-  
+
   for (let i = 0; i < word1.length; i++) {
     for (let j = 0; j < word2.length; j++) {
       if (word1[i] === word2[j]) {
         intersections.push({
           letter: word1[i],
-          word1: word1,
-          word1Position: i,
-          word2: word2,
-          word2Position: j,
-          row: 0, // Will be calculated later
-          col: 0, // Will be calculated later
+          position: i,
+          withWord: word2,
+          withPosition: j,
         });
       }
     }
   }
-  
+
   return intersections;
 }
 
 function calculatePlacement(
-  newWord: string,
+  _newWord: string,
   placedWord: PlacedWord,
-  intersection: any,
+  intersection: {
+    position: number;
+    withPosition: number;
+  },
   newDirection: 'across' | 'down'
 ) {
-  const { word1Position, word2Position } = intersection;
-  
-  if (newDirection === 'across') {
-    // New word goes across, placed word is vertical
-    const row = placedWord.startRow + word2Position;
-    const col = placedWord.startCol - word1Position;
-    return { row, col };
+  const newWordIndex = intersection.position;
+  const placedWordIndex = intersection.withPosition;
+
+  let intersectionRow: number;
+  let intersectionCol: number;
+
+  if (placedWord.direction === 'across') {
+    intersectionRow = placedWord.startRow;
+    intersectionCol = placedWord.startCol + placedWordIndex;
   } else {
-    // New word goes down, placed word is horizontal
-    const row = placedWord.startRow - word1Position;
-    const col = placedWord.startCol + word2Position;
-    return { row, col };
+    intersectionRow = placedWord.startRow + placedWordIndex;
+    intersectionCol = placedWord.startCol;
   }
+
+  if (newDirection === 'across') {
+    return {
+      row: intersectionRow,
+      col: intersectionCol - newWordIndex,
+    };
+  }
+
+  return {
+    row: intersectionRow - newWordIndex,
+    col: intersectionCol,
+  };
 }
 
 function scorePlacement(
@@ -357,7 +356,9 @@ function scorePlacement(
   for (let i = 0; i < word.length; i++) {
     const currentRow = direction === 'across' ? row : row + i;
     const currentCol = direction === 'across' ? col + i : col;
-    if (state.grid[currentRow]?.[currentCol] !== null) {
+    if (currentRow >= 0 && currentRow < state.grid.length &&
+        currentCol >= 0 && currentCol < state.grid[0].length &&
+        state.grid[currentRow]?.[currentCol] !== null) {
       intersectionCount++;
     }
   }
@@ -365,7 +366,7 @@ function scorePlacement(
   
   // Prefer placements closer to center
   const centerRow = Math.floor(state.grid.length / 2);
-  const centerCol = Math.floor(state.grid[0].length / 2);
+  const centerCol = Math.floor((state.grid[0]?.length || 0) / 2);
   const distanceFromCenter = Math.abs(row - centerRow) + Math.abs(col - centerCol);
   score -= distanceFromCenter;
   
@@ -376,18 +377,20 @@ function findDisconnectedPlacement(state: GenerationState): WordPlacement | null
   // Simple implementation: try to place a word in an empty area
   const gridSize = state.grid.length;
   const word = state.availableWords[0]?.word;
-  
+
   if (!word) return null;
-  
+
   // Try to place in various positions
   for (let row = 2; row < gridSize - 2; row += 3) {
     for (let col = 2; col < gridSize - word.length - 2; col += 3) {
-      if (isValidPlacement(state.grid, word, row, col, 'across')) {
-        return { word, row, col, direction: 'across', intersections: [] };
+      if (col >= 0 && col < gridSize && row >= 0 && row < gridSize) {
+        if (isValidPlacement(state.grid, word, row, col, 'across')) {
+          return { word, row, col, direction: 'across', intersections: [] };
+        }
       }
     }
   }
-  
+
   return null;
 }
 
@@ -412,7 +415,7 @@ function updateBounds(
 
 function createCrosswordData(state: GenerationState, originalGridSize: number): CrosswordData {
   // Trim the grid to actual bounds with padding
-  const padding = 1;
+  const padding = 3;
   const minRow = Math.max(0, state.bounds.minRow - padding);
   const maxRow = Math.min(originalGridSize - 1, state.bounds.maxRow + padding);
   const minCol = Math.max(0, state.bounds.minCol - padding);
@@ -493,15 +496,17 @@ function createCrosswordData(state: GenerationState, originalGridSize: number): 
       const row = word.startRow + (word.direction === 'down' ? i : 0);
       const col = word.startCol + (word.direction === 'across' ? i : 0);
 
-      grid[row][col] = {
-        letter: word.word[i],
-        isBlack: false,
-        number: i === 0 ? word.number : undefined,
-        isStart: i === 0,
-        belongsToWords: grid[row][col].belongsToWords
-          ? [...grid[row][col].belongsToWords!, word.number]
-          : [word.number],
-      };
+      if (row >= 0 && row < rows && col >= 0 && col < cols) {
+        grid[row][col] = {
+          letter: word.word[i],
+          isBlack: false,
+          number: i === 0 ? word.number : undefined,
+          isStart: i === 0,
+          belongsToWords: grid[row][col].belongsToWords
+            ? [...grid[row][col].belongsToWords!, word.number]
+            : [word.number],
+        };
+      }
     }
   }
 
@@ -532,7 +537,7 @@ function createCrosswordData(state: GenerationState, originalGridSize: number): 
   let intersectionCount = 0;
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      if (!grid[row][col].isBlack && grid[row][col].belongsToWords && grid[row][col].belongsToWords!.length > 1) {
+      if (grid[row] && grid[row][col] && !grid[row][col].isBlack && grid[row][col].belongsToWords && grid[row][col].belongsToWords!.length > 1) {
         intersectionCount++;
       }
     }

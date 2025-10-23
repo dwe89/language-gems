@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameVocabularyWord } from '../../../../../hooks/useGameVocabulary';
 
@@ -26,7 +26,6 @@ interface TempleTablet {
   lavaProximity: number;
   size: number;
   spawnTime: number;
-  // Add a property to track if the tablet has been 'answered'
   isAnswered: boolean;
 }
 
@@ -39,15 +38,36 @@ export default function LavaTempleEngine({
   gameActive,
   difficulty
 }: LavaTempleEngineProps) {
+  // --------------------------------------------------------
+  // 🌋 CORE FIX: Mutable Refs for Physics and DOM Elements
+  // --------------------------------------------------------
   const [templeTablets, setTempleTablets] = useState<TempleTablet[]>([]);
-  const [lavaLevel, setLavaLevel] = useState(0);
   const [lavaParticles, setLavaParticles] = useState<any[]>([]);
   const [emberEffects, setEmberEffects] = useState<any[]>([]);
+  
+  // Ref to hold the mutable physics state (x, y, etc.)
+  const physicsTabletsRef = useRef<TempleTablet[]>([]); 
+  // Ref map to link tablet ID to its actual DOM element
+  const objectRefsMap = useRef<Map<string, HTMLDivElement>>(new Map()); 
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
 
+  // Utility to set the ref and map it to the object ID
+  const setRef = useCallback((element: HTMLDivElement | null, id: string) => {
+    if (element) {
+        objectRefsMap.current.set(id, element);
+    } else {
+        objectRefsMap.current.delete(id);
+    }
+  }, []);
+
+  // --------------------------------------------------------
+  // 🧱 Physics/Collision Logic
+  // --------------------------------------------------------
+
   // Generate decoy translations
-  const generateDecoys = (correctTranslation: string): string[] => {
+  const generateDecoys = useCallback((correctTranslation: string): string[] => {
     const otherWords = vocabulary
       .filter(word => word.translation !== correctTranslation)
       .map(word => word.translation);
@@ -55,45 +75,62 @@ export default function LavaTempleEngine({
     const decoyCount = difficulty === 'beginner' ? 3 : difficulty === 'intermediate' ? 4 : 5;
     const shuffled = otherWords.sort(() => 0.5 - Math.random());
     return shuffled.slice(0, decoyCount);
-  };
+  }, [vocabulary, difficulty]);
 
   // Enhanced collision detection for tablets
-  const checkTabletCollisions = (tablets: TempleTablet[]): TempleTablet[] => {
-    const minDistance = 140; // Minimum distance between tablets
+  const checkTabletCollisions = useCallback((tablets: TempleTablet[]): TempleTablet[] => {
+    const minDistance = 140;
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
 
-    return tablets.map((tablet, index) => {
-      let adjustedX = tablet.x;
-      let adjustedY = tablet.y;
-      let collisionCount = 0;
+    let adjustedTablets = [...tablets];
+    let iterations = 0;
+    const maxIterations = 5;
 
-      // Check against all other tablets
-      tablets.forEach((otherTablet, otherIndex) => {
-        if (index !== otherIndex) {
-          const distance = Math.sqrt(
-            Math.pow(tablet.x - otherTablet.x, 2) + Math.pow(tablet.y - otherTablet.y, 2)
-          );
+    do {
+        let collidedInIteration = false;
+        // Collision resolution logic
+        for (let i = 0; i < adjustedTablets.length; i++) {
+            for (let j = i + 1; j < adjustedTablets.length; j++) {
+                const tab1 = adjustedTablets[i];
+                const tab2 = adjustedTablets[j];
 
-          if (distance < minDistance) {
-            collisionCount++;
-            // Move tablet away from collision
-            const angle = Math.atan2(tablet.y - otherTablet.y, tablet.x - otherTablet.x);
-            const pushDistance = minDistance + (collisionCount * 25);
+                const distance = Math.sqrt(
+                    Math.pow(tab1.x - tab2.x, 2) + Math.pow(tab1.y - tab2.y, 2)
+                );
 
-            adjustedX = Math.max(100, Math.min(screenWidth - 100,
-              otherTablet.x + Math.cos(angle) * pushDistance
-            ));
-            adjustedY = otherTablet.y + Math.sin(angle) * pushDistance;
-          }
+                if (distance < minDistance) {
+                    collidedInIteration = true;
+                    const overlap = minDistance - distance;
+                    const angle = Math.atan2(tab1.y - tab2.y, tab1.x - tab2.x);
+                    const pushDistance = overlap / 2;
+
+                    adjustedTablets[i] = {
+                        ...tab1,
+                        x: tab1.x + Math.cos(angle) * pushDistance,
+                        y: tab1.y + Math.sin(angle) * pushDistance
+                    };
+                    adjustedTablets[j] = {
+                        ...tab2,
+                        x: tab2.x - Math.cos(angle) * pushDistance,
+                        y: tab2.y - Math.sin(angle) * pushDistance
+                    };
+                }
+            }
         }
-      });
+        iterations++;
+        if (!collidedInIteration) break;
+    } while (iterations < maxIterations);
 
-      return { ...tablet, x: adjustedX, y: adjustedY };
-    });
-  };
+    // Final boundary check
+    return adjustedTablets.map(tablet => ({
+        ...tablet,
+        x: Math.max(100, Math.min(screenWidth - 100, tablet.x))
+    }));
+  }, []);
+
 
   // Spawn temple tablets with enhanced positioning
-  const spawnTempleTablets = () => {
+  const spawnTempleTablets = useCallback(() => {
     if (!currentWord || isPaused || !gameActive) return;
 
     const decoys = generateDecoys(currentWord.translation);
@@ -103,112 +140,116 @@ export default function LavaTempleEngine({
     const stoneTypes: ('granite' | 'marble' | 'obsidian')[] = ['granite', 'marble', 'obsidian'];
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
 
-    // Create tablets with enhanced collision detection
     const newTablets: TempleTablet[] = [];
     const columnWidth = (screenWidth - 200) / Math.max(shuffledOptions.length, 3);
 
     shuffledOptions.forEach((translation, index) => {
-      // Use column-based positioning for better distribution
       const baseX = 100 + (index * columnWidth) + (Math.random() * 60 - 30);
       const baseY = -100 - (index * 120) - (Math.random() * 50);
-
-      let position = { x: baseX, y: baseY };
-      let attempts = 0;
-
-      // Fine-tune position to avoid overlaps
-      while (attempts < 40) {
-        const overlapping = newTablets.some(tablet => {
-          const distance = Math.sqrt(
-            Math.pow(position.x - tablet.x, 2) + Math.pow(position.y - tablet.y, 2)
-          );
-          return distance < 140;
-        });
-
-        if (!overlapping) break;
-
-        // Adjust position
-        position.x = Math.max(100, Math.min(screenWidth - 100,
-          baseX + (Math.random() * 100 - 50)
-        ));
-        position.y = baseY + (Math.random() * 80 - 40);
-        attempts++;
-      }
 
       newTablets.push({
         id: `tablet-${currentWord.id}-${index}-${Date.now()}`,
         translation,
         isCorrect: translation === currentWord.translation,
-        x: position.x,
-        y: position.y,
-        speed: 0.6 + Math.random() * 0.4, // More consistent speed
+        x: baseX,
+        y: baseY,
+        // 🚀 CRITICAL FIX: Increase speed
+        speed: 1.2 + Math.random() * 0.5, 
         stoneType: stoneTypes[Math.floor(Math.random() * stoneTypes.length)],
-        crackLevel: Math.random() * 0.2, // Start with less cracking
+        crackLevel: Math.random() * 0.2,
         lavaProximity: 0,
-        size: Math.random() * 0.2 + 0.9, // More consistent sizing
+        size: Math.random() * 0.2 + 0.9,
         spawnTime: Date.now(),
-        isAnswered: false // Initialize as not answered
+        isAnswered: false
       });
     });
 
-    setTempleTablets(checkTabletCollisions(newTablets));
-  };
+    const adjustedTablets = checkTabletCollisions(newTablets);
+    
+    setTempleTablets(adjustedTablets);
+    physicsTabletsRef.current = adjustedTablets;
+    
+  }, [currentWord, isPaused, gameActive, generateDecoys, checkTabletCollisions]);
 
-  // Update tablet positions with collision avoidance
-  const updateTablets = () => {
+  // --------------------------------------------------------
+  // 📉 updateTablets (Lava logic removed)
+  // --------------------------------------------------------
+  const updateTablets = useCallback(() => {
     if (isPaused || !gameActive) return;
 
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1000;
+    
+    let tablets = physicsTabletsRef.current;
+    let removedTabletIds: string[] = [];
 
-    // Slowly increase lava level (slightly slower)
-    setLavaLevel(prev => Math.min(prev + 0.15, screenHeight * 0.7));
-
-    setTempleTablets(prev => {
-      const updatedTablets = prev.map(tablet => {
+    let updatedPhysicsTablets = tablets.map(tablet => {
         const newY = tablet.y + tablet.speed;
-        const lavaProximity = Math.max(0, (screenHeight - lavaLevel - newY) / 200);
+        
+        const lavaProximity = 0.1; 
+        
+        // Check if tablet has fallen off the screen
+        if (newY > screenHeight + 50) { 
+            removedTabletIds.push(tablet.id);
+        }
 
         return {
-          ...tablet,
-          y: newY,
-          lavaProximity,
-          crackLevel: Math.min(tablet.crackLevel + (lavaProximity * 0.008), 1) // Slower cracking
+            ...tablet,
+            y: newY,
+            lavaProximity,
+            crackLevel: Math.min(tablet.crackLevel + (lavaProximity * 0.008), 1)
         };
-      });
-
-      // Apply collision detection to moving tablets
-      return checkTabletCollisions(updatedTablets);
     });
-  };
 
-  // Handle tablet click
-  const handleTabletClick = (tablet: TempleTablet) => {
-    // Only process if the tablet hasn't been answered yet
+    // 2. Apply collisions and update the physics ref
+    let adjustedTablets = checkTabletCollisions(updatedPhysicsTablets);
+    physicsTabletsRef.current = adjustedTablets.filter(t => !removedTabletIds.includes(t.id));
+
+    // 3. DIRECT DOM WRITE: Apply position updates
+    adjustedTablets.forEach(tablet => {
+        const element = objectRefsMap.current.get(tablet.id);
+        if (element && !removedTabletIds.includes(tablet.id)) {
+            element.style.left = `${tablet.x}px`;
+            element.style.top = `${tablet.y}px`;
+        }
+    });
+
+    // 4. Update the state array ONLY for cleanup/removal (low frequency)
+    if (removedTabletIds.length > 0) {
+        setTempleTablets(prev => prev.filter(tablet => !removedTabletIds.includes(tablet.id)));
+    }
+
+  }, [isPaused, gameActive, checkTabletCollisions]);
+
+  // --------------------------------------------------------
+  // 💎 Game/FX Logic
+  // --------------------------------------------------------
+
+  // Handle tablet click (Lava level adjustments removed)
+  const handleTabletClick = useCallback((tablet: TempleTablet) => {
     if (tablet.isAnswered) return;
-
+    
     setTempleTablets(prev => 
         prev.map(t => t.id === tablet.id ? { ...t, isAnswered: true } : t)
     );
+    physicsTabletsRef.current = physicsTabletsRef.current.map(t => t.id === tablet.id ? { ...t, isAnswered: true } : t);
+
 
     if (tablet.isCorrect) {
       onCorrectAnswer(currentWord);
       createTempleExplosion(tablet.x, tablet.y, 'treasure');
-      // Temporarily lower lava level as reward
-      setLavaLevel(prev => Math.max(prev - 50, 0));
     } else {
       onIncorrectAnswer();
       createTempleExplosion(tablet.x, tablet.y, 'destruction');
-      // Increase lava level as penalty
-      setLavaLevel(prev => Math.min(prev + 30, window.innerHeight * 0.8));
     }
 
-    // Remove clicked tablet AFTER particles/effects are created
     setTimeout(() => {
         setTempleTablets(prev => prev.filter(t => t.id !== tablet.id));
-    }, 500); // Small delay to allow particle animation to start
-  };
+        physicsTabletsRef.current = physicsTabletsRef.current.filter(t => t.id !== tablet.id);
+    }, 500);
+  }, [currentWord, onCorrectAnswer, onIncorrectAnswer]);
 
   // Create temple explosion effect
-  const createTempleExplosion = (x: number, y: number, type: 'treasure' | 'destruction') => {
+  const createTempleExplosion = useCallback((x: number, y: number, type: 'treasure' | 'destruction') => {
     const particleCount = type === 'treasure' ? 15 : 8;
     const newParticles = Array.from({ length: particleCount }, (_, i) => ({
       id: `temple-particle-${Date.now()}-${i}`,
@@ -227,51 +268,54 @@ export default function LavaTempleEngine({
     setTimeout(() => {
       setLavaParticles(prev => prev.filter(p => !newParticles.some(np => np.id === p.id)));
     }, 1800);
-  };
+  }, []);
 
   // Create floating embers
   useEffect(() => {
     const createEmbers = () => {
-      if (!gameActive || isPaused) return;
+        if (!gameActive || isPaused) return;
 
-      const newEmbers = Array.from({ length: 3 }, (_, i) => ({
-        id: `ember-${Date.now()}-${i}`,
-        x: Math.random() * window.innerWidth,
-        y: window.innerHeight,
-        vx: (Math.random() - 0.5) * 2,
-        vy: -Math.random() * 3 - 1,
-        life: 1,
-        size: Math.random() * 4 + 2
-      }));
+        const newEmbers = Array.from({ length: 3 }, (_, i) => ({
+            id: `ember-${Date.now()}-${i}`,
+            x: Math.random() * window.innerWidth,
+            y: window.innerHeight,
+            vx: (Math.random() - 0.5) * 2,
+            vy: -Math.random() * 3 - 1,
+            life: 1,
+            size: Math.random() * 4 + 2
+        }));
 
-      setEmberEffects(prev => [...prev.slice(-20), ...newEmbers]);
+        setEmberEffects(prev => [...prev.slice(-20), ...newEmbers]);
     };
-
+    
     const emberInterval = setInterval(createEmbers, 500);
     return () => clearInterval(emberInterval);
   }, [gameActive, isPaused]);
 
-  // Animation loop with error handling
-  useEffect(() => {
+  // --------------------------------------------------------
+  // ⏳ Lifecycle and RAF Loop
+  // --------------------------------------------------------
+
+  // UseLayoutEffect for the animation loop (runs before browser paint)
+  useLayoutEffect(() => {
     const animate = () => {
       try {
         if (gameActive && !isPaused) {
           updateTablets();
-
-          // Update ember positions
+          
+          // Update ember positions inside the main RAF loop for better sync
           setEmberEffects(prev =>
-            prev.map(ember => ({
-              ...ember,
-              x: ember.x + ember.vx,
-              y: ember.y + ember.vy,
-              life: ember.life - 0.01
-            })).filter(ember => ember.life > 0 && ember.y > -50)
+              prev.map(ember => ({
+                  ...ember,
+                  x: ember.x + ember.vx,
+                  y: ember.y + ember.vy,
+                  life: ember.life - 0.01
+              })).filter(ember => ember.life > 0 && ember.y > -50)
           );
         }
         animationRef.current = requestAnimationFrame(animate);
       } catch (error) {
         console.error('Animation error in Lava Temple Engine:', error);
-        // Continue animation even if there's an error
         animationRef.current = requestAnimationFrame(animate);
       }
     };
@@ -286,14 +330,14 @@ export default function LavaTempleEngine({
         animationRef.current = undefined;
       }
     };
-  }, [gameActive, isPaused]);
+  }, [gameActive, isPaused, updateTablets]);
 
-  // Spawn tablets when current word changes
+  // Spawn tablets when current word changes (uses standard useEffect)
   useEffect(() => {
     if (currentWord && gameActive) {
       spawnTempleTablets();
     }
-  }, [currentWord, gameActive]);
+  }, [currentWord, gameActive, spawnTempleTablets]);
 
   const getStoneColor = (stoneType: string) => {
     switch (stoneType) {
@@ -309,7 +353,7 @@ export default function LavaTempleEngine({
       ref={containerRef}
       className="absolute inset-0 overflow-hidden"
     >
-      {/* Video Background */}
+      {/* Background/Overlay unchanged */}
       <div className="absolute inset-0">
         <video
           className="absolute inset-0 w-full h-full object-cover"
@@ -320,12 +364,8 @@ export default function LavaTempleEngine({
         >
           <source src="/games/noughts-and-crosses/images/lava-temple/lava-temple-bg.mp4" type="video/mp4" />
         </video>
-
-        {/* Video overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40"></div>
       </div>
-
-      {/* Temple Pattern Overlay */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(0,0,0,0.1)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.1)_75%),linear-gradient(45deg,rgba(0,0,0,0.1)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.1)_75%)] bg-[size:20px_20px] bg-[position:0_0,10px_10px] opacity-30"></div>
       </div>
@@ -361,19 +401,31 @@ export default function LavaTempleEngine({
         {templeTablets.map((tablet) => (
           <motion.div
             key={tablet.id}
-            initial={{ opacity: 0, scale: 0, x: tablet.x, y: tablet.y }}
+            // 💡 Use the Ref Setter Callback
+            ref={(element) => setRef(element, tablet.id)}
+
+            initial={{ opacity: 0, scale: 0 }}
             animate={{
-              opacity: tablet.isAnswered ? 0 : 1, // Fade out if answered
-              scale: tablet.isAnswered ? 0 : tablet.size, // Shrink if answered
-              x: tablet.x,
-              y: tablet.y
+              opacity: tablet.isAnswered ? 0 : 1,
+              scale: tablet.isAnswered ? 0 : tablet.size,
             }}
             exit={{ opacity: 0, scale: 0 }}
-            onClick={() => handleTabletClick(tablet)}
-            className={`absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none ${tablet.isAnswered ? 'pointer-events-none' : ''}`}
+
+            // 🚀 CRITICAL FIX: Use onPointerDown for moving elements
+            onPointerDown={() => handleTabletClick(tablet)}
+
+            className={`absolute cursor-pointer hover:scale-110 select-none ${tablet.isAnswered ? 'pointer-events-none' : ''}`}
+
+            // 🚀 CRITICAL FIX: Pin the element's INITIAL position using top/left
+            // and set the scale. The RAF loop will now overwrite the transform.
+            style={{
+                left: `${tablet.x}px`,
+                top: `${tablet.y}px`,
+                scale: tablet.size // Use the style object for scale
+            }}
           >
             <div className="relative">
-              {/* Realistic Stone/Rock Design */}
+              {/* Stone/Rock Design */}
               <div className="relative">
                 {/* Lava Glow Effect */}
                 {tablet.lavaProximity > 0.3 && (
@@ -428,7 +480,7 @@ export default function LavaTempleEngine({
         ))}
       </AnimatePresence>
 
-      {/* Lava Particles */}
+      {/* Lava Particles (Explosions) */}
       <AnimatePresence>
         {lavaParticles.map((particle) => (
           <motion.div
@@ -457,49 +509,6 @@ export default function LavaTempleEngine({
           />
         ))}
       </AnimatePresence>
-
-      {/* Rising Lava */}
-      <motion.div
-        className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-red-600 via-orange-500 to-red-400"
-        style={{ height: lavaLevel }}
-        animate={{
-          background: [
-            'linear-gradient(to top, #dc2626, #f97316, #dc2626)',
-            'linear-gradient(to top, #f97316, #dc2626, #f97316)',
-            'linear-gradient(to top, #dc2626, #f97316, #dc2626)'
-          ]
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity
-        }}
-      >
-        {/* Lava surface bubbles */}
-        <div className="absolute top-0 w-full h-8 overflow-hidden">
-          {Array.from({ length: 10 }, (_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-4 h-4 bg-yellow-400 rounded-full"
-              style={{
-                left: `${i * 10 + Math.random() * 5}%`,
-                top: Math.random() * 20
-              }}
-              animate={{
-                y: [0, -20, 0],
-                scale: [1, 1.3, 1],
-                opacity: [0.7, 1, 0.7]
-              }}
-              transition={{
-                duration: 1 + Math.random(),
-                repeat: Infinity,
-                delay: Math.random() * 2
-              }}
-            />
-          ))}
-        </div>
-      </motion.div>
-
-
     </div>
   );
 }

@@ -482,7 +482,7 @@ Respond with valid JSON in this format:
       "instructions": "Match the Spanish words with their English translations.",
       "items": [
         {"word": "Spanish word", "definition": "English translation"},
-        // ${exercisesPerType} items
+        // 10 items total (will display in 2 columns: 5 left, 5 right)
       ]
     },`;
     }
@@ -508,7 +508,7 @@ Respond with valid JSON in this format:
       "instructions": "Translate the following words from English to Spanish.",
       "items": [
         {"source": "English word", "target": "Spanish translation"},
-        // ${exercisesPerType} items
+        // 10 items total
       ]
     },`;
     }
@@ -521,7 +521,7 @@ Respond with valid JSON in this format:
       "instructions": "Choose the correct Spanish word for each definition.",
       "items": [
         {"question": "What is the Spanish word for 'house'?", "options": ["casa", "coche", "gato", "perro"], "answer": "casa"},
-        // ${exercisesPerType} items
+        // 10 items total (will display in 2 columns)
       ]
     },`;
     }
@@ -532,8 +532,8 @@ Respond with valid JSON in this format:
       "type": "wordsearch",
       "title": "Word Search",
       "instructions": "Find all the Spanish words hidden in the grid below.",
-      "grid_size": 12,
-      "words": [], // Will be populated with Spanish words from vocabulary_items
+      "grid_size": 16,
+      "words": [], // Will be populated with 14 Spanish words from vocabulary_items (remove all spaces from multi-word terms)
       "grid": [] // Will be generated automatically
     },`;
     }
@@ -543,16 +543,22 @@ Respond with valid JSON in this format:
     {
       "type": "crossword",
       "title": "Crossword Puzzle",
-      "instructions": "Complete the crossword using the Spanish vocabulary words.",
+      "instructions": "Complete the crossword using the vocabulary words.",
       "clues": {
         "across": [
-          {"number": 1, "clue": "English definition or hint", "answer": "spanish_word", "position": [0, 0]}
+          {"number": 1, "clue": "A descriptive clue (e.g., 'A vehicle with two wheels, without a motor' for bicycle)", "answer": "spanish_word", "position": [0, 0]}
+          // Include 10-12 across clues total - use single words without spaces
+          // IMPORTANT: Write descriptive, contextual clues that help students learn, NOT direct translations
+          // Example good clues: "A place where students learn" (school), "An animal that says meow" (cat)
+          // Avoid: "The Spanish word for house" - instead write: "A building where a family lives"
         ],
         "down": [
-          {"number": 2, "clue": "English definition or hint", "answer": "spanish_word", "position": [0, 1]}
+          {"number": 2, "clue": "A descriptive clue (e.g., 'What you use to write on paper' for pen)", "answer": "spanish_word", "position": [0, 1]}
+          // Include 10-12 down clues total - use single words without spaces
+          // IMPORTANT: Write descriptive, contextual clues that help students learn, NOT direct translations
         ]
       },
-      "grid_size": 10
+      "grid_size": 15
     },`;
     }
 

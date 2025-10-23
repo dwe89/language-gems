@@ -6,11 +6,6 @@ import { motion } from 'framer-motion';
 import {
   Clock,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Trophy,
-  RotateCcw,
-  ArrowRight,
   BookOpen,
   Target,
   Timer
@@ -55,8 +50,7 @@ export default function StudentTestPage() {
   const [testStatus, setTestStatus] = useState<StudentTestStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'preview' | 'test' | 'results'>('preview');
-  const [testResults, setTestResults] = useState<any>(null);
+  const [currentView, setCurrentView] = useState<'preview' | 'test'>('preview');
 
   useEffect(() => {
     if (user && testId) {
@@ -132,16 +126,8 @@ export default function StudentTestPage() {
   };
 
   const handleTestComplete = (resultId: string, score: number, passed: boolean) => {
-    setTestResults({
-      resultId,
-      score,
-      passed,
-      completedAt: new Date()
-    });
-    setCurrentView('results');
-    
-    // Reload test status
-    loadTestData();
+    // Redirect to results page
+    router.push(`/student/test/${testId}/results`);
   };
 
   const handleReturnToDashboard = () => {
@@ -210,75 +196,7 @@ export default function StudentTestPage() {
     );
   }
 
-  // Results View
-  if (currentView === 'results' && testResults) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-2xl mx-auto p-6">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-xl p-8 text-center"
-          >
-            {/* Result Icon */}
-            <div className="mb-6">
-              {testResults.passed ? (
-                <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-                  <Trophy className="h-10 w-10 text-green-600" />
-                </div>
-              ) : (
-                <div className="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
-                  <XCircle className="h-10 w-10 text-red-600" />
-                </div>
-              )}
-            </div>
-
-            {/* Result Message */}
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {testResults.passed ? 'Congratulations!' : 'Test Complete'}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              {testResults.passed 
-                ? 'You passed the vocabulary test!' 
-                : 'You can review your results and try again if attempts remain.'
-              }
-            </p>
-
-            {/* Score Display */}
-            <div className="bg-gray-50 rounded-xl p-6 mb-6">
-              <div className="text-4xl font-bold mb-2 ${getScoreColor(testResults.score, test.passing_score_percentage)}">
-                {testResults.score.toFixed(1)}%
-              </div>
-              <div className="text-sm text-gray-600">
-                Passing score: {test.passing_score_percentage}%
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-center space-x-4">
-              {testStatus.attempts_remaining > 0 && !testResults.passed && (
-                <button
-                  onClick={() => setCurrentView('preview')}
-                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  <span>Try Again</span>
-                </button>
-              )}
-              
-              <button
-                onClick={handleReturnToDashboard}
-                className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg"
-              >
-                <span>Return to Dashboard</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
+  // Results view is now handled by /student/test/[testId]/results page
 
   // Preview View (Default)
   return (

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '../../../../utils/supabase/client';
+import * as Sentry from '@sentry/nextjs';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -7,12 +8,25 @@ export const dynamic = 'force-dynamic';
 /**
  * Cron job endpoint to publish scheduled blog posts
  * This will be called by Vercel Cron every hour to check for posts ready to publish
+ *
+ * Monitored by Sentry Cron Monitoring for reliability tracking
  */
 export async function POST(request: NextRequest) {
+  // Start Sentry Cron Monitor check-in
+  const checkInId = Sentry.captureCheckIn({
+    monitorSlug: 'blog-publish-scheduled',
+    status: 'in_progress',
+  });
+
   try {
     // Verify this is a cron request (optional security measure)
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      Sentry.captureCheckIn({
+        checkInId,
+        monitorSlug: 'blog-publish-scheduled',
+        status: 'error',
+      });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -111,6 +125,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Mark cron job as successful
+    Sentry.captureCheckIn({
+      checkInId,
+      monitorSlug: 'blog-publish-scheduled',
+      status: 'ok',
+    });
+
     return NextResponse.json({
       success: true,
       message: `Published ${publishedPosts.length} posts`,
@@ -120,6 +141,17 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Cron job error:', error);
+
+    // Mark cron job as failed
+    Sentry.captureCheckIn({
+      checkInId,
+      monitorSlug: 'blog-publish-scheduled',
+      status: 'error',
+    });
+
+    // Also capture the exception for detailed error tracking
+    Sentry.captureException(error);
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -132,7 +164,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = createServiceRoleClient();
     const now = new Date();
 
     // Get scheduled posts for preview

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from './ThemeProvider';
 import { Brain, ArrowLeft, Volume2, VolumeX, Settings, Users, Monitor, Target, Moon, Skull, Rocket, Flame, X, Circle, Trophy, Frown, Handshake, Gamepad2, Home, RotateCcw, Clock, Award, BookOpen, TrendingUp, Zap, Volume1 } from 'lucide-react';
@@ -11,12 +11,13 @@ import { EnhancedGameSessionService } from '../../../../services/rewards/Enhance
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import AssignmentThemeSelector from '../../../../components/games/AssignmentThemeSelector';
 
-// Theme animations
-import ClassicAnimation from './themes/ClassicAnimation';
-import LavaTempleAnimation from './themes/LavaTempleAnimation';
-import TokyoNightsAnimation from './themes/TokyoNightsAnimation';
-import SpaceExplorerAnimation from './themes/SpaceExplorerAnimation';
-import PirateAdventureAnimation from './themes/PirateAdventureAnimation';
+// Dynamic imports for theme animations - only load the theme being used
+// This prevents loading all 5 themes (~2000 lines) when only 1 is needed
+const ClassicAnimation = lazy(() => import('./themes/ClassicAnimation'));
+const LavaTempleAnimation = lazy(() => import('./themes/LavaTempleAnimation'));
+const TokyoNightsAnimation = lazy(() => import('./themes/TokyoNightsAnimation'));
+const SpaceExplorerAnimation = lazy(() => import('./themes/SpaceExplorerAnimation'));
+const PirateAdventureAnimation = lazy(() => import('./themes/PirateAdventureAnimation'));
 
 type CellContent = 'X' | 'O' | null;
 type GameState = 'playing' | 'won' | 'lost' | 'tie';
@@ -811,17 +812,48 @@ export default function TicTacToeGame({
       onStoryDismiss: () => setStoryDismissed(true)
     };
     
+    // Loading fallback for theme animations
+    const ThemeLoadingFallback = () => (
+      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-sm">Loading theme...</p>
+        </div>
+      </div>
+    );
+    
+    // Wrap each theme component in Suspense for lazy loading
     switch (themeId) {
       case 'tokyo':
-        return <TokyoNightsAnimation {...animationProps} />;
+        return (
+          <Suspense fallback={<ThemeLoadingFallback />}>
+            <TokyoNightsAnimation {...animationProps} />
+          </Suspense>
+        );
       case 'pirate':
-        return <PirateAdventureAnimation {...animationProps} />;
+        return (
+          <Suspense fallback={<ThemeLoadingFallback />}>
+            <PirateAdventureAnimation {...animationProps} />
+          </Suspense>
+        );
       case 'space':
-        return <SpaceExplorerAnimation {...animationProps} />;
+        return (
+          <Suspense fallback={<ThemeLoadingFallback />}>
+            <SpaceExplorerAnimation {...animationProps} />
+          </Suspense>
+        );
       case 'temple':
-        return <LavaTempleAnimation {...animationProps} />;
+        return (
+          <Suspense fallback={<ThemeLoadingFallback />}>
+            <LavaTempleAnimation {...animationProps} />
+          </Suspense>
+        );
       default:
-        return <ClassicAnimation {...animationProps} />;
+        return (
+          <Suspense fallback={<ThemeLoadingFallback />}>
+            <ClassicAnimation {...animationProps} />
+          </Suspense>
+        );
     }
   };
 

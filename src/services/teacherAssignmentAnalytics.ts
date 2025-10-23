@@ -66,7 +66,7 @@ export class TeacherAssignmentAnalyticsService {
       // Get assignment details
       const { data: assignment, error: assignmentError } = await this.supabase
         .from('assignments')
-        .select('id, title, class_id')
+        .select('id, title, class_id, game_type, game_config')
         .eq('id', assignmentId)
         .single();
 
@@ -108,12 +108,18 @@ export class TeacherAssignmentAnalyticsService {
       const totalStudents = enrollments?.length || 0;
 
       // Get game sessions to determine actual student activity
-      const { data: sessions } = await this.supabase
+      // Add cache-busting by using a timestamp filter that's always true
+      // This forces PostgREST to bypass cache and fetch fresh data
+      const { data: sessions, error: sessionError } = await this.supabase
         .from('enhanced_game_sessions')
-        .select('id, student_id, duration_seconds, ended_at, completion_status')
-        .eq('assignment_id', assignmentId);
+        .select('id, student_id, duration_seconds, started_at, ended_at, completion_status')
+        .eq('assignment_id', assignmentId)
+        .gte('started_at', '2000-01-01T00:00:00Z'); // Cache-busting filter
 
-      console.log('📊 Sessions found:', sessions?.length);
+      if (sessionError) {
+        console.error('❌ Error fetching sessions:', sessionError);
+        throw sessionError;
+      }
 
       // Calculate completion from actual sessions (not from enhanced_assignment_progress which may be stale)
       const studentsWithSessions = new Set(sessions?.map(s => s.student_id) || []);
@@ -126,9 +132,34 @@ export class TeacherAssignmentAnalyticsService {
 
       console.log('📊 Completion stats:', { completedStudents, inProgressStudents, notStartedStudents });
 
-      // Calculate average time from sessions
-      const averageTimeSeconds = completedSessions.length > 0
-        ? completedSessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0) / completedSessions.length
+      // Calculate average time PER STUDENT (not per session)
+      // Group sessions by student and sum their time
+      const studentTimeMap = new Map<string, number>();
+
+      completedSessions.forEach(s => {
+        const sessionData = s as any;
+        let sessionSeconds = 0;
+
+        // If duration_seconds is available and non-zero, use it
+        if (sessionData.duration_seconds && sessionData.duration_seconds > 0) {
+          sessionSeconds = sessionData.duration_seconds;
+        }
+        // Otherwise, calculate from timestamps if both are available
+        else if (sessionData.started_at && sessionData.ended_at) {
+          const startTime = new Date(sessionData.started_at).getTime();
+          const endTime = new Date(sessionData.ended_at).getTime();
+          sessionSeconds = Math.round((endTime - startTime) / 1000);
+        }
+
+        // Add to student's total time
+        const currentTime = studentTimeMap.get(sessionData.student_id) || 0;
+        studentTimeMap.set(sessionData.student_id, currentTime + sessionSeconds);
+      });
+
+      // Calculate average time per student
+      const totalStudentTimeSeconds = Array.from(studentTimeMap.values()).reduce((sum, time) => sum + time, 0);
+      const averageTimeSeconds = studentTimeMap.size > 0
+        ? totalStudentTimeSeconds / studentTimeMap.size
         : 0;
 
       // Get class success score from gem_events OR assessment scores
@@ -137,9 +168,9 @@ export class TeacherAssignmentAnalyticsService {
       let classSuccessScore = 0;
       let studentsNeedingHelp = 0;
 
-      // Check if this is an assessment assignment (quiz type)
+      // Check if this is an assessment assignment (game_type === 'assessment')
       const isAssessment = assignment &&
-        ((assignment as any).type === 'quiz' ||
+        ((assignment as any).game_type === 'assessment' ||
         (assignment as any).game_config?.assessmentConfig);
 
       if (sessionIds.length > 0) {
@@ -468,11 +499,13 @@ export class TeacherAssignmentAnalyticsService {
         const studentName = nameMap.get(studentId) || 'Unknown';
 
         // Get game sessions for this student to determine status
+        // Add cache-busting filter to ensure fresh data
         const { data: studentSessions } = await this.supabase
           .from('enhanced_game_sessions')
-          .select('id, duration_seconds, ended_at, completion_status')
+          .select('id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage')
           .eq('assignment_id', assignmentId)
-          .eq('student_id', studentId);
+          .eq('student_id', studentId)
+          .gte('started_at', '2000-01-01T00:00:00Z'); // Cache-busting filter
 
         // Determine status from actual sessions
         let status: 'completed' | 'in_progress' | 'not_started' = 'not_started';
@@ -481,9 +514,28 @@ export class TeacherAssignmentAnalyticsService {
         if (studentSessions && studentSessions.length > 0) {
           const hasCompleted = studentSessions.some(s => s.completion_status === 'completed' || s.ended_at);
           status = hasCompleted ? 'completed' : 'in_progress';
-          timeSpentMinutes = Math.round(
-            studentSessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0) / 60
-          );
+
+          // Calculate total time - use duration_seconds if available, otherwise calculate from timestamps
+          const totalSeconds = studentSessions.reduce((sum, s) => {
+            const sessionData = s as any;
+
+            // If duration_seconds is available and non-zero, use it
+            if (sessionData.duration_seconds && sessionData.duration_seconds > 0) {
+              return sum + sessionData.duration_seconds;
+            }
+
+            // Otherwise, calculate from timestamps if both are available
+            if (sessionData.started_at && sessionData.ended_at) {
+              const startTime = new Date(sessionData.started_at).getTime();
+              const endTime = new Date(sessionData.ended_at).getTime();
+              const calculatedSeconds = Math.round((endTime - startTime) / 1000);
+              return sum + calculatedSeconds;
+            }
+
+            return sum;
+          }, 0);
+
+          timeSpentMinutes = Math.round(totalSeconds / 60);
         }
 
         // Get performance metrics - either from gem events (games) or session data (assessments)
@@ -498,12 +550,12 @@ export class TeacherAssignmentAnalyticsService {
         // Check if this is an assessment
         const { data: assignmentData } = await this.supabase
           .from('assignments')
-          .select('type, game_config')
+          .select('type, game_type, game_config')
           .eq('id', assignmentId)
           .single();
 
         const isAssessment = assignmentData &&
-          (assignmentData.type === 'quiz' || assignmentData.game_config?.assessmentConfig);
+          (assignmentData.game_type === 'assessment' || assignmentData.game_config?.assessmentConfig);
 
         if (studentSessionIds.length > 0) {
           if (isAssessment) {

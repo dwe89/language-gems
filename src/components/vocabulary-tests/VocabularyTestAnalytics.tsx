@@ -64,7 +64,7 @@ export default function VocabularyTestAnalytics({
   assignmentId
 }: VocabularyTestAnalyticsProps) {
   const { user } = useAuth();
-  const supabase = useSupabase();
+  const { supabase } = useSupabase();
   const [testService] = useState(() => new VocabularyTestService(supabase));
 
   // State
@@ -88,13 +88,19 @@ export default function VocabularyTestAnalytics({
       setLoading(true);
       setError(null);
 
-      // Load test analytics
+      // Load test analytics (may be null if not yet generated)
       const analyticsData = await testService.getTestAnalytics(testId);
-      setAnalytics(analyticsData);
 
       // Load detailed student results
       await loadStudentResults();
-      
+
+      // If no pre-computed analytics, calculate from results
+      if (!analyticsData) {
+        await calculateWordAnalytics();
+      } else {
+        setAnalytics(analyticsData);
+      }
+
     } catch (error: any) {
       setError(error.message || 'Failed to load analytics');
     } finally {
@@ -104,41 +110,156 @@ export default function VocabularyTestAnalytics({
 
   const loadStudentResults = async () => {
     try {
-      // This would be implemented to fetch detailed student results
-      // For now, using mock data structure
-      const { data, error } = await supabase
+      // Get test results
+      const { data: resultsData, error: resultsError } = await supabase
         .from('vocabulary_test_results')
-        .select(`
-          *,
-          student:student_id (
-            id,
-            email,
-            user_metadata
-          )
-        `)
+        .select('*')
         .eq('test_id', testId)
+        .eq('status', 'completed') // Only get completed results
         .order('percentage_score', { ascending: false });
 
-      if (error) throw error;
+      if (resultsError) throw resultsError;
 
-      const results: StudentResult[] = data?.map(result => ({
-        id: result.id,
-        student_name: result.student?.user_metadata?.full_name || result.student?.email || 'Unknown',
-        student_email: result.student?.email || '',
-        attempt_number: result.attempt_number,
-        percentage_score: result.percentage_score,
-        passed: result.passed,
-        total_time_seconds: result.total_time_seconds,
-        questions_correct: result.questions_correct,
-        questions_incorrect: result.questions_incorrect,
-        completion_time: result.completion_time,
-        error_patterns: Object.keys(result.error_analysis || {})
-      })) || [];
+      if (!resultsData || resultsData.length === 0) {
+        setStudentResults([]);
+        calculateClassMetrics([]);
+        return;
+      }
+
+      // Get unique student IDs
+      const studentIds = [...new Set(resultsData.map(r => r.student_id))];
+
+      // Use RPC function to get user info (email and display_name)
+      const { data: userInfoData, error: userInfoError } = await supabase
+        .rpc('get_user_info', { user_ids: studentIds });
+
+      if (userInfoError) {
+        console.error('Error fetching user info:', userInfoError);
+      }
+
+      // Create a map of user info
+      const userInfoMap = new Map(userInfoData?.map((u: any) => [u.user_id, u]) || []);
+
+      const results: StudentResult[] = resultsData.map(result => {
+        const userInfo = userInfoMap.get(result.student_id);
+        return {
+          id: result.id,
+          student_name: userInfo?.display_name || userInfo?.email || 'Unknown Student',
+          student_email: userInfo?.email || '',
+          attempt_number: result.attempt_number,
+          percentage_score: parseFloat(result.percentage_score),
+          passed: result.passed,
+          total_time_seconds: result.total_time_seconds,
+          questions_correct: result.questions_correct || 0,
+          questions_incorrect: result.questions_incorrect || 0,
+          completion_time: result.completion_time,
+          error_patterns: Object.keys(result.error_analysis || {})
+        };
+      });
 
       setStudentResults(results);
       calculateClassMetrics(results);
     } catch (error) {
       console.error('Error loading student results:', error);
+      // Set empty results on error
+      setStudentResults([]);
+      calculateClassMetrics([]);
+    }
+  };
+
+  const calculateWordAnalytics = async () => {
+    try {
+      // Get all test results with responses
+      const { data: results, error } = await supabase
+        .from('vocabulary_test_results')
+        .select('id, responses')
+        .eq('test_id', testId)
+        .eq('status', 'completed');
+
+      if (error) throw error;
+      if (!results || results.length === 0) {
+        setAnalytics({
+          test_id: testId,
+          total_attempts: 0,
+          average_score: 0,
+          pass_rate: 0,
+          average_time: 0,
+          problem_words: [],
+          mastery_words: [],
+          remediation_suggestions: []
+        });
+        return;
+      }
+
+      // Get all test questions
+      const { data: questions, error: questionsError } = await supabase
+        .from('vocabulary_test_questions')
+        .select(`
+          id,
+          vocabulary_id,
+          correct_answer,
+          question_text
+        `)
+        .eq('test_id', testId);
+
+      if (questionsError) throw questionsError;
+
+      // Calculate word-level statistics
+      const wordStats = new Map<string, { correct: number; total: number; word: string; translation: string }>();
+
+      results.forEach(result => {
+        const responses = result.responses || {};
+        questions?.forEach(question => {
+          const userAnswer = responses[question.id];
+          const isCorrect = userAnswer?.toLowerCase().trim() === question.correct_answer?.toLowerCase().trim();
+
+          const key = question.vocabulary_id || question.id;
+          if (!wordStats.has(key)) {
+            wordStats.set(key, {
+              correct: 0,
+              total: 0,
+              word: question.question_text || '',
+              translation: question.correct_answer || ''
+            });
+          }
+
+          const stats = wordStats.get(key)!;
+          stats.total++;
+          if (isCorrect) stats.correct++;
+        });
+      });
+
+      // Convert to problem/mastery words
+      const wordArray = Array.from(wordStats.entries()).map(([id, stats]) => ({
+        word: stats.word,
+        translation: stats.translation,
+        success_rate: (stats.correct / stats.total) * 100,
+        attempts: stats.total
+      }));
+
+      const problemWords = wordArray
+        .filter(w => w.success_rate < 70)
+        .sort((a, b) => a.success_rate - b.success_rate)
+        .slice(0, 10);
+
+      const masteryWords = wordArray
+        .filter(w => w.success_rate >= 90)
+        .sort((a, b) => b.success_rate - a.success_rate)
+        .slice(0, 10);
+
+      setAnalytics({
+        test_id: testId,
+        total_attempts: results.length,
+        average_score: 0,
+        pass_rate: 0,
+        average_time: 0,
+        problem_words: problemWords,
+        mastery_words: masteryWords,
+        remediation_suggestions: []
+      });
+
+    } catch (error) {
+      console.error('Error calculating word analytics:', error);
     }
   };
 
@@ -426,7 +547,7 @@ export default function VocabularyTestAnalytics({
                   <span className="text-gray-600">→</span>
                   <span className="text-gray-700">{word.translation}</span>
                 </div>
-                {word.common_errors.length > 0 && (
+                {word.common_errors && word.common_errors.length > 0 && (
                   <div className="mt-1 text-xs text-gray-500">
                     Common errors: {word.common_errors.join(', ')}
                   </div>
@@ -437,7 +558,7 @@ export default function VocabularyTestAnalytics({
                   {word.success_rate.toFixed(1)}% success
                 </div>
                 <div className="text-xs text-gray-500">
-                  {word.total_attempts} attempts
+                  {word.attempts} attempts
                 </div>
               </div>
             </div>
@@ -472,7 +593,7 @@ export default function VocabularyTestAnalytics({
                   {word.success_rate.toFixed(1)}% success
                 </div>
                 <div className="text-xs text-gray-500">
-                  {word.total_attempts} attempts
+                  {word.attempts} attempts
                 </div>
               </div>
             </div>

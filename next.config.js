@@ -64,6 +64,17 @@ const config = {
       };
       
       // No longer need to externalize puppeteer/chromium
+      
+      // Add chunk loading retry logic to handle 403 errors and stale chunks
+      // This helps with Windows PC cache issues and CDN problems
+      const originalEntry = config.entry;
+      config.entry = async () => {
+        const entries = await originalEntry();
+        if (entries['main.js'] && !entries['main.js'].includes('./scripts/chunk-retry.js')) {
+          entries['main.js'].unshift('./scripts/chunk-retry.js');
+        }
+        return entries;
+      };
     }
     
     return config;

@@ -215,6 +215,7 @@ export default function WordScrambleGame({
   });
 
   const [gameState, setGameState] = useState<'playing' | 'completed' | 'failed'>('playing');
+  const [gameStartTime] = useState(Date.now()); // Track overall game start time
   const [wordStartTime, setWordStartTime] = useState(Date.now());
   const [solveHistory, setSolveHistory] = useState<number[]>([]);
   const [showIncorrectModal, setShowIncorrectModal] = useState(false);
@@ -351,12 +352,19 @@ export default function WordScrambleGame({
     if (currentWordIndex >= remainingWords.length) {
       setGameState('completed');
 
+      // Calculate total time elapsed
+      const totalTimeElapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+      const updatedStats = {
+        ...gameStats,
+        timeElapsed: totalTimeElapsed
+      };
+
       // Call completion handlers
       if (onGameComplete) {
         onGameComplete({
           won: true,
           score: score,
-          stats: gameStats,
+          stats: updatedStats,
           wordsCompleted: completedWordIds.size,
           totalWords: remainingWords.length
         });
@@ -365,7 +373,7 @@ export default function WordScrambleGame({
         onGameEnd({
           won: true,
           score: score,
-          stats: gameStats
+          stats: updatedStats
         });
       }
       return;

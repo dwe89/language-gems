@@ -21,6 +21,19 @@ export interface WordSearchOptions {
 export function generateWordSearch(options: WordSearchOptions): WordSearchGrid {
   const { words, gridSize = 15, maxWords = 15, difficulty = 'medium' } = options;
 
+  // Clean words: remove spaces and special characters, convert to uppercase
+  const cleanedWords = words
+    .map(word => word
+      .replace(/\s+/g, '') // Remove all spaces
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .toUpperCase()
+      .replace(/[^A-Z]/g, '') // Keep only letters
+    )
+    .filter(word => word.length >= 3 && word.length <= 15); // Valid length
+
+  console.log('🔍 [WORD SEARCH] Original words:', words);
+  console.log('🔍 [WORD SEARCH] Cleaned words:', cleanedWords);
+
   // Configure difficulty settings
   let disabledDirections: string[] = [];
   let backwardsProbability = 0.3;
@@ -47,7 +60,7 @@ export function generateWordSearch(options: WordSearchOptions): WordSearchGrid {
     cols: gridSize,
     rows: gridSize,
     disabledDirections,
-    dictionary: words,
+    dictionary: cleanedWords,
     maxWords,
     backwardsProbability,
     upperCase: true,
@@ -92,13 +105,14 @@ export function generateWordSearchCSS(): string {
   return `
     .word-search-container {
       display: flex;
-      gap: 30px;
-      margin: 20px 0;
+      gap: 20px;
+      margin: 16px 0;
       align-items: flex-start;
     }
 
     .word-search-puzzle {
-      flex: 1;
+      flex: 1 1 auto;
+      max-width: 320px;
     }
 
     .word-search-grid {
@@ -109,42 +123,41 @@ export function generateWordSearchCSS(): string {
     }
 
     .word-search-cell {
-      width: 25px;
-      height: 25px;
+      width: 22px;
+      height: 22px;
       border: 1px solid #d1d5db;
       text-align: center;
       vertical-align: middle;
       font-family: 'Courier New', monospace;
-      font-weight: bold;
-      font-size: 14px;
+      font-weight: 600;
+      font-size: 12px;
       background: white;
     }
 
     .word-search-words {
-      flex: 1;
-      min-width: 200px;
+      flex: 0 0 200px;
     }
 
     .words-title {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
       color: #374151;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #e5e7eb;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #007bff;
     }
 
     .words-list {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
       gap: 8px;
     }
 
     .word-item {
-      padding: 6px 12px;
+      padding: 5px 10px;
       background: #f3f4f6;
       border-radius: 6px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       color: #374151;
       text-align: center;

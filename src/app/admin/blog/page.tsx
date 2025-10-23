@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabaseBrowser, useAuth } from '../../../components/auth/AuthProvider';
-import { Plus, Edit, Trash2, Save, X, Eye, EyeOff, Calendar, Tag, User } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Eye, EyeOff, Calendar, Tag, User, Send, Loader2, Mail, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
 interface BlogPost {
@@ -14,6 +14,9 @@ interface BlogPost {
   author: string | null;
   tags: string[] | null;
   is_published: boolean;
+  status?: string;
+  email_sent?: boolean;
+  email_sent_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +37,7 @@ export default function AdminBlogPage() {
   const [loading, setLoading] = useState(true);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [previewingPost, setPreviewingPost] = useState<BlogPost | null>(null);
+  const [publishingPostId, setPublishingPostId] = useState<string | null>(null);
   const [editData, setEditData] = useState<EditBlogData>({
     title: '',
     slug: '',
@@ -131,7 +135,7 @@ export default function AdminBlogPage() {
     try {
       const { error } = await supabaseBrowser
         .from('blog_posts')
-        .update({ 
+        .update({
           is_published: !currentStatus,
           updated_at: new Date().toISOString()
         })
@@ -142,6 +146,45 @@ export default function AdminBlogPage() {
     } catch (error) {
       console.error('Error updating blog post status:', error);
       alert('Error updating blog post status. Please try again.');
+    }
+  };
+
+  const publishAndNotifyNow = async (post: BlogPost) => {
+    if (!confirm(`Publish "${post.title}" immediately and send email notifications to all subscribers?`)) {
+      return;
+    }
+
+    setPublishingPostId(post.id);
+
+    try {
+      const response = await fetch('/api/blog/publish-now', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postId: post.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to publish post');
+      }
+
+      // Show success message with email status
+      const emailStatus = result.emailSent
+        ? `✅ Published and ${result.emailDetails?.results?.[0]?.sentTo || 0} emails sent!`
+        : '✅ Published! (Email notifications may have failed - check logs)';
+
+      alert(`${emailStatus}\n\nPost: ${result.post.title}`);
+
+      // Refresh the posts list
+      fetchPosts();
+    } catch (error: any) {
+      console.error('Error publishing post:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setPublishingPostId(null);
     }
   };
 
@@ -579,6 +622,29 @@ export default function AdminBlogPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
+                        {/* Publish & Notify Now Button - Only show for unpublished posts */}
+                        {(!post.is_published || post.status !== 'published') && (
+                          <button
+                            onClick={() => publishAndNotifyNow(post)}
+                            disabled={publishingPostId === post.id}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Publish & send email notifications now"
+                          >
+                            {publishingPostId === post.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Send className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+
+                        {/* Email sent indicator */}
+                        {post.email_sent && (
+                          <div className="p-2 text-emerald-600" title={`Email sent: ${post.email_sent_at ? new Date(post.email_sent_at).toLocaleString() : 'Yes'}`}>
+                            <CheckCircle className="h-4 w-4" />
+                          </div>
+                        )}
+
                         <button
                           onClick={() => setPreviewingPost(post)}
                           className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"

@@ -130,6 +130,7 @@ export default function GameAssignmentWrapper({
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [gemSessionService, setGemSessionService] = useState<EnhancedGameSessionService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const gameContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Load assignment data and vocabulary
@@ -155,6 +156,7 @@ export default function GameAssignmentWrapper({
     const initializeSession = async () => {
       try {
         const service = new EnhancedGameSessionService();
+        const startTime = new Date();
 
         const sessionId = await service.startGameSession({
           student_id: activeStudentId,
@@ -172,6 +174,7 @@ export default function GameAssignmentWrapper({
 
         setGemSessionService(service);
         setGameSessionId(sessionId);
+        setSessionStartTime(startTime);
       } catch (error) {
         console.error('❌ Failed to initialize gem session:', error);
       }
@@ -208,10 +211,36 @@ export default function GameAssignmentWrapper({
 
   const handleGameComplete = async (finalProgress: GameProgress) => {
     console.log('🎉 Game complete:', finalProgress);
-    
+
+    // End the game session with duration tracking
+    if (gemSessionService && gameSessionId && sessionStartTime) {
+      try {
+        const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+
+        await gemSessionService.endGameSession(gameSessionId, {
+          student_id: activeStudentId,
+          assignment_id: assignmentId,
+          game_type: gameId,
+          session_mode: 'assignment',
+          final_score: finalProgress.score || 0,
+          accuracy_percentage: finalProgress.accuracy || 0,
+          completion_percentage: 100,
+          words_attempted: finalProgress.wordsCompleted || 0,
+          words_correct: finalProgress.wordsCompleted || 0,
+          unique_words_practiced: finalProgress.totalWords || 0,
+          duration_seconds: finalProgress.timeSpent || sessionDuration,
+          session_data: finalProgress.sessionData || {}
+        });
+
+        console.log('✅ Game session ended with duration:', finalProgress.timeSpent || sessionDuration, 'seconds');
+      } catch (error) {
+        console.error('❌ Failed to end game session:', error);
+      }
+    }
+
     // Save progress via service
     await assignmentProgressService.recordProgress(finalProgress);
-    
+
     // Notify parent
     onAssignmentComplete(finalProgress);
   };
