@@ -1,7 +1,5 @@
 // HTML building utilities for worksheet generation
 
-import fs from 'fs';
-import path from 'path';
 import { getBaseStyles } from '../shared/base-styles';
 
 export interface HTMLDocumentOptions {
@@ -14,25 +12,11 @@ export function createHTMLDocument(
   options: HTMLDocumentOptions,
   bodyContent: string
 ): string {
-  // Try to embed the logo as a data URI (fixes logo not loading when HTML is rendered directly by headless browsers)
+  // Respect a custom logo URL (if provided via meta tag) while defaulting to a lightweight shared asset
   const logoUrlMatch = (options.additionalHead || '').match(/<meta\s+name="logoUrl"\s+content="([^"]+)"\s*\/?>/i);
   const fallbackLogoPath = logoUrlMatch ? logoUrlMatch[1] : '/worksheet-logo.png';
 
-  let logoSrc = fallbackLogoPath;
-  try {
-    // Prefer a local public file and embed as base64
-    const publicPath = path.join(process.cwd(), 'public', path.basename(fallbackLogoPath));
-    if (fs.existsSync(publicPath)) {
-      const buf = fs.readFileSync(publicPath);
-      // Try to infer mime type by extension (png/svg/jpg)
-      const ext = path.extname(publicPath).toLowerCase();
-      const mime = ext === '.svg' ? 'image/svg+xml' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
-      logoSrc = `data:${mime};base64,${buf.toString('base64')}`;
-    }
-  } catch (err) {
-    // fallback to using the path as-is (will work in browser environments where /worksheet-logo.png is served)
-    logoSrc = fallbackLogoPath;
-  }
+  const logoSrc = fallbackLogoPath;
 
   // Header intentionally keeps logo and small brand slot only — the worksheet title should remain in the body (so it's not duplicated in header/PDF)
   const headerHtml = `
