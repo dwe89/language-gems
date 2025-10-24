@@ -4,6 +4,11 @@ import { generateVocabularyPracticeHTML } from './generators/vocabulary-practice
 import { generateCrosswordHTML } from './generators/crossword';
 import { generateWorksheetHTML } from './generators/standard-worksheet';
 
+// Optimize serverless function bundle size
+export const runtime = 'nodejs';
+export const maxDuration = 60; // 60 seconds timeout
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🚀 [HTML API] POST request received');

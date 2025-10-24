@@ -12,6 +12,29 @@ const config = {
   },
   distDir: '.next',
   trailingSlash: false,
+  
+  // Output file tracing to reduce serverless function size
+  outputFileTracingIncludes: {
+    // Only include necessary files for HTML generation
+    '/api/worksheets/generate-html': [
+      './src/app/api/worksheets/generate-html/**/*',
+      './src/utils/wordSearchGenerator.ts',
+      './node_modules/@blex41/word-search/**/*',
+    ],
+  },
+  outputFileTracingExcludes: {
+    // Exclude heavy dependencies not needed for HTML generation
+    '/api/worksheets/generate-html': [
+      './node_modules/puppeteer/**/*',
+      './node_modules/puppeteer-core/**/*',
+      './node_modules/@sparticuz/**/*',
+      './node_modules/chromium-bidi/**/*',
+      './node_modules/sharp/**/*',
+      './node_modules/@aws-sdk/**/*',
+      './node_modules/@google-cloud/**/*',
+    ],
+  },
+  
   // Increase API route timeout for bulk operations
   experimental: {
     proxyTimeout: 120000, // 2 minutes
@@ -52,6 +75,21 @@ const config = {
     });
 
     // Keep general .js.map ignore for any future needs
+
+    // Reduce serverless function bundle size by externalizing heavy dependencies
+    if (isServer) {
+      // Externalize heavy packages to reduce bundle size
+      config.externals = config.externals || [];
+      
+      // Keep puppeteer external to prevent bundling ~100MB chromium
+      if (Array.isArray(config.externals)) {
+        config.externals.push({
+          'puppeteer': 'commonjs puppeteer',
+          'puppeteer-core': 'commonjs puppeteer-core',
+          '@sparticuz/chromium': 'commonjs @sparticuz/chromium',
+        });
+      }
+    }
 
     // Exclude server-only packages from client bundle
     if (!isServer) {

@@ -6,10 +6,16 @@ import { generateWordSearch, renderWordSearchHTML, generateWordSearchCSS } from 
 import { generateCrosswordLayout } from '../../../../tools/crossword/utils/crosswordGenerator';
 import { WordEntry } from '../../../../tools/crossword/types/crossword';
 import { PDF_BASE_STYLES, TYPOGRAPHY_STYLES, SPACING_STYLES, PRINT_STYLES } from '../shared/styles';
-import OpenAI from 'openai';
 
-// OpenAI client for generating clues (uses OPENAI_API_KEY env var)
-const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Lazy load OpenAI to reduce initial bundle size
+let openaiClient: any = null;
+async function getOpenAIClient() {
+  if (!openaiClient) {
+    const OpenAI = (await import('openai')).default;
+    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openaiClient;
+}
 
 // Simple HTML escape helper for inserted clue text
 function escapeHtml(input: string) {
@@ -1164,9 +1170,10 @@ async function generateCrosswordSection(
     // Generate the crossword layout
     // Attempt to improve clues via the GPT Nano API when available
     try {
+      const client = await getOpenAIClient();
       const aiPrompt = `Generate short, one-line descriptive clues in English for the following Spanish vocabulary words. **Clues must be very concise, ideally under 60 characters.** Return JSON array of objects with keys 'word' and 'clue'. Use the exact uppercase word form as provided. Example: [{"word":"BICICLETA","clue":"Two-wheeled vehicle without motor."}]\n\nWords:\n${limitedEntries.map(e => e.word + (e.clue ? ` — current clue: ${e.clue}` : '')).join('\n')}`;
 
-      const aiResponse = await openaiClient.chat.completions.create({
+      const aiResponse = await client.chat.completions.create({
         model: 'gpt-4.1-nano',
         messages: [{ role: 'user', content: aiPrompt }],
         max_completion_tokens: 300
