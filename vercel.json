@@ -4,12 +4,6 @@
   "devCommand": "next dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "functions": {
-    "api/worksheets/generate-html": {
-      "maxDuration": 60,
-      "memory": 1024
-    }
-  },
   "crons": [
     {
       "path": "/api/blog/publish-scheduled",
