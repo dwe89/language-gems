@@ -32,11 +32,13 @@ export class TemplateHandler extends WorksheetHandler {
       throw new Error('Template ID is required for template-based generation');
     }
 
-    // Get vocabulary if needed for language subjects
+    // Get vocabulary if needed for language subjects (NOT for grammar_exercises)
     let vocabularyWords: any[] = [];
     console.log(`[TemplateHandler] Checking if ${request.subject} is a language subject: ${this.isLanguageSubject(request.subject)}`);
+    console.log(`[TemplateHandler] Template ID: ${templateId}`);
     console.log(`[TemplateHandler] Custom vocabulary provided: ${!!request.customVocabulary}`);
-    if (this.isLanguageSubject(request.subject) && !request.customVocabulary) {
+    
+    if (this.isLanguageSubject(request.subject) && !request.customVocabulary && templateId !== 'grammar_exercises') {
       console.log(`[TemplateHandler] Fetching vocabulary for ${request.subject} (original: ${request.originalSubject})`);
       vocabularyWords = await this.getVocabularyForTemplate(request);
       console.log(`[TemplateHandler] Retrieved ${vocabularyWords.length} vocabulary words`);
@@ -85,13 +87,46 @@ export class TemplateHandler extends WorksheetHandler {
         throw new Error('No content received from OpenAI');
       }
 
-      // Parse the JSON response
+      // Parse the JSON response robustly. Models sometimes return prose + JSON or
+      // include trailing commas / code fences. Try multiple heuristics before
+      // failing so generation is more resilient.
       let worksheetData;
+      const rawAIContent = content;
       try {
-        worksheetData = JSON.parse(content);
-      } catch (parseError) {
-        console.error('Failed to parse OpenAI response as JSON:', parseError);
-        throw new Error('Invalid JSON response from AI');
+        worksheetData = JSON.parse(rawAIContent);
+      } catch (initialParseError) {
+        console.warn('Initial JSON.parse failed; attempting to extract JSON block from AI response.');
+        console.warn('Raw AI content (truncated 1k):', rawAIContent.substring(0, 1000));
+
+        // 1) Try to extract fenced JSON ```json ... ``` blocks
+        const fencedMatch = rawAIContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+        let candidate: string | null = fencedMatch && fencedMatch[1] ? fencedMatch[1].trim() : null;
+
+        // 2) If no fenced block, try to extract the first { ... } JSON-like substring
+        if (!candidate) {
+          const firstBrace = rawAIContent.indexOf('{');
+          const lastBrace = rawAIContent.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            candidate = rawAIContent.substring(firstBrace, lastBrace + 1);
+          }
+        }
+
+        // 3) If we found a candidate, try to clean common issues (trailing commas)
+        if (candidate) {
+          const cleaned = candidate.replace(/,\s*(?=[}\]])/g, '');
+          try {
+            worksheetData = JSON.parse(cleaned);
+            console.log('Parsed AI JSON after extraction/cleanup.');
+          } catch (secondParseError) {
+            console.warn('Failed to parse cleaned candidate JSON:', secondParseError);
+            console.warn('Candidate (truncated 1k):', candidate.substring(0, 1000));
+            throw new Error('Invalid JSON response from AI');
+          }
+        } else {
+          // No candidate JSON found, rethrow a helpful error for telemetry
+          console.error('No JSON block found in AI response.');
+          throw new Error('Invalid JSON response from AI');
+        }
       }
 
       this.updateJobProgress(jobId, 'formatting', 80, 'Formatting worksheet content');
@@ -172,7 +207,8 @@ export class TemplateHandler extends WorksheetHandler {
     
     const templateSpecificPrompts: { [key: string]: string } = {
       vocabulary_builder: `${basePrompt} You specialize in creating vocabulary worksheets with mixed activities including matching, fill-in-the-blank, and translation exercises.`,
-      vocabulary_practice: `${basePrompt} You specialize in creating vocabulary practice worksheets with matching, fill-in-the-blank, translation, word bank, word search, and crossword exercises using specific vocabulary words.`,
+  vocabulary_practice: `${basePrompt} You specialize in creating vocabulary practice worksheets with matching, fill-in-the-blank, translation, word bank, word search, and crossword exercises using specific vocabulary words.`,
+  grammar_exercises: `${basePrompt} You specialize in creating engaging grammar practice packs that combine clear explanations, worked examples, and varied activity types (conjugation tables, sentence completion, transformations, error correction). Always respond with well-structured JSON that includes rich instructional content and complete answer keys.`,
       verb_conjugation: `${basePrompt} You specialize in creating verb conjugation practice worksheets with contextual sentences and blanks for students to fill in correct verb forms.`,
       sentence_builder: `${basePrompt} You specialize in creating sentence unscrambling activities where students must put jumbled words back in the correct order.`,
       reading_comprehension: `${basePrompt} You specialize in creating reading comprehension worksheets with level-appropriate texts and comprehension activities. CRITICAL: For reading comprehension templates, you MUST use a special JSON format with fields like "topic_title", "article_paragraphs_html", "true_false_questions", etc. Do NOT use the standard worksheet format with "sections".`,
@@ -198,6 +234,75 @@ export class TemplateHandler extends WorksheetHandler {
     } else if (request.customVocabulary) {
       vocabularyContext = `\n\nUse these custom vocabulary words: ${request.customVocabulary}`;
     }
+
+    const grammarExerciseSource = (() => {
+      const advanced = request.advancedOptions?.grammarExerciseTypes;
+      if (advanced && advanced.length > 0) {
+        return advanced;
+      }
+      if (request.questionTypes && request.questionTypes.length > 0) {
+        return request.questionTypes;
+      }
+      return [] as string[];
+    })();
+
+    const normalizeGrammarType = (value: string) => {
+      if (!value) return value;
+      const simplified = value.toLowerCase().replace(/[^a-z]/g, '');
+      const map: Record<string, string> = {
+        conjugation: 'conjugation',
+        verbconjugation: 'conjugation',
+        sentencecompletion: 'sentence-completion',
+        sentencecompletionexercise: 'sentence-completion',
+        transformation: 'transformation',
+        sentencetransformation: 'transformation',
+        errorcorrection: 'error-correction',
+        proofreading: 'error-correction'
+      };
+      return map[simplified] || value.toLowerCase();
+    };
+
+    const grammarExerciseTypes = (() => {
+      const normalized = Array.from(
+        new Set(grammarExerciseSource.map(normalizeGrammarType).filter(Boolean))
+      );
+      if (normalized.length > 0) {
+        return normalized;
+      }
+      return ['conjugation', 'sentence-completion', 'transformation', 'error-correction'];
+    })();
+
+    const grammarExerciseDescriptions = grammarExerciseTypes
+      .map((type, index) => {
+        const prefix = `${index + 1}.`;
+        switch (type) {
+          case 'conjugation':
+            return `${prefix} **Verb Conjugation** – Include 2-3 verbs. Provide "verb", optional "tense", and a "pronouns" array (e.g. ["yo","tú","él/ella","nosotros","vosotros","ellos/ellas"]).`;
+          case 'sentence-completion':
+            return `${prefix} **Sentence Completion** – Contextual sentences with one blank. Each item needs "sentence" and "answer".`;
+          case 'transformation':
+            return `${prefix} **Sentence Transformation** – Supply "original", an "instruction", and the transformed "answer".`;
+          case 'error-correction':
+            return `${prefix} **Error Correction** – Provide "incorrect", the corrected sentence in "correction", plus an "explanation".`;
+          default:
+            return `${prefix} **${type}** – Include "instructions" and an "items" array with clear fields.`;
+        }
+      })
+      .join('\n');
+
+    const grammarFocusDescription = (() => {
+      const focusValue = (request.advancedOptions as any)?.grammarFocus || request.subtopic || request.topic;
+      if (!focusValue) return '';
+      const focusArray = Array.isArray(focusValue) ? focusValue : [focusValue];
+      const formatted = focusArray
+        .map((entry: string) => entry)
+        .filter(Boolean)
+        .map((entry: string) => entry.replace(/[_-]/g, ' '))
+        .map((entry: string) => entry.charAt(0).toUpperCase() + entry.slice(1));
+      if (formatted.length === 0) return '';
+      const focusText = formatted.join(', ');
+      return `Focus specifically on ${focusText}.`;
+    })();
 
     const templatePrompts: { [key: string]: string } = {
       vocabulary_builder: `${baseInfo}${vocabularyContext}
@@ -241,8 +346,6 @@ Create a reading comprehension worksheet with:
    - **Tense Detective**: 1 prompt asking students to find a specific tense/grammar structure
    - **Vocabulary Writing**: 4-5 ${request.targetLanguage || 'French'} words from the text with English definitions - students write the word
    - **Sentence Unscramble**: 2-3 properly scrambled sentences that can actually form correct ${request.targetLanguage || 'French'} sentences
-   - **Translation**: 3-4 sentences from the text to translate to English
-
 CRITICAL REQUIREMENTS - READ CAREFULLY:
 - True/False statements must be WRITTEN IN ENGLISH about the text content (NOT in ${request.targetLanguage || 'French'})
 - Multiple choice questions and options must be WRITTEN IN ENGLISH (NOT in ${request.targetLanguage || 'French'})
@@ -315,6 +418,43 @@ Create a vocabulary word search puzzle:
 - Fill remaining spaces with random letters
 - Include clear instructions and answer key with words circled`,
 
+      grammar_exercises: `${baseInfo}${vocabularyContext}
+
+${grammarFocusDescription}
+
+Design a grammar practice worksheet that combines explanation, examples, and these activity types:
+${grammarExerciseDescriptions}
+
+Respond with EXACTLY this JSON schema (no other fields):
+{
+  "title": "Worksheet title",
+  "instructions": "Overall student instructions",
+  "grammar_topic": "Headline for the grammar focus",
+  "explanation": "Detailed explanation (HTML allowed)",
+  "examples": [
+    {"correct": "Correct model", "incorrect": "Optional incorrect model", "explanation": "Why"}
+  ],
+  "exercises": [
+    {
+      "type": "one of ${grammarExerciseTypes.join(', ')}",
+      "title": "Section title",
+      "instructions": "Activity-specific instructions",
+      "items": []
+    }
+  ],
+  "answerKey": {
+    "exercise1": ["Answers listed in order"]
+  }
+}
+
+For each exercise, include at least ${Math.max(4, Math.ceil((request.targetQuestionCount || 12) / grammarExerciseTypes.length))} items. Use these item templates by type:
+- conjugation → {"verb": "hablar", "tense": "present", "pronouns": ["yo",...], "answers": {"yo": "hablo", ...}}
+- sentence-completion → {"sentence": "Yo ____ al parque.", "answer": "voy"}
+- transformation → {"original": "Veo la televisión.", "instruction": "Rewrite in the preterite", "answer": "Vi la televisión."}
+- error-correction → {"incorrect": "Ellos va a la escuela.", "correction": "Ellos van a la escuela.", "explanation": "Plural agreement"}
+
+Keep wording culturally neutral, reference the target language (${request.originalSubject || request.subject}), and make the answer key align exactly with provided items.`,
+
       revision_sheet: `${baseInfo}${vocabularyContext}
 
 Create a comprehensive revision sheet with multiple sections:
@@ -327,11 +467,13 @@ Create a comprehensive revision sheet with multiple sections:
 
     const templatePrompt = templatePrompts[templateId] || baseInfo;
     
+    const appendStandardSchema = !['reading_comprehension', 'vocabulary_practice', 'grammar_exercises'].includes(templateId);
+
     return `${templatePrompt}
 
 ${request.customPrompt ? `Additional requirements: ${request.customPrompt}` : ''}
 
-Respond with valid JSON in this format:
+${appendStandardSchema ? `Respond with valid JSON in this format:
 {
   "title": "Worksheet Title",
   "instructions": "General instructions for students",
@@ -354,7 +496,7 @@ Respond with valid JSON in this format:
     "section1": ["answer1", "answer2"],
     "section2": ["answer1", "answer2"]
   }
-}`;
+}` : ''}`;
   }
 
   protected convertToWorksheetWithTemplate(data: any, request: WorksheetRequest, templateId: string): Worksheet {
@@ -422,6 +564,39 @@ Respond with valid JSON in this format:
       };
     }
 
+    if (templateId === 'grammar_exercises') {
+      const grammarFocus = (request.advancedOptions as any)?.grammarFocus || request.subtopic || request.topic;
+      const targetLanguage = request.targetLanguage || request.language || request.subject;
+      return {
+        id: uuidv4(),
+        title: data.title || `${this.getTemplateDisplayName(templateId)} - ${grammarFocus || request.subject}`,
+        subject: request.subject,
+        topic: request.topic,
+        difficulty: request.difficulty || 'medium',
+        instructions: data.instructions || request.customPrompt || 'Complete the grammar exercises below.',
+        introduction: data.introduction || '',
+        sections: [],
+        language: targetLanguage || 'English',
+        estimatedTimeMinutes: this.getEstimatedTime(templateId),
+        tags: [request.subject.toLowerCase(), templateId, grammarFocus?.toString().toLowerCase()].filter(Boolean) as string[],
+        seo_description: `A ${request.difficulty || 'medium'} difficulty ${this.getTemplateDisplayName(templateId)} worksheet on ${grammarFocus || request.topic || 'core grammar skills'}`,
+        seo_keywords: [request.subject, templateId.replace('_', ' '), grammarFocus || request.topic].filter(Boolean).join(', '),
+        answerKey: data.answerKey || {},
+        metadata: {
+          title: data.title || `${this.getTemplateDisplayName(templateId)} - ${grammarFocus || request.subject}`,
+          subject: request.subject,
+          difficulty: request.difficulty || 'medium',
+          template: templateId,
+          grammarFocus,
+          targetLanguage,
+          curriculumLevel: request.curriculumLevel,
+          examBoard: request.examBoard,
+          tier: request.tier
+        },
+        rawContent: data
+      };
+    }
+
     // Default format for other templates
     return {
       id: uuidv4(),
@@ -463,6 +638,7 @@ Respond with valid JSON in this format:
       guided_reading: 'Guided Reading',
       word_search: 'Word Search',
       crossword: 'Crossword Puzzle',
+      grammar_exercises: 'Grammar Exercises',
       revision_sheet: 'Revision Sheet'
     };
     return displayNames[templateId] || 'Worksheet';
@@ -596,6 +772,7 @@ CRITICAL: Use ONLY the provided vocabulary words. Create meaningful, contextual 
       guided_reading: 25,
       word_search: 20,
       crossword: 35,
+      grammar_exercises: 30,
       revision_sheet: 45
     };
     return timeEstimates[templateId] || 30;

@@ -55,7 +55,7 @@ export function getBaseStyles(): string {
         .page {
             max-width: 910px;
             margin: 0 auto;
-            padding: 0 26px 28px 26px;
+            padding: 0 22px 24px 22px;
             background: white;
             border: 2px solid rgba(30, 64, 175, 0.16);
             border-radius: 18px;
@@ -65,8 +65,8 @@ export function getBaseStyles(): string {
 
         /* --- PREMIUM HEADER --- */
         .header {
-            padding: 18px 22px 16px;
-            margin: 0 0 20px 0;
+            padding: 14px 18px 12px;
+            margin: 0 0 16px 0;
             background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
             border: 2px solid var(--brand-primary);
             border-radius: var(--border-radius);
@@ -77,13 +77,13 @@ export function getBaseStyles(): string {
         /* Ensure subsequent pages leave a clear gap under the header */
         .page + .page .header {
             /* Adds extra breathing room for print/page breaks */
-            margin-top: 20px;
+            margin-top: 16px;
         }
 
         @media print {
             /* Use print-friendly units for PDFs */
             .page + .page .header {
-                margin-top: 14pt;
+                margin-top: 12pt;
             }
         }
 
@@ -92,32 +92,39 @@ export function getBaseStyles(): string {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
+            gap: 14px;
         }
 
         .header-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .worksheet-logo {
-            width: 84px;
-            height: auto;
+            width: 32px;
+            height: 32px;
             display: inline-block;
             object-fit: contain;
         }
 
-        .header-center {
-            flex: 1 1 auto;
-            text-align: left;
-            padding-left: 8px;
+        .header-brand {
+            font-family: var(--font-heading);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--brand-primary);
         }
 
         .header-right {
             text-align: right;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--color-text-light);
+        }
+
+        .header-tagline {
+            font-size: 11px;
+            color: var(--brand-accent);
+            font-weight: 500;
         }
 
         .header::before {
@@ -210,8 +217,8 @@ export function getBaseStyles(): string {
 
         /* --- PREMIUM SECTION STYLING --- */
         .section {
-            margin-bottom: 24px;
-            padding: 18px;
+            margin-bottom: 18px;
+            padding: 14px;
             background: white;
             border: 1px solid var(--color-border);
             border-radius: var(--border-radius);
@@ -222,7 +229,7 @@ export function getBaseStyles(): string {
         /* Worksheet top title in body (large, elegant) */
         .worksheet-container h1 {
             font-family: var(--font-heading);
-            font-size: 28px;
+            font-size: 26px;
             color: var(--color-text-heading);
             margin-bottom: 4px;
             letter-spacing: -0.4px;
@@ -231,8 +238,8 @@ export function getBaseStyles(): string {
         .worksheet-container .student-info-header {
             display:flex;
             justify-content: flex-start;
-            gap: 14px;
-            margin-bottom: 14px;
+            gap: 12px;
+            margin-bottom: 12px;
         }
 
         /* Matching activity styles */
@@ -413,11 +420,11 @@ export function getBaseStyles(): string {
 
         /* Screen footer styling */
         .footer {
-            margin-top: 18px;
-            padding: 10px 16px;
+            margin-top: 14px;
+            padding: 8px 14px;
             border-top: 1px solid var(--color-border);
             text-align: center;
-            font-size: 11px;
+            font-size: 10px;
             color: var(--color-text-light);
             background: transparent;
         }
@@ -427,20 +434,20 @@ export function getBaseStyles(): string {
         /* --- PRINT STYLES --- */
         @media print {
             @page {
-                margin: 0;
+                margin: 0.4in 0.45in;
             }
 
             body {
                 margin: 0;
                 padding: 0;
                 background: white !important;
-                font-size: 10.2pt;
-                line-height: 1.35;
+                font-size: 10pt;
+                line-height: 1.3;
             }
 
             .page {
                 margin: 0 !important;
-                padding: 0 0.48in 0.5in 0.48in !important;
+                padding: 0 !important;
                 border: none !important;
                 box-shadow: none !important;
                 min-height: auto !important;
@@ -448,15 +455,15 @@ export function getBaseStyles(): string {
 
             /* Add top padding for pages after the first to leave margin before content */
             .page + .page {
-                padding-top: 0.5in !important;
+                padding-top: 0.4in !important;
             }
 
             .header {
                 background: white !important;
                 border: none !important;
-                border-bottom: 2px solid #000 !important;
-                padding: 14px 0 !important;
-                margin-bottom: 18px !important;
+                border-bottom: 1.5px solid #000 !important;
+                padding: 10px 0 !important;
+                margin-bottom: 14px !important;
                 box-shadow: none !important;
             }
 
@@ -464,14 +471,19 @@ export function getBaseStyles(): string {
                 display: none !important;
             }
 
-            .title {
-                color: #000 !important;
-                font-size: 24pt !important;
+            .worksheet-logo {
+                width: 28px !important;
+                height: 28px !important;
             }
 
-            .subtitle {
+            .header-brand {
+                font-size: 14pt !important;
+                color: #000 !important;
+            }
+
+            .header-tagline {
                 color: #333 !important;
-                font-size: 12pt !important;
+                font-size: 9pt !important;
             }
 
             .meta-info span {
@@ -485,32 +497,32 @@ export function getBaseStyles(): string {
                 page-break-inside: avoid;
                 border: 1px solid #ccc !important;
                 background: white !important;
-                padding: 13px !important;
-                margin-bottom: 16px !important;
+                padding: 11px !important;
+                margin-bottom: 13px !important;
             }
 
             .section-title {
-                border-bottom: 2px solid #000 !important;
+                border-bottom: 1.5px solid #000 !important;
                 color: #000 !important;
-                font-size: 12pt !important;
+                font-size: 11pt !important;
             }
 
             .question {
                 border: 1px solid #ddd !important;
                 border-left: 2px solid #000 !important;
                 background: white !important;
-                padding: 9px !important;
-                margin-bottom: 8px !important;
+                padding: 8px !important;
+                margin-bottom: 7px !important;
             }
 
             .question-number {
                 color: #000 !important;
-                font-size: 10pt !important;
+                font-size: 9.5pt !important;
             }
 
             .question-text {
-                font-size: 10pt !important;
-                line-height: 1.4 !important;
+                font-size: 9.5pt !important;
+                line-height: 1.35 !important;
             }
 
             /* Ensure footer prints at bottom of page */
@@ -519,17 +531,17 @@ export function getBaseStyles(): string {
                 bottom: 0;
                 left: 0;
                 right: 0;
-                padding: 8px 24px;
+                padding: 6px 20px;
                 border-top: 1px solid #e5e7eb;
                 background: white;
-                font-size: 10px;
+                font-size: 9px;
                 color: #6b7280;
             }
             .instructions, .reading-passage {
                 border: 1px solid #999 !important;
-                border-left: 3px solid #000 !important;
+                border-left: 2.5px solid #000 !important;
                 background: white !important;
-                padding: 12px !important;
+                padding: 10px !important;
             }
 
             .instructions::before, .reading-passage::before {
@@ -538,13 +550,13 @@ export function getBaseStyles(): string {
 
             .answer-space {
                 border-bottom: 1px solid #999 !important;
-                min-height: 16px !important;
+                min-height: 14px !important;
             }
 
             /* Make multiple choice questions much more compact for printing */
             .multiple-choice-grid {
-                gap: 6px !important;
-                margin-bottom: 12px !important;
+                gap: 5px !important;
+                margin-bottom: 10px !important;
             }
 
             .multiple-choice-grid .question {

@@ -73,12 +73,16 @@ export default function WorksheetPreviewPage() {
 
     // Check if this is a reading comprehension template that needs HTML generation
     const isReadingComprehension = templateId === 'reading_comprehension' ||
-                                   metadataTemplate === 'reading_comprehension' ||
-                                   !!rawContent;
+                                    metadataTemplate === 'reading_comprehension' ||
+                                    !!rawContent;
 
     // Check if this is a vocabulary practice template that needs HTML generation
     const isVocabularyPractice = templateId === 'vocabulary_practice' ||
-                                metadataTemplate === 'vocabulary_practice';
+                                 metadataTemplate === 'vocabulary_practice';
+
+    // Check if this is a grammar exercises template that needs HTML generation
+    const isGrammarExercises = templateId === 'grammar_exercises' ||
+                               metadataTemplate === 'grammar_exercises';
 
     console.log('🤔 [HTML GENERATION] Template detection:');
     console.log('   - templateId:', templateId);
@@ -87,13 +91,16 @@ export default function WorksheetPreviewPage() {
     console.log('   - metadataTemplate === "reading_comprehension":', metadataTemplate === 'reading_comprehension');
     console.log('   - templateId === "vocabulary_practice":', templateId === 'vocabulary_practice');
     console.log('   - metadataTemplate === "vocabulary_practice":', metadataTemplate === 'vocabulary_practice');
+    console.log('   - templateId === "grammar_exercises":', templateId === 'grammar_exercises');
+    console.log('   - metadataTemplate === "grammar_exercises":', metadataTemplate === 'grammar_exercises');
     console.log('   - !!rawContent:', !!rawContent);
     console.log('   - FINAL RESULT:', isReadingComprehension);
     console.log('   - Final isVocabularyPractice:', isVocabularyPractice);
+    console.log('   - Final isGrammarExercises:', isGrammarExercises);
 
-    if (isReadingComprehension || isVocabularyPractice) {
+    if (isReadingComprehension || isVocabularyPractice || isGrammarExercises) {
       console.log('🚀 [HTML GENERATION] Special template detected - generating fresh HTML from rawContent');
-      console.log('   - Template type:', isReadingComprehension ? 'reading_comprehension' : 'vocabulary_practice');
+      console.log('   - Template type:', isReadingComprehension ? 'reading_comprehension' : isVocabularyPractice ? 'vocabulary_practice' : 'grammar_exercises');
       try {
         setGeneratingHtml(true);
         console.log('🚀 [HTML GENERATION] Calling /api/worksheets/generate-html...');
@@ -131,7 +138,7 @@ export default function WorksheetPreviewPage() {
       }
     } else {
       console.log('📝 [HTML GENERATION] Not a special template - using existing worksheet.html');
-      console.log('   - Available special templates: reading_comprehension, vocabulary_practice');
+      console.log('   - Available special templates: reading_comprehension, vocabulary_practice, grammar_exercises');
       const existingHtml = worksheet.html;
       console.log('📄 [HTML GENERATION] Existing HTML exists?', !!existingHtml);
       console.log('📄 [HTML GENERATION] Existing HTML length:', existingHtml?.length || 0);
@@ -191,7 +198,7 @@ export default function WorksheetPreviewPage() {
 
       // Transform the worksheet structure for special templates
       let transformedWorksheet = data;
-      if (data.template_id === 'vocabulary_practice' || data.template_id === 'reading_comprehension') {
+      if (data.template_id === 'vocabulary_practice' || data.template_id === 'reading_comprehension' || data.template_id === 'grammar_exercises') {
         console.log('🔄 [WORKSHEET PAGE] Transforming worksheet structure for special template');
 
         // Extract rawContent and metadata from content field to top level

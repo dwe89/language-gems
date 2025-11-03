@@ -1,6 +1,6 @@
 import { getBaseStyles } from '../shared/base-styles';
 
-export function generateWorksheetHTML(worksheet: any): string {
+export function generateWorksheetHTML(worksheet: any, options: any = {}): string {
   console.log('[STANDARD GENERATOR] Generating standard worksheet HTML for:', worksheet.title);
 
   const { title, subject, topic, difficulty, content, estimated_time_minutes } = worksheet;

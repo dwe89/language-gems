@@ -8,6 +8,9 @@ export interface WorksheetData {
   difficulty?: string;
   estimated_time_minutes?: number;
   template_id?: string;
+  instructions?: string | string[];
+  language?: string;
+  answerKey?: any;
   content?: any;
   rawContent?: any;
   metadata?: {
@@ -111,6 +114,7 @@ export interface GrammarExerciseContent {
   explanation?: string;
   examples?: GrammarExample[];
   exercises?: GrammarExercise[];
+  instructions?: string | string[];
 }
 
 export interface GrammarExample {
@@ -123,6 +127,8 @@ export interface GrammarExercise {
   type: 'conjugation' | 'sentence-completion' | 'transformation' | 'error-correction';
   instructions?: string;
   items?: any[];
+  title?: string;
+  difficulty?: string;
 }
 
 export interface ListeningComprehensionContent {
@@ -146,6 +152,7 @@ export interface HTMLGeneratorOptions {
   printOptimized?: boolean;
   language?: 'spanish' | 'french' | 'german';
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  canvaFriendly?: boolean; // Simplified styling for Canva import compatibility
 }
 
 export interface GeneratedHTML {

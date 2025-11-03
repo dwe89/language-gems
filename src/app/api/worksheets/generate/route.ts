@@ -323,7 +323,11 @@ async function saveWorksheetToDatabase(worksheet: Worksheet, request: WorksheetR
 
   // Generate HTML for the worksheet (skip for special templates that generate HTML on-demand)
   let html = null;
-  if (request.template !== 'reading_comprehension' && request.template !== 'vocabulary_practice') {
+  if (
+    request.template !== 'reading_comprehension' &&
+    request.template !== 'vocabulary_practice' &&
+    request.template !== 'grammar_exercises'
+  ) {
     html = generateWorksheetHTML(worksheet);
     console.log('[Database] Generated HTML for standard worksheet');
   } else {
@@ -338,9 +342,14 @@ async function saveWorksheetToDatabase(worksheet: Worksheet, request: WorksheetR
     answerKey: (worksheet as any).answerKey
   };
 
-  // For reading comprehension and vocabulary practice, include the raw content and metadata
-  if ((request.template === 'reading_comprehension' || request.template === 'vocabulary_practice') && (worksheet as any).rawContent) {
+  // For reading comprehension, vocabulary practice, and grammar exercises, include the raw content and metadata
+  if ((request.template === 'reading_comprehension' || request.template === 'vocabulary_practice' || request.template === 'grammar_exercises') && (worksheet as any).rawContent) {
     console.log(`[Database] Including rawContent for ${request.template} template`);
+    console.log(`[Database] rawContent keys:`, Object.keys((worksheet as any).rawContent || {}));
+    console.log(`[Database] rawContent.exercises length:`, ((worksheet as any).rawContent?.exercises || []).length);
+    if ((worksheet as any).rawContent?.exercises?.length > 0) {
+      console.log(`[Database] First exercise:`, JSON.stringify((worksheet as any).rawContent.exercises[0], null, 2));
+    }
     content = {
       ...content,
       rawContent: (worksheet as any).rawContent,

@@ -200,6 +200,8 @@ export interface WorksheetMetadata {
   vocabularySource?: string;
   curriculumLevel?: string;
   tier?: string;
+  grammarFocus?: string | string[];
+  targetLanguage?: string;
 
   // English writing specific options
   writingPrompt?: string;

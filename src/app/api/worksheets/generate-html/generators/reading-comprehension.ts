@@ -1,7 +1,7 @@
 import { getBaseStyles } from '../shared/base-styles';
 import { generateWordSearch, renderWordSearchHTML, generateWordSearchCSS } from '../../../../../utils/wordSearchGenerator';
 
-export function generateReadingComprehensionHTML(worksheet: any): string {
+export function generateReadingComprehensionHTML(worksheet: any, options: any = {}): string {
   console.log('🎨 [HTML GENERATOR] Generating reading comprehension HTML for worksheet:', worksheet.title);
   
   // Get raw content from either location

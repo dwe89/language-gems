@@ -55,11 +55,17 @@ export async function GET(
       );
     }
 
+    // Check if Canva-friendly mode is requested
+    const canvaMode = request.nextUrl.searchParams.get('canva') === 'true';
+
     // Generate fresh HTML for the worksheet
     const htmlResponse = await fetch(`${request.nextUrl.origin}/api/worksheets/generate-html`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ worksheet })
+      body: JSON.stringify({ 
+        worksheet,
+        options: { canvaFriendly: canvaMode }
+      })
     });
 
     if (!htmlResponse.ok) {
