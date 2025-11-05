@@ -28,7 +28,9 @@ function ReadingComprehensionPageContent() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  const isAssignmentMode = assignmentId && mode === 'assignment';
+  // If there's an assignment ID, automatically enable assignment mode
+  // This makes the code more forgiving if mode=assignment is missing from URL
+  const isAssignmentMode = !!assignmentId;
 
   // Load assignment data if in assignment mode
   const { assignment, vocabulary, loading: assignmentLoading, error: assignmentError } =

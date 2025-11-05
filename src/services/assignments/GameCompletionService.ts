@@ -43,20 +43,16 @@ export class GameCompletionService {
       // 1. Get assignment details
       const { data: assignment, error: assignmentError } = await this.supabase
         .from('assignments')
-        .select('vocabulary_count, game_config')
+        .select('vocabulary_count, game_config, game_type')
         .eq('id', assignmentId)
         .single();
 
       if (assignmentError) throw assignmentError;
 
-      const totalWords = assignment?.vocabulary_count || 0;
-      const gameRequirements = assignment?.game_config?.gameConfig?.gameRequirements || {};
-      const minSessionsRequired = gameRequirements[gameId]?.minSessions || 0;
-
       // 2. Get sessions played for this game
       const { data: sessions, error: sessionsError } = await this.supabase
         .from('enhanced_game_sessions')
-        .select('id')
+        .select('id, completion_percentage')
         .eq('assignment_id', assignmentId)
         .eq('student_id', studentId)
         .eq('game_type', gameId);
@@ -64,6 +60,36 @@ export class GameCompletionService {
       if (sessionsError) throw sessionsError;
 
       const sessionsPlayed = sessions?.length || 0;
+
+      // 🎯 ASSESSMENT TYPE: Simpler completion logic
+      // Assessments are complete when student finishes the test (completion_percentage = 100)
+      // No vocabulary exposure requirements for assessments
+      const isAssessmentType = assignment?.game_type === 'assessment' || 
+                               gameId.startsWith('reading-comprehension') ||
+                               gameId.startsWith('listening-comprehension') ||
+                               gameId.startsWith('grammar-test');
+
+      if (isAssessmentType) {
+        // Check if any session has completion_percentage = 100
+        const hasCompletedSession = sessions?.some(s => s.completion_percentage >= 100) || false;
+        
+        return {
+          gameId,
+          isComplete: hasCompletedSession,
+          sessionsPlayed,
+          minSessionsRequired: 1,
+          activityMet: hasCompletedSession,
+          wordsExposed: 0,
+          totalWords: 0,
+          exposureMet: true, // N/A for assessments
+          missingRequirements: hasCompletedSession ? [] : ['Complete the assessment']
+        };
+      }
+
+      // 🎮 GAME TYPE: Dual-criteria completion logic
+      const totalWords = assignment?.vocabulary_count || 0;
+      const gameRequirements = assignment?.game_config?.gameConfig?.gameRequirements || {};
+      const minSessionsRequired = gameRequirements[gameId]?.minSessions || 0;
 
       // 3. Get words exposed (assignment-level, not game-level)
       const { data: exposures, error: exposuresError } = await this.supabase

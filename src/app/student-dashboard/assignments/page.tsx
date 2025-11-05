@@ -127,9 +127,11 @@ type Assignment = {
 
 // Assignment Card Component (Refactored for improved aesthetics)
 const AssignmentCard = ({
-  assignment
+  assignment,
+  isPastDue = false
 }: {
-  assignment: Assignment
+  assignment: Assignment;
+  isPastDue?: boolean;
 }) => {
   const gemColors = {
     'purple': 'from-purple-400 to-indigo-500',
@@ -157,9 +159,9 @@ const AssignmentCard = ({
     : 0;
 
   return (
-    <div className="group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-200 hover:border-gray-300">
+    <div className={`group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 border ${isPastDue ? 'border-red-300 bg-red-50/30' : 'border-gray-200 hover:border-gray-300'}`}>
       {/* Top gradient accent */}
-      <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${gemColors[assignment.gemType]}`}></div>
+      <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${isPastDue ? 'from-red-400 to-rose-500' : gemColors[assignment.gemType]}`}></div>
 
       <div className="p-6 pt-7">
         {/* Header with icon and title */}
@@ -331,7 +333,8 @@ function AssignmentsPageContent() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [currentAssignments, setCurrentAssignments] = useState<Assignment[]>([]);
-  const [completedAssignments, setCompletedAssignments] = useState<Assignment[]>([]);
+  const [pastAssignments, setPastAssignments] = useState<Assignment[]>([]);
+  const [activeTab, setActiveTab] = useState<'current' | 'past'>('current');
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
@@ -365,7 +368,7 @@ function AssignmentsPageContent() {
           console.log('Student has no class enrollments');
           if (isMounted) {
             setCurrentAssignments([]);
-            setCompletedAssignments([]);
+            setPastAssignments([]);
             setLoading(false);
           }
           return;
@@ -631,16 +634,31 @@ function AssignmentsPageContent() {
         // Combine regular assignments and vocabulary tests
         const allAssignments = [...processedAssignments, ...processedVocabTests];
 
-        const currentAssignments = allAssignments.filter(assignment =>
-          assignment.status === 'not-started' || assignment.status === 'in-progress'
-        );
-        const completedAssignments = allAssignments.filter(assignment =>
-          assignment.status === 'completed'
-        );
+        // Helper function to check if assignment is past due
+        const isPastDue = (assignment: Assignment): boolean => {
+          if (!assignment.dueDate || assignment.dueDate === 'No due date') return false;
+          
+          try {
+            // Parse the due date (format: DD/MM/YYYY)
+            const [day, month, year] = assignment.dueDate.split('/');
+            const dueDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset time to start of day for fair comparison
+            
+            return dueDate < today;
+          } catch (error) {
+            console.warn('Error parsing due date:', assignment.dueDate, error);
+            return false;
+          }
+        };
+
+        // Separate assignments into current and past based on due date
+        const currentAssignments = allAssignments.filter(assignment => !isPastDue(assignment));
+        const pastAssignments = allAssignments.filter(assignment => isPastDue(assignment));
 
         if (isMounted) {
           setCurrentAssignments(currentAssignments);
-          setCompletedAssignments(completedAssignments);
+          setPastAssignments(pastAssignments);
         }
 
       } catch (err) {
@@ -733,70 +751,111 @@ function AssignmentsPageContent() {
           </div>
         </div>
 
-        {/* Current Assignments */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-                <Target className="h-5 w-5 text-white" strokeWidth={2} />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Active Assignments</h2>
-                <p className="text-sm text-gray-600">{currentAssignments.length} {currentAssignments.length === 1 ? 'assignment' : 'assignments'} to complete</p>
-              </div>
-            </div>
+        {/* Tabs */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+          <div className="flex space-x-1 mb-6">
+            <button
+              onClick={() => setActiveTab('current')}
+              className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all ${
+                activeTab === 'current'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Current Assignments ({currentAssignments.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('past')}
+              className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all ${
+                activeTab === 'past'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Past Assignments ({pastAssignments.length})
+            </button>
           </div>
 
-          {currentAssignments.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {currentAssignments.map((assignment) => (
-                <AssignmentCard key={assignment.id} assignment={assignment} />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-12 text-center">
-              <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <BookOpen className="h-10 w-10 text-gray-400" />
+          {/* Current Assignments Tab */}
+          {activeTab === 'current' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                    <Target className="h-5 w-5 text-white" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Current Assignments</h2>
+                    <p className="text-sm text-gray-600">{currentAssignments.length} {currentAssignments.length === 1 ? 'assignment' : 'assignments'} due</p>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No active assignments</h3>
-              <p className="text-gray-600 mb-4">Your teacher hasn't assigned any work yet.</p>
-              <Link
-                href="/student-dashboard/games"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
-              >
-                <Gamepad2 className="h-4 w-4" />
-                <span>Play Free Games</span>
-              </Link>
+
+              {currentAssignments.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {currentAssignments.map((assignment) => (
+                    <AssignmentCard key={assignment.id} assignment={assignment} isPastDue={false} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-12 text-center">
+                  <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">No current assignments</h3>
+                  <p className="text-gray-600 mb-4">All your assignments are up to date!</p>
+                  <Link
+                    href="/student-dashboard/games"
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
+                  >
+                    <Gamepad2 className="h-4 w-4" />
+                    <span>Play Free Games</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Past Assignments Tab */}
+          {activeTab === 'past' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
+                    <Clock className="h-5 w-5 text-white" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Past Assignments</h2>
+                    <p className="text-sm text-gray-600">{pastAssignments.length} {pastAssignments.length === 1 ? 'assignment' : 'assignments'} past due</p>
+                  </div>
+                </div>
+              </div>
+
+              {pastAssignments.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {pastAssignments.map((assignment) => (
+                    <AssignmentCard key={assignment.id} assignment={assignment} isPastDue={true} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-12 text-center">
+                  <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">No past assignments</h3>
+                  <p className="text-gray-600 mb-4">You're all caught up with your assignments!</p>
+                  <Link
+                    href="/student-dashboard/games"
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
+                  >
+                    <Gamepad2 className="h-4 w-4" />
+                    <span>Play Free Games</span>
+                  </Link>
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        {/* Completed Assignments */}
-        {completedAssignments.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
-                  <CheckCircle className="h-5 w-5 text-white" strokeWidth={2} />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Completed</h2>
-                  <p className="text-sm text-gray-600">{completedAssignments.length} {completedAssignments.length === 1 ? 'assignment' : 'assignments'} finished</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-700 font-bold text-sm">
-                <Award className="h-4 w-4" />
-                <span>{completedAssignments.length}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {completedAssignments.map(assignment => (
-                <AssignmentCard key={assignment.id} assignment={assignment} />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

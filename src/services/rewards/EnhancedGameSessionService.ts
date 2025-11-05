@@ -9,6 +9,7 @@ import { RewardEngine, type GemEvent, type GemRarity } from './RewardEngine';
 import { parseVocabularyIdentifier } from '@/utils/vocabulary-id';
 import { MWEVocabularyTrackingService } from '@/services/MWEVocabularyTrackingService';
 import { assignmentExposureService } from '@/services/assignments/AssignmentExposureService';
+import { GameCompletionService } from '@/services/assignments/GameCompletionService';
 
 export interface GameSessionData {
   student_id: string;
@@ -643,6 +644,7 @@ export class EnhancedGameSessionService {
         .from('enhanced_game_sessions')
         .update({
           ended_at: new Date().toISOString(),
+          completion_status: finalData.completion_percentage >= 100 ? 'completed' : 'in_progress',
           duration_seconds: finalData.duration_seconds,
           final_score: finalData.final_score,
           max_score_possible: finalData.max_score_possible,
@@ -676,6 +678,15 @@ export class EnhancedGameSessionService {
           );
 
           console.log(`✅ [GAME COMPLETION] Checked completion for ${sessionData.game_type}`);
+
+          // 🎯 NEW: Update enhanced_assignment_progress table
+          await this.updateAssignmentProgress(
+            sessionData.assignment_id,
+            sessionData.student_id,
+            finalData
+          );
+
+          console.log(`✅ [ASSIGNMENT PROGRESS] Updated assignment progress`);
         } catch (completionError) {
           console.error('Error checking game completion:', completionError);
           // Don't throw - this is a non-critical operation
@@ -1133,11 +1144,146 @@ export class EnhancedGameSessionService {
   private async updateStudentProfileXP(studentId: string, xpAmount: number): Promise<void> {
     try {
       // Use existing enhanced game service method
-      const { EnhancedGameService } = await import('../enhancedGameService');
-      const enhancedGameService = new EnhancedGameService(this.supabase);
-      await enhancedGameService.addXPToStudent(studentId, xpAmount);
+      const { data: profile, error: fetchError } = await this.supabase
+        .from('student_profiles')
+        .select('total_xp')
+        .eq('student_id', studentId)
+        .single();
+
+      if (fetchError || !profile) {
+        console.warn('Student profile not found, skipping XP update');
+        return;
+      }
+
+      const { error: updateError } = await this.supabase
+        .from('student_profiles')
+        .update({ 
+          total_xp: (profile.total_xp || 0) + xpAmount 
+        })
+        .eq('student_id', studentId);
+
+      if (updateError) throw updateError;
     } catch (error) {
-      console.error('Error updating student profile XP:', error);
+      console.error('Error updating student XP:', error);
+    }
+  }
+
+  /**
+   * Update enhanced_assignment_progress table with session results
+   */
+  private async updateAssignmentProgress(
+    assignmentId: string,
+    studentId: string,
+    finalData: GameSessionData
+  ): Promise<void> {
+    try {
+      // Get current progress
+      const { data: currentProgress } = await this.supabase
+        .from('enhanced_assignment_progress')
+        .select('*')
+        .eq('assignment_id', assignmentId)
+        .eq('student_id', studentId)
+        .single();
+
+      // Calculate if this is a better score
+      const currentBestScore = currentProgress?.best_score || 0;
+      const newScore = finalData.final_score || 0;
+      const isBetterScore = newScore > currentBestScore;
+
+      // Get all game sessions for this assignment to calculate total time
+      const { data: sessions } = await this.supabase
+        .from('enhanced_game_sessions')
+        .select('duration_seconds')
+        .eq('assignment_id', assignmentId)
+        .eq('student_id', studentId);
+
+      const totalTimeSpent = (sessions || []).reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+
+      // Use GameCompletionService to check completion status
+      const gameCompletionService = new GameCompletionService(this.supabase);
+      
+      // Get all games in this assignment
+      const { data: assignment } = await this.supabase
+        .from('assignments')
+        .select('game_config, game_type')
+        .eq('id', assignmentId)
+        .single();
+
+      // Get list of games to check
+      const gamesToCheck: string[] = [];
+      
+      if (assignment?.game_config?.selectedGames) {
+        gamesToCheck.push(...Object.keys(assignment.game_config.selectedGames));
+      }
+      
+      if (assignment?.game_config?.selectedAssessments) {
+        // 🎯 FIX: Use 'id' or 'type' from selectedAssessments, not 'activity_id'
+        gamesToCheck.push(...assignment.game_config.selectedAssessments.map((a: any) => a.id || a.type));
+      }
+
+      // Check completion for each game
+      let allGamesCompleted = gamesToCheck.length > 0;
+      
+      for (const gameId of gamesToCheck) {
+        const completionStatus = await gameCompletionService.checkGameCompletion(
+          assignmentId,
+          studentId,
+          gameId
+        );
+        
+        if (!completionStatus.isComplete) {
+          allGamesCompleted = false;
+          break;
+        }
+      }
+
+      const status = allGamesCompleted ? 'completed' : 
+        (currentProgress?.status === 'completed' ? 'completed' : 
+          (newScore > 0 ? 'in_progress' : 'not_started'));
+
+      // Update the progress
+      const updateData: any = {
+        assignment_id: assignmentId,
+        student_id: studentId,
+        status,
+        total_time_spent: totalTimeSpent,
+        session_count: (currentProgress?.session_count || 0) + 1,
+        updated_at: new Date().toISOString()
+      };
+
+      // Only update best score/accuracy if this session is better
+      if (isBetterScore || !currentProgress) {
+        updateData.best_score = newScore;
+        updateData.best_accuracy = finalData.accuracy_percentage || 0;
+      }
+
+      // Mark as completed if all games are done
+      if (allGamesCompleted && status === 'completed') {
+        updateData.completed_at = new Date().toISOString();
+      }
+
+      const { error } = await this.supabase
+        .from('enhanced_assignment_progress')
+        .upsert(updateData, {
+          onConflict: 'assignment_id,student_id'
+        });
+
+      if (error) {
+        console.error('Error updating assignment progress:', error);
+        throw error;
+      }
+
+      console.log(`✅ [ASSIGNMENT PROGRESS] Updated:`, {
+        assignmentId,
+        studentId,
+        status,
+        bestScore: updateData.best_score || currentBestScore,
+        totalTime: totalTimeSpent,
+        allGamesCompleted
+      });
+    } catch (error) {
+      console.error('Error in updateAssignmentProgress:', error);
+      throw error;
     }
   }
 }

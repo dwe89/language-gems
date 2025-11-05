@@ -31,14 +31,35 @@ export const createServerSideClient = (cookiesStore: any) => {
 
 // Service role client for API routes - bypasses RLS
 export const createServiceRoleClient = () => {
-  return createSupabaseClient<Database>(
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!serviceRoleKey) {
+    console.error('❌ SUPABASE_SERVICE_ROLE_KEY is not defined!');
+    console.error('❌ Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required');
+  }
+  
+  console.log('✅ Service role key loaded, length:', serviceRoleKey.length);
+  
+  // Create client with service role key - this should bypass RLS
+  const client = createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    serviceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
         persistSession: false
+      },
+      db: {
+        schema: 'public'
+      },
+      global: {
+        headers: {
+          'apikey': serviceRoleKey
+        }
       }
     }
   );
+  
+  return client;
 };

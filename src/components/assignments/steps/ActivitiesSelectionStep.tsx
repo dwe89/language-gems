@@ -14,8 +14,8 @@ const AVAILABLE_ASSESSMENTS = [
     name: 'Reading Comprehension',
     type: 'reading',
     estimatedTime: '15-25 minutes',
-    skills: ['Reading'],
-    description: 'Text-based comprehension with multiple question types and automated marking'
+    skills: ['Reading', 'Comprehension'],
+    description: 'Test your understanding of written texts'
   },
   {
     id: 'gcse-reading',
@@ -48,36 +48,30 @@ const AVAILABLE_ASSESSMENTS = [
     requiresPaper: false
   },
   {
+    id: 'gcse-speaking',
+    name: 'GCSE Speaking Exam',
+    type: 'speaking',
+    estimatedTime: '7-12 min',
+    skills: ['Speaking'],
+    description: 'AQA & Edexcel speaking assessments',
+    requiresExamBoard: true,
+    requiresPaper: false
+  },
+  {
+    id: 'topic-based',
+    name: 'Topic-Based Assessments',
+    type: 'reading',
+    estimatedTime: '15-25 minutes',
+    skills: ['Reading', 'Vocabulary', 'Grammar'],
+    description: 'Focused practice on specific AQA themes and topics'
+  },
+  {
     id: 'dictation',
-    name: 'Dictation Assessment',
+    name: 'Dictation Practice',
     type: 'listening',
-    estimatedTime: '20-30 minutes',
-    skills: ['Listening', 'Writing'],
-    description: 'Listen and write dictation exercises with accuracy scoring'
-  },
-  {
-    id: 'four-skills',
-    name: 'Four Skills Assessment',
-    type: 'comprehensive',
-    estimatedTime: '60-90 minutes',
-    skills: ['Reading', 'Writing', 'Listening', 'Speaking'],
-    description: 'Comprehensive assessment covering reading, writing, listening, and speaking'
-  },
-  {
-    id: 'listening-comprehension',
-    name: 'Listening Comprehension',
-    type: 'listening',
-    estimatedTime: '10-20 minutes',
-    skills: ['Listening'],
-    description: 'Audio-based comprehension tasks with authentic materials'
-  },
-  {
-    id: 'exam-style-questions',
-    name: 'Exam-Style Questions',
-    type: 'comprehensive',
-    estimatedTime: '30-60 minutes',
-    skills: ['Reading', 'Writing', 'Listening', 'Speaking'],
-    description: 'UK exam board format questions across all four skills'
+    estimatedTime: '10-15 minutes',
+    skills: ['Listening', 'Writing', 'Spelling'],
+    description: 'Improve listening and writing skills with GCSE-style dictation exercises'
   }
 ];
 

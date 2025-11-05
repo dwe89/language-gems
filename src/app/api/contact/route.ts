@@ -4,12 +4,25 @@ import { z } from 'zod';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
-  email: z.string().email('Valid email is required'),
+  email: z.string().email('Valid email is required').refine(
+    (email) => {
+      // Reject emails that are actually URLs
+      if (email.startsWith('http://') || email.startsWith('https://')) {
+        return false;
+      }
+      // Ensure email has @ and valid domain structure
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    },
+    { message: 'Please provide a valid email address' }
+  ),
   subject: z.string().min(1, 'Subject is required').max(200, 'Subject must be less than 200 characters'),
   message: z.string().min(5, 'Message must be at least 5 characters').max(2000, 'Message must be less than 2000 characters'),
   contactType: z.string().optional().default('general'),
   phone: z.string().optional(),
-  organization: z.string().optional()
+  organization: z.string().optional(),
+  // Honeypot field - should always be empty
+  website: z.string().optional()
 });
 
 // Helper function to send notification email via Brevo
@@ -112,17 +125,75 @@ async function sendNotificationEmail(submission: any) {
   }
 }
 
+// Simple in-memory rate limiting (for production, use Redis or similar)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(ipAddress: string): { allowed: boolean; message?: string } {
+  const now = Date.now();
+  const limit = 5; // Max 5 submissions
+  const windowMs = 60 * 60 * 1000; // Per hour
+
+  const record = rateLimitMap.get(ipAddress);
+
+  // Clean up old entries
+  if (record && now > record.resetTime) {
+    rateLimitMap.delete(ipAddress);
+  }
+
+  const currentRecord = rateLimitMap.get(ipAddress);
+
+  if (!currentRecord) {
+    // First submission from this IP
+    rateLimitMap.set(ipAddress, { count: 1, resetTime: now + windowMs });
+    return { allowed: true };
+  }
+
+  if (currentRecord.count >= limit) {
+    return { 
+      allowed: false, 
+      message: 'Too many submissions. Please try again later.' 
+    };
+  }
+
+  // Increment count
+  currentRecord.count++;
+  return { allowed: true };
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Parse and validate request body
     const body = await request.json();
     const validatedData = contactSchema.parse(body);
 
+    // HONEYPOT CHECK: If the "website" field is filled, it's a bot
+    if (validatedData.website && validatedData.website.trim() !== '') {
+      console.warn('Bot detected: honeypot field filled', {
+        email: validatedData.email,
+        website: validatedData.website
+      });
+      // Return success to the bot (so they don't know we detected them)
+      return NextResponse.json({
+        success: true,
+        message: 'Thank you for your message! We\'ll get back to you soon.'
+      });
+    }
+
     // Get user agent and IP for tracking
     const userAgent = request.headers.get('user-agent') || 'Unknown';
     const forwardedFor = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
     const ipAddress = forwardedFor?.split(',')[0] || realIp || 'Unknown';
+
+    // RATE LIMITING: Check if IP has exceeded submission limit
+    const rateLimitCheck = checkRateLimit(ipAddress);
+    if (!rateLimitCheck.allowed) {
+      console.warn('Rate limit exceeded', { ipAddress });
+      return NextResponse.json(
+        { error: rateLimitCheck.message },
+        { status: 429 }
+      );
+    }
 
     // Create Supabase client
     const supabase = await createClient();

@@ -11,6 +11,7 @@ interface FormData {
   subject: string;
   message: string;
   type: string;
+  website: string; // Honeypot field
 }
 
 export default function ContactPageClient() {
@@ -19,7 +20,8 @@ export default function ContactPageClient() {
     email: '',
     subject: '',
     message: '',
-    type: 'general'
+    type: 'general',
+    website: '' // Honeypot field - should remain empty
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,6 +66,10 @@ export default function ContactPageClient() {
     }
 
     try {
+      // Get honeypot value directly from form (not from state)
+      const formDataObj = new FormData(e.target as HTMLFormElement);
+      const honeypotValue = formDataObj.get('website') as string || '';
+
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
@@ -74,7 +80,8 @@ export default function ContactPageClient() {
           email: formData.email,
           subject: formData.subject,
           message: formData.message,
-          contactType: formData.type
+          contactType: formData.type,
+          website: honeypotValue // Get actual honeypot value from form
         })
       });
 
@@ -87,7 +94,8 @@ export default function ContactPageClient() {
           email: '',
           subject: '',
           message: '',
-          type: 'general'
+          type: 'general',
+          website: ''
         });
       } else {
         throw new Error(result.error || 'Failed to send message');
@@ -320,6 +328,18 @@ export default function ContactPageClient() {
                       rows={6}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Tell us how we can help you..."
+                    />
+                  </div>
+
+                  {/* Honeypot field - hidden from humans, visible to bots */}
+                  <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
+                    <label htmlFor="website">Website (do not fill)</label>
+                    <input
+                      type="text"
+                      id="website"
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
                     />
                   </div>
 

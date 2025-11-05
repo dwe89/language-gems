@@ -27,6 +27,10 @@ export async function GET(
   }
 
   try {
+    console.log('🔑 [API] Creating service role client...');
+    console.log('🔑 [API] Service role key present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    console.log('🔑 [API] Service role key length:', process.env.SUPABASE_SERVICE_ROLE_KEY?.length);
+    
     const supabaseAdmin = createServiceRoleClient();
     const analyticsService = new TeacherAssignmentAnalyticsService(supabaseAdmin);
 

@@ -110,20 +110,63 @@ export class TeacherAssignmentAnalyticsService {
       // Get game sessions to determine actual student activity
       // Add cache-busting by using a timestamp filter that's always true
       // This forces PostgREST to bypass cache and fetch fresh data
-      const { data: sessions, error: sessionError } = await this.supabase
+      
+      console.log('🔍 [DEBUG] Fetching sessions for assignment:', assignmentId);
+      console.log('🔍 [DEBUG] Is assessment type:', assignment?.game_type === 'assessment');
+      
+      let { data: sessions, error: sessionError } = await this.supabase
         .from('enhanced_game_sessions')
-        .select('id, student_id, duration_seconds, started_at, ended_at, completion_status')
-        .eq('assignment_id', assignmentId)
-        .gte('started_at', '2000-01-01T00:00:00Z'); // Cache-busting filter
+        .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage')
+        .eq('assignment_id', assignmentId);
+
+      console.log('🔍 [DEBUG] Sessions query result - error:', sessionError);
+      console.log('🔍 [DEBUG] Sessions found:', sessions?.length);
+      console.log('🔍 [DEBUG] First few sessions:', JSON.stringify(sessions?.slice(0, 3), null, 2));
 
       if (sessionError) {
         console.error('❌ Error fetching sessions:', sessionError);
         throw sessionError;
       }
 
+      // 🎯 FALLBACK: For assessment-type assignments, also check reading_comprehension_results
+      // if sessions are empty (in case sessions weren't created properly)
+      const isAssessmentType = assignment?.game_type === 'assessment' ||
+                               assignment?.game_config?.assessmentConfig;
+
+      if (isAssessmentType && (!sessions || sessions.length === 0)) {
+        console.log('📊 [ASSESSMENT FALLBACK] No sessions found, checking reading_comprehension_results');
+        
+        const { data: results, error: resultsError } = await this.supabase
+          .from('reading_comprehension_results')
+          .select('user_id, score, time_spent, completed_at')
+          .eq('assignment_id', assignmentId);
+
+        if (!resultsError && results && results.length > 0) {
+          console.log('📊 [ASSESSMENT FALLBACK] Found', results.length, 'results, using those instead');
+          
+          // Map results to session-like structure
+          const mappedSessions = results.map(r => ({
+            id: `result-${r.user_id}`,
+            student_id: r.user_id,
+            duration_seconds: r.time_spent || 0,
+            started_at: r.completed_at,
+            ended_at: r.completed_at,
+            completion_status: 'completed' as const,
+            accuracy_percentage: r.score || 0
+          }));
+
+          // Use mapped results as sessions
+          sessions = mappedSessions as any;
+          console.log('📊 [ASSESSMENT FALLBACK] Converted to sessions:', sessions?.length || 0);
+        }
+      }
+
       // Calculate completion from actual sessions (not from enhanced_assignment_progress which may be stale)
       const studentsWithSessions = new Set(sessions?.map(s => s.student_id) || []);
       const completedSessions = sessions?.filter(s => s.completion_status === 'completed' || s.ended_at) || [];
+      console.log('🔍 [DEBUG] Completed sessions count:', completedSessions.length);
+      console.log('🔍 [DEBUG] Completed sessions:', JSON.stringify(completedSessions.slice(0, 2), null, 2));
+      
       const studentsCompleted = new Set(completedSessions.map(s => s.student_id));
 
       const completedStudents = studentsCompleted.size;
@@ -169,12 +212,12 @@ export class TeacherAssignmentAnalyticsService {
       let studentsNeedingHelp = 0;
 
       // Check if this is an assessment assignment (game_type === 'assessment')
-      const isAssessment = assignment &&
+      const isAssessmentAssignment = assignment &&
         ((assignment as any).game_type === 'assessment' ||
         (assignment as any).game_config?.assessmentConfig);
 
       if (sessionIds.length > 0) {
-        if (isAssessment) {
+        if (isAssessmentAssignment) {
           // For assessments, calculate success from accuracy_percentage in sessions
           console.log('📊 [ASSESSMENT] Calculating success from session accuracy');
 
@@ -500,12 +543,43 @@ export class TeacherAssignmentAnalyticsService {
 
         // Get game sessions for this student to determine status
         // Add cache-busting filter to ensure fresh data
-        const { data: studentSessions } = await this.supabase
+        let { data: studentSessions } = await this.supabase
           .from('enhanced_game_sessions')
           .select('id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage')
           .eq('assignment_id', assignmentId)
           .eq('student_id', studentId)
           .gte('started_at', '2000-01-01T00:00:00Z'); // Cache-busting filter
+
+        // Check if this is an assessment type assignment
+        const { data: assignmentCheckData } = await this.supabase
+          .from('assignments')
+          .select('game_type, game_config')
+          .eq('id', assignmentId)
+          .single();
+
+        const isAssessmentType = assignmentCheckData &&
+          (assignmentCheckData.game_type === 'assessment' || assignmentCheckData.game_config?.assessmentConfig);
+
+        // If no sessions found for assessment, try reading_comprehension_results as fallback
+        if (isAssessmentType && (!studentSessions || studentSessions.length === 0)) {
+          const { data: assessmentResults } = await this.supabase
+            .from('reading_comprehension_results')
+            .select('*')
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', studentId);
+
+          if (assessmentResults && assessmentResults.length > 0) {
+            // Map results to session-like structure
+            studentSessions = assessmentResults.map((result: any) => ({
+              id: result.id,
+              duration_seconds: result.time_spent || 0,
+              started_at: result.submitted_at,
+              ended_at: result.submitted_at,
+              completion_status: 'completed' as const,
+              accuracy_percentage: result.score || 0
+            }));
+          }
+        }
 
         // Determine status from actual sessions
         let status: 'completed' | 'in_progress' | 'not_started' = 'not_started';
@@ -554,11 +628,11 @@ export class TeacherAssignmentAnalyticsService {
           .eq('id', assignmentId)
           .single();
 
-        const isAssessment = assignmentData &&
+        const isAssessmentAssignment = assignmentData &&
           (assignmentData.game_type === 'assessment' || assignmentData.game_config?.assessmentConfig);
 
         if (studentSessionIds.length > 0) {
-          if (isAssessment) {
+          if (isAssessmentAssignment) {
             // For assessments, use accuracy_percentage from sessions
             const sessionsWithData = studentSessions?.filter(s => s.ended_at) || [];
             if (sessionsWithData.length > 0) {

@@ -796,7 +796,23 @@ export default function ModernStudentDashboard({
       id: 'assignments',
       label: 'Assignments',
       icon: BookOpen,
-      badge: assignments.filter(a => a.status === 'not_started' || a.status === 'in_progress').length,
+      badge: (() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return assignments.filter(a => {
+          // Only count assignments that are not past due and not completed
+          if (a.status === 'completed') return false;
+          
+          try {
+            const dueDate = new Date(a.dueDate);
+            dueDate.setHours(0, 0, 0, 0);
+            return dueDate >= today;
+          } catch (error) {
+            // If date parsing fails, include the assignment
+            return true;
+          }
+        }).length;
+      })(),
       color: 'from-green-500 to-green-600',
       description: 'Current and upcoming tasks'
     },
@@ -1343,8 +1359,24 @@ export default function ModernStudentDashboard({
           </div>
         );
       case 'assignments':
-        const activeAssignments = assignments.filter(a => a.status === 'not_started' || a.status === 'in_progress');
-        const completedAssignments = assignments.filter(a => a.status === 'completed');
+        // Helper function to check if assignment is past due
+        const isPastDue = (assignment: any): boolean => {
+          if (!assignment.dueDate) return false;
+          
+          try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueDate = new Date(assignment.dueDate);
+            dueDate.setHours(0, 0, 0, 0);
+            return dueDate < today;
+          } catch (error) {
+            console.warn('Error parsing due date:', assignment.dueDate, error);
+            return false;
+          }
+        };
+
+        const currentAssignments = assignments.filter(a => !isPastDue(a));
+        const pastAssignments = assignments.filter(a => isPastDue(a));
 
         return (
           <div className="space-y-5">
@@ -1356,7 +1388,7 @@ export default function ModernStudentDashboard({
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">My Assignments</h2>
-                  <p className="text-sm text-gray-600">{activeAssignments.length} active • {completedAssignments.length} completed</p>
+                  <p className="text-sm text-gray-600">{currentAssignments.length} current • {pastAssignments.length} past due</p>
                 </div>
               </div>
               <Link
@@ -1368,10 +1400,10 @@ export default function ModernStudentDashboard({
               </Link>
             </div>
 
-            {/* Active Assignments */}
-            {activeAssignments.length > 0 && (
+            {/* Current Assignments */}
+            {currentAssignments.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Assignments</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Assignments</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {assignmentsLoading ? (
                     // Loading skeleton
@@ -1384,7 +1416,7 @@ export default function ModernStudentDashboard({
                       </div>
                     ))
                   ) : (
-                    activeAssignments.map((assignment) => (
+                    currentAssignments.map((assignment) => (
                       <EnhancedAssignmentCard
                         key={assignment.id}
                         assignment={assignment}
@@ -1398,12 +1430,12 @@ export default function ModernStudentDashboard({
               </div>
             )}
 
-            {/* Completed Assignments */}
-            {completedAssignments.length > 0 && (
+            {/* Past Assignments */}
+            {pastAssignments.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Completed</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Past Assignments</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {completedAssignments.slice(0, 2).map((assignment) => (
+                  {pastAssignments.slice(0, 2).map((assignment) => (
                     <EnhancedAssignmentCard
                       key={assignment.id}
                       assignment={assignment}
@@ -1413,13 +1445,13 @@ export default function ModernStudentDashboard({
                     />
                   ))}
                 </div>
-                {completedAssignments.length > 2 && (
+                {pastAssignments.length > 2 && (
                   <div className="mt-4 text-center">
                     <Link
                       href="/student-dashboard/assignments"
                       className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
                     >
-                      <span>View all {completedAssignments.length} completed assignments</span>
+                      <span>View all {pastAssignments.length} past assignments</span>
                       <ChevronRight className="h-4 w-4" />
                     </Link>
                   </div>

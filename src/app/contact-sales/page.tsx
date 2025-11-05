@@ -23,7 +23,8 @@ export default function ContactSalesPage() {
     studentCount: '',
     inquiryType: '',
     message: '',
-    preferredContact: 'email'
+    preferredContact: 'email',
+    website: '' // Honeypot field - should remain empty
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,6 +94,10 @@ export default function ContactSalesPage() {
     }
 
     try {
+      // Get honeypot value directly from form (not from state)
+      const formDataObj = new FormData(e.target as HTMLFormElement);
+      const honeypotValue = formDataObj.get('website') as string || '';
+
       // Format subject line
       const subject = `School Sales Inquiry: ${formData.school} - ${formData.inquiryType || 'General Inquiry'}`;
       
@@ -115,7 +120,8 @@ ${formData.message || 'No additional message'}
         message: fullMessage,
         contactType: 'school_sales',
         phone: formData.phone || undefined,
-        organization: formData.school
+        organization: formData.school,
+        website: honeypotValue // Get actual honeypot value from form
       };
 
       const response = await fetch('/api/contact', {
@@ -443,6 +449,26 @@ ${formData.message || 'No additional message'}
                     Phone
                   </label>
                 </div>
+              </div>
+              
+              {/* Honeypot field - hidden from humans, visible to bots */}
+              <div 
+                style={{ 
+                  position: 'absolute', 
+                  left: '-5000px', 
+                  height: '1px', // Added for better screen reader/bot confusion
+                  overflow: 'hidden' // Added for better visual hiding robustness
+                }} 
+                aria-hidden="true"
+              >
+                <label htmlFor="website">Website (do not fill)</label>
+                <input
+                  type="text"
+                  id="website"
+                  name="website" // Bot will fill this field
+                  tabIndex={-1}
+                  autoComplete="new-password" // Prevents browser autofill
+                />
               </div>
               
               <button

@@ -213,42 +213,72 @@ const ASSESSMENT_TYPES = [
   {
     id: 'reading-comprehension',
     name: 'Reading Comprehension',
-    description: 'Text-based comprehension with multiple question types and automated marking',
+    description: 'Test your understanding of written texts',
     icon: <BookOpen className="h-6 w-6" />,
     color: 'from-blue-500 to-blue-600',
     estimatedTime: '15-25 min',
-    skills: ['Reading'],
+    skills: ['Reading', 'Comprehension'],
     features: ['Multiple choice', 'True/false', 'Short answer', 'Automated marking']
   },
   {
-    id: 'aqa-reading',
-    name: 'AQA Reading Assessment',
-    description: 'Official AQA-style reading assessment with authentic exam questions',
+    id: 'gcse-reading',
+    name: 'GCSE Reading Exam',
+    description: 'AQA & Edexcel papers',
     icon: <FileText className="h-6 w-6" />,
-    color: 'from-indigo-500 to-indigo-600',
+    color: 'from-blue-500 to-blue-600',
     estimatedTime: '45-60 min',
     skills: ['Reading'],
-    features: ['AQA format', 'Exam practice', 'Automated marking', 'Progress tracking']
+    features: ['AQA & Edexcel format', 'Official exam practice', 'Automated marking', 'Progress tracking']
   },
   {
-    id: 'aqa-listening',
-    name: 'AQA Listening Assessment',
-    description: 'Official AQA-style listening assessment with audio materials',
+    id: 'gcse-listening',
+    name: 'GCSE Listening Exam',
+    description: 'AQA & Edexcel papers',
     icon: <Headphones className="h-6 w-6" />,
-    color: 'from-purple-500 to-purple-600',
+    color: 'from-green-500 to-green-600',
     estimatedTime: '35-45 min',
     skills: ['Listening'],
-    features: ['AQA format', 'Audio clips', 'Exam practice', 'Automated marking']
+    features: ['AQA & Edexcel format', 'Audio materials', 'Exam practice', 'Automated marking']
+  },
+  {
+    id: 'gcse-writing',
+    name: 'GCSE Writing Exam',
+    description: 'AQA papers available',
+    icon: <PenTool className="h-6 w-6" />,
+    color: 'from-purple-500 to-purple-600',
+    estimatedTime: '60-75 min',
+    skills: ['Writing'],
+    features: ['AQA format', 'Essay prompts', 'Translation tasks', 'AI-powered feedback']
+  },
+  {
+    id: 'gcse-speaking',
+    name: 'GCSE Speaking Exam',
+    description: 'AQA & Edexcel speaking assessments',
+    icon: <Mic className="h-6 w-6" />,
+    color: 'from-orange-500 to-orange-600',
+    estimatedTime: '7-12 min',
+    skills: ['Speaking'],
+    features: ['Role-play', 'Photo card', 'General conversation', 'Pronunciation analysis']
+  },
+  {
+    id: 'topic-based',
+    name: 'Topic-Based Assessments',
+    description: 'Focused practice on specific AQA themes and topics',
+    icon: <Target className="h-6 w-6" />,
+    color: 'from-indigo-500 to-indigo-600',
+    estimatedTime: '15-25 min',
+    skills: ['Reading', 'Vocabulary', 'Grammar'],
+    features: ['AQA themes', 'Foundation & Higher tiers', 'Targeted topics', 'Context-based learning']
   },
   {
     id: 'dictation',
-    name: 'Dictation Assessment',
-    description: 'Listen and write dictation exercises with accuracy scoring',
+    name: 'Dictation Practice',
+    description: 'Improve listening and writing skills with GCSE-style dictation exercises',
     icon: <PenTool className="h-6 w-6" />,
     color: 'from-green-500 to-green-600',
-    estimatedTime: '20-30 min',
-    skills: ['Listening', 'Writing'],
-    features: ['Audio dictation', 'Spelling accuracy', 'Speed control', 'Instant feedback']
+    estimatedTime: '10-15 min',
+    skills: ['Listening', 'Writing', 'Spelling'],
+    features: ['5 sentences per assessment', 'Multiple playback speeds', 'Foundation & Higher tiers', 'Authentic GCSE content']
   },
   {
     id: 'vocabulary-test',
@@ -259,56 +289,6 @@ const ASSESSMENT_TYPES = [
     estimatedTime: '20-45 min',
     skills: ['Vocabulary'],
     features: ['Translation', 'Multiple choice', 'Audio spelling', 'Detailed analytics', 'Progress tracking']
-  },
-  {
-    id: 'four-skills',
-    name: 'Four Skills Assessment',
-    description: 'Comprehensive assessment covering reading, writing, listening, and speaking',
-    icon: <Target className="h-6 w-6" />,
-    color: 'from-teal-500 to-teal-600',
-    estimatedTime: '60-90 min',
-    skills: ['Reading', 'Writing', 'Listening', 'Speaking'],
-    features: ['Complete assessment', 'All four skills', 'Comprehensive scoring', 'Detailed feedback']
-  },
-  {
-    id: 'listening-comprehension',
-    name: 'Listening Comprehension',
-    description: 'Audio-based comprehension tasks with authentic materials',
-    icon: <Headphones className="h-6 w-6" />,
-    color: 'from-purple-500 to-purple-600',
-    estimatedTime: '10-20 min',
-    skills: ['Listening'],
-    features: ['Audio clips', 'Multiple choice', 'Gap fill', 'Note taking']
-  },
-  {
-    id: 'writing-tasks',
-    name: 'Writing Tasks',
-    description: 'Structured writing assessments with AI-powered feedback',
-    icon: <PenTool className="h-6 w-6" />,
-    color: 'from-green-500 to-green-600',
-    estimatedTime: '20-40 min',
-    skills: ['Writing'],
-    features: ['Essay prompts', 'Translation', 'Creative writing', 'AI feedback']
-  },
-  {
-    id: 'speaking-tasks',
-    name: 'Speaking Tasks',
-    description: 'Oral assessment with pronunciation analysis and fluency scoring',
-    icon: <Mic className="h-6 w-6" />,
-    color: 'from-red-500 to-red-600',
-    estimatedTime: '5-15 min',
-    skills: ['Speaking'],
-    features: ['Voice recording', 'Pronunciation analysis', 'Fluency scoring', 'Photo description']
-  },
-  {
-    id: 'exam-style-questions',
-    name: 'Exam-Style Questions',
-    description: 'UK exam board format questions across all four skills',
-    icon: <Award className="h-6 w-6" />,
-    color: 'from-indigo-500 to-indigo-600',
-    estimatedTime: '30-60 min',
-    skills: ['Reading', 'Writing', 'Listening', 'Speaking'],
-    features: ['AQA/Edexcel/Eduqas format', 'Grade boundaries', 'Authentic questions', 'Full assessment']
   }
 ];
 
