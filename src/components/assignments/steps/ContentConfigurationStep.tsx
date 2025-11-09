@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Gamepad2, FileCheck, BookOpen, Brain, Target } from 'lucide-react';
+import { Settings, Gamepad2, FileCheck, BookOpen, Brain, Target, PenLine, Plus, Trash2 } from 'lucide-react';
 import { StepProps } from '../types/AssignmentTypes';
 
 import CurriculumContentSelector from '../CurriculumContentSelector';
@@ -76,6 +76,38 @@ function SkillsConfigurationSection({
     }));
   };
 
+  const addNewSkill = () => {
+    const newSkill = {
+      id: `grammar-activity-${Date.now()}`,
+      type: 'combined',
+      name: 'Grammar Activity',
+      estimatedTime: 'Varies by selection',
+      skills: ['Grammar'],
+      instanceConfig: {
+        language: skillsConfig.generalLanguage || 'spanish',
+        category: '', // Will be set in configuration
+        topicIds: [], // Will be set in configuration
+        contentTypes: ['lesson', 'practice', 'quiz'] as ('lesson' | 'quiz' | 'practice')[], // All types by default
+        timeLimit: skillsConfig.generalTimeLimit || 20,
+        maxAttempts: skillsConfig.generalMaxAttempts || 3,
+        showHints: skillsConfig.generalShowHints ?? true,
+        randomizeQuestions: skillsConfig.generalRandomizeQuestions ?? false,
+      }
+    };
+
+    setSkillsConfig((prev: any) => ({
+      ...prev,
+      selectedSkills: [...prev.selectedSkills, newSkill]
+    }));
+  };
+
+  const removeSkill = (skillId: string) => {
+    setSkillsConfig((prev: any) => ({
+      ...prev,
+      selectedSkills: prev.selectedSkills.filter((s: any) => s.id !== skillId)
+    }));
+  };
+
   return (
     <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
       <div className="flex items-center mb-3">
@@ -99,6 +131,15 @@ function SkillsConfigurationSection({
                   <p className="text-sm text-gray-600">{skill.type} • {skill.estimatedTime}</p>
                 </div>
               </div>
+              {skillsConfig.selectedSkills.length > 1 && (
+                <button
+                  onClick={() => removeSkill(skill.id)}
+                  className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors"
+                  title="Remove this skill configuration"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -142,6 +183,111 @@ function SkillsConfigurationSection({
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Content Types Selection */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Activity Types * (Select the learning sequence)
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <label className="flex items-start space-x-3 p-3 border-2 border-gray-200 rounded-lg hover:border-purple-300 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={skill.instanceConfig?.contentTypes?.includes('lesson') || false}
+                    onChange={(e) => {
+                      const currentTypes = skill.instanceConfig?.contentTypes || [];
+                      const newTypes = e.target.checked
+                        ? [...currentTypes, 'lesson']
+                        : currentTypes.filter((t: string) => t !== 'lesson');
+                      updateSkillConfig(skill.id, { contentTypes: newTypes });
+                    }}
+                    className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                      <BookOpen className="h-4 w-4 text-blue-600" />
+                      Lesson
+                    </div>
+                    <div className="text-xs text-gray-500">Explanations & examples</div>
+                    <div className="text-xs text-purple-600 mt-1">~15-25 min</div>
+                  </div>
+                </label>
+
+                <label className="flex items-start space-x-3 p-3 border-2 border-gray-200 rounded-lg hover:border-purple-300 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={skill.instanceConfig?.contentTypes?.includes('practice') || false}
+                    onChange={(e) => {
+                      const currentTypes = skill.instanceConfig?.contentTypes || [];
+                      const newTypes = e.target.checked
+                        ? [...currentTypes, 'practice']
+                        : currentTypes.filter((t: string) => t !== 'practice');
+                      updateSkillConfig(skill.id, { contentTypes: newTypes });
+                    }}
+                    className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                      <PenLine className="h-4 w-4 text-green-600" />
+                      Practice
+                    </div>
+                    <div className="text-xs text-gray-500">Interactive exercises</div>
+                    <div className="text-xs text-purple-600 mt-1">~10-20 min</div>
+                  </div>
+                </label>
+
+                <label className="flex items-start space-x-3 p-3 border-2 border-gray-200 rounded-lg hover:border-purple-300 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={skill.instanceConfig?.contentTypes?.includes('quiz') || false}
+                    onChange={(e) => {
+                      const currentTypes = skill.instanceConfig?.contentTypes || [];
+                      const newTypes = e.target.checked
+                        ? [...currentTypes, 'quiz']
+                        : currentTypes.filter((t: string) => t !== 'quiz');
+                      updateSkillConfig(skill.id, { contentTypes: newTypes });
+                    }}
+                    className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                      <Target className="h-4 w-4 text-orange-600" />
+                      Quiz
+                    </div>
+                    <div className="text-xs text-gray-500">Assessment & feedback</div>
+                    <div className="text-xs text-purple-600 mt-1">~10-15 min</div>
+                  </div>
+                </label>
+              </div>
+              {skill.instanceConfig?.contentTypes?.length === 0 && (
+                <p className="text-xs text-red-600 mt-1">Please select at least one activity type</p>
+              )}
+              {skill.instanceConfig?.contentTypes?.length > 0 && (
+                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-xs text-blue-800 flex items-center gap-1">
+                    <strong>Selected sequence:</strong>{' '}
+                    {skill.instanceConfig.contentTypes.includes('lesson') && (
+                      <span className="inline-flex items-center gap-1">
+                        <BookOpen className="h-3 w-3 text-blue-600" />
+                        Lesson →
+                      </span>
+                    )}
+                    {skill.instanceConfig.contentTypes.includes('practice') && (
+                      <span className="inline-flex items-center gap-1">
+                        <PenLine className="h-3 w-3 text-green-600" />
+                        Practice →
+                      </span>
+                    )}
+                    {skill.instanceConfig.contentTypes.includes('quiz') && (
+                      <span className="inline-flex items-center gap-1">
+                        <Target className="h-3 w-3 text-orange-600" />
+                        Quiz
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Grammar Topics Selection */}
@@ -188,6 +334,15 @@ function SkillsConfigurationSection({
             )}
           </div>
         ))}
+        
+        {/* Add Another Skill Button */}
+        <button
+          onClick={addNewSkill}
+          className="w-full py-3 px-4 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:text-purple-700 hover:border-purple-400 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 font-medium"
+        >
+          <Plus className="h-5 w-5" />
+          Add Another Grammar Skill Configuration
+        </button>
       </div>
     </div>
   );
@@ -218,6 +373,8 @@ export default function ContentConfigurationStep({
   setAssessmentConfig,
   skillsConfig,
   setSkillsConfig,
+  vocabMasterConfig,
+  setVocabMasterConfig,
   onStepComplete,
   assignmentDetails
 }: StepProps) {
@@ -352,7 +509,12 @@ export default function ContentConfigurationStep({
     if (hasSkills) {
       skillsConfigComplete = skillsConfig.selectedSkills.every(skill => {
         const config = skill.instanceConfig;
-        return config?.language && config?.category && config?.topicIds && config?.topicIds.length > 0;
+        return config?.language && 
+               config?.category && 
+               config?.topicIds && 
+               config?.topicIds.length > 0 &&
+               config?.contentTypes &&
+               config?.contentTypes.length > 0; // Ensure at least one content type is selected
       });
     }
 
@@ -378,7 +540,12 @@ export default function ContentConfigurationStep({
   // Compute skills configuration completeness for display
   const skillsConfigComplete = hasSkills ? skillsConfig.selectedSkills.every(skill => {
     const config = skill.instanceConfig;
-    return config?.language && config?.category && config?.topicIds && config?.topicIds.length > 0;
+    return config?.language && 
+           config?.category && 
+           config?.topicIds && 
+           config?.topicIds.length > 0 &&
+           config?.contentTypes &&
+           config?.contentTypes.length > 0; // Ensure at least one content type is selected
   }) : true;
 
   // Define game types for different configurations
@@ -448,15 +615,15 @@ export default function ContentConfigurationStep({
       <div className="min-h-[400px]">
         {(hasGames || hasAssessments || hasSkills) && (
           <div className="space-y-6">
-            {/* Content Configuration (only for vocabulary and sentence games, not grammar games) */}
-            {(hasVocabGames || hasSentenceGames || hasAssessments || hasSkills) && (
+            {/* Content Configuration (only for vocabulary and sentence games - NOT for assessments/skills) */}
+            {(hasVocabGames || hasSentenceGames) && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
               <div className="flex items-center mb-3">
                 <BookOpen className="h-6 w-6 text-blue-600 mr-3" />
-                <h3 className="text-xl font-semibold text-gray-900">Content Configuration</h3>
+                <h3 className="text-xl font-semibold text-gray-900">Vocabulary Content Configuration</h3>
               </div>
               <p className="text-sm text-gray-600 mb-4">
-                Configure the vocabulary and content for your assignment based on curriculum level
+                Configure the vocabulary and content for your games based on curriculum level
               </p>
 
               {/* Language Selection */}

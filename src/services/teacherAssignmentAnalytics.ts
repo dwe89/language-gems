@@ -138,7 +138,7 @@ export class TeacherAssignmentAnalyticsService {
         
         const { data: results, error: resultsError } = await this.supabase
           .from('reading_comprehension_results')
-          .select('user_id, score, time_spent, completed_at')
+          .select('id, student_id, user_id, score_percentage, score, time_spent_seconds, time_spent, completed_at, submitted_at')
           .eq('assignment_id', assignmentId);
 
         if (!resultsError && results && results.length > 0) {
@@ -146,13 +146,13 @@ export class TeacherAssignmentAnalyticsService {
           
           // Map results to session-like structure
           const mappedSessions = results.map(r => ({
-            id: `result-${r.user_id}`,
-            student_id: r.user_id,
-            duration_seconds: r.time_spent || 0,
-            started_at: r.completed_at,
-            ended_at: r.completed_at,
+            id: r.id ? `result-${r.id}` : `result-${r.student_id || r.user_id}`,
+            student_id: r.student_id || r.user_id,
+            duration_seconds: (r.time_spent_seconds ?? r.time_spent) || 0,
+            started_at: r.completed_at || r.submitted_at,
+            ended_at: r.completed_at || r.submitted_at,
             completion_status: 'completed' as const,
-            accuracy_percentage: r.score || 0
+            accuracy_percentage: (r.score_percentage ?? r.score) || 0
           }));
 
           // Use mapped results as sessions
@@ -534,6 +534,30 @@ export class TeacherAssignmentAnalyticsService {
 
       const nameMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
 
+      // Fetch all sessions for this assignment at once
+      const { data: allSessions } = await this.supabase
+        .from('enhanced_game_sessions')
+        .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage')
+        .eq('assignment_id', assignmentId);
+
+      // Group sessions by student
+      const sessionsByStudent = new Map<string, any[]>();
+      allSessions?.forEach(session => {
+        const existing = sessionsByStudent.get(session.student_id) || [];
+        existing.push(session);
+        sessionsByStudent.set(session.student_id, existing);
+      });
+
+      // Get assignment type once
+      const { data: assignmentCheckData } = await this.supabase
+        .from('assignments')
+        .select('game_type, game_config')
+        .eq('id', assignmentId)
+        .single();
+
+      const isAssessmentType = assignmentCheckData &&
+        (assignmentCheckData.game_type === 'assessment' || assignmentCheckData.game_config?.assessmentConfig);
+
       // Get progress for each student
       const studentProgress: StudentProgress[] = [];
 
@@ -541,45 +565,8 @@ export class TeacherAssignmentAnalyticsService {
         const studentId = enrollment.student_id;
         const studentName = nameMap.get(studentId) || 'Unknown';
 
-        // Get game sessions for this student to determine status
-        // Add cache-busting filter to ensure fresh data
-        let { data: studentSessions } = await this.supabase
-          .from('enhanced_game_sessions')
-          .select('id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage')
-          .eq('assignment_id', assignmentId)
-          .eq('student_id', studentId)
-          .gte('started_at', '2000-01-01T00:00:00Z'); // Cache-busting filter
-
-        // Check if this is an assessment type assignment
-        const { data: assignmentCheckData } = await this.supabase
-          .from('assignments')
-          .select('game_type, game_config')
-          .eq('id', assignmentId)
-          .single();
-
-        const isAssessmentType = assignmentCheckData &&
-          (assignmentCheckData.game_type === 'assessment' || assignmentCheckData.game_config?.assessmentConfig);
-
-        // If no sessions found for assessment, try reading_comprehension_results as fallback
-        if (isAssessmentType && (!studentSessions || studentSessions.length === 0)) {
-          const { data: assessmentResults } = await this.supabase
-            .from('reading_comprehension_results')
-            .select('*')
-            .eq('assignment_id', assignmentId)
-            .eq('student_id', studentId);
-
-          if (assessmentResults && assessmentResults.length > 0) {
-            // Map results to session-like structure
-            studentSessions = assessmentResults.map((result: any) => ({
-              id: result.id,
-              duration_seconds: result.time_spent || 0,
-              started_at: result.submitted_at,
-              ended_at: result.submitted_at,
-              completion_status: 'completed' as const,
-              accuracy_percentage: result.score || 0
-            }));
-          }
-        }
+        // Get sessions for this student from our map
+        let studentSessions = sessionsByStudent.get(studentId) || [];
 
         // Determine status from actual sessions
         let status: 'completed' | 'in_progress' | 'not_started' = 'not_started';

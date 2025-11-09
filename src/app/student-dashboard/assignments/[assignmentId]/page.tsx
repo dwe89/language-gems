@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Play, CheckCircle, Clock, Gamepad2, Target, Star, Gem, TrendingUp, Activity, Award, Zap } from 'lucide-react';
+import { ArrowLeft, Play, CheckCircle, Clock, Gamepad2, Target, Star, Gem, TrendingUp, Activity, Award, Zap, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
@@ -68,6 +68,10 @@ export default function StudentAssignmentDetailPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [masteryScore, setMasteryScore] = useState<MasteryScoreBreakdown | null>(null);
+  
+  // Grammar skills expansion state
+  const [expandedSkills, setExpandedSkills] = useState<Set<string>>(new Set());
+  const [skillTopicsData, setSkillTopicsData] = useState<Map<string, any[]>>(new Map());
 
   // Check if this is a preview mode (teacher viewing the assignment)
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -327,6 +331,7 @@ export default function StudentAssignmentDetailPage() {
               category: skill.instanceConfig?.category,
               topicIds: skill.instanceConfig?.topicIds,
               language: skill.instanceConfig?.language,
+              instanceConfig: skill.instanceConfig, // Pass full config for content types
               completed: isCompleted,
               score: Math.round(avgScore),
               accuracy: Math.round(avgAccuracy),
@@ -568,7 +573,7 @@ export default function StudentAssignmentDetailPage() {
     router.push(assessmentUrl);
   };
 
-  const handlePlaySkill = async (skill: any) => {
+  const handlePlaySkill = async (skill: any, specificTopicId?: string) => {
     const previewParam = isPreviewMode ? '&preview=true' : '';
 
     // Map incoming language identifiers (ISO codes or names) to the
@@ -589,8 +594,8 @@ export default function StudentAssignmentDetailPage() {
       return map[lang] || lang; // fallback to the original value if unknown
     };
 
-    // Get the first topic ID for the skill
-    const topicId = skill.topicIds?.[0];
+    // Use specific topic ID if provided, otherwise use the first topic
+    const topicId = specificTopicId || skill.topicIds?.[0];
     if (!topicId) {
       alert('No topic configured for this skill activity.');
       return;
@@ -641,6 +646,37 @@ export default function StudentAssignmentDetailPage() {
     } catch (error) {
       console.error('Error in handlePlaySkill:', error);
       alert('Failed to load skill activity. Please try again.');
+    }
+  };
+
+  const toggleSkillExpansion = async (skillId: string, topicIds: string[]) => {
+    const newExpanded = new Set(expandedSkills);
+    
+    if (expandedSkills.has(skillId)) {
+      // Collapse
+      newExpanded.delete(skillId);
+      setExpandedSkills(newExpanded);
+    } else {
+      // Expand and fetch topic details if not already fetched
+      newExpanded.add(skillId);
+      setExpandedSkills(newExpanded);
+      
+      if (!skillTopicsData.has(skillId) && topicIds.length > 0) {
+        try {
+          const { data: topicsData, error } = await supabaseBrowser
+            .from('grammar_topics')
+            .select('id, title, description, difficulty_level')
+            .in('id', topicIds);
+          
+          if (!error && topicsData) {
+            const newMap = new Map(skillTopicsData);
+            newMap.set(skillId, topicsData);
+            setSkillTopicsData(newMap);
+          }
+        } catch (error) {
+          console.error('Error fetching topic details:', error);
+        }
+      }
     }
   };
 
@@ -1207,32 +1243,131 @@ export default function StudentAssignmentDetailPage() {
 
               {/* Progress bars removed - redundant with top-level assignment progress */}
 
-              {/* Action Button */}
-              <button
-                onClick={() => {
-                  if (activity.type === 'game') {
-                    handlePlayGame(activity.id);
-                  } else if (activity.type === 'assessment') {
-                    handlePlayAssessment(activity);
-                  } else if (activity.type === 'skill') {
-                    handlePlaySkill(activity);
-                  }
-                }}
-                className={`w-full py-3 px-4 rounded-lg font-bold transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-lg ${
-                  activity.completed
-                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
+              {/* Action Button or Topic Expansion for Skills */}
+              {activity.type === 'skill' && activity.topicIds && activity.topicIds.length > 1 ? (
+                <div className="space-y-2">
+                  {/* Expand/Collapse Topics Button */}
+                  <button
+                    onClick={() => toggleSkillExpansion(activity.id, activity.topicIds)}
+                    className="w-full py-3 px-4 rounded-lg font-bold transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700"
+                  >
+                    {expandedSkills.has(activity.id) ? (
+                      <>
+                        <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                        Hide Topics ({activity.topicIds.length})
+                      </>
+                    ) : (
+                      <>
+                        <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        Show All Topics ({activity.topicIds.length})
+                      </>
+                    )}
+                  </button>
+
+                  {/* Expanded Topics List */}
+                  {expandedSkills.has(activity.id) && (
+                    <div className="mt-3 space-y-2 pl-4 border-l-4 border-purple-300">
+                      {skillTopicsData.get(activity.id)?.map((topic, topicIndex) => {
+                        // Check if this specific topic has been completed
+                        // This would require session data per topic, which we'll implement
+                        const topicCompleted = false; // TODO: Check session data per topic
+                        
+                        return (
+                          <div key={topic.id} className="bg-white/70 border border-purple-200 rounded-lg p-3">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex items-center justify-center w-6 h-6 bg-purple-600 text-white text-xs font-bold rounded-full">
+                                    {topicIndex + 1}
+                                  </span>
+                                  <h4 className="font-bold text-gray-900">{topic.title}</h4>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                    topic.difficulty_level === 'beginner' ? 'bg-green-100 text-green-700' :
+                                    topic.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                  }`}>
+                                    {topic.difficulty_level}
+                                  </span>
+                                </div>
+                                {topic.description && (
+                                  <p className="text-xs text-gray-600 mt-1 ml-8">{topic.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Content Type Buttons for Each Topic */}
+                            <div className="flex gap-2 ml-8">
+                              {activity.instanceConfig?.contentTypes?.includes('lesson') && (
+                                <button
+                                  onClick={() => handlePlaySkill({ ...activity, skillType: 'lesson' }, topic.id)}
+                                  className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors flex items-center justify-center gap-1"
+                                >
+                                  <BookOpen className="h-3 w-3" />
+                                  Lesson
+                                </button>
+                              )}
+                              {activity.instanceConfig?.contentTypes?.includes('practice') && (
+                                <button
+                                  onClick={() => handlePlaySkill({ ...activity, skillType: 'practice' }, topic.id)}
+                                  className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors flex items-center justify-center gap-1"
+                                >
+                                  <Target className="h-3 w-3" />
+                                  Practice
+                                </button>
+                              )}
+                              {activity.instanceConfig?.contentTypes?.includes('quiz') && (
+                                <button
+                                  onClick={() => handlePlaySkill({ ...activity, skillType: 'quiz' }, topic.id)}
+                                  className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors flex items-center justify-center gap-1"
+                                >
+                                  <Award className="h-3 w-3" />
+                                  Quiz
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }) || (
+                        <div className="text-center py-4">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto"></div>
+                          <p className="text-xs text-gray-500 mt-2">Loading topics...</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Regular Action Button for single-topic skills, games, and assessments */
+                <button
+                  onClick={() => {
+                    if (activity.type === 'game') {
+                      handlePlayGame(activity.id);
+                    } else if (activity.type === 'assessment') {
+                      handlePlayAssessment(activity);
+                    } else if (activity.type === 'skill') {
+                      handlePlaySkill(activity);
+                    }
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-bold transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-lg ${
+                    activity.completed
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
+                      : activity.status === 'in_progress'
+                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
+                        : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
+                  }`}
+                >
+                  <Play className="h-5 w-5 mr-2" />
+                  {activity.completed
+                    ? 'Play Again'
                     : activity.status === 'in_progress'
-                      ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
-                      : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
-                }`}
-              >
-                <Play className="h-5 w-5 mr-2" />
-                {activity.completed
-                  ? 'Play Again'
-                  : activity.status === 'in_progress'
-                    ? 'Continue'
-                    : 'Start'}
-              </button>
+                      ? 'Continue'
+                      : 'Start'}
+                </button>
+              )}
             </div>
             );
           })}

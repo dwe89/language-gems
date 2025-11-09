@@ -27,6 +27,7 @@ import {
   ClipboardList,
   Search,
   Grid3x3,
+  Shuffle,
 } from 'lucide-react';
 
 // Import category system
@@ -48,6 +49,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { LoadingModal } from '@/components/ui/loading-modal';
 
 // Types for vocabulary configuration
 interface VocabularyConfig {
@@ -69,15 +71,16 @@ export default function VocabularyPracticePage() {
   );
   const [customPrompt, setCustomPrompt] = useState('');
 
-  // Exercise types
+  // Exercise types - All enabled by default
   const [exerciseTypes, setExerciseTypes] = useState({
     matching: true,
     fillBlanks: true,
-    definitions: false,
+    definitions: true,
     translations: true,
     wordBank: true,
-    wordsearch: false,
-    crossword: false,
+    unjumble: true,
+    wordsearch: true,
+    crossword: true,
   });
 
   // Vocabulary selection
@@ -97,6 +100,16 @@ export default function VocabularyPracticePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedWorksheet, setGeneratedWorksheet] = useState<any>(null);
   const [worksheetId, setWorksheetId] = useState<string | null>(null);
+  const [generationStep, setGenerationStep] = useState(0);
+  const [generationMessage, setGenerationMessage] = useState('Initializing...');
+
+  const generationSteps = [
+    'Validating worksheet parameters...',
+    'Fetching vocabulary words...',
+    'Generating AI content...',
+    'Creating exercises...',
+    'Finalizing worksheet...',
+  ];
 
   // Load categories based on curriculum level and exam board
   useEffect(() => {
@@ -217,31 +230,33 @@ export default function VocabularyPracticePage() {
         const status = await response.json();
         console.log('Job status response:', status);
 
+        // Update progress message based on status
+        if (status.message) {
+          setGenerationMessage(status.message);
+        }
+
+        // Update step based on progress percentage
+        const progress = status.progress || 0;
+        if (progress < 20) setGenerationStep(0);
+        else if (progress < 40) setGenerationStep(1);
+        else if (progress < 60) setGenerationStep(2);
+        else if (progress < 80) setGenerationStep(3);
+        else setGenerationStep(4);
+
         if (status.status === 'completed') {
           console.log('Worksheet generation completed successfully');
+          setGenerationMessage('Redirecting to worksheet...');
+          setGenerationStep(4);
 
-          if (status.result?.worksheet) {
-            // We have the worksheet data directly
-            setGeneratedWorksheet(status.result.worksheet);
-            // Also extract the database worksheet ID if available
-            if (status.result.worksheetId) {
-              setWorksheetId(status.result.worksheetId);
+          // Auto-redirect after a brief delay to show completion
+          setTimeout(() => {
+            if (status.result?.worksheetId) {
+              window.location.href = `/worksheets/${status.result.worksheetId}`;
+            } else {
+              window.location.href = '/worksheets';
             }
-          } else if (status.assumedComplete) {
-            // Job completed but we need to redirect to the worksheets page
-            console.log('Job assumed complete, redirecting to worksheets page');
-            alert('Worksheet generated successfully! Redirecting to your worksheets...');
-            window.location.href = '/worksheets';
-            return;
-          } else {
-            // Fallback: assume completion and redirect
-            console.log('Job completed but no worksheet data, redirecting to worksheets page');
-            alert('Worksheet generated successfully! Redirecting to your worksheets...');
-            window.location.href = '/worksheets';
-            return;
-          }
+          }, 1500);
           
-          setIsGenerating(false);
           return;
         }
 
@@ -259,7 +274,7 @@ export default function VocabularyPracticePage() {
           setTimeout(poll, 2000);
         } else {
           console.error('Polling timed out after', maxAttempts, 'attempts');
-          alert('Worksheet generation may have completed. Please check your worksheets page.');
+          alert('Worksheet generation may have completed. Redirecting to your worksheets...');
           window.location.href = '/worksheets';
         }
       } catch (error) {
@@ -269,7 +284,7 @@ export default function VocabularyPracticePage() {
           // Continue polling even on errors, in case it's a temporary issue
           setTimeout(poll, 2000);
         } else {
-          alert('Worksheet generation may have completed. Please check your worksheets page.');
+          alert('Worksheet generation may have completed. Redirecting to your worksheets...');
           window.location.href = '/worksheets';
         }
       }
@@ -304,6 +319,15 @@ export default function VocabularyPracticePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Loading Modal */}
+      <LoadingModal 
+        isOpen={isGenerating}
+        title="Generating Your Worksheet"
+        description={generationMessage}
+        steps={generationSteps}
+        currentStep={generationStep}
+      />
+      
       {/* Hero Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
       
@@ -627,12 +651,13 @@ export default function VocabularyPracticePage() {
               </CardHeader>
               <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-8">
                 {[
-                  { id: 'matching', label: 'Matching (Word to Translation)', icon: Globe },
+                  { id: 'matching', label: 'Matching Exercise', icon: Globe },
                   { id: 'fillBlanks', label: 'Fill in the Blanks', icon: Edit3 },
-                  { id: 'definitions', label: 'Definition Matching', icon: BookOpen },
+                  { id: 'definitions', label: 'Multiple Choice (Max 8)', icon: BookOpen },
                   { id: 'translations', label: 'Translation Practice', icon: Globe },
+                  { id: 'unjumble', label: 'Word Unjumble', icon: Shuffle },
                   { id: 'wordBank', label: 'Include a Word Bank', icon: ClipboardList },
-                  { id: 'wordsearch', label: 'Word Search Puzzle', icon: Search },
+                  { id: 'wordsearch', label: 'Word Search', icon: Search },
                   { id: 'crossword', label: 'Crossword Puzzle', icon: Grid3x3 },
                 ].map((exercise) => {
                   const IconComponent = exercise.icon;

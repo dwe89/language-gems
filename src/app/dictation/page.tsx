@@ -8,9 +8,12 @@ import {
   Filter,
   Clock,
   Volume2,
-  ArrowLeft
+  ArrowLeft,
+  Settings
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/components/auth/AuthProvider';
+import DictationAdminModal from '@/components/admin/DictationAdminModal';
 
 interface DictationAssessment {
   id: string;
@@ -28,6 +31,7 @@ interface DictationAssessment {
 
 export default function DictationPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [selectedLanguage, setSelectedLanguage] = useState<'es' | 'fr' | 'de'>('es');
   const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<string>('');
   const [selectedExamBoard, setSelectedExamBoard] = useState<string>('');
@@ -35,27 +39,31 @@ export default function DictationPage() {
   const [availableAssessments, setAvailableAssessments] = useState<DictationAssessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filteredAssessments, setFilteredAssessments] = useState<DictationAssessment[]>([]);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+
+  // Check if user is admin
+  const isAdmin = user?.email === 'danieletienne89@gmail.com';
 
   // Load available assessments
-  useEffect(() => {
-    const loadAvailableAssessments = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/dictation/assessments');
+  const loadAvailableAssessments = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/dictation/assessments');
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.assessments && data.assessments.length > 0) {
-            setAvailableAssessments(data.assessments);
-          }
+      if (response.ok) {
+        const data = await response.json();
+        if (data.assessments && data.assessments.length > 0) {
+          setAvailableAssessments(data.assessments);
         }
-      } catch (err) {
-        console.error('Error loading available assessments:', err);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Error loading available assessments:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadAvailableAssessments();
   }, []);
 
@@ -113,7 +121,7 @@ export default function DictationPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link
             href="/assessments"
             className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium"
@@ -121,6 +129,17 @@ export default function DictationPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Assessments
           </Link>
+
+          {/* Admin Button */}
+          {isAdmin && (
+            <button
+              onClick={() => setShowAdminModal(true)}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Assessments
+            </button>
+          )}
         </div>
 
         {/* Header */}
@@ -294,6 +313,15 @@ export default function DictationPage() {
             </div>
           )}
         </div>
+
+        {/* Admin Modal */}
+        {isAdmin && (
+          <DictationAdminModal
+            isOpen={showAdminModal}
+            onClose={() => setShowAdminModal(false)}
+            onRefresh={loadAvailableAssessments}
+          />
+        )}
       </div>
     </div>
   );

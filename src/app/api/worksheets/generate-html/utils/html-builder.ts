@@ -12,33 +12,7 @@ export function createHTMLDocument(
   options: HTMLDocumentOptions,
   bodyContent: string
 ): string {
-  // Respect a custom logo URL (if provided via meta tag) while defaulting to the main SVG logo
-  const logoUrlMatch = (options.additionalHead || '').match(/<meta\s+name="logoUrl"\s+content="([^"]+)"\s*\/?>/i);
-  const fallbackLogoPath = logoUrlMatch ? logoUrlMatch[1] : '/logo.svg';
-
-  const logoSrc = fallbackLogoPath;
-
-  // Simplified header with logo and minimal branding
-  const headerHtml = `
-    <div class="header">
-      <div class="header-inner">
-        <div class="header-left">
-          <img src="${logoSrc}" alt="LanguageGems" class="worksheet-logo" onerror="this.style.display='none'" />
-          <div class="header-brand">LanguageGems</div>
-        </div>
-        <div class="header-right">
-          <div class="header-tagline">Empowering language learners worldwide</div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  const footerHtml = `
-    <div class="footer">
-      <strong>LanguageGems</strong> | The Intelligent Language Learning Platform | <a href="https://languagegems.com">LanguageGems.com</a>
-    </div>
-  `;
-
+  // No branding header/footer - clean worksheet only
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,11 +31,9 @@ export function createHTMLDocument(
 </head>
 <body>
     <div class="page">
-        ${headerHtml}
         <main>
           ${bodyContent}
         </main>
-        ${footerHtml}
     </div>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script>

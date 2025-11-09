@@ -69,6 +69,11 @@ export interface GrammarConfig {
 }
 
 export interface SkillsConfig {
+  generalLanguage?: string;
+  generalTimeLimit?: number;
+  generalMaxAttempts?: number;
+  generalShowHints?: boolean;
+  generalRandomizeQuestions?: boolean;
   selectedSkills: Array<{
     id: string;
     type: string;
@@ -76,8 +81,7 @@ export interface SkillsConfig {
     estimatedTime: string;
     skills: string[];
     instanceConfig?: {
-      language?: 'spanish' | 'french' | 'german';
-      level?: 'KS3' | 'KS4';
+      language?: string;
       category?: string;
       topicIds?: string[];
       contentTypes?: ('lesson' | 'quiz' | 'practice')[];
@@ -85,14 +89,34 @@ export interface SkillsConfig {
       maxAttempts?: number;
       showHints?: boolean;
       randomizeQuestions?: boolean;
+      tier?: 'foundation' | 'higher';
+      examBoard?: 'AQA' | 'Edexcel';
+      theme?: string;
+      topic?: string;
     };
   }>;
-  generalLanguage: 'spanish' | 'french' | 'german';
-  generalLevel: 'KS3' | 'KS4';
-  generalTimeLimit: number;
-  generalMaxAttempts: number;
-  generalShowHints: boolean;
-  generalRandomizeQuestions: boolean;
+}
+
+// VocabMaster-specific configuration
+export interface VocabMasterConfig {
+  selectedModes: Array<{
+    id: string;
+    modeId: string; // flashcard_review, listening_practice, dictation_practice, etc.
+    name: string;
+    estimatedTime: string;
+    difficulty: string;
+    instanceConfig?: {
+      language?: string;
+      wordsPerSession?: number;
+      sessionLength?: number; // in minutes
+      enableAudio?: boolean;
+      enableSpacedRepetition?: boolean;
+      adaptiveDifficulty?: boolean;
+      showHints?: boolean;
+      timeLimit?: number;
+      vocabularySource?: VocabularyConfig; // Reuse existing vocabulary config
+    };
+  }>;
 }
 
 export interface AssessmentConfig {
@@ -193,6 +217,8 @@ export interface StepProps {
   setAssessmentConfig: React.Dispatch<React.SetStateAction<AssessmentConfig>>;
   skillsConfig: SkillsConfig;
   setSkillsConfig: React.Dispatch<React.SetStateAction<SkillsConfig>>;
+  vocabMasterConfig: VocabMasterConfig;
+  setVocabMasterConfig: React.Dispatch<React.SetStateAction<VocabMasterConfig>>;
   onStepComplete: (stepId: string, completed: boolean) => void;
   classes: Array<{ id: string; name: string; student_count: number }>;
   loading?: boolean;

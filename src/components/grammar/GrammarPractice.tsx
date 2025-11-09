@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Target,
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { GemButton, GemCard } from '../ui/GemTheme';
 import { GrammarSessionService } from '@/services/grammar/GrammarSessionService';
+import { hasRichTextFormatting, sanitizeInlineHtml, stripHtmlTags, emphasizeBlankSpaces } from '@/utils/richTextHelpers';
 
 interface PracticeItem {
   id: string;
@@ -57,7 +58,7 @@ export default function GrammarPractice({
   language,
   category,
   difficulty,
-  practiceItems,
+  practiceItems: rawPracticeItems,
   onComplete,
   onExit,
   gamified = true,
@@ -73,6 +74,14 @@ export default function GrammarPractice({
   contentId,
   userId
 }: GrammarPracticeProps) {
+  const practiceItems = useMemo(() => {
+    return rawPracticeItems.map((item) => ({
+      ...item,
+      question: sanitizeInlineHtml(item.question),
+      options: item.options ? item.options.map((option) => stripHtmlTags(sanitizeInlineHtml(option))) : undefined,
+      hint: item.hint ? stripHtmlTags(sanitizeInlineHtml(item.hint)) : item.hint,
+    }));
+  }, [rawPracticeItems]);
   const [currentItem, setCurrentItem] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [score, setScore] = useState(0);
@@ -218,6 +227,12 @@ export default function GrammarPractice({
   const currentPracticeItem = practiceItems[currentItem];
   const progress = ((currentItem + 1) / practiceItems.length) * 100;
   const isLastItem = currentItem === practiceItems.length - 1;
+  const displayTypeLabel = currentPracticeItem
+    ? (() => {
+        const normalized = currentPracticeItem.type.replace(/_/g, ' ');
+        return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+      })()
+    : 'Question';
 
 
 
@@ -480,7 +495,7 @@ export default function GrammarPractice({
       const responseTime = Date.now() - questionStartTime;
       await sessionServiceRef.current.recordQuestionAttempt(sessionId, {
         question_id: currentPracticeItem.id,
-        question_text: currentPracticeItem.question,
+        question_text: stripHtmlTags(currentPracticeItem.question),
         question_type: currentPracticeItem.type,
         student_answer: userAnswer,
         correct_answer: currentPracticeItem.answer,
@@ -596,7 +611,9 @@ export default function GrammarPractice({
           <div className="space-y-4">
             <div className="bg-blue-50 p-4 rounded-lg">
               <p className="text-lg font-medium text-blue-900 mb-2">Conjugate the verb:</p>
-              <p className="text-xl text-blue-800">{currentPracticeItem.question}</p>
+              <p className="text-xl text-blue-800">
+                <QuestionContent value={currentPracticeItem.question} />
+              </p>
             </div>
             <input
               type="text"
@@ -614,7 +631,7 @@ export default function GrammarPractice({
           <div className="space-y-4">
             <div className="bg-green-50 p-4 rounded-lg">
               <p className="text-lg text-green-900 leading-relaxed">
-                {currentPracticeItem.question.replace('_____', '______')}
+                <QuestionContent value={currentPracticeItem.question} enlargeBlanks />
               </p>
             </div>
             <input
@@ -633,7 +650,9 @@ export default function GrammarPractice({
           <div className="space-y-4">
             <div className="bg-yellow-50 p-4 rounded-lg">
               <p className="text-lg font-medium text-yellow-900 mb-2">Arrange the words in correct order:</p>
-              <p className="text-xl text-yellow-800">{currentPracticeItem.question}</p>
+              <p className="text-xl text-yellow-800">
+                <QuestionContent value={currentPracticeItem.question} />
+              </p>
             </div>
             {currentPracticeItem.options && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
@@ -669,7 +688,9 @@ export default function GrammarPractice({
           <div className="space-y-4">
             <div className="bg-purple-50 p-4 rounded-lg">
               <p className="text-lg font-medium text-purple-900 mb-2">Translate to {language === 'es' ? 'Spanish' : language === 'fr' ? 'French' : 'German'}:</p>
-              <p className="text-xl text-purple-800">{currentPracticeItem.question}</p>
+              <p className="text-xl text-purple-800">
+                <QuestionContent value={currentPracticeItem.question} />
+              </p>
             </div>
             <input
               type="text"
@@ -687,7 +708,9 @@ export default function GrammarPractice({
           <div className="space-y-4">
             <div className="bg-pink-50 p-4 rounded-lg">
               <p className="text-lg font-medium text-pink-900 mb-2">Complete the exercise:</p>
-              <p className="text-xl text-pink-800">{currentPracticeItem.question}</p>
+              <p className="text-xl text-pink-800">
+                <QuestionContent value={currentPracticeItem.question} />
+              </p>
             </div>
             {currentPracticeItem.options && (
               <div className="grid grid-cols-2 gap-3">
@@ -835,7 +858,7 @@ export default function GrammarPractice({
                       {currentPracticeItem.difficulty}
                     </span>
                     <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium capitalize">
-                      Fill Blank
+                      {displayTypeLabel}
                     </span>
                   </div>
                 </div>
@@ -855,7 +878,10 @@ export default function GrammarPractice({
                     : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200'
                   }`}>
                     <p className="text-3xl font-bold text-gray-800 text-center leading-relaxed">
-                      {currentPracticeItem.question}
+                      <QuestionContent
+                        value={currentPracticeItem.question}
+                        enlargeBlanks={currentPracticeItem.type === 'fill_blank'}
+                      />
                     </p>
                   </div>
 
@@ -976,4 +1002,17 @@ export default function GrammarPractice({
       </div>
     </div>
   );
+}
+
+function QuestionContent({ value, enlargeBlanks = false }: { value: string; enlargeBlanks?: boolean }) {
+  const sanitized = sanitizeInlineHtml(value);
+  const processed = enlargeBlanks ? emphasizeBlankSpaces(sanitized) : sanitized;
+  const plain = stripHtmlTags(processed);
+  const containsMarkup = hasRichTextFormatting(processed);
+
+  if (containsMarkup) {
+    return <span dangerouslySetInnerHTML={{ __html: processed }} />;
+  }
+
+  return <>{plain}</>;
 }

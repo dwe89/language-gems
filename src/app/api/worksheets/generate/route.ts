@@ -49,7 +49,9 @@ export async function POST(req: Request) {
         },
       }
     );
-    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Use getUser() instead of getSession() for security - authenticates with Supabase Auth server
+    const { data: { user } } = await supabase.auth.getUser();
 
     // Create a consistent anonymousId for guest users
     let anonymousId = cookieStore.get('worksheet_guest_id')?.value;
@@ -58,8 +60,8 @@ export async function POST(req: Request) {
     }
     
     // Use the user ID if authenticated, otherwise use the anonymousId
-    const userId = session?.user?.id || anonymousId;
-    const isGuest = !session?.user;
+    const userId = user?.id || anonymousId;
+    const isGuest = !user;
 
     console.log(`User ID for worksheet generation: ${userId.substring(0, 8)}... (${isGuest ? 'guest' : 'authenticated'})`);
 

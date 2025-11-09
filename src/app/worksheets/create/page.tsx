@@ -23,20 +23,20 @@ import {
 const worksheetCategories = {
   popular: [
     {
-      id: 'crossword',
-      title: 'Crossword Puzzle',
-      description: 'Generate crossword puzzles with vocabulary words and custom clues',
-      icon: Puzzle,
-      color: 'bg-purple-500',
-      features: ['Vocabulary Practice', 'Print Ready']
-    },
-    {
       id: 'vocabulary-practice',
       title: 'Vocabulary Practice',
       description: 'Create vocabulary exercises with matching, definitions, and translations',
       icon: BookOpen,
       color: 'bg-green-500',
       features: ['Word Banks', 'Multiple Formats', 'Progress Tracking']
+    },
+    {
+      id: 'reading-comprehension',
+      title: 'Reading Comprehension',
+      description: 'Build reading passages with comprehension questions and analysis',
+      icon: FileText,
+      color: 'bg-teal-500',
+      features: ['Text Analysis', 'Question Types', 'Difficulty Levels']
     }
   ],
   puzzles: [
@@ -58,14 +58,6 @@ const worksheetCategories = {
     }
   ],
   comprehension: [
-    {
-      id: 'reading-comprehension',
-      title: 'Reading Comprehension',
-      description: 'Build reading passages with comprehension questions and analysis',
-      icon: FileText,
-      color: 'bg-teal-500',
-      features: ['Text Analysis', 'Question Types', 'Difficulty Levels']
-    },
     {
       id: 'listening-comprehension',
       title: 'Listening Comprehension',

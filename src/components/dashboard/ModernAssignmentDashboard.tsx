@@ -310,17 +310,6 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
               <Users className="h-4 w-4 inline mr-2" />
               Student Performance
             </button>
-            <button
-              onClick={() => setActiveTab('words')}
-              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
-                activeTab === 'words'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              <BookOpen className="h-4 w-4 inline mr-2" />
-              Vocabulary Analysis
-            </button>
           </div>
         </div>
 

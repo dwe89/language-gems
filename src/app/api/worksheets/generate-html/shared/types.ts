@@ -96,7 +96,7 @@ export interface VocabularyPracticeContent {
 }
 
 export interface VocabularyExercise {
-  type: 'matching' | 'fill-in-blank' | 'translation' | 'definition' | 'wordsearch' | 'crossword';
+  type: 'matching' | 'fill-in-blank' | 'fillBlanks' | 'translation' | 'definition' | 'wordsearch' | 'crossword' | 'unjumble';
   instructions?: string;
   items?: any[];
   title?: string;

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Share2, Edit, Trash2, Eye, Clock, BookOpen, Target } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Edit, Trash2, Eye, Clock, BookOpen, Target, Save, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import WorksheetWysiwygEditor from '@/components/worksheets/WorksheetWysiwygEditor';
 
 interface Worksheet {
   id: string;
@@ -34,8 +35,42 @@ export default function WorksheetPreviewPage() {
   const [downloading, setDownloading] = useState(false);
   const [htmlContent, setHtmlContent] = useState<string | null>(null);
   const [generatingHtml, setGeneratingHtml] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedHtml, setEditedHtml] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const supabase = createClient();
+
+  // Auto-resize iframe to fit content
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !htmlContent) return;
+
+    const resizeIframe = () => {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDoc) {
+          const height = iframeDoc.documentElement.scrollHeight;
+          iframe.style.height = `${height + 20}px`; // Add small padding
+        }
+      } catch (e) {
+        // Ignore cross-origin errors
+        console.log('Cannot resize iframe:', e);
+      }
+    };
+
+    // Resize when content loads
+    iframe.addEventListener('load', resizeIframe);
+    
+    // Resize after a short delay to ensure all content is rendered
+    const timer = setTimeout(resizeIframe, 500);
+
+    return () => {
+      iframe.removeEventListener('load', resizeIframe);
+      clearTimeout(timer);
+    };
+  }, [htmlContent]);
 
   useEffect(() => {
     loadWorksheet();
@@ -233,41 +268,49 @@ export default function WorksheetPreviewPage() {
     try {
       setDownloading(true);
       
-      // Always generate fresh HTML to ensure we get the correct template
-      console.log('🚀 [PDF DOWNLOAD] Generating fresh HTML for PDF...');
-      console.log('📋 [PDF DOWNLOAD] Worksheet data:', {
-        id: worksheet.id,
-        title: worksheet.title,
-        template_id: worksheet.template_id,
-        subject: worksheet.subject,
-        hasContent: !!worksheet.content,
-        hasRawContent: !!(worksheet as any).rawContent,
-        metadata: (worksheet as any).metadata
-      });
+      // Use edited HTML if in edit mode, otherwise generate fresh HTML
+      let htmlForPdf: string;
       
-      const htmlResponse = await fetch('/api/worksheets/generate-html', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ worksheet })
-      });
-      
-      if (!htmlResponse.ok) {
-        const errorText = await htmlResponse.text();
-        console.error('❌ [PDF DOWNLOAD] HTML generation failed:', htmlResponse.status, errorText);
-        throw new Error(`Failed to generate HTML: ${htmlResponse.status} ${errorText}`);
+      if (isEditing && editedHtml) {
+        console.log('🚀 [PDF DOWNLOAD] Using edited HTML for PDF...');
+        htmlForPdf = editedHtml;
+      } else {
+        // Always generate fresh HTML to ensure we get the correct template
+        console.log('🚀 [PDF DOWNLOAD] Generating fresh HTML for PDF...');
+        console.log('📋 [PDF DOWNLOAD] Worksheet data:', {
+          id: worksheet.id,
+          title: worksheet.title,
+          template_id: worksheet.template_id,
+          subject: worksheet.subject,
+          hasContent: !!worksheet.content,
+          hasRawContent: !!(worksheet as any).rawContent,
+          metadata: (worksheet as any).metadata
+        });
+        
+        const htmlResponse = await fetch('/api/worksheets/generate-html', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ worksheet })
+        });
+        
+        if (!htmlResponse.ok) {
+          const errorText = await htmlResponse.text();
+          console.error('❌ [PDF DOWNLOAD] HTML generation failed:', htmlResponse.status, errorText);
+          throw new Error(`Failed to generate HTML: ${htmlResponse.status} ${errorText}`);
+        }
+        
+        const htmlResult = await htmlResponse.json();
+        htmlForPdf = htmlResult.html;
+        console.log('✅ [PDF DOWNLOAD] Fresh HTML generated, length:', htmlForPdf.length);
+        console.log('📄 [PDF DOWNLOAD] HTML preview (first 200 chars):', htmlForPdf.substring(0, 200));
       }
-      
-      const htmlResult = await htmlResponse.json();
-      const htmlContent = htmlResult.html;
-      console.log('✅ [PDF DOWNLOAD] Fresh HTML generated, length:', htmlContent.length);
-      console.log('📄 [PDF DOWNLOAD] HTML preview (first 200 chars):', htmlContent.substring(0, 200));
 
       // Generate PDF
       const pdfResponse = await fetch('/api/worksheets/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          html: htmlContent,
+          html: htmlForPdf,
           filename: `${worksheet.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}`
         })
       });
@@ -329,6 +372,50 @@ export default function WorksheetPreviewPage() {
     }
   };
 
+  const startEditing = () => {
+    if (!htmlContent) {
+      console.warn('⚠️ No HTML content available for editing');
+      return;
+    }
+    console.log('✏️ Starting edit mode with HTML length:', htmlContent.length);
+    setEditedHtml(htmlContent);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditedHtml('');
+  };
+
+  const saveEdits = async () => {
+    if (!worksheet) return;
+    
+    try {
+      setSaving(true);
+      
+      // Update the HTML content with edited version
+      setHtmlContent(editedHtml);
+      
+      // Save to database
+      const { error } = await supabase
+        .from('worksheets')
+        .update({ html: editedHtml })
+        .eq('id', worksheet.id);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setIsEditing(false);
+      setError('');
+    } catch (err) {
+      console.error('Error saving edits:', err);
+      setError('Failed to save edits');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -379,25 +466,53 @@ export default function WorksheetPreviewPage() {
             </div>
 
             <div className="flex items-center space-x-3">
-              <button
-                onClick={downloadPDF}
-                disabled={downloading}
-                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {downloading ? 'Generating...' : 'Download PDF'}
-              </button>
-
-              {isOwner && (
+              {!isEditing ? (
                 <>
-                  <button className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
-                    <Edit className="w-5 h-5" />
+                  <button
+                    onClick={downloadPDF}
+                    disabled={downloading}
+                    className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    {downloading ? 'Generating...' : 'Download PDF'}
+                  </button>
+
+                  {isOwner && (
+                    <>
+                      <button 
+                        onClick={startEditing}
+                        disabled={generatingHtml || !htmlContent}
+                        className="flex items-center px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={deleteWorksheet}
+                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={saveEdits}
+                    disabled={saving}
+                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button
-                    onClick={deleteWorksheet}
-                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={cancelEditing}
+                    disabled={saving}
+                    className="flex items-center px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
                   </button>
                 </>
               )}
@@ -460,10 +575,21 @@ export default function WorksheetPreviewPage() {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200">
               <div className="p-6 lg:p-8 border-b border-slate-200">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-slate-900">Worksheet Preview</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    {isEditing ? 'Edit Worksheet' : 'Worksheet Preview'}
+                  </h2>
                   <div className="flex items-center text-sm text-slate-600">
-                    <Eye className="w-4 h-4 mr-1" />
-                    Preview Mode
+                    {isEditing ? (
+                      <>
+                        <Edit className="w-4 h-4 mr-1" />
+                        HTML Edit Mode
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-4 h-4 mr-1" />
+                        Preview Mode
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -476,10 +602,47 @@ export default function WorksheetPreviewPage() {
                     <p className="text-slate-600">Please wait while we prepare your worksheet preview.</p>
                   </div>
                 ) : htmlContent ? (
-                  <div
-                    className="worksheet-content w-full"
-                    dangerouslySetInnerHTML={{ __html: htmlContent }}
-                  />
+                  isEditing ? (
+                    <div className="space-y-4" key="editing-mode">
+                      <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+                        <p className="font-medium">✨ WYSIWYG Editing Mode</p>
+                        <p className="mt-1 text-indigo-800">
+                          Edit your worksheet directly with formatting preserved. The preview updates as you type. All styling is maintained for PDF generation.
+                        </p>
+                      </div>
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium text-slate-700">Edit Content</h3>
+                          <WorksheetWysiwygEditor
+                            initialContent={editedHtml}
+                            onChange={setEditedHtml}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium text-slate-700">Live Preview</h3>
+                          <div className="rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                            <iframe
+                              key={`preview-${editedHtml.length}`}
+                              srcDoc={editedHtml}
+                              className="w-full border-0"
+                              style={{ minHeight: '70vh' }}
+                              title="Worksheet Preview"
+                              sandbox="allow-same-origin"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <iframe
+                      ref={iframeRef}
+                      srcDoc={htmlContent}
+                      className="w-full border-0"
+                      style={{ minHeight: '1200px', height: 'auto' }}
+                      title="Worksheet Preview"
+                      sandbox="allow-same-origin"
+                    />
+                  )
                 ) : (
                   <div className="text-center py-12">
                     <div className="text-slate-400 text-6xl mb-4">📄</div>

@@ -111,9 +111,16 @@ export class TemplateHandler extends WorksheetHandler {
           }
         }
 
-        // 3) If we found a candidate, try to clean common issues (trailing commas)
+        // 3) If we found a candidate, try to clean common issues (trailing commas, comments)
         if (candidate) {
-          const cleaned = candidate.replace(/,\s*(?=[}\]])/g, '');
+          let cleaned = candidate
+            // Remove single-line comments (// ...)
+            .replace(/\/\/[^\n]*/g, '')
+            // Remove multi-line comments (/* ... */)
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            // Remove trailing commas before } or ]
+            .replace(/,\s*(?=[}\]])/g, '');
+          
           try {
             worksheetData = JSON.parse(cleaned);
             console.log('Parsed AI JSON after extraction/cleanup.');
@@ -203,7 +210,7 @@ export class TemplateHandler extends WorksheetHandler {
   }
 
   private getSystemPrompt(templateId: string): string {
-    const basePrompt = 'You are an expert educator creating high-quality worksheets. Always respond with valid JSON.';
+    const basePrompt = 'You are an expert educator creating high-quality worksheets. Always respond with valid JSON only - no comments, no explanations, no markdown code blocks, just pure JSON.';
     
     const templateSpecificPrompts: { [key: string]: string } = {
       vocabulary_builder: `${basePrompt} You specialize in creating vocabulary worksheets with mixed activities including matching, fill-in-the-blank, and translation exercises.`,
@@ -496,7 +503,13 @@ ${appendStandardSchema ? `Respond with valid JSON in this format:
     "section1": ["answer1", "answer2"],
     "section2": ["answer1", "answer2"]
   }
-}` : ''}`;
+}` : ''}
+
+CRITICAL: Return ONLY valid JSON. Do NOT include:
+- JavaScript comments (// or /* */)
+- Markdown code blocks
+- Explanatory text before or after the JSON
+- Any content other than pure JSON`;
   }
 
   protected convertToWorksheetWithTemplate(data: any, request: WorksheetRequest, templateId: string): Worksheet {
@@ -647,6 +660,11 @@ ${appendStandardSchema ? `Respond with valid JSON in this format:
   private buildVocabularyPracticePrompt(request: WorksheetRequest, baseInfo: string, vocabularyContext: string): string {
     const questionTypes = request.questionTypes || ['matching', 'fillBlanks', 'translations', 'definitions'];
     const exercisesPerType = Math.ceil((request.targetQuestionCount || 15) / questionTypes.length);
+    
+    // Determine the target language name
+    const targetLanguage = request.originalSubject 
+      ? request.originalSubject.charAt(0).toUpperCase() + request.originalSubject.slice(1)
+      : (request.topic || 'target language');
 
     let exerciseTemplates = '';
 
@@ -655,9 +673,9 @@ ${appendStandardSchema ? `Respond with valid JSON in this format:
     {
       "type": "matching",
       "title": "Matching Exercise",
-      "instructions": "Match the Spanish words with their English translations.",
+      "instructions": "Match the ${targetLanguage} words with their English translations.",
       "items": [
-        {"word": "Spanish word", "definition": "English translation"},
+        {"word": "${targetLanguage} word", "definition": "English translation"},
         // 10 items total (will display in 2 columns: 5 left, 5 right)
       ]
     },`;
@@ -668,10 +686,13 @@ ${appendStandardSchema ? `Respond with valid JSON in this format:
     {
       "type": "fill-in-blank",
       "title": "Fill in the Blanks",
-      "instructions": "Complete each sentence with the correct Spanish word.",
+      "instructions": "Complete each sentence with the correct ${targetLanguage} word.",
       "items": [
-        {"sentence": "Complete sentence with _____ blank.", "answer": "correct word"},
-        // ${exercisesPerType} items - create meaningful, contextual sentences
+        {"sentence": "Example sentence with _____ blank.", "answer": "word"},
+        // ${exercisesPerType} items total - create meaningful, contextual sentences using vocabulary words
+        // Each sentence should have ONE blank marked with _____
+        // IMPORTANT: Write sentences in ${targetLanguage}, not in English
+        // Use as many vocabulary words as possible to create ${exercisesPerType} different sentences
       ]
     },`;
     }
@@ -681,9 +702,9 @@ ${appendStandardSchema ? `Respond with valid JSON in this format:
     {
       "type": "translation",
       "title": "Translation Practice",
-      "instructions": "Translate the following words from English to Spanish.",
+      "instructions": "Translate the following words from English to ${targetLanguage}.",
       "items": [
-        {"source": "English word", "target": "Spanish translation"},
+        {"source": "English word", "target": "${targetLanguage} translation"},
         // 10 items total
       ]
     },`;
@@ -694,10 +715,26 @@ ${appendStandardSchema ? `Respond with valid JSON in this format:
     {
       "type": "definition",
       "title": "Multiple Choice",
-      "instructions": "Choose the correct Spanish word for each definition.",
+      "instructions": "Choose the correct ${targetLanguage} word for each definition.",
       "items": [
-        {"question": "What is the Spanish word for 'house'?", "options": ["casa", "coche", "gato", "perro"], "answer": "casa"},
-        // 10 items total (will display in 2 columns)
+        {"question": "What is the ${targetLanguage} word for 'example'?", "options": ["option1", "option2", "option3", "option4"], "answer": "option1"},
+        // MAX 8 items (will display in 2 columns) - MUST NOT exceed 8 to fit on one page
+        // IMPORTANT: Questions MUST be written in ENGLISH (e.g., "What is the French word for 'phone'?")
+        // Options should be ${targetLanguage} words
+      ]
+    },`;
+    }
+
+    if (questionTypes.includes('unjumble')) {
+      exerciseTemplates += `
+    {
+      "type": "unjumble",
+      "title": "Word Unjumble",
+      "instructions": "Unscramble the letters to form the correct ${targetLanguage} word.",
+      "items": [
+        {"scrambled": "ldemxbrae", "correct": "exambleword"},
+        // 8 items total - scramble vocabulary words by mixing up letters
+        // Use ${targetLanguage} words from the vocabulary list
       ]
     },`;
     }
@@ -707,9 +744,9 @@ ${appendStandardSchema ? `Respond with valid JSON in this format:
     {
       "type": "wordsearch",
       "title": "Word Search",
-      "instructions": "Find all the Spanish words hidden in the grid below.",
+      "instructions": "Find all the ${targetLanguage} words hidden in the grid below.",
       "grid_size": 16,
-      "words": [], // Will be populated with 14 Spanish words from vocabulary_items (remove all spaces from multi-word terms)
+      "words": [], // Will be populated with 14 ${targetLanguage} words from vocabulary_items (remove all spaces from multi-word terms)
       "grid": [] // Will be generated automatically
     },`;
     }
@@ -722,16 +759,18 @@ ${appendStandardSchema ? `Respond with valid JSON in this format:
       "instructions": "Complete the crossword using the vocabulary words.",
       "clues": {
         "across": [
-          {"number": 1, "clue": "A descriptive clue (e.g., 'A vehicle with two wheels, without a motor' for bicycle)", "answer": "spanish_word", "position": [0, 0]}
+          {"number": 1, "clue": "A descriptive clue (e.g., 'A vehicle with two wheels, without a motor' for bicycle)", "answer": "${targetLanguage.toLowerCase()}_word", "position": [0, 0]}
           // Include 10-12 across clues total - use single words without spaces
           // IMPORTANT: Write descriptive, contextual clues that help students learn, NOT direct translations
           // Example good clues: "A place where students learn" (school), "An animal that says meow" (cat)
-          // Avoid: "The Spanish word for house" - instead write: "A building where a family lives"
+          // Avoid: "The ${targetLanguage} word for house" - instead write: "A building where a family lives"
+          // Use ${targetLanguage} words as answers
         ],
         "down": [
-          {"number": 2, "clue": "A descriptive clue (e.g., 'What you use to write on paper' for pen)", "answer": "spanish_word", "position": [0, 1]}
+          {"number": 2, "clue": "A descriptive clue (e.g., 'What you use to write on paper' for pen)", "answer": "${targetLanguage.toLowerCase()}_word", "position": [0, 1]}
           // Include 10-12 down clues total - use single words without spaces
           // IMPORTANT: Write descriptive, contextual clues that help students learn, NOT direct translations
+          // Use ${targetLanguage} words as answers
         ]
       },
       "grid_size": 15
@@ -749,15 +788,22 @@ Create a professional vocabulary practice worksheet using this EXACT JSON struct
   "title": "Worksheet title here",
   "instructions": "Complete all vocabulary exercises below. Use the vocabulary list for reference.",
   "vocabulary_items": [
-    {"word": "Spanish word", "translation": "English translation", "article": "el/la/los/las if applicable"},
+    {"word": "${targetLanguage} word", "translation": "English translation", "article": "el/la/los/las if applicable"},
     // Include ALL provided vocabulary words here
   ],
-  "word_bank": ["word1", "word2", "word3"], // Spanish words only for word bank exercises
+  "word_bank": ["word1", "word2", "word3"], // ${targetLanguage} words only for word bank exercises
   "exercises": [${exerciseTemplates}
   ]
 }
 
-CRITICAL: Use ONLY the provided vocabulary words. Create meaningful, contextual sentences. Never use "undefined" or duplicate numbering.`;
+CRITICAL INSTRUCTIONS:
+1. Use ONLY the provided vocabulary words
+2. ALL instructions, questions, and prompts MUST be written in ENGLISH
+3. Only the vocabulary words, answers to blanks, and sentence content should be in ${targetLanguage}
+4. For fill-in-the-blanks: Create AT LEAST ${exercisesPerType} sentences in ${targetLanguage} with blanks
+5. For multiple choice: Questions MUST be in ENGLISH (e.g., "What is the French word for 'phone'?"), options in ${targetLanguage}
+6. Never use "undefined" or duplicate numbering
+7. Create meaningful, contextual sentences and questions`;
   }
 
   private getEstimatedTime(templateId: string): number {

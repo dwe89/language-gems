@@ -34,9 +34,19 @@ export async function GET(
     const supabaseAdmin = createServiceRoleClient();
     const analyticsService = new TeacherAssignmentAnalyticsService(supabaseAdmin);
 
+    // Check if this is an assessment assignment
+    const { data: assignmentData } = await supabaseAdmin
+      .from('assignments')
+      .select('game_type, game_config')
+      .eq('id', assignmentId)
+      .single();
+
+    const isAssessmentAssignment = assignmentData &&
+      ((assignmentData as any).game_type === 'assessment' || (assignmentData as any).game_config?.assessmentConfig);
+
     const [overview, words, students] = await Promise.all([
       analyticsService.getAssignmentOverview(assignmentId),
-      analyticsService.getWordDifficultyRanking(assignmentId),
+      isAssessmentAssignment ? Promise.resolve([]) : analyticsService.getWordDifficultyRanking(assignmentId),
       analyticsService.getStudentRoster(assignmentId)
     ]);
 

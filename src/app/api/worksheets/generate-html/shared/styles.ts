@@ -135,8 +135,13 @@ export const PRINT_STYLES = `
     }
 
     .word-search-words h3 {
-      color: #007bff !important;
-      border-bottom-color: #007bff !important;
+      color: #000 !important;
+      border-bottom-color: #000 !important;
+    }
+
+    .words-title {
+      color: #000 !important;
+      border-bottom-color: #000 !important;
     }
 
     .wordsearch-crossword-layout {

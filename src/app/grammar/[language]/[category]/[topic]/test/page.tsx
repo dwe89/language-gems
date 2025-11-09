@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { GrammarSessionService } from '@/services/grammar/GrammarSessionService';
+import { sanitizeInlineHtml, stripHtmlTags } from '@/utils/richTextHelpers';
 
 interface PageProps {
   params: {
@@ -133,13 +134,18 @@ export default function GrammarTestPage({ params }: PageProps) {
       else if (q.type === 'conjugation') type = 'conjugation';
       else if (q.type === 'multiple_choice') type = 'multiple_choice';
 
+      const rawQuestion = q.question_text || q.question || '';
+      const sanitizedQuestion = sanitizeInlineHtml(rawQuestion);
+  const sanitizedOptions = (q.options || []).map((option: string) => stripHtmlTags(sanitizeInlineHtml(option)));
+      const sanitizedHint = stripHtmlTags(sanitizeInlineHtml(q.hint || q.explanation || ''));
+
       return {
         id: q.id,
         type,
-        question: q.question_text || q.question || '',
+        question: sanitizedQuestion,
         answer: q.correct_answer || q.answer || '',
-        options: q.options || [],
-        hint: q.hint || q.explanation || '',
+        options: sanitizedOptions,
+        hint: sanitizedHint,
         difficulty: (q.difficulty || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
         category: params.category,
       };

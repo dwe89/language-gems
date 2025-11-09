@@ -125,18 +125,7 @@ const AVAILABLE_GAMES: GameOption[] = [
     features: ['Letter manipulation', 'Spelling practice', 'Timed challenges'],
     type: 'vocabulary'
   },
-  {
-    id: 'vocab-master',
-    name: 'VocabMaster',
-    description: 'Comprehensive vocabulary learning with flashcards, matching, dictation, and spaced repetition',
-    icon: <Crown className="h-5 w-5" />,
-    color: 'from-purple-600 to-indigo-600',
-    category: 'vocabulary',
-    difficulty: 'adaptive',
-    estimatedTime: '10-20 min',
-    features: ['Multiple modes', 'Spaced repetition', 'Adaptive difficulty', 'Comprehensive learning'],
-    type: 'vocabulary'
-  },
+  // VocabMaster moved to its own dedicated tab
   {
     id: 'detective-listening',
     name: 'Detective Listening Game',

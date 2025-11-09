@@ -16,6 +16,7 @@ import SmartAssignmentConfig from './SmartAssignmentConfig';
 import DatabaseCategorySelector from './DatabaseCategorySelector';
 import CurriculumContentSelector from './CurriculumContentSelector';
 import VocabularyPreviewSection from './VocabularyPreviewSection';
+import { VocabMasterConfig } from './types/AssignmentTypes';
 
 // Import step components
 import AssignmentDetailsStep from './steps/AssignmentDetailsStep';
@@ -374,6 +375,10 @@ export default function EnhancedAssignmentCreator({
     generalRandomizeQuestions: false,
   });
 
+  const [vocabMasterConfig, setVocabMasterConfig] = useState<VocabMasterConfig>({
+    selectedModes: []
+  });
+
   // --- New Unified Content Configuration State ---
   const [contentConfig, setContentConfig] = useState<ContentConfig>({
     type: 'KS3',
@@ -576,7 +581,7 @@ export default function EnhancedAssignmentCreator({
       title: 'Choose Activities',
       description: 'Select games, assessments, or skills',
       icon: <Gamepad2 className="h-5 w-5" />,
-      completed: gameConfig.selectedGames.length > 0 || assessmentConfig.selectedAssessments.length > 0 || skillsConfig.selectedSkills.length > 0
+      completed: gameConfig.selectedGames.length > 0 || assessmentConfig.selectedAssessments.length > 0 || skillsConfig.selectedSkills.length > 0 || vocabMasterConfig.selectedModes.length > 0
     },
     {
       id: 'content',
@@ -615,10 +620,18 @@ export default function EnhancedAssignmentCreator({
             return config?.language && config?.category && config?.topicIds && config?.topicIds.length > 0;
           });
 
-        return (gameConfig.selectedGames.length > 0 || assessmentConfig.selectedAssessments.length > 0 || skillsConfig.selectedSkills.length > 0) &&
+        // VocabMaster modes require vocabulary source configuration
+        const vocabMasterContentComplete = vocabMasterConfig.selectedModes.length === 0 ||
+          vocabMasterConfig.selectedModes.every(mode => {
+            const config = mode.instanceConfig;
+            return config?.language && config?.vocabularySource?.source && config?.vocabularySource?.source !== '';
+          });
+
+        return (gameConfig.selectedGames.length > 0 || assessmentConfig.selectedAssessments.length > 0 || skillsConfig.selectedSkills.length > 0 || vocabMasterConfig.selectedModes.length > 0) &&
           gamesContentComplete &&
           assessmentsContentComplete &&
-          skillsContentComplete;
+          skillsContentComplete &&
+          vocabMasterContentComplete;
       })()
     },
     {
@@ -713,8 +726,8 @@ export default function EnhancedAssignmentCreator({
 
       if (!user) throw new Error('User not authenticated');
       if (selectedClasses.length === 0) throw new Error('Please select at least one class.');
-      if (gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0) {
-        throw new Error('Please select at least one game, assessment, or skills activity.');
+      if (gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0 && vocabMasterConfig.selectedModes.length === 0) {
+        throw new Error('Please select at least one game, assessment, skills activity, or VocabMaster mode.');
       }
       if (!assignmentDetails.title || !assignmentDetails.description || !assignmentDetails.due_date) {
         throw new Error('Please fill in all basic assignment details.');
@@ -726,6 +739,7 @@ export default function EnhancedAssignmentCreator({
         gameConfig: gameConfig.selectedGames.length > 0 ? gameConfig : undefined, // Only include if games are selected
         assessmentConfig: assessmentConfig.selectedAssessments.length > 0 ? assessmentConfig : undefined, // Only include if assessments are selected
         skillsConfig: skillsConfig.selectedSkills.length > 0 ? skillsConfig : undefined, // Only include if skills are selected
+        vocabMasterConfig: vocabMasterConfig.selectedModes.length > 0 ? vocabMasterConfig : undefined, // Only include if VocabMaster modes are selected
         // Add any other global assignment configs here
       };
 
@@ -1851,6 +1865,8 @@ export default function EnhancedAssignmentCreator({
       setAssessmentConfig,
       skillsConfig,
       setSkillsConfig,
+      vocabMasterConfig,
+      setVocabMasterConfig,
       onStepComplete: handleStepComplete,
       classes: availableClasses,
       loading,

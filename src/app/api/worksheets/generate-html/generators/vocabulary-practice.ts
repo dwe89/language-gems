@@ -147,6 +147,7 @@ export async function generateVocabularyPracticeHTML(
       display: grid;
       grid-template-columns: repeat(2, minmax(110px, 1fr));
       gap: 8px;
+      grid-auto-rows: 1fr; /* Make all rows the same height */
     }
 
     .matching-card {
@@ -158,7 +159,7 @@ export async function generateVocabularyPracticeHTML(
       border-radius: 8px;
       padding: 6px 10px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-      min-height: 46px;
+      height: 100%; /* Fill grid cell */
     }
 
     .matching-index {
@@ -206,7 +207,7 @@ export async function generateVocabularyPracticeHTML(
       display: flex;
       gap: 8px;
       align-items: flex-start;
-      min-height: 46px;
+      height: 100%; /* Fill grid cell */
     }
 
     .matching-definition-card .matching-index {
@@ -234,6 +235,50 @@ export async function generateVocabularyPracticeHTML(
       width: 200px;
       border-bottom: 1px solid #000;
       margin-left: 8px;
+    }
+
+    /* Unjumble Exercise */
+    .unjumble-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(240px, 1fr));
+      gap: 12px;
+      margin: 10px 0;
+    }
+
+    .unjumble-card {
+      background: #fff;
+      border: 1px solid #ced4da;
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 4px; /* Reduced from 8px to 4px for tighter spacing */
+    }
+
+    .unjumble-scrambled {
+      font-weight: 600;
+      font-size: 11pt;
+      line-height: 1.3;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: #dc2626;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+    }
+
+    .unjumble-scrambled .question-number {
+      color: #007bff;
+      font-weight: 700;
+      font-family: 'Helvetica', 'Arial', sans-serif;
+    }
+
+    .unjumble-input-line {
+      border-bottom: 2px solid #000;
+      width: 100%;
+      min-height: 1.4em;
+      display: inline-block;
     }
 
     /* Multiple Choice */
@@ -369,27 +414,76 @@ export async function generateVocabularyPracticeHTML(
       align-items: start;
     }
 
-    .wordsearch-crossword-left {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .wordsearch-crossword-left,
+    .wordsearch-crossword-right {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto; /* h2, instructions, puzzle, words-title section */
+      gap: 0; /* remove gap - we'll control spacing per element */
+      align-items: stretch;
     }
 
-    .wordsearch-crossword-right {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 9.5pt;
+    /* Make the two part titles visually identical and aligned */
+    .wordsearch-crossword-left h2,
+    .wordsearch-crossword-right h2 {
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      font-size: 13pt;
+      font-weight: 700;
+      margin: 0 0 6px 0;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #000; /* black underline to match other sections */
+      color: #000; /* black title text */
+      text-align: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wordsearch-crossword-left p.exercise-instructions,
+    .wordsearch-crossword-right p.exercise-instructions {
+      font-style: italic;
+      color: #495057;
+      margin-bottom: 6px;
+      line-height: 1.4;
+      font-size: 11pt;
+      background: transparent; /* keep consistent background */
+      padding: 0;
+    }
+
+    /* Ensure containers don't add extra top spacing inside the side-by-side layout */
+    .wordsearch-crossword-left > div,
+    .wordsearch-crossword-right > .crossword-container {
+      margin-top: 0 !important;
+    }
+
+    /* Force heading baseline/margins to be identical */
+    .wordsearch-crossword-left h2,
+    .wordsearch-crossword-right h2 {
+      margin-top: 0;
+      margin-bottom: 6px;
+      line-height: 1.05;
+    }
+
+    /* Words / Clues title used under puzzles */
+    .words-title {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #000 !important; /* black title text */
+      margin: 0 0 8px 0;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #000 !important; /* black underline full width */
+      text-align: center;
+      display: block;
+      width: 100%;
     }
 
     .word-search-words {
-      flex: 0 0 180px;
+      flex: 0 0 auto;
+      margin-top: 12px; /* Add consistent top margin to push down from puzzle */
     }
 
     .word-search-words .words-list {
       display: grid;
       grid-template-columns: repeat(2, minmax(90px, 1fr));
-      gap: 4px;
+      gap: 8px;
+      margin-top: 6px; /* reduce gap between title underline and items */
     }
 
     .word-search-words .word-item {
@@ -472,11 +566,21 @@ export async function generateVocabularyPracticeHTML(
     }
 
     .crossword-container h2 {
-      display: none; /* Hide main title, use compact one */
+      display: block; /* Show title for consistent styling */
     }
 
+      .words-title {
+        font-size: 13pt;
+        font-weight: 700;
+        color: #000; /* black title text */
+        margin: 0 0 8px 0;
+        padding-bottom: 6px;
+        border-bottom: 2px solid #000; /* black underline */
+        text-align: center;
+      }
+
     .crossword-container .exercise-instructions {
-      display: none; /* Hide main instructions, use compact ones */
+      display: block; /* Show instructions for consistent styling */
     }
 
     .crossword-grid-wrapper {
@@ -746,13 +850,10 @@ export async function generateVocabularyPracticeHTML(
                (exercise.title && (
                  exercise.title.toLowerCase().includes('crossword') ||
                  exercise.title.toLowerCase().includes('vocabulary words') ||
-                 exercise.title.toLowerCase().includes('complete the') ||
-                 exercise.title.toLowerCase().includes('fill in')
+                 exercise.title.toLowerCase().includes('complete the crossword')
                )) ||
                (exercise.instructions && (
-                 exercise.instructions.toLowerCase().includes('crossword') ||
-                 exercise.instructions.toLowerCase().includes('complete the') ||
-                 exercise.instructions.toLowerCase().includes('fill in')
+                 exercise.instructions.toLowerCase().includes('crossword')
                ))) {
       crosswordExercise = exercise;
   console.log('[VOCAB PRACTICE] Detected crossword exercise:', exercise.title);
@@ -804,6 +905,7 @@ export async function generateVocabularyPracticeHTML(
         bodyContent += generateMatchingSection(exercise, partNumber);
         break;
       case 'fill-in-blank':
+      case 'fillBlanks': // Handle both naming conventions
         bodyContent += generateFillInBlankSection(exercise, partNumber);
         break;
       case 'translation':
@@ -811,6 +913,9 @@ export async function generateVocabularyPracticeHTML(
         break;
       case 'definition':
         bodyContent += generateMultipleChoiceSection(exercise, partNumber);
+        break;
+      case 'unjumble':
+        bodyContent += generateUnjumbleSection(exercise, partNumber);
         break;
       default:
         bodyContent += generateGenericSection(exercise, partNumber);
@@ -843,6 +948,65 @@ function shuffleArray<T>(input: T[]): T[] {
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
+}
+
+/**
+ * Scrambles a word by shuffling its letters while ensuring:
+ * 1. The scrambled version is different from the original
+ * 2. It's actually solvable (not random gibberish)
+ * 3. Preserves spaces and special characters in their positions
+ */
+function scrambleWord(word: string): string {
+  if (!word || word.length <= 2) return word; // Too short to scramble meaningfully
+  
+  // Clean the word - remove articles and trim
+  let cleanWord = word.trim();
+  const lowerWord = cleanWord.toLowerCase();
+  
+  // Remove common articles for scrambling
+  const articles = ['el ', 'la ', 'los ', 'las ', 'un ', 'una ', 'the '];
+  for (const article of articles) {
+    if (lowerWord.startsWith(article)) {
+      cleanWord = cleanWord.substring(article.length);
+      break;
+    }
+  }
+  
+  // Extract only letters to scramble (preserve accents, ñ, etc.)
+  const letters = cleanWord.split('');
+  const letterIndices: number[] = [];
+  const letterChars: string[] = [];
+  
+  letters.forEach((char, index) => {
+    // Include letters and accented characters, exclude spaces and hyphens
+    if (char.match(/[a-záéíóúñüA-ZÁÉÍÓÚÑÜ]/)) {
+      letterIndices.push(index);
+      letterChars.push(char);
+    }
+  });
+  
+  if (letterChars.length <= 2) return cleanWord; // Not enough letters to scramble
+  
+  // Shuffle the letters multiple times until we get something different
+  let scrambledLetters = [...letterChars];
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  do {
+    scrambledLetters = shuffleArray(letterChars);
+    attempts++;
+  } while (
+    scrambledLetters.join('') === letterChars.join('') && 
+    attempts < maxAttempts
+  );
+  
+  // Reconstruct the word with scrambled letters in their positions
+  const result = letters.slice();
+  letterIndices.forEach((originalIndex, i) => {
+    result[originalIndex] = scrambledLetters[i];
+  });
+  
+  return result.join('').toUpperCase(); // Return in uppercase for visibility
 }
 
 // --- Clean Section Generators ---
@@ -918,7 +1082,10 @@ function generateMultipleChoiceSection(exercise: any, partNumber: number): strin
   const items = exercise.items || [];
   if (items.length === 0) return '';
 
-  const cards = items.map((item: any, index: number) => {
+  // LIMIT TO MAX 8 ITEMS to fit on one page with other exercises
+  const limitedItems = items.slice(0, 8);
+
+  const cards = limitedItems.map((item: any, index: number) => {
     const originalOptions = Array.isArray(item.options) ? item.options.filter(Boolean) : [];
     const explicitCorrect = item.answer || item.correct_answer || item.correctAnswer;
     const correctOption = explicitCorrect || originalOptions[0];
@@ -968,6 +1135,56 @@ function generateMultipleChoiceSection(exercise: any, partNumber: number): strin
     <h2><i data-lucide="Edit3" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Multiple Choice'}</h2>
     <p class="exercise-instructions">${exercise.instructions || 'Choose the best answer.'}</p>
     <div class="multiple-choice-grid">
+      ${cards}
+    </div>
+  `;
+}
+
+function generateUnjumbleSection(exercise: any, partNumber: number): string {
+  const items = exercise.items || [];
+  if (items.length === 0) return '';
+
+  const cards = items.map((item: any, index: number) => {
+    // Get the correct word from various possible properties
+    const correctWord = item.correct || item.word || item.answer || '';
+    
+    // Use AI-provided scrambled version if it exists and looks valid,
+    // otherwise generate our own scramble
+    let scrambled = item.scrambled || '';
+    
+    // Validate AI scrambled version - check if it's just random characters
+    // or doesn't contain the same letters as the original word
+    const isValidScramble = (original: string, scrambledVersion: string): boolean => {
+      if (!scrambledVersion || scrambledVersion === original) return false;
+      
+      // Remove articles and clean both strings for comparison
+      const cleanOriginal = original.toLowerCase().replace(/^(el |la |los |las |un |una |the )/i, '').replace(/[^a-záéíóúñü]/g, '').split('').sort().join('');
+      const cleanScrambled = scrambledVersion.toLowerCase().replace(/[^a-záéíóúñü]/g, '').split('').sort().join('');
+      
+      // Check if they contain the same letters (when sorted)
+      return cleanOriginal === cleanScrambled && cleanScrambled.length > 0;
+    };
+    
+    // If AI scramble is invalid, generate our own
+    if (!isValidScramble(correctWord, scrambled)) {
+      scrambled = scrambleWord(correctWord);
+    }
+
+    return `
+      <div class="unjumble-card">
+        <div class="unjumble-scrambled">
+          <span class="question-number">${index + 1}.</span>
+          <span>${escapeHtml(scrambled)}</span>
+        </div>
+        <span class="unjumble-input-line"></span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <h2><i data-lucide="Shuffle" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Word Unjumble'}</h2>
+    <p class="exercise-instructions">${exercise.instructions || 'Unscramble the letters to form the correct Spanish word.'}</p>
+    <div class="unjumble-grid">
       ${cards}
     </div>
   `;
@@ -1032,7 +1249,7 @@ function generateWordSearchSection(exercise: any, partNumber: number): string {
         </table>
       </div>
       <div class="word-search-words">
-        <h3 style="font-size: 11pt; font-weight: 700; margin: 8px 0 6px 0; color: #374151;">Words to Find:</h3>
+  <h3 class="words-title">Words to Find:</h3>
         <div class="words-list">
           ${(wordSearchData.words || []).map((wordObj: any) => 
             `<div class="word-item" style="padding: 3px 6px; background: #f3f4f6; border-radius: 6px; font-size: 9pt; font-weight: 500; color: #374151;">${wordObj.word || wordObj}</div>`
@@ -1043,8 +1260,8 @@ function generateWordSearchSection(exercise: any, partNumber: number): string {
 
     return `
       <div style="text-align: center;">
-        <h3 class="compact-section-title" style="color: #007bff; border-bottom-color: #007bff;"><i data-lucide="Search" class="icon"></i> ${exercise.title || '🔍 Word Search'}</h3>
-        <p class="compact-instructions">${exercise.instructions || 'Find all the words hidden in the grid below.'}</p>
+        <h2><i data-lucide="Search" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Word Search'}</h2>
+        <p class="exercise-instructions">${exercise.instructions || 'Find all the words hidden in the grid below.'}</p>
         ${wordSearchHTML}
       </div>
     `;
@@ -1231,7 +1448,7 @@ async function generateCrosswordSection(
     // ** IMPROVED HTML STRUCTURE WITH CLUES (styled like Word Search 'Words to Find') **
     const cluesHTML = `
       <div class="word-search-words">
-        <h3 class="words-title">Clues</h3>
+  <h3 class="words-title">Clues</h3>
         <div class="words-list">
           ${crosswordData.acrossClues.map((clue: any) => `<div class="word-item">${clue.number}. ${escapeHtml(clue.clue)}</div>`).join('')}
           ${crosswordData.downClues.map((clue: any) => `<div class="word-item">${clue.number}. ${escapeHtml(clue.clue)}</div>`).join('')}
@@ -1241,8 +1458,8 @@ async function generateCrosswordSection(
 
     // Shorter default instructions and match compact title style color/bottom border to Word Search
     const heading = isCompact ? `
-      <h3 class="compact-section-title" style="color: #007bff; border-bottom-color: #007bff;"><i data-lucide="Puzzle" class="icon"></i> ${exercise.title || '🧩 Crossword Puzzle'}</h3>
-      <p class="compact-instructions">${exercise.instructions || 'Complete the crossword puzzle.'}</p>
+      <h2><i data-lucide="Puzzle" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Crossword Puzzle'}</h2>
+      <p class="exercise-instructions">${exercise.instructions || 'Complete the crossword puzzle.'}</p>
     ` : `
       <h2><i data-lucide="Puzzle" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Crossword Puzzle'}</h2>
       <p class="exercise-instructions">${exercise.instructions || 'Complete the crossword puzzle.'}</p>
@@ -1279,7 +1496,7 @@ async function generateCrosswordSection(
 
     const cluesHTML = `
       <div class="word-search-words">
-        <h3 class="words-title">Clues</h3>
+  <h3 class="words-title">Clues</h3>
         <div class="words-list">
           ${fallbackWords.slice(0, 4).map((word: string, index: number) => `
             <div class="word-item">${index + 1}. ${escapeHtml(word)}</div>
@@ -1292,8 +1509,8 @@ async function generateCrosswordSection(
     `;
 
     const heading = isCompact ? `
-      <h3 class="compact-section-title" style="color: #007bff; border-bottom-color: #007bff;"><i data-lucide="Puzzle" class="icon"></i> ${exercise.title || '🧩 Crossword Puzzle'}</h3>
-      <p class="compact-instructions">${exercise.instructions || 'Complete the crossword.'}</p>
+      <h2><i data-lucide="Puzzle" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Crossword Puzzle'}</h2>
+      <p class="exercise-instructions">${exercise.instructions || 'Complete the crossword.'}</p>
     ` : `
       <h2><i data-lucide="Puzzle" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Crossword Puzzle'}</h2>
       <p class="exercise-instructions">${exercise.instructions || 'Complete the crossword.'}</p>

@@ -136,9 +136,12 @@ export default function AssessmentConfigModal({
   currentConfig,
   onSave
 }: AssessmentConfigModalProps) {
+  // Check if this is a GCSE exam
+  const isGCSEExam = assessmentType.id.startsWith('gcse-');
+
   const [config, setConfig] = useState({
     language: currentConfig?.language || 'spanish',
-    level: currentConfig?.level || 'KS3',
+    level: currentConfig?.level || (isGCSEExam ? 'KS4' : 'KS3'), // Auto-set to KS4 for GCSE exams
     difficulty: currentConfig?.difficulty || 'foundation',
     examBoard: currentConfig?.examBoard || 'General',
     paper: currentConfig?.paper || '',
@@ -154,6 +157,7 @@ export default function AssessmentConfigModal({
 
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [availableTopics, setAvailableTopics] = useState<string[]>([]);
+  const [availablePapers, setAvailablePapers] = useState<Array<{identifier: string, title: string}>>([]);
 
   // Update subcategories when category changes (KS3)
   useEffect(() => {
@@ -172,6 +176,15 @@ export default function AssessmentConfigModal({
     }
   }, [config.theme, config.level, config.examBoard]);
 
+  // Fetch available papers when exam board, language, or difficulty changes for GCSE exams
+  useEffect(() => {
+    if (isGCSEExam && config.examBoard !== 'General' && config.language && config.difficulty) {
+      fetchAvailablePapers();
+    } else {
+      setAvailablePapers([]);
+    }
+  }, [config.examBoard, config.language, config.difficulty, isGCSEExam]);
+
   // Reset category/subcategory when switching between KS3/KS4
   useEffect(() => {
     setConfig(prev => ({
@@ -183,6 +196,52 @@ export default function AssessmentConfigModal({
     }));
   }, [config.level]);
 
+  const fetchAvailablePapers = async () => {
+    try {
+      // Map difficulty to level
+      const level = config.difficulty === 'foundation' ? 'foundation' : 'higher';
+      // Map language to database format
+      const language = config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de';
+
+      let endpoint = '';
+      
+      // Only AQA has API endpoints currently
+      if (config.examBoard === 'AQA') {
+        if (assessmentType.id === 'gcse-reading') {
+          endpoint = `/api/admin/aqa-reading/list?language=${language}&tier=${level}`;
+        } else if (assessmentType.id === 'gcse-listening') {
+          endpoint = `/api/admin/aqa-listening/list?language=${language}&tier=${level}`;
+        }
+      } else if (config.examBoard === 'Edexcel') {
+        // Edexcel papers exist in database but no API endpoints yet
+        console.log('Edexcel papers are not yet available via API');
+        setAvailablePapers([]);
+        return;
+      }
+
+      if (endpoint) {
+        const response = await fetch(endpoint);
+        const data = await response.json();
+        
+        if (data.success && data.papers) {
+          // Extract unique identifiers and titles
+          const papers = data.papers.map((paper: any) => ({
+            identifier: paper.identifier,
+            title: paper.title
+          }));
+          setAvailablePapers(papers);
+        } else {
+          setAvailablePapers([]);
+        }
+      } else {
+        setAvailablePapers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching papers:', error);
+      setAvailablePapers([]);
+    }
+  };
+
   const handleSave = () => {
     onSave(config);
     onClose();
@@ -190,13 +249,25 @@ export default function AssessmentConfigModal({
 
   const isConfigComplete = () => {
     if (!config.language) return false;
-    if (!config.level) return false;
 
-    // For GCSE exams, require paper selection
-    if ((assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening') && config.examBoard !== 'General') {
-      if (!config.paper) return false;
+    // For GCSE exams, level is always KS4 and we don't need category/subcategory
+    if (isGCSEExam) {
+      if (!config.examBoard) return false;
+      
+      // Edexcel papers not available yet - block completion
+      if (config.examBoard === 'Edexcel') return false;
+      
+      // For reading/listening exams, require paper selection when exam board is not General
+      if ((assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening') && config.examBoard !== 'General') {
+        if (!config.paper) return false;
+      }
+      return true;
     }
 
+    // For non-GCSE exams, require level
+    if (!config.level) return false;
+
+    // For KS3, require category and subcategory
     if (config.level === 'KS3') {
       return config.category && config.subcategory;
     } else {
@@ -257,39 +328,41 @@ export default function AssessmentConfigModal({
               </select>
             </div>
 
-            {/* Curriculum Level */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Curriculum Level <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setConfig(prev => ({ ...prev, level: 'KS3' }))}
-                  className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                    config.level === 'KS3'
-                      ? 'border-purple-600 bg-purple-50 text-purple-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-semibold">KS3</div>
-                  <div className="text-xs text-gray-600">Years 7-9</div>
-                </button>
-                <button
-                  onClick={() => setConfig(prev => ({ ...prev, level: 'KS4' }))}
-                  className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                    config.level === 'KS4'
-                      ? 'border-purple-600 bg-purple-50 text-purple-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-semibold">KS4 (GCSE)</div>
-                  <div className="text-xs text-gray-600">Years 10-11</div>
-                </button>
+            {/* Curriculum Level - Hide for GCSE exams */}
+            {!isGCSEExam && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Curriculum Level <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setConfig(prev => ({ ...prev, level: 'KS3' }))}
+                    className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                      config.level === 'KS3'
+                        ? 'border-purple-600 bg-purple-50 text-purple-700'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="font-semibold">KS3</div>
+                    <div className="text-xs text-gray-600">Years 7-9</div>
+                  </button>
+                  <button
+                    onClick={() => setConfig(prev => ({ ...prev, level: 'KS4' }))}
+                    className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                      config.level === 'KS4'
+                        ? 'border-purple-600 bg-purple-50 text-purple-700'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="font-semibold">KS4 (GCSE)</div>
+                    <div className="text-xs text-gray-600">Years 10-11</div>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* KS4 Exam Board Selection */}
-            {config.level === 'KS4' && (
+            {/* Exam Board Selection - Show for GCSE exams or KS4 */}
+            {(isGCSEExam || config.level === 'KS4') && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Exam Board <span className="text-red-500">*</span>
@@ -302,13 +375,12 @@ export default function AssessmentConfigModal({
                   <option value="General">General (Non-exam specific)</option>
                   <option value="AQA">AQA</option>
                   <option value="Edexcel">Edexcel</option>
-                  <option value="Eduqas">Eduqas</option>
                 </select>
               </div>
             )}
 
-            {/* KS4 Tier/Difficulty */}
-            {config.level === 'KS4' && config.examBoard !== 'General' && (
+            {/* Tier/Difficulty - Show for GCSE exams or KS4 with exam board */}
+            {(isGCSEExam || (config.level === 'KS4' && config.examBoard !== 'General')) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Tier <span className="text-red-500">*</span>
@@ -344,22 +416,40 @@ export default function AssessmentConfigModal({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Paper <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={config.paper}
-                  onChange={(e) => setConfig(prev => ({ ...prev, paper: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  <option value="">Select a paper...</option>
-                  <option value="paper-1">Paper 1</option>
-                  <option value="paper-2">Paper 2</option>
-                  <option value="paper-3">Paper 3</option>
-                  <option value="paper-4">Paper 4</option>
-                </select>
+                {config.examBoard === 'Edexcel' ? (
+                  <div className="w-full px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-start space-x-2">
+                      <span className="text-orange-600 text-lg">🚧</span>
+                      <div>
+                        <p className="text-sm font-medium text-orange-900">Edexcel Papers Coming Soon</p>
+                        <p className="text-xs text-orange-700 mt-1">
+                          Edexcel exam papers are currently being prepared. Please select AQA for now or check back soon.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <select
+                    value={config.paper}
+                    onChange={(e) => setConfig(prev => ({ ...prev, paper: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Select a paper...</option>
+                    {availablePapers.map(paper => (
+                      <option key={paper.identifier} value={paper.identifier}>
+                        {paper.title} ({paper.identifier})
+                      </option>
+                    ))}
+                    {availablePapers.length === 0 && config.examBoard === 'AQA' && (
+                      <option value="" disabled>No papers available for the selected criteria</option>
+                    )}
+                  </select>
+                )}
               </div>
             )}
 
-            {/* Content Selection - KS3 */}
-            {config.level === 'KS3' && (
+            {/* Content Selection - KS3 (hide for GCSE exams) */}
+            {config.level === 'KS3' && !isGCSEExam && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -397,8 +487,8 @@ export default function AssessmentConfigModal({
               </>
             )}
 
-            {/* Content Selection - KS4 with Exam Board */}
-            {config.level === 'KS4' && config.examBoard !== 'General' && (
+            {/* Content Selection - KS4 with Exam Board (hide for GCSE exams) */}
+            {config.level === 'KS4' && config.examBoard !== 'General' && !isGCSEExam && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -436,8 +526,8 @@ export default function AssessmentConfigModal({
               </>
             )}
 
-            {/* Content Selection - KS4 General */}
-            {config.level === 'KS4' && config.examBoard === 'General' && (
+            {/* Content Selection - KS4 General (hide for GCSE exams) */}
+            {config.level === 'KS4' && config.examBoard === 'General' && !isGCSEExam && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

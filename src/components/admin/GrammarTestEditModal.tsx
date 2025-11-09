@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Save } from 'lucide-react';
+import { useState } from 'react';
+import { X, Plus, Trash2, Save, Type } from 'lucide-react';
+import RichTextPopover from './RichTextPopover';
+import { hasRichTextFormatting, sanitizeInlineHtml, stripHtmlTags } from '@/utils/richTextHelpers';
 
 interface Question {
   id: string;
@@ -39,16 +41,27 @@ export default function GrammarTestEditModal({
 }: GrammarTestEditModalProps) {
   const [title, setTitle] = useState(initialData.title);
   const [difficulty, setDifficulty] = useState(initialData.difficulty_level);
-  const [questions, setQuestions] = useState<Question[]>(initialData.questions);
+  const [questions, setQuestions] = useState<Question[]>(
+    () =>
+      initialData.questions.map((question) => ({
+        ...question,
+        question: sanitizeInlineHtml(question.question),
+        options: (question.options || []).map((option) => sanitizeInlineHtml(option)),
+        explanation: question.explanation ? sanitizeInlineHtml(question.explanation) : '',
+        hint: question.hint ? sanitizeInlineHtml(question.hint) : '',
+        correct_answer: sanitizeInlineHtml(question.correct_answer),
+      }))
+  );
   const [saving, setSaving] = useState(false);
   const [showJsonImport, setShowJsonImport] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
   const [importMode, setImportMode] = useState<'replace' | 'add'>('replace');
+  const [richTextQuestionIndex, setRichTextQuestionIndex] = useState<number | null>(null);
 
   const addQuestion = () => {
     const newQuestion: Question = {
       id: `q_${Date.now()}`,
-      question: '',
+  question: '',
       type: 'fill_blank',
       correct_answer: '',
       options: [],
@@ -74,7 +87,7 @@ export default function GrammarTestEditModal({
   const updateOptions = (index: number, optionIndex: number, value: string) => {
     const updated = [...questions];
     const options = [...(updated[index].options || [])];
-    options[optionIndex] = value;
+    options[optionIndex] = sanitizeInlineHtml(value);
     updated[index] = { ...updated[index], options };
     setQuestions(updated);
   };
@@ -100,12 +113,12 @@ export default function GrammarTestEditModal({
         // Validate and transform the questions
         const importedQuestions = parsed.map((q: any, index: number) => ({
           id: q.id || `q_${Date.now()}_${index}`,
-          question: q.question || '',
+          question: sanitizeInlineHtml(q.question || ''),
           type: q.type || 'fill_blank',
-          correct_answer: q.correct_answer || '',
-          options: q.options || [],
-          explanation: q.explanation || '',
-          hint: q.hint || '',
+          correct_answer: sanitizeInlineHtml(q.correct_answer || ''),
+          options: (q.options || []).map((option: string) => sanitizeInlineHtml(option)),
+          explanation: sanitizeInlineHtml(q.explanation || ''),
+          hint: sanitizeInlineHtml(q.hint || ''),
           difficulty: q.difficulty || 'beginner',
         }));
         
@@ -328,15 +341,36 @@ export default function GrammarTestEditModal({
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Question Text
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">
+                        Question Text
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {hasRichTextFormatting(q.question) && (
+                          <span className="px-2 py-0.5 text-xs font-semibold text-purple-700 bg-purple-100 rounded-full uppercase tracking-wide">
+                            Rich Text
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setRichTextQuestionIndex(index)}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-md hover:bg-purple-100"
+                        >
+                          <Type className="w-3.5 h-3.5" />
+                          Rich Text
+                        </button>
+                      </div>
+                    </div>
                     <textarea
-                      value={q.question}
-                      onChange={(e) => updateQuestion(index, 'question', e.target.value)}
+                      value={stripHtmlTags(q.question)}
+                      onChange={(e) => updateQuestion(index, 'question', sanitizeInlineHtml(e.target.value))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       rows={2}
+                      placeholder="Type the question..."
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Keep questions concise. Use the Rich Text editor for bold, italics, or lists when needed.
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
@@ -363,7 +397,7 @@ export default function GrammarTestEditModal({
                       <input
                         type="text"
                         value={q.correct_answer}
-                        onChange={(e) => updateQuestion(index, 'correct_answer', e.target.value)}
+                        onChange={(e) => updateQuestion(index, 'correct_answer', sanitizeInlineHtml(e.target.value))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
                     </div>
@@ -428,7 +462,7 @@ export default function GrammarTestEditModal({
                       <input
                         type="text"
                         value={q.hint || ''}
-                        onChange={(e) => updateQuestion(index, 'hint', e.target.value)}
+                        onChange={(e) => updateQuestion(index, 'hint', sanitizeInlineHtml(e.target.value))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
                     </div>
@@ -439,7 +473,7 @@ export default function GrammarTestEditModal({
                       <input
                         type="text"
                         value={q.explanation || ''}
-                        onChange={(e) => updateQuestion(index, 'explanation', e.target.value)}
+                        onChange={(e) => updateQuestion(index, 'explanation', sanitizeInlineHtml(e.target.value))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
                     </div>
@@ -468,6 +502,17 @@ export default function GrammarTestEditModal({
           </button>
         </div>
       </div>
+
+      {richTextQuestionIndex !== null && questions[richTextQuestionIndex] && (
+        <RichTextPopover
+          initialValue={questions[richTextQuestionIndex].question}
+          onCancel={() => setRichTextQuestionIndex(null)}
+          onSave={(value) => {
+            updateQuestion(richTextQuestionIndex, 'question', value);
+            setRichTextQuestionIndex(null);
+          }}
+        />
+      )}
     </div>
   );
 }
