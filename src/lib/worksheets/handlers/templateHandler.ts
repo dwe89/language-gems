@@ -4,6 +4,10 @@ import { WorksheetRequest, WorksheetResponse, Worksheet } from '../core/types';
 import { CentralizedVocabularyService } from '@/services/centralizedVocabularyService';
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
+import { 
+  getContentConstraint, 
+  formatContentConstraintForPrompt 
+} from '../content-constraints';
 
 export class TemplateHandler extends WorksheetHandler {
   private vocabularyService: CentralizedVocabularyService;
@@ -32,6 +36,22 @@ export class TemplateHandler extends WorksheetHandler {
       throw new Error('Template ID is required for template-based generation');
     }
 
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`🎯 WORKSHEET GENERATION REQUEST`);
+    console.log(`${'='.repeat(80)}`);
+    console.log(`Template: ${templateId}`);
+    console.log(`Subject: ${request.subject}`);
+    console.log(`Original Subject: ${request.originalSubject}`);
+    console.log(`Topic: ${request.topic || 'NOT PROVIDED'}`);
+    console.log(`Subtopic: ${request.subtopic || 'NOT PROVIDED'}`);
+    console.log(`Category: ${request.category || 'NOT PROVIDED'}`);
+    console.log(`Subcategory: ${request.subcategory || 'NOT PROVIDED'}`);
+    console.log(`Curriculum Level: ${request.curriculumLevel || 'NOT PROVIDED'}`);
+    console.log(`Grade Level: ${request.gradeLevel || 'NOT PROVIDED'}`);
+    console.log(`Difficulty: ${request.difficulty || 'NOT PROVIDED'}`);
+    console.log(`Custom Vocabulary: ${request.customVocabulary ? 'YES (' + request.customVocabulary.substring(0, 50) + '...)' : 'NO'}`);
+    console.log(`${'='.repeat(80)}\n`);
+
     // Get vocabulary if needed for language subjects (NOT for grammar_exercises)
     let vocabularyWords: any[] = [];
     console.log(`[TemplateHandler] Checking if ${request.subject} is a language subject: ${this.isLanguageSubject(request.subject)}`);
@@ -41,7 +61,27 @@ export class TemplateHandler extends WorksheetHandler {
     if (this.isLanguageSubject(request.subject) && !request.customVocabulary && templateId !== 'grammar_exercises') {
       console.log(`[TemplateHandler] Fetching vocabulary for ${request.subject} (original: ${request.originalSubject})`);
       vocabularyWords = await this.getVocabularyForTemplate(request);
-      console.log(`[TemplateHandler] Retrieved ${vocabularyWords.length} vocabulary words`);
+      console.log(`[TemplateHandler] ✅ FINAL RESULT: Retrieved ${vocabularyWords.length} vocabulary words`);
+      
+      if (vocabularyWords.length === 0) {
+        console.error(`\n${'!'.repeat(80)}`);
+        console.error(`❌ CRITICAL: NO VOCABULARY RETRIEVED!`);
+        console.error(`${'!'.repeat(80)}`);
+        console.error(`This means the database query returned 0 results.`);
+        console.error(`Check that category='${request.category}' and subcategory='${request.subcategory}' exist in database.`);
+        console.error(`${'!'.repeat(80)}\n`);
+      }
+    } else {
+      console.log(`[TemplateHandler] ⏭️ SKIPPING vocabulary fetch because:`);
+      if (!this.isLanguageSubject(request.subject)) {
+        console.log(`  - Not a language subject (subject: ${request.subject})`);
+      }
+      if (request.customVocabulary) {
+        console.log(`  - Custom vocabulary was provided`);
+      }
+      if (templateId === 'grammar_exercises') {
+        console.log(`  - Template is grammar_exercises`);
+      }
     }
 
     this.updateJobProgress(jobId, 'promptGeneration', 30, 'Building template-specific prompt');
@@ -161,10 +201,21 @@ export class TemplateHandler extends WorksheetHandler {
     try {
       const query: any = {
         language: this.getLanguageCode(request.originalSubject || request.subject),
-        limit: request.targetQuestionCount || 20
+        // DON'T limit vocabulary by question count - get ALL words from the subcategory!
+        // The AI should have access to the full vocabulary list to create better content
+        limit: 100 // Reasonable max to prevent overwhelming the AI
       };
 
-      console.log(`[TemplateHandler] Query parameters:`, JSON.stringify(query, null, 2));
+      console.log(`[TemplateHandler] 🔍 Starting vocabulary fetch`);
+      console.log(`[TemplateHandler] 📋 Request details:`, {
+        subject: request.subject,
+        originalSubject: request.originalSubject,
+        category: request.category,
+        subcategory: request.subcategory,
+        topic: request.topic,
+        subtopic: request.subtopic,
+        curriculumLevel: request.curriculumLevel
+      });
 
       // Add curriculum-specific filters
       if (request.curriculumLevel === 'KS4') {
@@ -178,22 +229,36 @@ export class TemplateHandler extends WorksheetHandler {
       } else {
         // Default to KS3
         query.curriculumLevel = 'KS3';
+        
+        // Handle category-level mappings (frontend → database)
+        // No category mapping needed - they match!
         if (request.category) {
           query.category = request.category;
         }
+        
         if (request.subcategory) {
+          // NO COMPOSITE SUBCATEGORIES NEEDED!
+          // The src/utils/categories.ts file already matches the database exactly
+          // Just use the subcategory as-is
           query.subcategory = request.subcategory;
         }
       }
 
-      console.log(`[TemplateHandler] Final query with filters:`, JSON.stringify(query, null, 2));
+      console.log(`[TemplateHandler] 🎯 Final vocabulary query:`, JSON.stringify(query, null, 2));
 
+      // Execute the query - no composite subcategory handling needed!
       const vocabulary = await this.vocabularyService.getVocabulary(query);
-      console.log(`[TemplateHandler] Retrieved ${vocabulary.length} vocabulary words for ${request.subject}`);
+      
+      console.log(`[TemplateHandler] ✅ Retrieved ${vocabulary.length} vocabulary words`);
+      if (vocabulary.length > 0) {
+        console.log(`[TemplateHandler] 📝 Sample vocabulary:`, vocabulary.slice(0, 5).map(v => `${v.word} (${v.translation})`));
+      } else {
+        console.warn(`[TemplateHandler] ⚠️ NO VOCABULARY FOUND for query:`, query);
+      }
       
       return vocabulary;
     } catch (error) {
-      console.error('Error fetching vocabulary:', error);
+      console.error('[TemplateHandler] ❌ Error fetching vocabulary:', error);
       return [];
     }
   }
@@ -230,8 +295,95 @@ export class TemplateHandler extends WorksheetHandler {
     return templateSpecificPrompts[templateId] || basePrompt;
   }
 
+  private getTextTypeGuidance(textType?: string): string {
+    if (!textType) return '';
+    
+    const guidance: Record<string, string> = {
+      'personal-account': 'Write in first person (Yo/I) as a personal account or personal narrative.',
+      'diary-entry': 'Write in first person (Yo/I) in past tense as a diary entry or journal reflection.',
+      'informational': 'Write in third person as an informational or expository text presenting facts.',
+      'dialogue': 'Write as a dialogue or conversation between multiple people using mixed persons.',
+      'fictional-narrative': 'Write in third person as a fictional story or narrative.'
+    };
+    
+    return guidance[textType] || '';
+  }
+
+  private getTenseFocusGuidance(tenseFocus?: string): string {
+    if (!tenseFocus || tenseFocus === 'mixed') return '';
+    
+    const guidance: Record<string, string> = {
+      'present': 'Focus primarily on present tense verbs throughout the text.',
+      'preterite': 'Focus primarily on preterite (simple past) tense verbs.',
+      'imperfect': 'Focus primarily on imperfect (descriptive past) tense verbs.',
+      'future': 'Focus primarily on future tense verbs and expressions.',
+      'conditional': 'Focus primarily on conditional tense and hypothetical situations.',
+      'subjunctive': 'Focus primarily on subjunctive mood and its uses.',
+      'complex': 'Use 3 or more different tenses throughout the text in a sophisticated way.'
+    };
+    
+    return guidance[tenseFocus] || '';
+  }
+
+  private getPersonFocusGuidance(personFocus?: string): string {
+    if (!personFocus || personFocus === 'mixed') return '';
+    
+    const guidance: Record<string, string> = {
+      'first-singular': 'Write primarily using first person singular conjugations (I / je / ich).',
+      'second': 'Write primarily using second person conjugations (you / tu/vous / du/Sie).',
+      'third-singular': 'Write primarily using third person singular conjugations (he/she / il/elle / er/sie).',
+      'first-plural': 'Write primarily using first person plural conjugations (we / nous / wir).',
+      'third-plural': 'Write primarily using third person plural conjugations (they / ils/elles / sie).'
+    };
+    
+    return guidance[personFocus] || '';
+  }
+
+  private getYearLevelGuidance(yearLevel?: string): string {
+    if (!yearLevel) return '';
+    
+    const guidance: Record<string, string> = {
+      'Y7': `Year 7 (A1-A2 Beginner Level) - CRITICAL SIMPLICITY REQUIREMENTS:
+        - Vocabulary: Use ONLY the most basic 200-300 high-frequency words (colors, numbers, family, basic verbs like 'to be', 'to have', 'to go')
+        - Sentence Length: Maximum 8-10 words per sentence - keep everything SHORT and SIMPLE
+        - Tenses: Use ONLY present tense (and simple past if specifically requested) - NO subjunctive, NO conditional, NO complex tenses
+        - Grammar: Basic subject-verb-object sentences only - NO subordinate clauses, NO complex structures
+        - Topics: Concrete, everyday topics only (my family, my hobbies, my school) - NO abstract concepts
+        - Reading Level: Should be readable by a complete beginner who has studied the language for 3-6 months maximum
+        - Example sentences: "Me llamo Juan." "Tengo doce años." "Mi familia es pequeña." "Me gusta el fútbol."
+        - AVOID: Complex verb forms, abstract nouns, literary language, philosophical concepts, advanced vocabulary`,
+      'Y8': 'Year 8 (A2): Use elementary vocabulary (500-800 words), present and simple past tenses, straightforward sentence patterns. Suitable for elementary learners.',
+      'Y9': 'Year 9 (A2-B1): Use intermediate vocabulary (800-1200 words), multiple tenses including future, more complex sentences with conjunctions. Suitable for pre-intermediate learners.',
+      'Y10': 'Year 10 (B1): Use intermediate vocabulary (1200-1500 words), all major tenses, subordinate clauses, idiomatic expressions. Suitable for GCSE intermediate level.',
+      'Y11': 'Year 11 (B1-B2): Use advanced vocabulary (1500+ words), all tenses including subjunctive and conditional, complex grammatical structures, sophisticated expressions. Suitable for GCSE higher tier.'
+    };
+    
+    return guidance[yearLevel] || '';
+  }
+
   private buildTemplatePrompt(request: WorksheetRequest, templateId: string, vocabularyWords: any[]): string {
-    const baseInfo = `Create a ${request.difficulty || 'medium'} difficulty ${request.subject} worksheet about "${request.topic || 'general concepts'}" for grade ${request.gradeLevel || 7} students.`;
+    // Get the properly capitalized language name
+    const languageName = (request.originalSubject || request.subject || 'Spanish')
+      .charAt(0).toUpperCase() + (request.originalSubject || request.subject || 'Spanish').slice(1);
+    
+    const baseInfo = `Create a ${request.difficulty || 'medium'} difficulty ${languageName} worksheet about "${request.topic || 'general concepts'}" for grade ${request.gradeLevel || 7} students.`;
+    
+    // Get pedagogical parameters with detailed descriptions - extract from advancedOptions
+    const textTypeGuidance = this.getTextTypeGuidance((request.advancedOptions as any)?.textType);
+    const tenseFocusGuidance = this.getTenseFocusGuidance((request.advancedOptions as any)?.tenseFocus);
+    const personFocusGuidance = this.getPersonFocusGuidance((request.advancedOptions as any)?.personFocus);
+    const yearLevelGuidance = this.getYearLevelGuidance((request.advancedOptions as any)?.yearLevel);
+    
+    // Log pedagogical parameters for debugging
+    console.log(`[TemplateHandler] Building prompt with pedagogical parameters:`, {
+      textType: (request.advancedOptions as any)?.textType,
+      tenseFocus: (request.advancedOptions as any)?.tenseFocus,
+      personFocus: (request.advancedOptions as any)?.personFocus,
+      yearLevel: (request.advancedOptions as any)?.yearLevel,
+      topic: request.topic,
+      subtopic: request.subtopic,
+      vocabularyCount: vocabularyWords.length
+    });
     
     // Add vocabulary context if available
     let vocabularyContext = '';
@@ -338,45 +490,117 @@ Create a sentence builder (unscrambling) worksheet with:
 - Include word order hints if needed
 - Provide answer key with correct sentence order`,
 
-      reading_comprehension: `${baseInfo}${vocabularyContext}
+      reading_comprehension: `${baseInfo}
 
-IMPORTANT: You MUST respond with the exact JSON format specified below. Do NOT use the standard worksheet format with "sections". This is a special reading comprehension template.
+⚠️ CRITICAL LANGUAGE AND SIMPLICITY REQUIREMENTS ⚠️
+TARGET LANGUAGE: ${languageName.toUpperCase()}
+- **Reading Passage (article_paragraphs_html):** MUST be written 100% in ${languageName.toUpperCase()} ONLY.
+- **Questions/Instructions:** MUST be written 100% in ENGLISH ONLY.
+- **TENSE/PERSON:** ${tenseFocusGuidance || 'Focus primarily on present tense'}, ${personFocusGuidance || 'first person singular (Yo/I) conjugations'}.
+- **SIMPLICITY:** Use ONLY the most basic 200-300 high-frequency words. Maximum 8-10 words per sentence. Use ONLY present tense (no subjunctive, conditional, or complex tenses). Use basic subject-verb-object sentences (no subordinate clauses or complex structures).
+- **TEXT TYPE:** ${textTypeGuidance || 'Write in first person (Yo/I) as a personal account/narrative'} about "${request.subtopic || request.topic || 'general topic'}".
+- **MAX LENGTH:** Reading passage MUST NOT exceed 1300 characters (including spaces).
 
-Create a reading comprehension worksheet with:
+⚠️ MANDATORY VOCABULARY TO INCLUDE ⚠️
+You MUST use a minimum of ${Math.min(6, Math.floor(vocabularyWords.length * 0.5))} of these specific words naturally within the reading passage:
+${vocabularyWords.map(w => `- ${w.word} (${w.translation})`).join('\n')}
 
-1. **Article**: Generate a ${request.targetLanguage || 'French'} text passage (200-300 words) appropriate for ${request.curriculumLevel || 'intermediate'} level students about "${request.subtopic || request.topic || 'daily life'}".
+⚠️ MANDATORY JSON STRUCTURE AND COMPONENT COUNTS ⚠️
+You MUST return ONLY the exact JSON format specified below, and fulfill these exact component counts:
+1.  **Reading Text (article_paragraphs_html):** 2-3 paragraphs. 100% ${languageName}. Max 1300 characters.
+2.  **Multiple Choice Questions:** EXACTLY 4 questions. English questions and English options.
+3.  **Word Hunt:** Maximum 9 words (English clue, ${languageName} answer from text).
+4.  **True/False Questions:** 4-5 statements (English).
+5.  **Vocabulary Practice (3 of each):**
+    * 3 Sentence Unscramble exercises (scrambled ${languageName} words).
+    * 3 Translation exercises (${languageName} sentence to English translation).
+    * 3 Tense Detective exercises (instructions in English, ${languageName} answer from text).
 
-2. **Activities**: Generate exactly these 7 activity types:
-   - **True/False Questions**: 4-5 statements WRITTEN IN ENGLISH about the text content
-   - **Multiple Choice**: 3-4 questions WRITTEN IN ENGLISH with 4 options each (A, B, C, D) WRITTEN IN ENGLISH
-   - **Word Hunt**: 4-6 vocabulary words - provide English definitions and students find the ${request.targetLanguage || 'French'} word in the text
-   - **Tense Detective**: 1 prompt asking students to find a specific tense/grammar structure
-   - **Vocabulary Writing**: 4-5 ${request.targetLanguage || 'French'} words from the text with English definitions - students write the word
-   - **Sentence Unscramble**: 2-3 properly scrambled sentences that can actually form correct ${request.targetLanguage || 'French'} sentences
-CRITICAL REQUIREMENTS - READ CAREFULLY:
-- True/False statements must be WRITTEN IN ENGLISH about the text content (NOT in ${request.targetLanguage || 'French'})
-- Multiple choice questions and options must be WRITTEN IN ENGLISH (NOT in ${request.targetLanguage || 'French'})
-- Word hunt: English definition → find ${request.targetLanguage || 'French'} word in text
-- Vocabulary writing: ${request.targetLanguage || 'French'} word with English definition for students to write
-- Sentence unscramble: Make sure scrambled words include ALL necessary words (articles, prepositions, etc.) to form a complete proper sentence
-- Use "${request.targetLanguage || 'French'}" not "French" in instructions
-- IMPORTANT: Questions should be in English so students can understand what they need to do
+CRITICAL: Return ONLY valid JSON. Do NOT include any explanatory text, markdown code blocks, or comments outside the JSON object.
+${yearLevelGuidance ? `\nYEAR LEVEL REQUIREMENTS:\n${yearLevelGuidance}` : ''}
+
+JSON FORMAT:
+\`\`\`json
+{
+   - 4-5 statements WRITTEN IN ENGLISH about the text content
+   - Students mark true or false based on the ${languageName} text
+
+5. **Vocabulary Practice** (MANDATORY):
+   - Include THREE sentence unscramble exercises in ${languageName}
+   - Include THREE translation exercises (${languageName} → English)
+   - Include THREE tense detective exercises (find specific tenses/grammar in text)
+
+6. **Sentence Unscramble Requirements**:
+   - Provide scrambled ${languageName} words that include ALL necessary words (articles, prepositions, etc.)
+   - Scrambled words must be able to form a complete, grammatically correct ${languageName} sentence
+   - No missing words that would make the sentence incomplete
+
+LANGUAGE REQUIREMENTS - ⚠️ READ THIS CAREFULLY ⚠️:
+- **Reading passage (article_paragraphs_html): 100% ${languageName.toUpperCase()} (NOT ENGLISH!)**
+- All questions and instructions: ENGLISH ONLY
+- Multiple choice questions: ENGLISH questions with ENGLISH answer options
+- True/False statements: ENGLISH ONLY
+- Word hunt clues: ENGLISH definitions
+- Translation sentences: ${languageName} → English
+- Unscramble sentences: ${languageName} words to unscramble
+- Tense detective answers: ${languageName} sentences from the text
+
+VOCABULARY INTEGRATION:
+- You MUST use the provided vocabulary words in the reading text
+- Vocabulary words should appear naturally in context
+- Word hunt should include vocabulary from the provided list
 
 CRITICAL: You MUST return ONLY this exact JSON format (no other fields):
 {
-  "topic_title": "Topic name in ${request.targetLanguage || 'French'}",
-  "article_title": "Article title in ${request.targetLanguage || 'French'}",
-  "article_paragraphs_html": "Full HTML with <p> tags for each paragraph",
-  "true_false_questions": [{"id": 1, "statement": "Students enjoy playing sports as a hobby", "answer": true}],
-  "multiple_choice_questions": [{"id": 1, "question": "What hobby is mentioned in the text?", "options": [{"letter": "A", "text": "Reading books"}, {"letter": "B", "text": "Playing games"}, {"letter": "C", "text": "Watching TV"}, {"letter": "D", "text": "Sleeping"}], "answer": "A"}],
-  "word_hunt_words": [{"word": "English definition", "answer": "${request.targetLanguage || 'French'} word from text"}],
-  "tense_detective_prompt": "Find a sentence in the present tense",
-  "vocabulary_writing": [{"word": "${request.targetLanguage || 'French'} word", "definition": "English definition"}],
-  "unscramble_sentences": [{"id": 1, "jumbled_sentence": "properly scrambled words including ALL necessary words like prepositions and articles", "answer": "correct complete ${request.targetLanguage || 'French'} sentence with all words"}],
-  "translation_sentences": [{"id": 1, "sentence": "${request.targetLanguage || 'French'} sentence", "answer": "English translation"}]
+  "topic_title": "Topic name in ${languageName}",
+  "article_title": "Article title in ${languageName}",
+  "article_paragraphs_html": "⚠️ CRITICAL: Full HTML with <p> tags - MUST BE WRITTEN ENTIRELY IN ${languageName.toUpperCase()} - DO NOT USE ENGLISH - MAXIMUM 1300 characters including spaces ⚠️",
+  "true_false_questions": [{"id": 1, "statement": "English statement about the text", "answer": true}],
+  "multiple_choice_questions": [
+    {
+      "id": 1,
+      "question": "English question about the text",
+      "options": [
+        {"letter": "A", "text": "English option A"},
+        {"letter": "B", "text": "English option B"},
+        {"letter": "C", "text": "English option C"},
+        {"letter": "D", "text": "English option D"}
+      ],
+      "answer": "A"
+    }
+  ],
+  "word_hunt_words": [{"word": "English definition or clue", "answer": "${languageName} word from text (maximum 9 words)"}],
+  "vocabulary_writing": [{"word": "${languageName} word", "definition": "English definition"}],
+  "unscramble_sentences": [
+    {"id": 1, "jumbled_sentence": "scrambled ${languageName} words with ALL necessary articles and prepositions", "answer": "complete correct ${languageName} sentence"},
+    {"id": 2, "jumbled_sentence": "scrambled ${languageName} words with ALL necessary articles and prepositions", "answer": "complete correct ${languageName} sentence"},
+    {"id": 3, "jumbled_sentence": "scrambled ${languageName} words with ALL necessary articles and prepositions", "answer": "complete correct ${languageName} sentence"}
+  ],
+  "translation_sentences": [
+    {"id": 1, "sentence": "${languageName} sentence to translate", "answer": "English translation"},
+    {"id": 2, "sentence": "${languageName} sentence to translate", "answer": "English translation"},
+    {"id": 3, "sentence": "${languageName} sentence to translate", "answer": "English translation"}
+  ],
+  "tense_detective": [
+    {"id": 1, "instruction": "Find a sentence in the present tense and write it here", "answer": "Example ${languageName} sentence from text"},
+    {"id": 2, "instruction": "Find a sentence with a specific verb form and write it here", "answer": "Example ${languageName} sentence from text"},
+    {"id": 3, "instruction": "Find a sentence with a particular grammar structure and write it here", "answer": "Example ${languageName} sentence from text"}
+  ]
 }
 
-DO NOT include "title", "instructions", "sections", or any other fields. Use ONLY the format above.`,
+⚠️ FINAL CRITICAL REMINDERS ⚠️:
+- Text MAXIMUM 1300 characters including spaces
+- **THE READING PASSAGE (article_paragraphs_html) MUST BE WRITTEN IN ${languageName.toUpperCase()} - NOT IN ENGLISH**
+- EXACTLY 4 multiple choice questions (in English)
+- Maximum 9 word hunt words
+- Include EXACTLY 3 of each: sentence unscramble, translation, tense detective
+- All questions and instructions in ENGLISH
+- Reading passage text in ${languageName.toUpperCase()}
+${textTypeGuidance ? `- ${textTypeGuidance}` : ''}
+${tenseFocusGuidance ? `- ${tenseFocusGuidance}` : ''}
+${personFocusGuidance ? `- ${personFocusGuidance}` : ''}
+${yearLevelGuidance ? `- ${yearLevelGuidance}` : ''}
+- DO NOT include "title", "instructions", "sections", or any other fields`,
 
       guided_reading: `${baseInfo}${vocabularyContext}
 
@@ -661,6 +885,12 @@ CRITICAL: Return ONLY valid JSON. Do NOT include:
     const questionTypes = request.questionTypes || ['matching', 'fillBlanks', 'translations', 'definitions'];
     const exercisesPerType = Math.ceil((request.targetQuestionCount || 15) / questionTypes.length);
     
+    // Get pedagogical guidance
+    const textTypeGuidance = this.getTextTypeGuidance((request as any).textType);
+    const tenseFocusGuidance = this.getTenseFocusGuidance((request as any).tenseFocus);
+    const personFocusGuidance = this.getPersonFocusGuidance((request as any).personFocus);
+    const yearLevelGuidance = this.getYearLevelGuidance((request as any).yearLevel);
+    
     // Determine the target language name
     const targetLanguage = request.originalSubject 
       ? request.originalSubject.charAt(0).toUpperCase() + request.originalSubject.slice(1)
@@ -689,10 +919,10 @@ CRITICAL: Return ONLY valid JSON. Do NOT include:
       "instructions": "Complete each sentence with the correct ${targetLanguage} word.",
       "items": [
         {"sentence": "Example sentence with _____ blank.", "answer": "word"},
-        // ${exercisesPerType} items total - create meaningful, contextual sentences using vocabulary words
+        // MUST include MINIMUM 6 items, MAXIMUM 8 items
         // Each sentence should have ONE blank marked with _____
         // IMPORTANT: Write sentences in ${targetLanguage}, not in English
-        // Use as many vocabulary words as possible to create ${exercisesPerType} different sentences
+        // Use different vocabulary words to create 6-8 different sentences
       ]
     },`;
     }
@@ -702,10 +932,48 @@ CRITICAL: Return ONLY valid JSON. Do NOT include:
     {
       "type": "translation",
       "title": "Translation Practice",
-      "instructions": "Translate the following words from English to ${targetLanguage}.",
+      "instructions": "Translate the following words from ${targetLanguage} to English.",
       "items": [
-        {"source": "English word", "target": "${targetLanguage} translation"},
-        // 10 items total
+        {"word": "${targetLanguage} vocabulary word", "answer": "English translation"},
+        {"word": "${targetLanguage} vocabulary word", "answer": "English translation"},
+        {"word": "${targetLanguage} vocabulary word", "answer": "English translation"}
+        // MUST include at least 10 vocabulary words
+        // Use words from the provided vocabulary list
+        // Provide ${targetLanguage} words (not sentences) and expect English translations
+      ]
+    },`;
+    }
+
+    // Sentence unscramble exercise
+    if (questionTypes.includes('unscramble')) {
+      exerciseTemplates += `
+    {
+      "type": "sentence-unscramble",
+      "title": "Sentence Unscramble",
+      "instructions": "Put the words in the correct order to form a proper ${targetLanguage} sentence.",
+      "items": [
+        {"jumbled_sentence": "scrambled words including ALL necessary articles and prepositions", "answer": "complete correct ${targetLanguage} sentence"},
+        {"jumbled_sentence": "scrambled words including ALL necessary articles and prepositions", "answer": "complete correct ${targetLanguage} sentence"},
+        {"jumbled_sentence": "scrambled words including ALL necessary articles and prepositions", "answer": "complete correct ${targetLanguage} sentence"}
+        // MUST include EXACTLY 3 sentence unscramble exercises
+        // Ensure scrambled sentences include ALL words needed (articles, prepositions, etc.)
+      ]
+    },`;
+    }
+
+    // Tense detective exercise  
+    if (questionTypes.includes('tenseDetective')) {
+      exerciseTemplates += `
+    {
+      "type": "tense-detective",
+      "title": "Tense Detective",
+      "instructions": "Find and write sentences that match the grammar patterns described.",
+      "items": [
+        {"instruction": "Write a sentence in the present tense using a vocabulary word", "answer": "Example ${targetLanguage} sentence"},
+        {"instruction": "Write a sentence in the past tense using a vocabulary word", "answer": "Example ${targetLanguage} sentence"},
+        {"instruction": "Write a sentence with a specific grammar structure using a vocabulary word", "answer": "Example ${targetLanguage} sentence"}
+        // MUST include EXACTLY 3 tense detective exercises
+        // Instructions should guide students to create or identify specific tenses/grammar
       ]
     },`;
     }
@@ -744,7 +1012,7 @@ CRITICAL: Return ONLY valid JSON. Do NOT include:
     {
       "type": "wordsearch",
       "title": "Word Search",
-      "instructions": "Find all the ${targetLanguage} words hidden in the grid below.",
+      "instructions": "Find all the words hidden in the grid below.",
       "grid_size": 16,
       "words": [], // Will be populated with 14 ${targetLanguage} words from vocabulary_items (remove all spaces from multi-word terms)
       "grid": [] // Will be generated automatically
@@ -756,7 +1024,7 @@ CRITICAL: Return ONLY valid JSON. Do NOT include:
     {
       "type": "crossword",
       "title": "Crossword Puzzle",
-      "instructions": "Complete the crossword using the vocabulary words.",
+  "instructions": "Complete the crossword using the words below",
       "clues": {
         "across": [
           {"number": 1, "clue": "A descriptive clue (e.g., 'A vehicle with two wheels, without a motor' for bicycle)", "answer": "${targetLanguage.toLowerCase()}_word", "position": [0, 0]}
@@ -782,6 +1050,12 @@ CRITICAL: Return ONLY valid JSON. Do NOT include:
 
     return `${baseInfo}${vocabularyContext}
 
+PEDAGOGICAL CONSTRAINTS:
+${textTypeGuidance ? `- TEXT TYPE: ${textTypeGuidance}` : ''}
+${tenseFocusGuidance ? `- TENSE FOCUS: ${tenseFocusGuidance}` : ''}
+${personFocusGuidance ? `- PERSON FOCUS: ${personFocusGuidance}` : ''}
+${yearLevelGuidance ? `- YEAR LEVEL: ${yearLevelGuidance}` : ''}
+
 Create a professional vocabulary practice worksheet using this EXACT JSON structure:
 
 {
@@ -800,10 +1074,14 @@ CRITICAL INSTRUCTIONS:
 1. Use ONLY the provided vocabulary words
 2. ALL instructions, questions, and prompts MUST be written in ENGLISH
 3. Only the vocabulary words, answers to blanks, and sentence content should be in ${targetLanguage}
-4. For fill-in-the-blanks: Create AT LEAST ${exercisesPerType} sentences in ${targetLanguage} with blanks
+4. For fill-in-the-blanks: Create MINIMUM 6 and MAXIMUM 8 sentences in ${targetLanguage} with blanks
 5. For multiple choice: Questions MUST be in ENGLISH (e.g., "What is the French word for 'phone'?"), options in ${targetLanguage}
 6. Never use "undefined" or duplicate numbering
-7. Create meaningful, contextual sentences and questions`;
+7. Create meaningful, contextual sentences and questions
+${textTypeGuidance ? `8. ${textTypeGuidance}` : ''}
+${tenseFocusGuidance ? `9. ${tenseFocusGuidance}` : ''}
+${personFocusGuidance ? `10. ${personFocusGuidance}` : ''}
+${yearLevelGuidance ? `11. ${yearLevelGuidance}` : ''}`;
   }
 
   private getEstimatedTime(templateId: string): number {

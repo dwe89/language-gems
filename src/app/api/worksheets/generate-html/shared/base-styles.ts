@@ -145,6 +145,7 @@ export function getBaseStyles(): string {
             color: var(--brand-primary);
             margin-bottom: 6px;
             letter-spacing: -0.2px;
+            text-align: center;
         }
 
         .subtitle {
@@ -153,6 +154,7 @@ export function getBaseStyles(): string {
             color: var(--brand-accent);
             margin-bottom: 12px;
             font-weight: 600;
+            text-align: center;
         }
 
         .meta-info {

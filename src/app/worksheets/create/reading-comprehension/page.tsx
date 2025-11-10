@@ -22,16 +22,10 @@ import {
   ClipboardList
 } from 'lucide-react';
 
-// Import database category system
-import {
-  fetchKS3Categories,
-  fetchKS4Themes,
-  fetchAvailableTiers,
-  type DatabaseCategory,
-  type DatabaseSubcategory,
-  type KS4Theme,
-  type KS4Unit
-} from '@/lib/database-categories';
+// Import category system - USING THE CORRECT SOURCE (matches utils/categories.ts and database exactly)
+import { VOCABULARY_CATEGORIES, CURRICULUM_LEVELS_CONFIG } from '@/components/games/ModernCategorySelector';
+import { getCategoriesByCurriculum } from '@/components/games/KS4CategorySystem';
+import type { Category, Subcategory } from '@/components/games/ModernCategorySelector';
 
 // Corrected shadcn/ui component imports using the '@/' alias
 import { Button } from '@/components/ui/button';
@@ -49,6 +43,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { LoadingModal } from '@/components/ui/loading-modal';
 
 // Types for vocabulary configuration
 interface TopicConfig {
@@ -61,15 +56,18 @@ interface TopicConfig {
   tier?: 'foundation' | 'higher';
 }
 
-// Union type for categories/themes
-type CategoryOrTheme = DatabaseCategory | KS4Theme;
-type SubcategoryOrUnit = DatabaseSubcategory | KS4Unit;
+// Category types are now unified - no need for union types
+// Both KS3 and KS4 use Category/Subcategory from ModernCategorySelector
 
 export default function ReadingComprehensionPage() {
   const [title, setTitle] = useState('Reading Comprehension Worksheet');
   const [subject, setSubject] = useState('spanish');
   const [instructions, setInstructions] = useState('Read the passage carefully and answer the questions that follow.');
   const [customPrompt, setCustomPrompt] = useState('');
+  const [textType, setTextType] = useState('personal-account');
+  const [tenseFocus, setTenseFocus] = useState('mixed');
+  const [personFocus, setPersonFocus] = useState('mixed');
+  const [yearLevel, setYearLevel] = useState('Y9');
 
   // Topic selection
   const [topicConfig, setTopicConfig] = useState<TopicConfig>({
@@ -79,8 +77,8 @@ export default function ReadingComprehensionPage() {
     subcategoryId: undefined,
   });
 
-  const [availableCategories, setAvailableCategories] = useState<CategoryOrTheme[]>([]);
-  const [availableSubcategories, setAvailableSubcategories] = useState<SubcategoryOrUnit[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
+  const [availableSubcategories, setAvailableSubcategories] = useState<Subcategory[]>([]);
   const [availableTiers, setAvailableTiers] = useState<string[]>(['foundation', 'higher']);
 
   // Reading comprehension specific settings
@@ -99,39 +97,35 @@ export default function ReadingComprehensionPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedWorksheet, setGeneratedWorksheet] = useState<any>(null);
   const [worksheetId, setWorksheetId] = useState<string | null>(null);
+  const [generationStep, setGenerationStep] = useState(0);
+  const [generationMessage, setGenerationMessage] = useState('Initializing...');
+
+  const generationSteps = [
+    'Validating worksheet parameters...',
+    'Fetching vocabulary words...',
+    'Generating AI content...',
+    'Creating reading comprehension exercises...',
+    'Finalizing worksheet...',
+  ];
 
   // Load categories based on curriculum level and exam board
+  // UPDATED: Use the CORRECT category system from ModernCategorySelector (matches utils/categories.ts)
   useEffect(() => {
-    const loadCategories = async () => {
-      if (topicConfig.curriculumLevel === 'KS3') {
-        const categories = await fetchKS3Categories();
-        setAvailableCategories(categories);
-      } else if (topicConfig.curriculumLevel === 'KS4') {
-        const examBoard = topicConfig.examBoard || 'AQA';
-        const [themes, tiers] = await Promise.all([
-          fetchKS4Themes(examBoard),
-          fetchAvailableTiers(examBoard)
-        ]);
-        setAvailableCategories(themes);
-        setAvailableTiers(tiers);
-      }
-    };
-
-    loadCategories();
+    if (topicConfig.curriculumLevel === 'KS3') {
+      setAvailableCategories(VOCABULARY_CATEGORIES);
+    } else if (topicConfig.curriculumLevel === 'KS4') {
+      const ks4Categories = getCategoriesByCurriculum('KS4', topicConfig.examBoard || 'AQA');
+      setAvailableCategories(ks4Categories);
+    }
   }, [topicConfig.curriculumLevel, topicConfig.examBoard]);
 
-  // Load subcategories/units when category/theme changes
+  // Load subcategories when category changes
+  // UPDATED: Simplified - Category type always has subcategories array
   useEffect(() => {
     if (topicConfig.categoryId) {
       const selectedCategory = availableCategories.find(cat => cat.id === topicConfig.categoryId);
       if (selectedCategory) {
-        // For KS3 categories, use subcategories; for KS4 themes, use units
-        const subItems = 'subcategories' in selectedCategory
-          ? selectedCategory.subcategories
-          : 'units' in selectedCategory
-            ? selectedCategory.units
-            : [];
-        setAvailableSubcategories(subItems);
+        setAvailableSubcategories(selectedCategory.subcategories || []);
       }
     } else {
       setAvailableSubcategories([]);
@@ -170,6 +164,7 @@ export default function ReadingComprehensionPage() {
       template: 'reading_comprehension',
       subject: subject,
       topic: topicConfig.categoryId || 'General',
+      subtopic: topicConfig.subcategoryId, // Add subtopic field for proper routing
       passageLength: readingSettings.passageLength,
       questionCount: readingSettings.questionCount,
       questionTypes: Object.entries(readingSettings.questionTypes)
@@ -182,6 +177,10 @@ export default function ReadingComprehensionPage() {
       tier: topicConfig.tier,
       category: topicConfig.categoryId,
       subcategory: topicConfig.subcategoryId,
+      textType: textType,
+      tenseFocus: tenseFocus,
+      personFocus: personFocus,
+      yearLevel: yearLevel,
     };
 
     console.log('Sending worksheet generation request:', requestBody);
@@ -231,27 +230,33 @@ export default function ReadingComprehensionPage() {
         const status = await response.json();
         console.log('Job status response:', status);
 
+        // Update progress message based on status
+        if (status.message) {
+          setGenerationMessage(status.message);
+        }
+
+        // Update step based on progress percentage
+        const progress = status.progress || 0;
+        if (progress < 20) setGenerationStep(0);
+        else if (progress < 40) setGenerationStep(1);
+        else if (progress < 60) setGenerationStep(2);
+        else if (progress < 80) setGenerationStep(3);
+        else setGenerationStep(4);
+
         if (status.status === 'completed') {
           console.log('Worksheet generation completed successfully');
+          setGenerationMessage('Redirecting to worksheet...');
+          setGenerationStep(4);
 
-          if (status.result?.worksheet) {
-            setGeneratedWorksheet(status.result.worksheet);
-            if (status.result.worksheetId) {
-              setWorksheetId(status.result.worksheetId);
+          // Auto-redirect after a brief delay to show completion
+          setTimeout(() => {
+            if (status.result?.worksheetId) {
+              window.location.href = `/worksheets/${status.result.worksheetId}`;
+            } else {
+              window.location.href = '/worksheets';
             }
-          } else if (status.assumedComplete) {
-            console.log('Job assumed complete, redirecting to worksheets page');
-            alert('Worksheet generated successfully! Redirecting to your worksheets...');
-            window.location.href = '/worksheets';
-            return;
-          } else {
-            console.log('Job completed but no worksheet data, redirecting to worksheets page');
-            alert('Worksheet generated successfully! Redirecting to your worksheets...');
-            window.location.href = '/worksheets';
-            return;
-          }
-
-          setIsGenerating(false);
+          }, 1500);
+          
           return;
         }
 
@@ -262,12 +267,14 @@ export default function ReadingComprehensionPage() {
           return;
         }
 
+        // Job is still in progress
+        console.log(`Job status: ${status.status}, progress: ${status.progress || 'unknown'}`);
         attempts++;
         if (attempts < maxAttempts) {
           setTimeout(poll, 2000);
         } else {
           console.error('Polling timed out after', maxAttempts, 'attempts');
-          alert('Worksheet generation may have completed. Please check your worksheets page.');
+          alert('Worksheet generation may have completed. Redirecting to your worksheets...');
           window.location.href = '/worksheets';
         }
       } catch (error) {
@@ -276,7 +283,7 @@ export default function ReadingComprehensionPage() {
         if (attempts < maxAttempts) {
           setTimeout(poll, 2000);
         } else {
-          alert('Worksheet generation may have completed. Please check your worksheets page.');
+          alert('Worksheet generation may have completed. Redirecting to your worksheets...');
           window.location.href = '/worksheets';
         }
       }
@@ -371,6 +378,70 @@ export default function ReadingComprehensionPage() {
                       <SelectItem value="english">English</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="textType" className="text-slate-700 font-semibold">Text Type / Genre</Label>
+                  <select
+                    id="textType"
+                    value={textType}
+                    onChange={(e) => setTextType(e.target.value)}
+                    className="flex h-12 w-full rounded-md border-2 border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="personal-account">Personal Account (Yo)</option>
+                    <option value="diary-entry">Diary Entry (Yo past)</option>
+                    <option value="informational">Informational Text (3rd person)</option>
+                    <option value="dialogue">Dialogue (mixed persons)</option>
+                    <option value="fictional-narrative">Fictional Narrative (3rd person)</option>
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="tenseFocus" className="text-slate-700 font-semibold">Tense / Mood Focus</Label>
+                  <select
+                    id="tenseFocus"
+                    value={tenseFocus}
+                    onChange={(e) => setTenseFocus(e.target.value)}
+                    className="flex h-12 w-full rounded-md border-2 border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="present">Present Tense</option>
+                    <option value="preterite">Preterite</option>
+                    <option value="imperfect">Imperfect</option>
+                    <option value="future">Future</option>
+                    <option value="conditional">Conditional</option>
+                    <option value="subjunctive">Subjunctive</option>
+                    <option value="mixed">Mixed Tenses</option>
+                    <option value="complex">Complex (3+ tenses)</option>
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="personFocus" className="text-slate-700 font-semibold">Person Focus</Label>
+                  <select
+                    id="personFocus"
+                    value={personFocus}
+                    onChange={(e) => setPersonFocus(e.target.value)}
+                    className="flex h-12 w-full rounded-md border-2 border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="first-singular">First person singular (I)</option>
+                    <option value="second">Second person (you)</option>
+                    <option value="third-singular">Third person singular (he/she)</option>
+                    <option value="first-plural">First person plural (we)</option>
+                    <option value="third-plural">Third person plural (they)</option>
+                    <option value="mixed">Mixed persons</option>
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="yearLevel" className="text-slate-700 font-semibold">UK Year Level</Label>
+                  <select
+                    id="yearLevel"
+                    value={yearLevel}
+                    onChange={(e) => setYearLevel(e.target.value)}
+                    className="flex h-12 w-full rounded-md border-2 border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="Y7">Year 7 (A1-A2)</option>
+                    <option value="Y8">Year 8 (A2)</option>
+                    <option value="Y9">Year 9 (A2-B1)</option>
+                    <option value="Y10">Year 10 (B1)</option>
+                    <option value="Y11">Year 11 (B1-B2)</option>
+                  </select>
                 </div>
                 <div className="space-y-3 md:col-span-2">
                   <Label htmlFor="instructions" className="text-slate-700 font-semibold flex items-center gap-2">
@@ -800,6 +871,14 @@ export default function ReadingComprehensionPage() {
           </div>
         </div>
       </div>
+
+      <LoadingModal 
+        isOpen={isGenerating}
+        currentStep={generationStep}
+        steps={generationSteps}
+        title="Generating Reading Comprehension Worksheet"
+        description="Please wait while we create your worksheet..."
+      />
     </div>
   );
 }

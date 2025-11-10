@@ -20,7 +20,7 @@ export default function TestGeneratorsPage() {
             {
               type: 'wordsearch',
               title: 'Spanish Vocabulary Word Search',
-              instructions: 'Find all the Spanish words hidden in the grid below.',
+              instructions: 'Find all the words hidden in the grid below.',
               words: ['CASA', 'PERRO', 'GATO', 'AGUA', 'COMIDA', 'FAMILIA', 'ESCUELA', 'LIBRO'],
               grid_size: 15,
               difficulty: 'medium'

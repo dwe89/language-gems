@@ -48,6 +48,34 @@ export async function generateVocabularyPracticeHTML(
       --puzzle-width: 280px;
     }
 
+    /* Tighter spacing for title and container */
+    .worksheet-container {
+      /* Reduce top padding so title appears higher on the page */
+      padding-top: 0.12in; /* was 0.25in in shared styles */
+    }
+
+    h1 {
+      margin-top: 0.15rem; /* small positive space to avoid overlap with header */
+      margin-bottom: 0.6rem;
+    }
+
+    .student-info-header {
+      margin-top: 0.25rem;
+    }
+
+    /* Ensure PDF/print also uses tightened spacing (overrides PRINT_STYLES !important rules) */
+    @media print {
+      .worksheet-container {
+        padding-top: 0.12in !important;
+        padding-bottom: 0.12in !important;
+      }
+
+      h1 {
+        margin-top: 0.15rem !important;
+        margin-bottom: 0.6rem !important;
+      }
+    }
+
     /* Student Info Header */
     .student-info-header {
       display: flex;
@@ -60,7 +88,7 @@ export async function generateVocabularyPracticeHTML(
     .info-field {
       display: inline-block;
       border-bottom: 1px solid #000;
-      width: 250px;
+      width: 300px;
       margin-left: 8px;
     }
 
@@ -402,6 +430,13 @@ export async function generateVocabularyPracticeHTML(
       font-size: 10pt;
       line-height: 1.4;
       margin: 0;
+    }
+
+    /* Slightly smaller instruction text for crossword to save vertical space */
+    .crossword-container .exercise-instructions {
+      font-size: 9.5pt;
+      line-height: 1.25;
+      margin-bottom: 8px;
     }
 
     /* === IMPROVED LAYOUT: WORD SEARCH AND CROSSWORD SIDE BY SIDE === */
@@ -757,6 +792,80 @@ export async function generateVocabularyPracticeHTML(
       font-size: 11px;
     }
 
+    /* Sentence Unscramble Styles */
+    .unscramble-container {
+      margin: 12px 0;
+    }
+
+    .unscramble-item {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: flex-start;
+    }
+
+    .unscramble-item .question-number {
+      color: #007bff;
+      font-weight: 700;
+      font-size: 11pt;
+      flex-shrink: 0;
+    }
+
+    .unscramble-content {
+      flex: 1 1 auto;
+    }
+
+    .scrambled-words {
+      font-weight: 600;
+      font-size: 10.5pt;
+      color: #dc2626;
+      font-family: 'Courier New', monospace;
+      margin-bottom: 6px;
+    }
+
+    .unscramble-answer-line {
+      border-bottom: 2px solid #000;
+      width: 100%;
+      min-height: 1.6em;
+      margin-top: 4px;
+    }
+
+    /* Tense Detective Styles */
+    .tense-detective-container {
+      margin: 12px 0;
+    }
+
+    .tense-detective-item {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: flex-start;
+    }
+
+    .tense-detective-item .question-number {
+      color: #007bff;
+      font-weight: 700;
+      font-size: 11pt;
+      flex-shrink: 0;
+    }
+
+    .tense-detective-content {
+      flex: 1 1 auto;
+    }
+
+    .instruction-text {
+      font-weight: 500;
+      font-size: 10.5pt;
+      margin-bottom: 6px;
+    }
+
+    .tense-detective-answer-line {
+      border-bottom: 2px solid #000;
+      width: 100%;
+      min-height: 1.6em;
+      margin-top: 4px;
+    }
+
     /* Print styles - repeat header on every page */
     @media print {
       .worksheet-header-repeat {
@@ -764,28 +873,23 @@ export async function generateVocabularyPracticeHTML(
         position: running(header);
       }
 
-      @page {
-        margin-top: 0.75in;
-        @top-center {
-          content: element(header);
+        /* Reduce the printed page header space - keep minimal for PDF */
+        @page {
+          /* Small top margin to allow header area but not create huge blank space */
+          margin-top: 4mm;
+          @top-center {
+            content: element(header);
+          }
         }
-      }
 
-      /* Fallback for browsers that don't support running headers */
-      .page-header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: white;
-        border-bottom: 2px solid #333;
-        padding: 8px 0.25in;
-        z-index: 1000;
-      }
+        /* Fallback for browsers that don't support running headers - hide by default for worksheets */
+        .page-header {
+          display: none; /* hide the fallback fixed header in PDFs to avoid large reserved space */
+        }
 
-      .worksheet-container {
-        margin-top: 60px;
-      }
+        .worksheet-container {
+          margin-top: 6mm; /* small offset to account for any header spacing */
+        }
     }
   `;
 
@@ -817,12 +921,15 @@ export async function generateVocabularyPracticeHTML(
 
   // Vocabulary List (if provided)
   if (vocabularyItems.length > 0) {
+    // Use 3 columns if there are many words (30+), 2 columns for medium (15-29), 1 column for few
+    const columnCount = vocabularyItems.length >= 30 ? 3 : vocabularyItems.length >= 15 ? 2 : 1;
+    
     bodyContent += `
       <div class="vocab-list">
         <h3><i data-lucide="BookOpen" class="icon"></i> Vocabulary List</h3>
-        <ul>
+        <ul style="column-count: ${columnCount}; column-gap: 24px;">
           ${vocabularyItems.map((item: any) => `
-            <li>
+            <li style="break-inside: avoid;">
               <strong>${item.word}</strong> - ${item.translation}
             </li>
           `).join('')}
@@ -917,6 +1024,7 @@ export async function generateVocabularyPracticeHTML(
       case 'unjumble':
         bodyContent += generateUnjumbleSection(exercise, partNumber);
         break;
+      // sentence-unscramble and tenseDetective removed - these are reading-comprehension specific exercises
       default:
         bodyContent += generateGenericSection(exercise, partNumber);
     }
@@ -1067,12 +1175,15 @@ function generateTranslationSection(exercise: any, partNumber: number): string {
   const items = exercise.items || [];
   if (items.length === 0) return '';
 
+  // Use 3 columns if there are many words (20+), 2 columns for medium (10-19), 1 column for few
+  const columnCount = items.length >= 20 ? 3 : items.length >= 10 ? 2 : 1;
+
   return `
     <h2><i data-lucide="Globe" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Translation Practice'}</h2>
     <p class="exercise-instructions">${exercise.instructions || 'Translate the following words.'}</p>
-    <ol style="column-count: 2; column-gap: 24px;">
+    <ol style="column-count: ${columnCount}; column-gap: 24px;">
       ${items.map((item: any) => `
-        <li style="break-inside: avoid; margin-bottom: 12px;">${item.source || item.text} → <span class="translation-line" style="width: 200px;"></span></li>
+        <li style="break-inside: avoid; margin-bottom: 12px;">${item.word || item.source || item.text} → <span class="translation-line" style="width: 200px;"></span></li>
       `).join('')}
     </ol>
   `;
@@ -1190,6 +1301,9 @@ function generateUnjumbleSection(exercise: any, partNumber: number): string {
   `;
 }
 
+// generateSentenceUnscrambleSection removed - reading-comprehension specific exercise
+// generateTenseDetectiveSection removed - reading-comprehension specific exercise
+
 function generateGenericSection(exercise: any, partNumber: number): string {
   return `
     <h2><i data-lucide="List" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Exercise'}</h2>
@@ -1219,7 +1333,8 @@ function generateWordSearchSection(exercise: any, partNumber: number): string {
   }
 
   const uniqueWords: string[] = Array.from(new Set<string>(normalizedWords));
-  const limitedWords: string[] = uniqueWords.slice(0, Math.min(uniqueWords.length, 16));
+  // Limit word search to a maximum of 12 words to keep puzzles compact and fit on the page
+  const limitedWords: string[] = uniqueWords.slice(0, Math.min(uniqueWords.length, 12));
 
   // Force 14x14 grid - with smaller puzzle-width this will fit on first page
   const gridSize = 14;
@@ -1459,10 +1574,10 @@ async function generateCrosswordSection(
     // Shorter default instructions and match compact title style color/bottom border to Word Search
     const heading = isCompact ? `
       <h2><i data-lucide="Puzzle" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Crossword Puzzle'}</h2>
-      <p class="exercise-instructions">${exercise.instructions || 'Complete the crossword puzzle.'}</p>
+      <p class="exercise-instructions">${exercise.instructions || 'Complete the crossword using the words below'}</p>
     ` : `
       <h2><i data-lucide="Puzzle" class="icon"></i> Part ${partNumber}: ${exercise.title || 'Crossword Puzzle'}</h2>
-      <p class="exercise-instructions">${exercise.instructions || 'Complete the crossword puzzle.'}</p>
+      <p class="exercise-instructions">${exercise.instructions || 'Complete the crossword using the words below'}</p>
     `;
 
     return `

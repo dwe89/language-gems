@@ -38,9 +38,8 @@ export function generateReadingComprehensionHTML(worksheet: any, options: any = 
         <div class="title">${title}</div>
         <div class="subtitle">${subject} • ${topic}</div>
         <div class="meta-info">
-            <span>Difficulty: <strong>${difficulty}</strong></span>
-            <span>Time: <strong>${estimated_time_minutes || 30} minutes</strong></span>
-            <span>Date: <strong>_____________</strong></span>
+            <span>Name: <strong>_______________________________</strong></span>
+            <span>Date: <strong>_______________________________</strong></span>
         </div>
     </div>
 
@@ -97,8 +96,11 @@ export function generateReadingComprehensionHTML(worksheet: any, options: any = 
   }
 
   // Add tense detective
-  if (rawContent.tense_detective_prompt) {
-    html += generateTenseDetectiveSection(rawContent.tense_detective_prompt);
+  if (rawContent.tense_detective && Array.isArray(rawContent.tense_detective) && rawContent.tense_detective.length > 0) {
+    html += generateTenseDetectiveSection(rawContent.tense_detective);
+  } else if (rawContent.tense_detective_prompt) {
+    // Fallback for old format
+    html += generateTenseDetectiveSection([{ id: 1, instruction: rawContent.tense_detective_prompt, answer: '' }]);
   }
 
   html += `
@@ -316,16 +318,26 @@ function generateTranslationSection(sentences: any[]): string {
   return html;
 }
 
-function generateTenseDetectiveSection(prompt: string): string {
-  return `
+function generateTenseDetectiveSection(items: Array<{id: number, instruction: string, answer?: string}>): string {
+  let html = `
     <div class="section">
         <div class="section-title">Tense Detective</div>
+`;
+
+  items.forEach((item) => {
+    html += `
         <div class="question-compact">
-            <div class="question-text">${prompt}</div>
-            <div class="answer-space" style="min-height: 35px; margin-top: 6px;"></div>
+            <div class="question-text">${item.instruction}</div>
+            <div class="answer-space" style="min-height: 35px; margin-top: 6px; border-bottom: 1px solid #000;"></div>
         </div>
+`;
+  });
+
+  html += `
     </div>
 `;
+  
+  return html;
 }
 
 function createFallbackHTML(worksheet: any): string {
@@ -347,9 +359,8 @@ function createFallbackHTML(worksheet: any): string {
         <div class="title">${title}</div>
         <div class="subtitle">${subject} • ${topic}</div>
         <div class="meta-info">
-            <span>Difficulty: <strong>${difficulty}</strong></span>
-            <span>Time: <strong>${estimated_time_minutes || 30} minutes</strong></span>
-            <span>Date: <strong>_____________</strong></span>
+            <span>Name: <strong>_______________________________</strong></span>
+            <span>Date: <strong>_______________________________</strong></span>
         </div>
     </div>
 

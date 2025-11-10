@@ -70,6 +70,7 @@ export default function VocabularyPracticePage() {
     'Complete the vocabulary exercises below.',
   );
   const [customPrompt, setCustomPrompt] = useState('');
+  // textType/tense/person/yearLevel removed from Vocabulary Practice per UX request
 
   // Exercise types - All enabled by default
   const [exerciseTypes, setExerciseTypes] = useState({
@@ -81,6 +82,7 @@ export default function VocabularyPracticePage() {
     unjumble: true,
     wordsearch: true,
     crossword: true,
+    // unscramble and tenseDetective removed - these are reading-comprehension specific exercises
   });
 
   // Vocabulary selection
@@ -181,6 +183,7 @@ export default function VocabularyPracticePage() {
       tier: vocabularyConfig.tier,
       category: vocabularyConfig.categoryId,
       subcategory: vocabularyConfig.subcategoryId,
+      // textType/tense/person/yearLevel intentionally omitted for vocabulary-practice
     };
 
     console.log('Sending worksheet generation request:', requestBody);
@@ -392,6 +395,7 @@ export default function VocabularyPracticePage() {
                     <option value="german">German</option>
                   </select>
                 </div>
+                {/* Text Type / Tense / Person / Year Level removed from Vocabulary Practice page per UX request */}
                 <div className="space-y-3 md:col-span-2">
                   <Label htmlFor="instructions" className="text-slate-700 font-semibold flex items-center gap-2">
                     Instructions for Students

@@ -45,7 +45,7 @@ export function generateCrosswordHTML(
   const acrossClues = content.acrossClues || [];
   const downClues = content.downClues || [];
   const gridSize = content.gridSize || { rows: 15, cols: 15 };
-  const instructions = content.instructions || 'Complete the crossword puzzle using the clues provided below.';
+  const instructions = content.instructions || 'Complete the crossword using the words below';
 
   const additionalStyles = `
     .crossword-container {

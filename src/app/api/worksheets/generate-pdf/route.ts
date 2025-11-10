@@ -67,10 +67,11 @@ export async function POST(request: NextRequest) {
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
+      // Reduce top margin so titles appear higher on the page for worksheets
       margin: {
-        top: '15mm',
+        top: '8mm',
         right: '12mm',
-        bottom: '15mm',
+        bottom: '12mm',
         left: '12mm'
       },
       preferCSSPageSize: true,

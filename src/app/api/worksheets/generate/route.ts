@@ -14,7 +14,9 @@ import { ErrorLogger } from '@/lib/error-logger';
 // Initialize OpenAI client
 function initOpenAI() {
   return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+    apiKey: process.env.OPENAI_API_KEY,
+    timeout: 45000, // 45 second timeout for OpenAI API calls
+    maxRetries: 2, // Retry failed requests twice
   });
 }
 
@@ -25,6 +27,7 @@ function createWorksheetRouter() {
 }
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // 60 seconds timeout for worksheet generation
 
 export async function POST(req: Request) {
   try {
@@ -158,7 +161,14 @@ export async function POST(req: Request) {
       language: body.language || 'English',
       customPrompt: body.customPrompt || '',
       targetLanguage: body.targetLanguage || subjectForRouter,
-      advancedOptions: body.advancedOptions || {},
+      advancedOptions: {
+        ...(body.advancedOptions || {}),
+        // Pedagogical parameters for reading comprehension and other templates
+        textType: body.textType,
+        tenseFocus: body.tenseFocus,
+        personFocus: body.personFocus,
+        yearLevel: body.yearLevel,
+      },
       originalSubject: subjectFromInput,
       jobId: jobId,
       generateSeoAndTags: true,

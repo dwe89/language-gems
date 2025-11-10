@@ -89,10 +89,11 @@ export async function fetchKS3Categories(): Promise<DatabaseCategory[]> {
       color: 'from-purple-500 to-pink-600',
       subcategories: [
         { id: 'family_friends', name: 'family_friends', displayName: 'Family & Friends', categoryId: 'identity_personal_life' },
-        { id: 'physical_descriptions', name: 'physical_descriptions', displayName: 'Physical Descriptions', categoryId: 'identity_personal_life' },
-        { id: 'personality_character', name: 'personality_character', displayName: 'Personality & Character', categoryId: 'identity_personal_life' },
-        { id: 'hobbies_interests', name: 'hobbies_interests', displayName: 'Hobbies & Interests', categoryId: 'identity_personal_life' },
-        { id: 'daily_routine', name: 'daily_routine', displayName: 'Daily Routine', categoryId: 'identity_personal_life' }
+        { id: 'physical_personality_descriptions', name: 'physical_personality_descriptions', displayName: 'Physical Descriptions', categoryId: 'identity_personal_life' },
+        { id: 'feelings_emotions', name: 'feelings_emotions', displayName: 'Feelings & Emotions', categoryId: 'identity_personal_life' },
+        { id: 'personal_information', name: 'personal_information', displayName: 'Personal Information', categoryId: 'identity_personal_life' },
+        { id: 'relationships', name: 'relationships', displayName: 'Relationships', categoryId: 'identity_personal_life' },
+        { id: 'pets', name: 'pets', displayName: 'Pets', categoryId: 'identity_personal_life' }
       ]
     },
     {
