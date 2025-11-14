@@ -223,3 +223,17 @@ export function formatVocabularyList(vocabulary: Array<{word: string, definition
     })
     .join('');
 }
+
+/**
+ * Utility: normalize a value that may have been stored as a JSON string in the DB.
+ * If the value is a string, attempt to parse it as JSON. Otherwise return as-is.
+ */
+export function parseMaybeJSON(value: any): any {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch (err) {
+    console.warn('⚠️ [content-formatter] Failed to JSON.parse value, returning original string', err);
+    return value;
+  }
+}

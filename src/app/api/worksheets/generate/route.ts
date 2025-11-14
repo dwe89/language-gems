@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse, unstable_after } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { WorksheetRequest, WorksheetResponse, Worksheet } from '@/lib/worksheets/core/types';
 import { WorksheetRouter } from '@/lib/worksheets/router';
@@ -30,8 +30,12 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 60 seconds timeout for worksheet generation
 
 export async function POST(req: Request) {
+  const startTime = Date.now();
+  console.log(`[WORKSHEET GEN] Request started at ${new Date().toISOString()}`);
+  
   try {
     const body = await req.json();
+    console.log(`[WORKSHEET GEN] Request body parsed in ${Date.now() - startTime}ms`);
 
     // Get user ID from auth session
     const cookieStore = await cookies();
@@ -188,15 +192,11 @@ export async function POST(req: Request) {
     // Send immediate response with job ID
     const response = NextResponse.json({ jobId });
 
-    // Schedule the worksheet generation process to continue after the response is sent
+    // Start the worksheet generation process asynchronously
     console.log(`Starting async worksheet generation for job: ${jobId}`);
-    unstable_after(async () => {
-      try {
-        await generateWorksheetAsync(worksheetRequest, userId, isGuest);
-      } catch (backgroundError) {
-        console.error(`[Worksheets] Background generation crashed for job ${jobId}:`, backgroundError);
-      }
-    });
+
+    // Don't await this - we want to return immediately while processing continues
+    generateWorksheetAsync(worksheetRequest, userId, isGuest);
 
     return response;
   } catch (error: any) {

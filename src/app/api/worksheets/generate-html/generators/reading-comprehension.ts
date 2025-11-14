@@ -1,11 +1,13 @@
 import { getBaseStyles } from '../shared/base-styles';
+import { parseMaybeJSON } from '../utils/content-formatter';
 import { generateWordSearch, renderWordSearchHTML, generateWordSearchCSS } from '../../../../../utils/wordSearchGenerator';
 
 export function generateReadingComprehensionHTML(worksheet: any, options: any = {}): string {
   console.log('🎨 [HTML GENERATOR] Generating reading comprehension HTML for worksheet:', worksheet.title);
   
   // Get raw content from either location
-  const rawContent = worksheet.rawContent || worksheet.content?.rawContent;
+  let rawContent = worksheet.rawContent || worksheet.content?.rawContent;
+  rawContent = parseMaybeJSON(rawContent);
   
   console.log('🎨 [HTML GENERATOR] Raw content found at worksheet.rawContent:', !!worksheet.rawContent);
   console.log('🎨 [HTML GENERATOR] Raw content found at worksheet.content.rawContent:', !!(worksheet.content?.rawContent));

@@ -43,6 +43,7 @@
     "test:production": "node scripts/production-readiness-test.js",
     "test:production:critical": "node scripts/production-readiness-test.js --mode=critical",
     "test:production:full": "node scripts/production-readiness-test.js --mode=full",
+    "debug:worksheet-production": "node scripts/debug-production-worksheet-generation.js",
     "benchmark": "node scripts/performance-benchmark.js",
     "benchmark:load": "node scripts/performance-benchmark.js --concurrent=50 --duration=120",
     "import-grammar-content": "tsx src/scripts/import-grammar-content.ts",

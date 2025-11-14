@@ -12,9 +12,13 @@ export const maxDuration = 60; // 60 seconds timeout
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  let worksheet: any;
   try {
-    console.log('🚀 [HTML API] POST request received');
-    const { worksheet, options = {} } = await request.json();
+    console.log('🚀 [HTML API] POST request received at', new Date().toISOString());
+    const requestData = await request.json();
+    worksheet = requestData.worksheet;
+    const options = requestData.options || {};
 
     if (!worksheet) {
       console.error('❌ [HTML API] No worksheet data provided');
@@ -50,6 +54,29 @@ export async function POST(request: NextRequest) {
     // Check if this is a reading comprehension worksheet
     const templateId = worksheet.template_id;
     const metadataTemplate = worksheet.metadata?.template;
+    // Normalize rawContent: in some production environments Postgres/clients may
+    // return JSON columns as strings (e.g., text '"{...}"') which breaks
+    // the generators that expect an object. Attempt to parse any stringified
+    // JSON here and log if parsing occurred.
+    if (worksheet?.rawContent && typeof worksheet.rawContent === 'string') {
+      console.warn('📌 [HTML API] Normalizing: worksheet.rawContent is a string (stringified JSON). Attempting to JSON.parse it...');
+      try {
+        worksheet.rawContent = JSON.parse(worksheet.rawContent);
+        console.log('📌 [HTML API] Successfully parsed worksheet.rawContent to object');
+      } catch (parseError) {
+        console.warn('⚠️ [HTML API] Failed to parse worksheet.rawContent string - continuing with original string', parseError);
+      }
+    }
+    if (worksheet?.content?.rawContent && typeof worksheet.content.rawContent === 'string') {
+      console.warn('📌 [HTML API] Normalizing: worksheet.content.rawContent is a string. Attempting to JSON.parse it...');
+      try {
+        worksheet.content.rawContent = JSON.parse(worksheet.content.rawContent);
+        console.log('📌 [HTML API] Successfully parsed worksheet.content.rawContent to object');
+      } catch (parseError) {
+        console.warn('⚠️ [HTML API] Failed to parse worksheet.content.rawContent string - continuing with original string', parseError);
+      }
+    }
+
     const hasRawContent = !!worksheet.rawContent || !!(worksheet.content?.rawContent);
 
     console.log('🔍 [HTML API] Template detection:');
@@ -64,15 +91,17 @@ export async function POST(request: NextRequest) {
     if (templateId === 'reading_comprehension' || metadataTemplate === 'reading_comprehension') {
       console.log('✅ [HTML API] Using reading comprehension HTML generator');
       const html = generateReadingComprehensionHTML(worksheet, options);
-      console.log('✅ [HTML API] Reading comprehension HTML generated, length:', html.length);
-      return NextResponse.json({ html });
+      const duration = Date.now() - startTime;
+      console.log('✅ [HTML API] Reading comprehension HTML generated, length:', html.length, 'in', duration + 'ms');
+      return NextResponse.json({ html, generationTime: duration });
     }
 
     if (templateId === 'vocabulary_practice' || metadataTemplate === 'vocabulary_practice') {
       console.log('✅ [HTML API] Using vocabulary practice HTML generator');
       const html = await generateVocabularyPracticeHTML(worksheet, options);
-      console.log('✅ [HTML API] Vocabulary practice HTML generated, length:', html.length);
-      return NextResponse.json({ html });
+      const duration = Date.now() - startTime;
+      console.log('✅ [HTML API] Vocabulary practice HTML generated, length:', html.length, 'in', duration + 'ms');
+      return NextResponse.json({ html, generationTime: duration });
     }
 
     if (templateId === 'grammar_exercises' || metadataTemplate === 'grammar_exercises') {
@@ -88,36 +117,58 @@ export async function POST(request: NextRequest) {
         }
       }
       const html = generateGrammarExercisesHTML(worksheet, options);
-      console.log('✅ [HTML API] Grammar exercises HTML generated, length:', html.length);
-      return NextResponse.json({ html });
+      const duration = Date.now() - startTime;
+      console.log('✅ [HTML API] Grammar exercises HTML generated, length:', html.length, 'in', duration + 'ms');
+      return NextResponse.json({ html, generationTime: duration });
     }
 
     if (templateId === 'word-search' || templateId === 'word_search' || templateId === 'vocabulary_wordsearch' ||
         metadataTemplate === 'word-search' || metadataTemplate === 'word_search' || metadataTemplate === 'vocabulary_wordsearch') {
       console.log('✅ [HTML API] Using word search HTML generator');
       const html = generateWordSearchHTML(worksheet, options);
-      console.log('✅ [HTML API] Word search HTML generated, length:', html.length);
-      return NextResponse.json({ html });
+      const duration = Date.now() - startTime;
+      console.log('✅ [HTML API] Word search HTML generated, length:', html.length, 'in', duration + 'ms');
+      return NextResponse.json({ html, generationTime: duration });
     }
 
     if (templateId === 'vocabulary_crossword' || templateId === 'crossword' ||
         metadataTemplate === 'vocabulary_crossword' || metadataTemplate === 'crossword') {
       console.log('✅ [HTML API] Using crossword HTML generator');
       const html = generateCrosswordHTML(worksheet, options);
-      console.log('✅ [HTML API] Crossword HTML generated, length:', html.length);
-      return NextResponse.json({ html });
+      const duration = Date.now() - startTime;
+      console.log('✅ [HTML API] Crossword HTML generated, length:', html.length, 'in', duration + 'ms');
+      return NextResponse.json({ html, generationTime: duration });
     }
 
     console.log('📝 [HTML API] Using standard worksheet HTML generator');
     // Generate HTML from worksheet content
     const html = generateWorksheetHTML(worksheet, options);
-    console.log('✅ [HTML API] Standard HTML generated, length:', html.length);
+    const duration = Date.now() - startTime;
+    console.log('✅ [HTML API] Standard HTML generated, length:', html.length, 'in', duration + 'ms');
 
-    return NextResponse.json({ html });
+    return NextResponse.json({ html, generationTime: duration });
   } catch (error) {
+    const duration = Date.now() - startTime;
     console.error('💥 [HTML API] Error generating HTML:', error);
+    console.error('💥 [HTML API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('💥 [HTML API] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      worksheetId: worksheet?.id,
+      templateId: worksheet?.template_id,
+      hasContent: !!worksheet?.content,
+      hasRawContent: !!worksheet?.rawContent,
+      duration: `${duration}ms`,
+      timestamp: new Date().toISOString(),
+    });
+    
     return NextResponse.json(
-      { error: 'Failed to generate HTML' },
+      { 
+        error: 'Failed to generate HTML',
+        details: error instanceof Error ? error.message : String(error),
+        worksheetId: worksheet?.id,
+        duration: `${duration}ms`,
+      },
       { status: 500 }
     );
   }

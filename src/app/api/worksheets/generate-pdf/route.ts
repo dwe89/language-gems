@@ -21,19 +21,31 @@ export async function POST(request: NextRequest) {
 
     // Launch puppeteer
     console.log('🚀 [PDF GENERATION] Launching Puppeteer...');
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu'
-      ]
-    });
+      const launchOptions: any = {
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-gpu'
+        ]
+      };
+
+      if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        console.log('📌 [PDF GENERATION] Using custom puppeteer executable path from PUPPETEER_EXECUTABLE_PATH');
+        launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      }
+
+      try {
+        browser = await puppeteer.launch(launchOptions);
+      } catch (launchErr) {
+        console.error('❌ [PDF GENERATION] Failed to launch Puppeteer browser instance', launchErr);
+        throw launchErr; // Let outer catch handle the response
+      }
     console.log('✅ [PDF GENERATION] Puppeteer launched successfully');
 
     const page = await browser.newPage();

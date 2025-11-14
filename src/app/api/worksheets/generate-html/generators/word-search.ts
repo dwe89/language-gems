@@ -2,6 +2,7 @@
 
 import { WorksheetData, HTMLGeneratorOptions } from '../shared/types';
 import { createHTMLDocument } from '../utils/html-builder';
+import { parseMaybeJSON } from '../utils/content-formatter';
 import { 
   generateHeader, 
   generateStudentInfo, 
@@ -23,7 +24,8 @@ export function generateWordSearchHTML(
 ): string {
   console.log('🎨 [WORD SEARCH GENERATOR] Generating word search HTML for worksheet:', worksheet.title);
 
-  const content = (worksheet.rawContent || worksheet.content || {}) as WordSearchContent;
+  let content = (worksheet.rawContent || worksheet.content || {}) as WordSearchContent;
+  content = parseMaybeJSON(content) as WordSearchContent;
   const words = content.word_search_words || content.words || [];
   const difficulty = content.word_search_difficulty || content.difficulty || 'medium';
   const instructions = content.instructions || 'Find all the hidden words in the puzzle below. Words can be horizontal, vertical, or diagonal.';

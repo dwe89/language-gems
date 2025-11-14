@@ -2,6 +2,7 @@
 
 import { WorksheetData, GrammarExerciseContent, HTMLGeneratorOptions } from '../shared/types';
 import { createHTMLDocument } from '../utils/html-builder';
+import { parseMaybeJSON } from '../utils/content-formatter';
 import {
   generateHeader,
   generateStudentInfo,
@@ -26,7 +27,8 @@ export function generateGrammarExercisesHTML(
   console.log('📊 [GRAMMAR GENERATOR] worksheet.rawContent:', typeof worksheet.rawContent, worksheet.rawContent ? Object.keys(worksheet.rawContent) : 'N/A');
   console.log('📊 [GRAMMAR GENERATOR] worksheet.metadata:', worksheet.metadata);
 
-  const content = (worksheet.rawContent || worksheet.content || {}) as GrammarExerciseContent;
+  let content = (worksheet.rawContent || worksheet.content || {}) as GrammarExerciseContent;
+  content = parseMaybeJSON(content) as GrammarExerciseContent;
   console.log('📊 [GRAMMAR GENERATOR] Extracted content keys:', Object.keys(content));
   console.log('📊 [GRAMMAR GENERATOR] content.exercises:', Array.isArray(content.exercises), content.exercises?.length || 0);
   

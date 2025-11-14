@@ -2,6 +2,7 @@
 
 import { WorksheetData, ListeningComprehensionContent, HTMLGeneratorOptions } from '../shared/types';
 import { createHTMLDocument } from '../utils/html-builder';
+import { parseMaybeJSON } from '../utils/content-formatter';
 import { 
   generateHeader, 
   generateStudentInfo, 
@@ -19,7 +20,8 @@ export function generateListeningComprehensionHTML(
 ): string {
   console.log('🎨 [LISTENING GENERATOR] Generating listening comprehension HTML for worksheet:', worksheet.title);
 
-  const content = (worksheet.rawContent || worksheet.content || {}) as ListeningComprehensionContent;
+  let content = (worksheet.rawContent || worksheet.content || {}) as ListeningComprehensionContent;
+  content = parseMaybeJSON(content) as ListeningComprehensionContent;
   const audioTitle = content.audio_title || 'Listening Exercise';
   const audioUrl = content.audio_url || '';
   const transcript = content.transcript || '';

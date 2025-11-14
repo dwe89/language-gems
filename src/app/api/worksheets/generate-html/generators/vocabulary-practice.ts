@@ -2,6 +2,7 @@
 
 import { WorksheetData, VocabularyPracticeContent, HTMLGeneratorOptions } from '../shared/types';
 import { createHTMLDocument } from '../utils/html-builder';
+import { parseMaybeJSON } from '../utils/content-formatter';
 import { generateWordSearch, renderWordSearchHTML, generateWordSearchCSS } from '../../../../../utils/wordSearchGenerator';
 import { generateCrosswordLayout } from '../../../../tools/crossword/utils/crosswordGenerator';
 import { WordEntry } from '../../../../tools/crossword/types/crossword';
@@ -27,7 +28,8 @@ export async function generateVocabularyPracticeHTML(
   worksheet: WorksheetData,
   options: HTMLGeneratorOptions = {}
 ): Promise<string> {
-  const content = (worksheet.rawContent || worksheet.content || {}) as VocabularyPracticeContent;
+  let content = (worksheet.rawContent || worksheet.content || {}) as VocabularyPracticeContent;
+  content = parseMaybeJSON(content) as VocabularyPracticeContent;
   const vocabularyItems = content.vocabulary_items || [];
   const exercises = content.exercises || [];
   const wordBank = content.word_bank || [];
