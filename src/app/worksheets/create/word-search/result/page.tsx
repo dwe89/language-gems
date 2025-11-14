@@ -73,20 +73,64 @@ export default function WordSearchResultPage() {
     }
   }, []);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!wordSearchData) return;
 
-    // Create a simple HTML version for download
-    const htmlContent = generatePrintableHTML(wordSearchData);
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${wordSearchData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      // Generate HTML using the word search generator
+      const htmlResponse = await fetch('/api/worksheets/generate-html', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          worksheet: {
+            id: wordSearchData.id,
+            title: wordSearchData.title,
+            subject: wordSearchData.subject,
+            topic: wordSearchData.language,
+            difficulty: wordSearchData.difficulty,
+            template_id: 'word-search',
+            rawContent: {
+              word_search_words: wordSearchData.words,
+              word_search_difficulty: wordSearchData.difficulty
+            }
+          }
+        })
+      });
+
+      if (!htmlResponse.ok) {
+        throw new Error('Failed to generate HTML');
+      }
+
+      const { html } = await htmlResponse.json();
+
+      // Generate PDF
+      const pdfResponse = await fetch('/api/worksheets/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          html,
+          filename: wordSearchData.title.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
+        })
+      });
+
+      if (!pdfResponse.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      // Download the PDF
+      const blob = await pdfResponse.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${wordSearchData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Failed to download PDF. Please try again.');
+    }
   };
 
   const handlePrint = () => {
@@ -365,56 +409,82 @@ export default function WordSearchResultPage() {
           {/* Main Puzzle Display */}
           <div className="lg:col-span-2">
             <Card className="h-fit">
-              <CardHeader>
-                <CardTitle className="text-xl">{wordSearchData.title}</CardTitle>
-                <CardDescription>{wordSearchData.instructions}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* Actual Puzzle Grid */}
-                <div className="bg-white border-2 border-gray-200 rounded-lg p-4 overflow-auto">
-                  <div className="flex justify-center">
-                    <table className="border-collapse border-2 border-gray-400">
-                      <tbody>
-                        {wordSearchData.grid.map((row, rowIndex) => (
-                          <tr key={rowIndex}>
-                            {row.map((cell, colIndex) => (
-                              <td
-                                key={colIndex}
-                                className="w-6 h-6 sm:w-8 sm:h-8 border border-gray-300 text-center font-mono font-bold text-xs sm:text-sm bg-white hover:bg-blue-50 transition-colors cursor-pointer"
-                              >
-                                {cell}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              <CardContent className="p-8">
+                {/* Centered Header - matching PDF */}
+                <div className="text-center mb-8">
+                  <h1 className="text-sm font-semibold text-slate-500 tracking-wide mb-2">LanguageGems</h1>
+                  <h2 className="text-3xl font-bold text-slate-900">Word Search Puzzle</h2>
+                </div>
+
+                {/* Inline Name & Class fields - matching PDF */}
+                <div className="flex gap-8 mb-6 pb-4 border-b-2 border-slate-200">
+                  <div className="flex items-center gap-3 flex-1">
+                    <label className="font-semibold text-slate-700 text-sm">Name:</label>
+                    <div className="flex-1 border-b border-slate-300 h-6"></div>
+                  </div>
+                  <div className="flex items-center gap-3 flex-1">
+                    <label className="font-semibold text-slate-700 text-sm">Class:</label>
+                    <div className="flex-1 border-b border-slate-300 h-6"></div>
                   </div>
                 </div>
 
-                {/* Instructions and Tips */}
-                <div className="mt-6 space-y-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                      <ClipboardList className="h-4 w-4" />
-                      Instructions:
-                    </h4>
-                    <p className="text-sm text-blue-800 leading-relaxed">{wordSearchData.instructions}</p>
-                  </div>
+                {/* Instructions */}
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-8">
+                  <p className="text-sm text-slate-700">
+                    <strong>Instructions:</strong> {wordSearchData.instructions}
+                  </p>
+                </div>
 
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      Tips for Students:
-                    </h4>
-                    <ul className="text-sm text-green-800 space-y-1">
-                      <li>• Look for words horizontally, vertically, and diagonally</li>
-                      <li>• Words can be forwards or backwards</li>
-                      <li>• Check off each word as you find it</li>
-                      <li>• Take your time and be systematic</li>
-                      <li>• Use a pencil to circle or highlight found words</li>
-                    </ul>
+                {/* Larger Centered Word Search Grid - matching PDF */}
+                <div className="flex justify-center mb-8">
+                  <table className="border-collapse border-3 border-slate-800">
+                    <tbody>
+                      {wordSearchData.grid.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                          {row.map((cell, colIndex) => (
+                            <td
+                              key={colIndex}
+                              className="w-10 h-10 border border-slate-400 text-center font-mono font-bold text-lg bg-white hover:bg-blue-50 transition-colors cursor-pointer"
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Words in 6 Columns - matching PDF */}
+                <div className="max-w-4xl mx-auto">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4 pb-2 border-b-2 border-blue-500">
+                    Words to Find:
+                  </h3>
+                  <div className="grid grid-cols-6 gap-3">
+                    {wordSearchData.words.map((word, index) => (
+                      <div
+                        key={index}
+                        className="bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-center text-sm font-semibold text-slate-700 uppercase"
+                      >
+                        {word}
+                      </div>
+                    ))}
                   </div>
+                </div>
+
+                {/* Tips for Students - keeping this helpful info */}
+                <div className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Tips for Students:
+                  </h4>
+                  <ul className="text-sm text-green-800 space-y-1">
+                    <li>• Look for words horizontally, vertically, and diagonally</li>
+                    <li>• Words can be forwards or backwards</li>
+                    <li>• Check off each word as you find it</li>
+                    <li>• Take your time and be systematic</li>
+                    <li>• Use a pencil to circle or highlight found words</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>

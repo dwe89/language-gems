@@ -7,7 +7,12 @@ export async function POST(request: NextRequest) {
   try {
     const { html, filename } = await request.json();
 
+    console.log('📄 [PDF GENERATION] Starting PDF generation...');
+    console.log('📄 [PDF GENERATION] Filename:', filename);
+    console.log('📄 [PDF GENERATION] HTML length:', html?.length);
+
     if (!html) {
+      console.error('❌ [PDF GENERATION] No HTML content provided');
       return NextResponse.json(
         { error: 'HTML content is required' },
         { status: 400 }
@@ -15,6 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Launch puppeteer
+    console.log('🚀 [PDF GENERATION] Launching Puppeteer...');
     browser = await puppeteer.launch({
       headless: true,
       args: [
@@ -28,6 +34,7 @@ export async function POST(request: NextRequest) {
         '--disable-gpu'
       ]
     });
+    console.log('✅ [PDF GENERATION] Puppeteer launched successfully');
 
     const page = await browser.newPage();
     

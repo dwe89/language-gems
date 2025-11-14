@@ -62,29 +62,28 @@ export function CrosswordGrid({
     const isSelected = selectedCell?.row === row && selectedCell?.col === col;
 
     return cn(
-      'relative border border-slate-400 font-mono font-bold text-center select-none transition-colors duration-150',
+      'relative border border-slate-600 font-mono font-bold text-center select-none transition-colors duration-150',
       {
-        'bg-slate-900 border-slate-900': cell.isBlack,
-        'bg-white hover:bg-slate-50 border-slate-300': !cell.isBlack && interactive,
-        'bg-slate-50 border-slate-200': !cell.isBlack && !interactive,
+        'bg-slate-900 dark:bg-slate-950 border-slate-900': cell.isBlack,
+        'bg-white hover:bg-blue-50 border-slate-600': !cell.isBlack && interactive,
+        'bg-white border-slate-600': !cell.isBlack && !interactive,
         'cursor-pointer': !cell.isBlack && interactive,
         'ring-2 ring-blue-500 ring-inset shadow-md': isSelected,
-        'text-blue-700': showAnswers,
-        'text-slate-800': !showAnswers,
+        'text-slate-900': showAnswers || interactive,
       }
     );
   };
 
-  // Calculate cell size based on grid dimensions
+  // Calculate cell size based on grid dimensions - larger cells to match PDF
   const maxDimension = Math.max(data.gridSize.rows, data.gridSize.cols);
-  const cellSize = maxDimension <= 15 ? 'w-10 h-10 text-base' :
-                   maxDimension <= 20 ? 'w-8 h-8 text-sm' :
-                   'w-7 h-7 text-xs';
+  const cellSize = maxDimension <= 15 ? 'w-12 h-12 text-lg' :
+                   maxDimension <= 20 ? 'w-10 h-10 text-base' :
+                   'w-8 h-8 text-sm';
 
   return (
-    <div className={cn('inline-block bg-white p-6 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700', className)}>
+    <div className={cn('inline-block', className)}>
       <div
-        className="grid gap-0 border-3 border-slate-600 rounded-lg overflow-hidden shadow-inner"
+        className="grid gap-0 border-[3px] border-slate-800 rounded-sm overflow-hidden shadow-lg"
         style={{
           gridTemplateColumns: `repeat(${data.gridSize.cols}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${data.gridSize.rows}, minmax(0, 1fr))`,

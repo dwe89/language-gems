@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, unstable_after } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { WorksheetRequest, WorksheetResponse, Worksheet } from '@/lib/worksheets/core/types';
 import { WorksheetRouter } from '@/lib/worksheets/router';
@@ -188,11 +188,15 @@ export async function POST(req: Request) {
     // Send immediate response with job ID
     const response = NextResponse.json({ jobId });
 
-    // Start the worksheet generation process asynchronously
+    // Schedule the worksheet generation process to continue after the response is sent
     console.log(`Starting async worksheet generation for job: ${jobId}`);
-
-    // Don't await this - we want to return immediately while processing continues
-    generateWorksheetAsync(worksheetRequest, userId, isGuest);
+    unstable_after(async () => {
+      try {
+        await generateWorksheetAsync(worksheetRequest, userId, isGuest);
+      } catch (backgroundError) {
+        console.error(`[Worksheets] Background generation crashed for job ${jobId}:`, backgroundError);
+      }
+    });
 
     return response;
   } catch (error: any) {

@@ -49,6 +49,10 @@ export function generateWorksheetHTML(worksheet: any, options: any = {}): string
   });
 
   html += `
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    </script>
 </body>
 </html>`;
 
@@ -164,6 +168,10 @@ function createFallbackHTML(worksheet: any): string {
         <div class="section-title">Worksheet Content</div>
         <p><em>This worksheet is being generated. Please refresh the page in a moment.</em></p>
     </div>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    </script>
 </body>
 </html>`;
 }

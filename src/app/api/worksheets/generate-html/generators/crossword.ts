@@ -48,35 +48,94 @@ export function generateCrosswordHTML(
   const instructions = content.instructions || 'Complete the crossword using the words below';
 
   const additionalStyles = `
+    /* Page Header */
+    .page-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .page-header h1 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      margin: 0 0 8px 0;
+      letter-spacing: 0.5px;
+    }
+    
+    .page-header h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0;
+    }
+    
+    .student-info-inline {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .student-info-field {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+    
+    .student-info-field label {
+      font-weight: 600;
+      color: #475569;
+      font-size: 14px;
+    }
+    
+    .student-info-field .field-line {
+      flex: 1;
+      border-bottom: 1px solid #cbd5e1;
+      height: 20px;
+    }
+    
+    .instructions {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 30px;
+      font-size: 14px;
+      color: #4a5568;
+    }
+
     .crossword-container {
       display: flex;
       gap: 30px;
-      margin: 20px 0;
+      margin: 40px 20px;
       align-items: flex-start;
     }
 
     .crossword-grid {
       border-collapse: collapse;
-      border: 2px solid #000;
+      border: 3px solid #1e293b;
       background: white;
-      margin: 0 auto;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     .crossword-cell {
-      width: 30px;
-      height: 30px;
-      border: 1px solid #666;
+      width: 35px;
+      height: 35px;
+      border: 1px solid #64748b;
       text-align: center;
       vertical-align: middle;
       position: relative;
       font-family: 'Courier New', monospace;
-      font-weight: bold;
-      font-size: 14px;
+      font-weight: 600;
+      font-size: 16px;
+      background: white;
     }
 
     .crossword-cell.black {
-      background-color: #000;
-      border: 1px solid #000;
+      background-color: #1e293b;
+      border: 1px solid #1e293b;
     }
 
     .crossword-cell.white {
@@ -85,12 +144,18 @@ export function generateCrosswordHTML(
 
     .cell-number {
       position: absolute;
-      top: 1px;
-      left: 2px;
-      font-size: 8px;
-      font-weight: normal;
-      color: #333;
+      top: 2px;
+      left: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      color: #475569;
       line-height: 1;
+    }
+
+    .grid-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
     }
 
     .clues-section {
@@ -103,59 +168,34 @@ export function generateCrosswordHTML(
     }
 
     .clues-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #1a202c;
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
       margin-bottom: 12px;
       padding-bottom: 8px;
-      border-bottom: 2px solid #e2e8f0;
+      border-bottom: 2px solid #3b82f6;
     }
 
     .clue-item {
       display: flex;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.5;
+      padding: 6px 8px;
+      background: #f8fafc;
+      border-radius: 4px;
     }
 
     .clue-number {
-      font-weight: 600;
-      color: #374151;
-      min-width: 25px;
+      font-weight: 700;
+      color: #1e293b;
+      min-width: 30px;
       margin-right: 8px;
     }
 
     .clue-text {
-      color: #4a5568;
+      color: #334155;
       flex: 1;
-    }
-
-    .crossword-header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .crossword-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: #2d3748;
-      margin-bottom: 8px;
-    }
-
-    .crossword-instructions {
-      background: #f7fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
-      font-size: 14px;
-      color: #4a5568;
-    }
-
-    .grid-container {
-      display: flex;
-      justify-content: center;
-      margin: 20px 0;
     }
 
     /* Responsive design */
@@ -166,13 +206,13 @@ export function generateCrosswordHTML(
       }
       
       .crossword-cell {
-        width: 25px;
-        height: 25px;
-        font-size: 12px;
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
       }
       
       .cell-number {
-        font-size: 7px;
+        font-size: 8px;
       }
       
       .clues-section {
@@ -189,7 +229,8 @@ export function generateCrosswordHTML(
       }
       
       .crossword-grid {
-        border: 2px solid #000 !important;
+        border: 3px solid #000 !important;
+        box-shadow: none !important;
       }
       
       .crossword-cell {
@@ -217,40 +258,40 @@ export function generateCrosswordHTML(
 
     /* Large grid adjustments */
     .large-grid .crossword-cell {
-      width: 25px;
-      height: 25px;
-      font-size: 12px;
-    }
-
-    .large-grid .cell-number {
-      font-size: 7px;
-    }
-
-    /* Small grid adjustments */
-    .small-grid .crossword-cell {
-      width: 35px;
-      height: 35px;
-      font-size: 16px;
-    }
-
-    .small-grid .cell-number {
-      font-size: 9px;
+      width: 28px;
+      height: 28px;
+      font-size: 13px;
     }
   `;
 
   let bodyContent = '';
 
-  // Header
-  bodyContent += generateHeader(worksheet.title || 'Crossword Puzzle', worksheet.subject, worksheet.topic);
+  // Centered Header
+  bodyContent += `
+    <div class="page-header">
+      <h1>LanguageGems</h1>
+      <h2>Crossword Puzzle</h2>
+    </div>
+  `;
 
-  // Student Information
-  bodyContent += generateStudentInfo();
+  // Student Information - Inline
+  bodyContent += `
+    <div class="student-info-inline">
+      <div class="student-info-field">
+        <label>Name:</label>
+        <div class="field-line"></div>
+      </div>
+      <div class="student-info-field">
+        <label>Class:</label>
+        <div class="field-line"></div>
+      </div>
+    </div>
+  `;
 
   // Instructions
   bodyContent += `
-    <div class="crossword-instructions">
-      <div class="instructions-title">Instructions</div>
-      <div>${formatText(instructions)}</div>
+    <div class="instructions">
+      <strong>Instructions:</strong> ${instructions}
     </div>
   `;
 
@@ -273,23 +314,8 @@ export function generateCrosswordHTML(
   } else {
     // Fallback content if no crossword data
     bodyContent += `
-      <div class="crossword-container">
-        <div class="grid-container">
-          <div style="text-align: center; padding: 40px; border: 2px dashed #cbd5e1; border-radius: 8px; color: #64748b;">
-            <p style="font-size: 18px; margin-bottom: 10px;">Crossword Grid</p>
-            <p style="font-size: 14px;">Grid will be generated based on vocabulary words</p>
-          </div>
-        </div>
-        <div class="clues-section">
-          <div class="clues-column">
-            <h3 class="clues-title">Across</h3>
-            <div style="color: #64748b; font-style: italic;">Clues will appear here</div>
-          </div>
-          <div class="clues-column">
-            <h3 class="clues-title">Down</h3>
-            <div style="color: #64748b; font-style: italic;">Clues will appear here</div>
-          </div>
-        </div>
+      <div style="padding: 20px; text-align: center; color: #64748b;">
+        <p>Crossword puzzle could not be generated.</p>
       </div>
     `;
   }

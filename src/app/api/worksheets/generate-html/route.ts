@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateReadingComprehensionHTML } from './generators/reading-comprehension';
 import { generateVocabularyPracticeHTML } from './generators/vocabulary-practice';
 import { generateCrosswordHTML } from './generators/crossword';
+import { generateWordSearchHTML } from './generators/word-search';
 import { generateWorksheetHTML } from './generators/standard-worksheet';
 import { generateGrammarExercisesHTML } from './generators/grammar-exercises';
 
@@ -91,10 +92,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ html });
     }
 
-    if (templateId === 'vocabulary_crossword' || templateId === 'vocabulary_wordsearch' ||
-        templateId === 'crossword' || templateId === 'word_search' ||
-        metadataTemplate === 'vocabulary_crossword' || metadataTemplate === 'vocabulary_wordsearch' ||
-        metadataTemplate === 'crossword' || metadataTemplate === 'word_search') {
+    if (templateId === 'word-search' || templateId === 'word_search' || templateId === 'vocabulary_wordsearch' ||
+        metadataTemplate === 'word-search' || metadataTemplate === 'word_search' || metadataTemplate === 'vocabulary_wordsearch') {
+      console.log('✅ [HTML API] Using word search HTML generator');
+      const html = generateWordSearchHTML(worksheet, options);
+      console.log('✅ [HTML API] Word search HTML generated, length:', html.length);
+      return NextResponse.json({ html });
+    }
+
+    if (templateId === 'vocabulary_crossword' || templateId === 'crossword' ||
+        metadataTemplate === 'vocabulary_crossword' || metadataTemplate === 'crossword') {
       console.log('✅ [HTML API] Using crossword HTML generator');
       const html = generateCrosswordHTML(worksheet, options);
       console.log('✅ [HTML API] Crossword HTML generated, length:', html.length);

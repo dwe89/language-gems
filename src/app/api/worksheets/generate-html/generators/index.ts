@@ -7,6 +7,7 @@ export { generateGrammarExercisesHTML } from './grammar-exercises';
 export { generateListeningComprehensionHTML } from './listening-comprehension';
 export { generateWritingPracticeHTML } from './writing-practice';
 export { generateCrosswordHTML } from './crossword';
+export { generateWordSearchHTML } from './word-search';
 
 // Re-export types for convenience
 export type {

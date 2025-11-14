@@ -104,6 +104,10 @@ export function generateReadingComprehensionHTML(worksheet: any, options: any = 
   }
 
   html += `
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    </script>
 </body>
 </html>`;
 
@@ -122,19 +126,23 @@ function generateWordSearchSection(words: string[], difficulty: 'easy' | 'medium
 
     const wordSearchHTML = renderWordSearchHTML(wordSearch);
 
-    return `
-    <div class="section">
-        <div class="section-title">Word Search</div>
-        <p><em>Find the hidden words in the grid below. Words can be horizontal, vertical, or diagonal.</em></p>
-        ${wordSearchHTML}
-    </div>
-`;
+    return wordSearchHTML;
   } catch (error) {
     console.error('Error generating word search:', error);
     return `
-    <div class="section">
-        <div class="section-title">Word Search</div>
-        <p><em>Word search puzzle could not be generated. Words to find: ${words.join(', ')}</em></p>
+    <div class="vocab-exercise exercise-full-width">
+      <div class="vocab-exercise-header">
+        <div class="vocab-exercise-icon" style="background: #8b5cf6;">
+          <i data-lucide="search"></i>
+        </div>
+        <div>
+          <h2 class="vocab-exercise-title">Word Search</h2>
+          <p class="vocab-exercise-instructions">Find all the Spanish words hidden in the grid below. Words can be horizontal, vertical, or diagonal.</p>
+        </div>
+      </div>
+      <div style="padding: 20px; text-align: center; color: #64748b;">
+        <p>Word search puzzle could not be generated. Words to find: ${words.join(', ')}</p>
+      </div>
     </div>
 `;
   }
@@ -372,6 +380,10 @@ function createFallbackHTML(worksheet: any): string {
         <div class="section-title">Worksheet Content</div>
         <p><em>This worksheet is being generated. Please refresh the page in a moment.</em></p>
     </div>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    </script>
 </body>
 </html>`;
 }
