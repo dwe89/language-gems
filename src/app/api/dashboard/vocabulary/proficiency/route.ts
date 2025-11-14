@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/utils/supabase/client';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/dashboard/vocabulary/proficiency
  *

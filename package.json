@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:clean": "rm -rf .next/cache && next build",
     "start": "next start",
     "lint": "next lint",
+    "clean-cache": "rm -rf .next/cache && echo '✅ Build cache cleared'",
     "test": "vitest",
     "generate-listening-audio": "tsx scripts/generate-listening-audio.ts",
     "test-tts-models": "tsx scripts/test-tts-models.ts",

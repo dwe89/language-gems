@@ -13,32 +13,11 @@ const config = {
   distDir: '.next',
   trailingSlash: false,
   
-  // Output file tracing to reduce serverless function size
-  outputFileTracingIncludes: {
-    // Only include necessary files for HTML generation
-    '/api/worksheets/generate-html': [
-      './src/app/api/worksheets/generate-html/**/*',
-      './src/utils/wordSearchGenerator.ts',
-      './node_modules/@blex41/word-search/**/*',
-    ],
-  },
-  outputFileTracingExcludes: {
-    // Exclude heavy dependencies not needed for HTML generation
-    '/api/worksheets/generate-html': [
-      './node_modules/puppeteer/**/*',
-      './node_modules/puppeteer-core/**/*',
-      './node_modules/@sparticuz/**/*',
-      './node_modules/chromium-bidi/**/*',
-      './node_modules/sharp/**/*',
-      './node_modules/@aws-sdk/**/*',
-      './node_modules/@google-cloud/**/*',
-    ],
-  },
-  
   // Increase API route timeout for bulk operations
   experimental: {
     proxyTimeout: 120000, // 2 minutes
   },
+  
   // Allow student subdomain for development
   async headers() {
     return [
@@ -63,18 +42,33 @@ const config = {
       },
     ];
   },
+  
   // Allow cross-origin requests from student subdomain in development
   ...(process.env.NODE_ENV === 'development' && {
     allowedDevOrigins: ['students.localhost'],
   }),
+  
+  // Optimize webpack for large template strings and Edge Runtime
   webpack: (config, { isServer }) => {
+    // Disable serialization caching for large strings
+    if (config.cache && config.cache.type === 'filesystem') {
+      config.cache.compression = 'gzip'; // Compress cache to reduce size
+      config.cache.maxAge = 1000 * 60 * 60 * 24 * 7; // 1 week cache
+    }
+    
+    // Optimize module concatenation for API routes
+    if (isServer) {
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: 'deterministic',
+      };
+    }
+    
     // Exclude source map files from webpack processing
     config.module.rules.push({
       test: /\.js\.map$/,
       use: 'ignore-loader',
     });
-
-    // Keep general .js.map ignore for any future needs
 
     // Reduce serverless function bundle size by externalizing heavy dependencies
     if (isServer) {
@@ -100,8 +94,6 @@ const config = {
         tls: false,
         child_process: false,
       };
-      
-      // No longer need to externalize puppeteer/chromium
       
       // Add chunk loading retry logic to handle 403 errors and stale chunks
       // This helps with Windows PC cache issues and CDN problems
