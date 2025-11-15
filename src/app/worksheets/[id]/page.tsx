@@ -108,8 +108,7 @@ export default function WorksheetPreviewPage() {
 
     // Check if this is a reading comprehension template that needs HTML generation
     const isReadingComprehension = templateId === 'reading_comprehension' ||
-                                    metadataTemplate === 'reading_comprehension' ||
-                                    !!rawContent;
+                    metadataTemplate === 'reading_comprehension';
 
     // Check if this is a vocabulary practice template that needs HTML generation
     const isVocabularyPractice = templateId === 'vocabulary_practice' ||
@@ -119,7 +118,10 @@ export default function WorksheetPreviewPage() {
     const isGrammarExercises = templateId === 'grammar_exercises' ||
                                metadataTemplate === 'grammar_exercises';
 
-    console.log('🤔 [HTML GENERATION] Template detection:');
+    const hasStoredHtml = typeof worksheet.html === 'string' && worksheet.html.trim().length > 0;
+    const shouldRegenerate = isReadingComprehension || isVocabularyPractice || isGrammarExercises || !hasStoredHtml;
+
+    console.log('🤔 [HTML GENERATION] Template detection & decision:');
     console.log('   - templateId:', templateId);
     console.log('   - metadataTemplate:', metadataTemplate);
     console.log('   - templateId === "reading_comprehension":', templateId === 'reading_comprehension');
@@ -128,14 +130,25 @@ export default function WorksheetPreviewPage() {
     console.log('   - metadataTemplate === "vocabulary_practice":', metadataTemplate === 'vocabulary_practice');
     console.log('   - templateId === "grammar_exercises":', templateId === 'grammar_exercises');
     console.log('   - metadataTemplate === "grammar_exercises":', metadataTemplate === 'grammar_exercises');
-    console.log('   - !!rawContent:', !!rawContent);
-    console.log('   - FINAL RESULT:', isReadingComprehension);
+    console.log('   - hasRawContent:', !!rawContent);
+    console.log('   - hasStoredHtml:', hasStoredHtml);
+    console.log('   - shouldRegenerate:', shouldRegenerate);
+    console.log('   - Final isReadingComprehension:', isReadingComprehension);
     console.log('   - Final isVocabularyPractice:', isVocabularyPractice);
     console.log('   - Final isGrammarExercises:', isGrammarExercises);
 
-    if (isReadingComprehension || isVocabularyPractice || isGrammarExercises) {
-      console.log('🚀 [HTML GENERATION] Special template detected - generating fresh HTML from rawContent');
-      console.log('   - Template type:', isReadingComprehension ? 'reading_comprehension' : isVocabularyPractice ? 'vocabulary_practice' : 'grammar_exercises');
+    if (shouldRegenerate) {
+      const templateLabel = isReadingComprehension
+        ? 'reading_comprehension'
+        : isVocabularyPractice
+          ? 'vocabulary_practice'
+          : isGrammarExercises
+            ? 'grammar_exercises'
+            : 'no_stored_html';
+
+      console.log('🚀 [HTML GENERATION] HTML regeneration required');
+      console.log('   - Reason:', templateLabel === 'no_stored_html' ? 'Missing stored HTML' : 'Special template');
+      console.log('   - Template label:', templateLabel);
       try {
         setGeneratingHtml(true);
         console.log('🚀 [HTML GENERATION] Calling /api/worksheets/generate-html...');
@@ -172,7 +185,7 @@ export default function WorksheetPreviewPage() {
         setGeneratingHtml(false);
       }
     } else {
-      console.log('📝 [HTML GENERATION] Not a special template - using existing worksheet.html');
+      console.log('📝 [HTML GENERATION] Using stored worksheet.html (no regeneration needed)');
       console.log('   - Available special templates: reading_comprehension, vocabulary_practice, grammar_exercises');
       const existingHtml = worksheet.html;
       console.log('📄 [HTML GENERATION] Existing HTML exists?', !!existingHtml);

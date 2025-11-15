@@ -13,11 +13,21 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const phaseMarks: Array<{ label: string; elapsed: number }> = [];
+  const markPhase = (label: string) => {
+    const elapsed = Date.now() - startTime;
+    phaseMarks.push({ label, elapsed });
+    console.log(`⏱️ [HTML API] ${label} @ ${elapsed}ms`);
+  };
+  const logTimeline = () => {
+    console.log('⏱️ [HTML API] Timeline snapshot:', phaseMarks);
+  };
   let worksheet: any;
   try {
     console.log('🚀 [HTML API] POST request received at', new Date().toISOString());
     const requestData = await request.json();
     worksheet = requestData.worksheet;
+    markPhase('request parsed');
     const options = requestData.options || {};
 
     if (!worksheet) {
@@ -78,6 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     const hasRawContent = !!worksheet.rawContent || !!(worksheet.content?.rawContent);
+    markPhase('normalization complete');
 
     console.log('🔍 [HTML API] Template detection:');
     console.log('   - template_id:', templateId);
@@ -88,19 +99,29 @@ export async function POST(request: NextRequest) {
     console.log('   - templateId === "reading_comprehension":', templateId === 'reading_comprehension');
     console.log('   - metadataTemplate === "reading_comprehension":', metadataTemplate === 'reading_comprehension');
 
+    markPhase('template detection logged');
+
     if (templateId === 'reading_comprehension' || metadataTemplate === 'reading_comprehension') {
       console.log('✅ [HTML API] Using reading comprehension HTML generator');
+      markPhase('reading generator start');
       const html = generateReadingComprehensionHTML(worksheet, options);
       const duration = Date.now() - startTime;
       console.log('✅ [HTML API] Reading comprehension HTML generated, length:', html.length, 'in', duration + 'ms');
+      markPhase('reading generator complete');
+      markPhase('response ready');
+      logTimeline();
       return NextResponse.json({ html, generationTime: duration });
     }
 
     if (templateId === 'vocabulary_practice' || metadataTemplate === 'vocabulary_practice') {
       console.log('✅ [HTML API] Using vocabulary practice HTML generator');
+      markPhase('vocab generator start');
       const html = await generateVocabularyPracticeHTML(worksheet, options);
       const duration = Date.now() - startTime;
       console.log('✅ [HTML API] Vocabulary practice HTML generated, length:', html.length, 'in', duration + 'ms');
+      markPhase('vocab generator complete');
+      markPhase('response ready');
+      logTimeline();
       return NextResponse.json({ html, generationTime: duration });
     }
 
@@ -116,35 +137,51 @@ export async function POST(request: NextRequest) {
           console.log('📊 [HTML API] content.rawContent.exercises:', Array.isArray(worksheet.content.rawContent.exercises), worksheet.content.rawContent.exercises?.length || 0);
         }
       }
+      markPhase('grammar generator start');
       const html = generateGrammarExercisesHTML(worksheet, options);
       const duration = Date.now() - startTime;
       console.log('✅ [HTML API] Grammar exercises HTML generated, length:', html.length, 'in', duration + 'ms');
+      markPhase('grammar generator complete');
+      markPhase('response ready');
+      logTimeline();
       return NextResponse.json({ html, generationTime: duration });
     }
 
     if (templateId === 'word-search' || templateId === 'word_search' || templateId === 'vocabulary_wordsearch' ||
         metadataTemplate === 'word-search' || metadataTemplate === 'word_search' || metadataTemplate === 'vocabulary_wordsearch') {
       console.log('✅ [HTML API] Using word search HTML generator');
+      markPhase('word-search generator start');
       const html = generateWordSearchHTML(worksheet, options);
       const duration = Date.now() - startTime;
       console.log('✅ [HTML API] Word search HTML generated, length:', html.length, 'in', duration + 'ms');
+      markPhase('word-search generator complete');
+      markPhase('response ready');
+      logTimeline();
       return NextResponse.json({ html, generationTime: duration });
     }
 
     if (templateId === 'vocabulary_crossword' || templateId === 'crossword' ||
         metadataTemplate === 'vocabulary_crossword' || metadataTemplate === 'crossword') {
       console.log('✅ [HTML API] Using crossword HTML generator');
+      markPhase('crossword generator start');
       const html = generateCrosswordHTML(worksheet, options);
       const duration = Date.now() - startTime;
       console.log('✅ [HTML API] Crossword HTML generated, length:', html.length, 'in', duration + 'ms');
+      markPhase('crossword generator complete');
+      markPhase('response ready');
+      logTimeline();
       return NextResponse.json({ html, generationTime: duration });
     }
 
     console.log('📝 [HTML API] Using standard worksheet HTML generator');
     // Generate HTML from worksheet content
+    markPhase('standard generator start');
     const html = generateWorksheetHTML(worksheet, options);
     const duration = Date.now() - startTime;
     console.log('✅ [HTML API] Standard HTML generated, length:', html.length, 'in', duration + 'ms');
+    markPhase('standard generator complete');
+    markPhase('response ready');
+    logTimeline();
 
     return NextResponse.json({ html, generationTime: duration });
   } catch (error) {
@@ -160,7 +197,10 @@ export async function POST(request: NextRequest) {
       hasRawContent: !!worksheet?.rawContent,
       duration: `${duration}ms`,
       timestamp: new Date().toISOString(),
+      phaseMarks,
     });
+    markPhase('error response ready');
+    logTimeline();
     
     return NextResponse.json(
       { 

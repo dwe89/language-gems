@@ -10,12 +10,23 @@ import { PDF_BASE_STYLES, TYPOGRAPHY_STYLES, SPACING_STYLES, PRINT_STYLES } from
 
 // Lazy load OpenAI to reduce initial bundle size
 let openaiClient: any = null;
+const AI_CLUE_TIMEOUT_MS = 4000;
+
 async function getOpenAIClient() {
   if (!openaiClient) {
     const OpenAI = (await import('openai')).default;
     openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   }
   return openaiClient;
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+    })
+  ]);
 }
 
 // Simple HTML escape helper for inserted clue text
@@ -48,6 +59,8 @@ export async function generateVocabularyPracticeHTML(
 
     :root {
       --puzzle-width: 280px;
+    } else {
+      console.log('[CROSSWORD] Skipping GPT clue enhancement -', aiCluesEnabled ? 'insufficient entries' : 'API key missing');
     }
 
     /* Tighter spacing for title and container */
@@ -1398,11 +1411,13 @@ async function generateCrosswordSection(
   const words = exercise.words || [];
   const clues = exercise.clues || {};
   const items = exercise.items || [];
+  const aiCluesEnabled = Boolean(process.env.OPENAI_API_KEY);
 
   console.log('[CROSSWORD] Processing exercise:', exercise.title);
   console.log('[CROSSWORD] Words:', words);
   console.log('[CROSSWORD] Clues:', clues);
   console.log('[CROSSWORD] Items:', items);
+  console.log('[CROSSWORD] AI clue enhancement enabled:', aiCluesEnabled);
 
   // Handle different clue structures
   let allClues: any[] = [];
@@ -1503,31 +1518,38 @@ async function generateCrosswordSection(
 
     // Generate the crossword layout
     // Attempt to improve clues via the GPT Nano API when available
-    try {
-      const client = await getOpenAIClient();
+    if (aiCluesEnabled && limitedEntries.length >= 3) {
+      try {
+        console.log(`[CROSSWORD] Enhancing clues via GPT (timeout ${AI_CLUE_TIMEOUT_MS}ms)`);
+        const client = await getOpenAIClient();
       const aiPrompt = `Generate short, one-line descriptive clues in English for the following Spanish vocabulary words. **Clues must be very concise, ideally under 60 characters.** Return JSON array of objects with keys 'word' and 'clue'. Use the exact uppercase word form as provided. Example: [{"word":"BICICLETA","clue":"Two-wheeled vehicle without motor."}]\n\nWords:\n${limitedEntries.map(e => e.word + (e.clue ? ` — current clue: ${e.clue}` : '')).join('\n')}`;
 
-      const aiResponse = await client.chat.completions.create({
-        model: 'gpt-4.1-nano',
-        messages: [{ role: 'user', content: aiPrompt }],
-        max_completion_tokens: 300
-      });
+        const aiResponse: any = await withTimeout(
+          client.chat.completions.create({
+            model: 'gpt-4.1-nano',
+            messages: [{ role: 'user', content: aiPrompt }],
+            max_completion_tokens: 300
+          }),
+          AI_CLUE_TIMEOUT_MS,
+          'CROSSWORD GPT clues'
+        );
 
-      const aiText = aiResponse.choices?.[0]?.message?.content || '';
-      try {
-        const parsed = JSON.parse(aiText);
-        if (Array.isArray(parsed)) {
-          parsed.forEach((p: any) => {
-            const match = limitedEntries.find(le => le.word === (p.word || '').toUpperCase());
-            if (match && p.clue) match.clue = p.clue;
-          });
+        const aiText = aiResponse.choices?.[0]?.message?.content || '';
+        try {
+          const parsed = JSON.parse(aiText);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((p: any) => {
+              const match = limitedEntries.find(le => le.word === (p.word || '').toUpperCase());
+              if (match && p.clue) match.clue = p.clue;
+            });
+            console.log('[CROSSWORD] GPT clues applied for', parsed.length, 'entries');
+          }
+        } catch (err) {
+          console.warn('[CROSSWORD] GPT clue JSON parse failed, using defaults:', err);
         }
-      } catch (err) {
-        // ignore parse errors, we'll fall back to existing clues
+      } catch (err: any) {
+        console.warn('[CROSSWORD] GPT clue generation skipped:', err && err.message ? err.message : err);
       }
-    } catch (err: any) {
-      // If AI call fails, continue with existing clues silently
-      console.warn('[CROSSWORD] GPT clue generation failed:', err && err.message ? err.message : err);
     }
 
     const crosswordData = await generateCrosswordLayout(limitedEntries, {
