@@ -4,7 +4,7 @@ import { WorksheetRequest, WorksheetResponse, Worksheet } from '@/lib/worksheets
 import { WorksheetRouter } from '@/lib/worksheets/router';
 import { findSubject, getParentSubject } from '@/lib/subjects';
 import { OpenAI } from 'openai';
-import { createProgressJob, updateProgress, markJobFailed, markJobComplete, getJobProgress, GenerationStep } from '@/lib/progress';
+import { createProgressJob, updateProgress, markJobFailed, markJobComplete, getJobProgress } from '@/lib/progress';
 import { generateCacheKey, getWorksheetCache, setWorksheetCache } from '@/lib/worksheets/cache';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
@@ -14,9 +14,7 @@ import { ErrorLogger } from '@/lib/error-logger';
 // Initialize OpenAI client
 function initOpenAI() {
   return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    timeout: 45000, // 45 second timeout for OpenAI API calls
-    maxRetries: 2, // Retry failed requests twice
+    apiKey: process.env.OPENAI_API_KEY
   });
 }
 
@@ -26,17 +24,11 @@ function createWorksheetRouter() {
   return new WorksheetRouter(openai);
 }
 
-export const runtime = 'nodejs'; // Force Node.js runtime for OpenAI SDK compatibility
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // 60 seconds timeout for worksheet generation
 
 export async function POST(req: Request) {
-  const startTime = Date.now();
-  console.log(`[WORKSHEET GEN] Request started at ${new Date().toISOString()}`);
-  
   try {
     const body = await req.json();
-    console.log(`[WORKSHEET GEN] Request body parsed in ${Date.now() - startTime}ms`);
 
     // Get user ID from auth session
     const cookieStore = await cookies();
@@ -57,9 +49,7 @@ export async function POST(req: Request) {
         },
       }
     );
-    
-    // Use getUser() instead of getSession() for security - authenticates with Supabase Auth server
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
 
     // Create a consistent anonymousId for guest users
     let anonymousId = cookieStore.get('worksheet_guest_id')?.value;
@@ -68,8 +58,8 @@ export async function POST(req: Request) {
     }
     
     // Use the user ID if authenticated, otherwise use the anonymousId
-    const userId = user?.id || anonymousId;
-    const isGuest = !user;
+    const userId = session?.user?.id || anonymousId;
+    const isGuest = !session?.user;
 
     console.log(`User ID for worksheet generation: ${userId.substring(0, 8)}... (${isGuest ? 'guest' : 'authenticated'})`);
 
@@ -166,14 +156,7 @@ export async function POST(req: Request) {
       language: body.language || 'English',
       customPrompt: body.customPrompt || '',
       targetLanguage: body.targetLanguage || subjectForRouter,
-      advancedOptions: {
-        ...(body.advancedOptions || {}),
-        // Pedagogical parameters for reading comprehension and other templates
-        textType: body.textType,
-        tenseFocus: body.tenseFocus,
-        personFocus: body.personFocus,
-        yearLevel: body.yearLevel,
-      },
+      advancedOptions: body.advancedOptions || {},
       originalSubject: subjectFromInput,
       jobId: jobId,
       generateSeoAndTags: true,
@@ -214,41 +197,26 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
   const { jobId } = request;
 
   try {
-    console.log(`[Worksheet Gen] Starting generation for job ${jobId}`);
+    await updateProgress(jobId!, 'fetchSubject', 20, 'Fetching subject details');
 
     // Check cache first
-    await updateProgress(jobId!, 'fetchSubject', 15, 'Checking cache');
-    
-    let cacheKey: string | null = null;
-    let cachedWorksheet: WorksheetResponse | null = null;
-
-    try {
-      cacheKey = generateCacheKey(request);
-      cachedWorksheet = cacheKey ? getWorksheetCache(cacheKey) : null;
-    } catch (cacheError) {
-      console.error(`[Worksheet Gen] Cache error:`, cacheError);
-    }
+    const cacheKey = generateCacheKey(request);
+    const cachedWorksheet = getWorksheetCache(cacheKey);
 
     if (cachedWorksheet) {
-      console.log(`[Worksheet Gen] Cache hit for job ${jobId}`);
+      console.log(`[Cache] Using cached worksheet for job: ${jobId}`);
       await updateProgress(jobId!, 'completed', 100, 'Retrieved cached worksheet');
       await markJobComplete(jobId!, cachedWorksheet);
       return;
     }
 
-    // Generate worksheet - let the handler manage progress from here
-    console.log(`[Worksheet Gen] Generating new worksheet for job ${jobId}`);
-    const worksheetRouter = createWorksheetRouter();
-    
-    // Add timeout wrapper to prevent hanging on long OpenAI calls
-    const AI_TIMEOUT = 50000; // 50 seconds (must be less than 60s maxDuration)
-    const resultPromise = worksheetRouter.generateWorksheet(request);
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error(`Worksheet generation timed out after ${AI_TIMEOUT/1000}s`)), AI_TIMEOUT);
-    });
-    
-    const result: WorksheetResponse = await Promise.race([resultPromise, timeoutPromise]);
-    console.log(`[Worksheet Gen] AI generation complete for job ${jobId}`);
+    // Generate worksheet
+    await updateProgress(jobId!, 'aiProcessing', 30, 'Generating worksheet with AI');
+    const worksheetRouter = createWorksheetRouter(); // Create new instance for each request
+    const result: WorksheetResponse = await worksheetRouter.generateWorksheet(request);
+
+    await updateProgress(jobId!, 'parsing', 60, 'Parsing AI response');
+    await updateProgress(jobId!, 'formatting', 70, 'Formatting worksheet content');
 
     // Ensure topic is set in the worksheet
     if (!result.worksheet.topic || result.worksheet.topic.trim() === '') {
@@ -269,12 +237,9 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
     }
 
     // Cache the result
-    if (cacheKey) {
-      setWorksheetCache(cacheKey, result);
-    }
+    setWorksheetCache(cacheKey, result);
 
     // Save worksheet to database
-    await updateProgress(jobId!, 'formatting', 80, 'Saving worksheet');
     let savedWorksheet = null;
     if (!isGuest) {
       try {
@@ -290,7 +255,8 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
     await recordGenerationUsage(userId, 'worksheet');
 
     // Mark job as complete
-    console.log(`[Worksheet Gen] Worksheet generation complete for job ${jobId}`);
+    await updateProgress(jobId!, 'completed', 100, 'Worksheet generation complete');
+    console.log(`Worksheet generation complete for job: ${jobId}`);
 
     // Include worksheet ID in the result if saved
     const finalResult = savedWorksheet ? {
@@ -298,7 +264,6 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
       worksheetId: savedWorksheet.id
     } : result;
 
-    await updateProgress(jobId!, 'completed', 100, 'Worksheet generation completed successfully');
     await markJobComplete(jobId!, finalResult);
 
   } catch (error: any) {
@@ -358,11 +323,7 @@ async function saveWorksheetToDatabase(worksheet: Worksheet, request: WorksheetR
 
   // Generate HTML for the worksheet (skip for special templates that generate HTML on-demand)
   let html = null;
-  if (
-    request.template !== 'reading_comprehension' &&
-    request.template !== 'vocabulary_practice' &&
-    request.template !== 'grammar_exercises'
-  ) {
+  if (request.template !== 'reading_comprehension' && request.template !== 'vocabulary_practice') {
     html = generateWorksheetHTML(worksheet);
     console.log('[Database] Generated HTML for standard worksheet');
   } else {
@@ -377,14 +338,9 @@ async function saveWorksheetToDatabase(worksheet: Worksheet, request: WorksheetR
     answerKey: (worksheet as any).answerKey
   };
 
-  // For reading comprehension, vocabulary practice, and grammar exercises, include the raw content and metadata
-  if ((request.template === 'reading_comprehension' || request.template === 'vocabulary_practice' || request.template === 'grammar_exercises') && (worksheet as any).rawContent) {
+  // For reading comprehension and vocabulary practice, include the raw content and metadata
+  if ((request.template === 'reading_comprehension' || request.template === 'vocabulary_practice') && (worksheet as any).rawContent) {
     console.log(`[Database] Including rawContent for ${request.template} template`);
-    console.log(`[Database] rawContent keys:`, Object.keys((worksheet as any).rawContent || {}));
-    console.log(`[Database] rawContent.exercises length:`, ((worksheet as any).rawContent?.exercises || []).length);
-    if ((worksheet as any).rawContent?.exercises?.length > 0) {
-      console.log(`[Database] First exercise:`, JSON.stringify((worksheet as any).rawContent.exercises[0], null, 2));
-    }
     content = {
       ...content,
       rawContent: (worksheet as any).rawContent,
