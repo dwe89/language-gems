@@ -212,28 +212,32 @@ export async function POST(req: Request) {
 async function generateWorksheetAsync(request: WorksheetRequest, userId: string, isGuest: boolean) {
   const { jobId } = request;
 
-  const safeProgressUpdate = async (
+  const safeProgressUpdate = (
     step: GenerationStep,
     progress: number,
-    message: string,
-    timeoutMs = 3000
+    message: string
   ) => {
     if (!jobId) return;
-    try {
-      await Promise.race([
-        updateProgress(jobId, step, progress, message),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Progress update timeout')), timeoutMs))
-      ]);
-    } catch (progressError) {
-      console.error(`[WORKSHEET GEN ASYNC] Progress update failed (${step}):`, progressError);
-    }
+    
+    console.log(`[WORKSHEET_GEN_ASYNC] PRE-UPDATING progress to ${step} (${progress}%)`);
+    
+    // Non-blocking fire-and-forget with self-contained error handling
+    (async () => {
+      try {
+        await updateProgress(jobId, step, progress, message);
+        console.log(`[WORKSHEET_GEN_ASYNC] POST-UPDATE for ${step} completed.`);
+      } catch (progressError) {
+        // Log the error but do not re-throw, to prevent crashing the main thread
+        console.error(`[WORKSHEET_GEN_ASYNC] BACKGROUND progress update failed for step "${step}":`, progressError);
+      }
+    })();
   };
 
   try {
     console.log(`[WORKSHEET GEN ASYNC] Starting async generation for job ${jobId}`);
 
-    await safeProgressUpdate('fetchSubject', 20, 'Fetching subject details');
-    console.log(`[WORKSHEET GEN ASYNC] Progress updated to fetchSubject`);
+    safeProgressUpdate('fetchSubject', 20, 'Fetching subject details');
+    console.log(`[WORKSHEET GEN ASYNC] Progress update dispatched for fetchSubject`);
 
     // Check cache first
     console.log(`[WORKSHEET GEN ASYNC] Checking cache for job ${jobId}`);
@@ -242,21 +246,21 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
 
     try {
       cacheKey = generateCacheKey(request);
-      await safeProgressUpdate('promptGeneration', 22, 'Cache key generated');
+      safeProgressUpdate('promptGeneration', 22, 'Cache key generated');
       cachedWorksheet = cacheKey ? getWorksheetCache(cacheKey) : null;
-      await safeProgressUpdate(
+      safeProgressUpdate(
         'promptGeneration',
         cachedWorksheet ? 95 : 24,
         cachedWorksheet ? 'Cache hit - serving stored worksheet' : 'Cache miss - generating new worksheet'
       );
     } catch (cacheError) {
       console.error(`[WORKSHEET GEN ASYNC] Cache subsystem failure for job ${jobId}:`, cacheError);
-      await safeProgressUpdate('promptGeneration', 23, 'Cache unavailable - continuing with fresh generation');
+      safeProgressUpdate('promptGeneration', 23, 'Cache unavailable - continuing with fresh generation');
     }
 
     if (cachedWorksheet) {
       console.log(`[Cache] Using cached worksheet for job: ${jobId}`);
-      await safeProgressUpdate('completed', 100, 'Retrieved cached worksheet');
+      safeProgressUpdate('completed', 100, 'Retrieved cached worksheet');
       try {
         await Promise.race([
           markJobComplete(jobId!, cachedWorksheet),
@@ -270,16 +274,16 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
 
     // Generate worksheet
     console.log(`[WORKSHEET GEN ASYNC] No cache hit, generating worksheet for job ${jobId}`);
-    await safeProgressUpdate('promptGeneration', 26, 'Preparing worksheet router');
+    safeProgressUpdate('promptGeneration', 26, 'Preparing worksheet router');
     const worksheetRouter = createWorksheetRouter(); // Create new instance for each request
-    await safeProgressUpdate('promptGeneration', 28, 'Worksheet router initialized');
+    safeProgressUpdate('promptGeneration', 28, 'Worksheet router initialized');
 
-    await safeProgressUpdate('aiProcessing', 30, 'Generating worksheet with AI');
+    safeProgressUpdate('aiProcessing', 30, 'Generating worksheet with AI');
     const result: WorksheetResponse = await worksheetRouter.generateWorksheet(request);
-    await safeProgressUpdate('aiProcessing', 55, 'AI generation complete');
+    safeProgressUpdate('aiProcessing', 55, 'AI generation complete');
 
-    await safeProgressUpdate('parsing', 60, 'Parsing AI response');
-    await safeProgressUpdate('formatting', 70, 'Formatting worksheet content');
+    safeProgressUpdate('parsing', 60, 'Parsing AI response');
+    safeProgressUpdate('formatting', 70, 'Formatting worksheet content');
 
     // Ensure topic is set in the worksheet
     if (!result.worksheet.topic || result.worksheet.topic.trim() === '') {
@@ -320,7 +324,7 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
     await recordGenerationUsage(userId, 'worksheet');
 
     // Mark job as complete
-    await safeProgressUpdate('completed', 100, 'Worksheet generation complete');
+    safeProgressUpdate('completed', 100, 'Worksheet generation complete');
     console.log(`Worksheet generation complete for job: ${jobId}`);
 
     // Include worksheet ID in the result if saved
