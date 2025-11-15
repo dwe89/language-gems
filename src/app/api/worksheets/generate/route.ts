@@ -237,14 +237,22 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
 
     // Check cache first
     console.log(`[WORKSHEET GEN ASYNC] Checking cache for job ${jobId}`);
-    const cacheKey = generateCacheKey(request);
-    await safeProgressUpdate('promptGeneration', 22, 'Cache key generated');
-    const cachedWorksheet = getWorksheetCache(cacheKey);
-    await safeProgressUpdate(
-      'promptGeneration',
-      cachedWorksheet ? 95 : 24,
-      cachedWorksheet ? 'Cache hit - serving stored worksheet' : 'Cache miss - generating new worksheet'
-    );
+    let cacheKey: string | null = null;
+    let cachedWorksheet: WorksheetResponse | null = null;
+
+    try {
+      cacheKey = generateCacheKey(request);
+      await safeProgressUpdate('promptGeneration', 22, 'Cache key generated');
+      cachedWorksheet = cacheKey ? getWorksheetCache(cacheKey) : null;
+      await safeProgressUpdate(
+        'promptGeneration',
+        cachedWorksheet ? 95 : 24,
+        cachedWorksheet ? 'Cache hit - serving stored worksheet' : 'Cache miss - generating new worksheet'
+      );
+    } catch (cacheError) {
+      console.error(`[WORKSHEET GEN ASYNC] Cache subsystem failure for job ${jobId}:`, cacheError);
+      await safeProgressUpdate('promptGeneration', 23, 'Cache unavailable - continuing with fresh generation');
+    }
 
     if (cachedWorksheet) {
       console.log(`[Cache] Using cached worksheet for job: ${jobId}`);
@@ -292,7 +300,9 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
     }
 
     // Cache the result
-    setWorksheetCache(cacheKey, result);
+    if (cacheKey) {
+      setWorksheetCache(cacheKey, result);
+    }
 
     // Save worksheet to database
     let savedWorksheet = null;

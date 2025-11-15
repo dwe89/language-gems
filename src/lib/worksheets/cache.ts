@@ -42,12 +42,32 @@ export function generateCacheKey(request: WorksheetRequest): string {
   // Debug logging
   console.log(`[Cache] Generating cache key with data:`, JSON.stringify(keyData, null, 2));
 
-  // Create a hash-like key from the data
+  // Create a deterministic hash that works in both Node and Edge runtimes
   const keyString = JSON.stringify(keyData);
-  const cacheKey = `worksheet_${Buffer.from(keyString).toString('base64').slice(0, 32)}`;
+  const cacheKey = `worksheet_${stableHash(keyString)}`;
 
   console.log(`[Cache] Generated cache key: ${cacheKey}`);
   return cacheKey;
+}
+
+function stableHash(input: string): string {
+  const FNV_PRIME = 16777619;
+  const OFFSET_BASIS = 2166136261;
+
+  let hash1 = OFFSET_BASIS;
+  let hash2 = OFFSET_BASIS;
+
+  for (let i = 0; i < input.length; i++) {
+    const charCode = input.charCodeAt(i);
+    hash1 ^= charCode;
+    hash1 = (hash1 * FNV_PRIME) >>> 0;
+
+    hash2 ^= charCode + i;
+    hash2 = (hash2 * FNV_PRIME) >>> 0;
+  }
+
+  const combined = (hash1.toString(16).padStart(8, '0') + hash2.toString(16).padStart(8, '0')).padEnd(32, '0');
+  return combined.slice(0, 32);
 }
 
 /**
