@@ -26,6 +26,7 @@ function createWorksheetRouter() {
   return new WorksheetRouter(openai);
 }
 
+export const runtime = 'nodejs'; // Force Node.js runtime for OpenAI SDK compatibility
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 60 seconds timeout for worksheet generation
 
@@ -279,7 +280,15 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
     safeProgressUpdate('promptGeneration', 28, 'Worksheet router initialized');
 
     safeProgressUpdate('aiProcessing', 30, 'Generating worksheet with AI');
-    const result: WorksheetResponse = await worksheetRouter.generateWorksheet(request);
+    
+    // Add timeout wrapper to prevent hanging on long OpenAI calls
+    const AI_TIMEOUT = 50000; // 50 seconds (must be less than 60s maxDuration)
+    const resultPromise = worksheetRouter.generateWorksheet(request);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`Worksheet generation timed out after ${AI_TIMEOUT/1000}s`)), AI_TIMEOUT);
+    });
+    
+    const result: WorksheetResponse = await Promise.race([resultPromise, timeoutPromise]);
     safeProgressUpdate('aiProcessing', 55, 'AI generation complete');
 
     safeProgressUpdate('parsing', 60, 'Parsing AI response');

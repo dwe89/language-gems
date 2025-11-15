@@ -31,7 +31,7 @@ export class LanguagesHandler extends WorksheetHandler {
     try {
       // Stronger system + user instructions to get richer, validated JSON output
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-5-nano',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',

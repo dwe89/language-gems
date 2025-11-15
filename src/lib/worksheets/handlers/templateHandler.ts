@@ -96,7 +96,7 @@ export class TemplateHandler extends WorksheetHandler {
       console.log('System prompt:', this.getSystemPrompt(templateId).substring(0, 200) + '...');
 
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4.1-nano', 
+        model: 'gpt-4o-mini', 
         messages: [
           {
             role: 'system',
