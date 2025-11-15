@@ -28,11 +28,27 @@ const jobProgressMap = new Map<string, JobProgress>();
 // Import Supabase client for database storage
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client for server-side operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client for server-side operations with validation
+let supabase: ReturnType<typeof createClient> | null = null;
+let supabaseInitError: string | null = null;
+
+try {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    supabaseInitError = `Missing Supabase credentials: URL=${!!supabaseUrl}, KEY=${!!supabaseKey}`;
+    console.error(`[Progress] ${supabaseInitError}`);
+    console.warn('[Progress] Falling back to in-memory progress tracking only');
+  } else {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('[Progress] Supabase client initialized successfully');
+  }
+} catch (error) {
+  supabaseInitError = `Supabase initialization failed: ${error}`;
+  console.error(`[Progress] ${supabaseInitError}`);
+  console.warn('[Progress] Falling back to in-memory progress tracking only');
+}
 
 /**
  * Create a new progress job
@@ -47,8 +63,16 @@ export async function createProgressJob(jobId: string): Promise<void> {
     updatedAt: new Date()
   };
 
+  // Always store in memory first
+  jobProgressMap.set(jobId, job);
+
+  if (!supabase) {
+    console.warn(`[Progress] No Supabase client available (${supabaseInitError}), using in-memory only for job ${jobId}`);
+    return;
+  }
+
   try {
-    // Store in database first
+    // Store in database
     const { error } = await supabase
       .from('worksheet_generation_jobs')
       .insert({
@@ -58,22 +82,16 @@ export async function createProgressJob(jobId: string): Promise<void> {
         message: job.message,
         created_at: job.createdAt.toISOString(),
         updated_at: job.updatedAt.toISOString()
-      });
+      } as any);
 
     if (error) {
       console.error(`[Progress] Failed to create job in database: ${error.message}`);
-      // Fall back to in-memory storage
-      jobProgressMap.set(jobId, job);
     } else {
       console.log(`[Progress] Created job in database: ${jobId}`);
     }
   } catch (error) {
     console.error(`[Progress] Database error creating job:`, error);
-    // Fall back to in-memory storage
-    jobProgressMap.set(jobId, job);
   }
-
-  console.log(`[Progress] Created job: ${jobId}`);
 }
 
 /**
@@ -88,43 +106,40 @@ export async function updateProgress(
   const normalizedProgress = Math.min(100, Math.max(0, progress));
   const updatedAt = new Date();
 
+  // Always update in-memory first
+  const job = jobProgressMap.get(jobId);
+  if (job) {
+    job.status = status;
+    job.progress = normalizedProgress;
+    job.message = message;
+    job.updatedAt = updatedAt;
+    jobProgressMap.set(jobId, job);
+  }
+
+  console.log(`[Progress] Updated job ${jobId}: ${progress}% - ${message}`);
+
+  if (!supabase) {
+    // Silently skip database update if no Supabase client
+    return;
+  }
+
   try {
-    // Update in database first
-    const { error } = await supabase
+    // Update in database (async, non-blocking)
+    const { error } = await supabase!
       .from('worksheet_generation_jobs')
       .update({
         status,
         progress: normalizedProgress,
         message,
         updated_at: updatedAt.toISOString()
-      })
+      } as any)
       .eq('id', jobId);
 
     if (error) {
       console.error(`[Progress] Failed to update job in database: ${error.message}`);
-      // Fall back to in-memory update
-      const job = jobProgressMap.get(jobId);
-      if (job) {
-        job.status = status;
-        job.progress = normalizedProgress;
-        job.message = message;
-        job.updatedAt = updatedAt;
-        jobProgressMap.set(jobId, job);
-      }
-    } else {
-      console.log(`[Progress] Updated job ${jobId}: ${progress}% - ${message}`);
     }
   } catch (error) {
     console.error(`[Progress] Database error updating job:`, error);
-    // Fall back to in-memory update
-    const job = jobProgressMap.get(jobId);
-    if (job) {
-      job.status = status;
-      job.progress = normalizedProgress;
-      job.message = message;
-      job.updatedAt = updatedAt;
-      jobProgressMap.set(jobId, job);
-    }
   }
 }
 
@@ -136,7 +151,7 @@ export async function markJobComplete(jobId: string, result: any): Promise<void>
 
   try {
     // Update in database first
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('worksheet_generation_jobs')
       .update({
         status: 'completed',
@@ -144,7 +159,7 @@ export async function markJobComplete(jobId: string, result: any): Promise<void>
         message: 'Worksheet generation completed successfully',
         result: JSON.stringify(result),
         updated_at: updatedAt.toISOString()
-      })
+      } as any)
       .eq('id', jobId);
 
     if (error) {
@@ -209,7 +224,7 @@ export async function markJobFailed(jobId: string, error: string): Promise<void>
 
   try {
     // Update in database first
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabase!
       .from('worksheet_generation_jobs')
       .update({
         status: 'failed',
@@ -217,7 +232,7 @@ export async function markJobFailed(jobId: string, error: string): Promise<void>
         message: 'Worksheet generation failed',
         error_message: error,
         updated_at: updatedAt.toISOString()
-      })
+      } as any)
       .eq('id', jobId);
 
     if (dbError) {

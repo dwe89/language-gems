@@ -213,21 +213,52 @@ async function generateWorksheetAsync(request: WorksheetRequest, userId: string,
   const { jobId } = request;
 
   try {
-    await updateProgress(jobId!, 'fetchSubject', 20, 'Fetching subject details');
+    console.log(`[WORKSHEET GEN ASYNC] Starting async generation for job ${jobId}`);
+    
+    // Update progress with timeout protection
+    try {
+      await Promise.race([
+        updateProgress(jobId!, 'fetchSubject', 20, 'Fetching subject details'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Progress update timeout')), 3000))
+      ]);
+      console.log(`[WORKSHEET GEN ASYNC] Progress updated to fetchSubject`);
+    } catch (progressError) {
+      console.error(`[WORKSHEET GEN ASYNC] Failed to update progress:`, progressError);
+      // Continue anyway - don't let progress tracking block generation
+    }
 
     // Check cache first
+    console.log(`[WORKSHEET GEN ASYNC] Checking cache for job ${jobId}`);
     const cacheKey = generateCacheKey(request);
     const cachedWorksheet = getWorksheetCache(cacheKey);
 
     if (cachedWorksheet) {
       console.log(`[Cache] Using cached worksheet for job: ${jobId}`);
-      await updateProgress(jobId!, 'completed', 100, 'Retrieved cached worksheet');
-      await markJobComplete(jobId!, cachedWorksheet);
+      try {
+        await Promise.race([
+          updateProgress(jobId!, 'completed', 100, 'Retrieved cached worksheet'),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Progress update timeout')), 3000))
+        ]);
+        await Promise.race([
+          markJobComplete(jobId!, cachedWorksheet),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Mark complete timeout')), 3000))
+        ]);
+      } catch (progressError) {
+        console.error(`[WORKSHEET GEN ASYNC] Failed to update progress for cached result:`, progressError);
+      }
       return;
     }
 
     // Generate worksheet
-    await updateProgress(jobId!, 'aiProcessing', 30, 'Generating worksheet with AI');
+    console.log(`[WORKSHEET GEN ASYNC] No cache hit, generating worksheet for job ${jobId}`);
+    try {
+      await Promise.race([
+        updateProgress(jobId!, 'aiProcessing', 30, 'Generating worksheet with AI'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Progress update timeout')), 3000))
+      ]);
+    } catch (progressError) {
+      console.error(`[WORKSHEET GEN ASYNC] Failed to update progress to aiProcessing:`, progressError);
+    }
     const worksheetRouter = createWorksheetRouter(); // Create new instance for each request
     const result: WorksheetResponse = await worksheetRouter.generateWorksheet(request);
 
