@@ -40,10 +40,6 @@ export default function SchoolCodeSelector({ schoolName, onCodeSelect, selectedC
         const data = await response.json();
         if (data.success) {
           setSuggestions(data.suggestions || []);
-          // Auto-select first available suggestion if none selected
-          if (!selectedCode && data.suggestions?.length > 0) {
-            onCodeSelect(data.suggestions[0].suggestion);
-          }
         }
       } catch (error) {
         console.error('Error generating suggestions:', error);

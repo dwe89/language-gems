@@ -752,18 +752,19 @@ export default function UpgradePage() {
                   ))}
                 </ul>
 
-                <Link
-                  href={`/schools/contact?plan=${plan.name.toLowerCase().replace(' plan', '')}`}
-                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-all text-center block ${
-                    plan.highlighted
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
-                      : plan.enterprise
-                      ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:from-indigo-700 hover:to-blue-700'
-                      : 'bg-slate-800 text-white hover:bg-slate-900'
-                  }`}
-                >
-                  {plan.enterprise ? 'Contact Sales' : 'Get Started'}
-                </Link>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      // Start 14-day trial immediately (no payment)
+                      window.location.href = `/api/trial/start?plan=${plan.name.toLowerCase().replace(' plan', '')}`;
+                    }}
+                    className="w-full py-3 px-6 rounded-lg font-semibold transition-all text-center block bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 flex items-center justify-center"
+                  >
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    Start 14-Day Free Trial
+                  </button>
+                  <p className="text-xs text-center text-slate-500">No credit card required</p>
+                </div>
               </div>
             ))}
           </div>
@@ -786,7 +787,7 @@ export default function UpgradePage() {
                 Try Demo Games
               </Link>
               <Link
-                href="/schools/contact"
+                href="/contact"
                 className="px-8 py-4 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 transition-colors border-2 border-white/20"
               >
                 <Mail className="h-5 w-5 mr-2 inline" />

@@ -91,7 +91,7 @@ export default function PricingPage() {
       ],
       studentLimit: 'Whole-class access',
       cta: 'Get Basic Plan',
-      ctaLink: '/schools/contact?plan=basic'
+      ctaLink: '/auth/signup?plan=basic'
     },
     standard: {
       name: 'Standard Plan',
@@ -113,7 +113,7 @@ export default function PricingPage() {
       popular: true,
       studentLimit: 'Up to 750 students',
       cta: 'Get Standard Plan',
-      ctaLink: '/schools/contact?plan=standard'
+      ctaLink: '/auth/signup?plan=standard'
     },
     large: {
       name: 'Large School Plan',
@@ -129,7 +129,7 @@ export default function PricingPage() {
       ],
       studentLimit: 'Unlimited students',
       cta: 'Get Large School Plan',
-      ctaLink: '/schools/contact?plan=large-school'
+      ctaLink: '/auth/signup?plan=large-school'
     },
     mat: {
       name: 'MAT Plan',
@@ -147,7 +147,7 @@ export default function PricingPage() {
       ],
       studentLimit: 'Multiple schools',
       cta: 'Contact for Quote',
-      ctaLink: '/schools/contact?plan=mat'
+      ctaLink: '/contact?plan=mat'
     }
   };
 

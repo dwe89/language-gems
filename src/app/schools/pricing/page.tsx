@@ -43,7 +43,7 @@ const pricingPlans = [
       'Homework Setting Capability: Not included in this tier'
     ],
     buttonText: 'Get Basic Plan',
-    buttonLink: '/schools/contact?plan=basic',
+    buttonLink: '/auth/signup?plan=basic',
     highlighted: false,
     gradient: 'from-blue-500 to-cyan-500',
     borderGradient: 'from-blue-400 to-cyan-400',
@@ -69,7 +69,7 @@ const pricingPlans = [
       'Competition Features: School-wide leaderboards & achievement systems'
     ],
     buttonText: 'Get Standard Plan',
-    buttonLink: '/schools/contact?plan=standard',
+    buttonLink: '/auth/signup?plan=standard',
     highlighted: true,
     gradient: 'from-emerald-500 to-teal-500',
     borderGradient: 'from-emerald-400 to-teal-400',
@@ -90,7 +90,7 @@ const pricingPlans = [
       'Strategic Partnership for feature requests and feedback'
     ],
     buttonText: 'Get Large School Plan',
-    buttonLink: '/schools/contact?plan=large-school',
+    buttonLink: '/auth/signup?plan=large-school',
     highlighted: false,
     gradient: 'from-purple-500 to-pink-500',
     borderGradient: 'from-purple-400 to-pink-400',
@@ -115,7 +115,7 @@ const matPlan = {
     'Trust-wide analytics and reporting dashboard'
   ],
   buttonText: 'Contact for Quote',
-  buttonLink: '/schools/contact?plan=mat',
+  buttonLink: '/contact?plan=mat',
   highlighted: false, // MAT plan is not highlighted in the main pricing section
   gradient: 'from-slate-600 to-slate-800',
   borderGradient: 'from-slate-500 to-slate-700',

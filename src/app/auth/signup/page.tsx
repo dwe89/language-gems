@@ -25,6 +25,7 @@ export default function TeacherSignupPage() {
   const [name, setName] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [selectedSchoolCode, setSelectedSchoolCode] = useState('');
+  const [isJoiningViaInvitation, setIsJoiningViaInvitation] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -72,6 +73,7 @@ export default function TeacherSignupPage() {
       const schoolCodeParam = searchParams?.get('school_code');
       if (schoolCodeParam) {
         setSelectedSchoolCode(schoolCodeParam.toUpperCase());
+        setIsJoiningViaInvitation(true);
       }
 
       // Handle error parameters
@@ -282,7 +284,7 @@ export default function TeacherSignupPage() {
             </div>
 
             {/* Only show school name field if not joining via invitation */}
-            {!selectedSchoolCode && (
+            {!isJoiningViaInvitation && (
               <>
                 <div>
                   <label htmlFor="schoolName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -317,7 +319,7 @@ export default function TeacherSignupPage() {
             )}
 
             {/* Show school code info if joining via invitation */}
-            {selectedSchoolCode && (
+            {isJoiningViaInvitation && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
