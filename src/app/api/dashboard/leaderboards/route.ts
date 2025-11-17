@@ -12,6 +12,7 @@ const parseQueryParams = (request: Request) => {
     teacherId: searchParams.get('teacherId'),
     classId: searchParams.get('classId') ?? undefined,
     limit: searchParams.get('limit'),
+    scope: searchParams.get('scope') as 'my-classes' | 'school' | null,
     timePeriod: searchParams.get('timePeriod') as
       | 'daily'
       | 'weekly'
@@ -22,7 +23,15 @@ const parseQueryParams = (request: Request) => {
 };
 
 export async function GET(request: Request) {
-  const { teacherId, classId, limit, timePeriod } = parseQueryParams(request);
+  const { teacherId, classId, limit, timePeriod, scope } = parseQueryParams(request);
+
+  console.log('[API /dashboard/leaderboards] Request params:', {
+    teacherId,
+    classId,
+    limit,
+    timePeriod,
+    scope
+  });
 
   if (!teacherId) {
     return NextResponse.json({ error: 'Missing teacherId query parameter' }, { status: 400 });
@@ -37,7 +46,8 @@ export async function GET(request: Request) {
     const response = await service.getLeaderboards(teacherId, {
       classId,
       limit: Number.isFinite(limitNumber) && limitNumber > 0 ? limitNumber : DEFAULT_LIMIT,
-      timePeriod: timePeriod ?? 'weekly'
+      timePeriod: timePeriod ?? 'weekly',
+      scope: scope ?? 'my-classes'
     });
 
     return NextResponse.json({ leaderboards: response });

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Headphones, ArrowLeft, Clock, FileText, Award, CheckCircle, Settings } from 'lucide-react';
@@ -13,6 +13,7 @@ import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary'
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import AQAListeningAssessment from '../../../components/assessments/AQAListeningAssessment';
 import EdexcelListeningAssessment from '../../../components/assessments/EdexcelListeningAssessment';
+import { normalizeAssessmentLanguage, normalizeExamBoard, extractAssessmentInstance } from '@/lib/assessmentConfigUtils';
 
 const AVAILABLE_LANGUAGES = [
   { code: 'es', countryCode: 'ES', name: 'Spanish' },
@@ -410,12 +411,30 @@ function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string })
   const [error, setError] = useState<string | null>(null);
 
   // Load assignment data
-  const { assignment, vocabulary, loading, error: assignmentError } =
+  const { assignment, loading, error: assignmentError } =
     useAssignmentVocabulary(assignmentId, 'gcse-listening', false);
+
+  const listeningConfig = useMemo(() => {
+    if (!assignment?.game_config) return null;
+    const instance = extractAssessmentInstance(assignment.game_config, 'gcse-listening');
+    if (!instance) return null;
+
+    const instanceConfig = instance.instanceConfig || {};
+    return {
+      examBoard: normalizeExamBoard(instanceConfig.examBoard),
+      language: normalizeAssessmentLanguage(instanceConfig.language, 'iso') as 'es' | 'fr' | 'de',
+      level: (instanceConfig.level || 'KS4') as 'KS3' | 'KS4',
+      difficulty: (instanceConfig.difficulty || 'foundation') as 'foundation' | 'higher',
+      identifier: instanceConfig.paper || instanceConfig.identifier || 'paper-1'
+    };
+  }, [assignment]);
 
   useEffect(() => {
     const initializeSession = async () => {
       if (!user?.id || !assignment || loading) return;
+      if (!listeningConfig) {
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -430,9 +449,10 @@ function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string })
           session_data: {
             assignmentId,
             assessmentType: 'gcse-listening',
-            examBoard: (assignment.game_config as any)?.assessmentConfig?.examBoard,
-            difficulty: (assignment.game_config as any)?.assessmentConfig?.difficulty,
-            identifier: (assignment.game_config as any)?.assessmentConfig?.identifier
+            examBoard: listeningConfig.examBoard,
+            difficulty: listeningConfig.difficulty,
+            identifier: listeningConfig.identifier,
+            language: listeningConfig.language
           }
         });
 
@@ -446,7 +466,7 @@ function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string })
     };
 
     initializeSession();
-  }, [user?.id, assignment, assignmentId, loading]);
+  }, [user?.id, assignment, assignmentId, loading, listeningConfig]);
 
   const handleComplete = async (results: any) => {
     if (!user?.id || !gameSessionId) return;
@@ -519,39 +539,36 @@ function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string })
     );
   }
 
-  // Extract assessment config from assignment
-  const assessmentConfig = (assignment.game_config as any)?.assessmentConfig;
-  if (!assessmentConfig) {
+  if (!listeningConfig) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-green-50">
         <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-xl">
           <h2 className="text-xl font-semibold mb-2">Invalid Configuration</h2>
-          <p className="text-gray-600">Assessment configuration is missing.</p>
+          <p className="text-gray-600">Listening assessment configuration is missing.</p>
         </div>
       </div>
     );
   }
 
-  const { examBoard, difficulty, identifier, language, level } = assessmentConfig;
-
-  // Render the appropriate assessment component
-  if (examBoard === 'AQA') {
+  if (listeningConfig.examBoard === 'AQA') {
     return (
       <AQAListeningAssessment
-        language={language}
-        level={level}
-        difficulty={difficulty}
-        identifier={identifier}
+        language={listeningConfig.language}
+        level={listeningConfig.level}
+        difficulty={listeningConfig.difficulty}
+        identifier={listeningConfig.identifier}
         onComplete={handleComplete}
       />
     );
-  } else if (examBoard === 'Edexcel') {
+  }
+
+  if (listeningConfig.examBoard === 'Edexcel') {
     return (
       <EdexcelListeningAssessment
-        language={language}
-        level={level}
-        difficulty={difficulty}
-        identifier={identifier}
+        language={listeningConfig.language}
+        level={listeningConfig.level}
+        difficulty={listeningConfig.difficulty}
+        identifier={listeningConfig.identifier}
         onComplete={handleComplete}
         onQuestionComplete={() => {}}
       />

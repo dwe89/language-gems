@@ -46,6 +46,7 @@ const TIME_PERIOD_OPTIONS: Array<{ id: LeaderboardTimePeriod; label: string }> =
 ];
 
 type ViewMode = 'cross-game' | 'students' | 'classes';
+type ScopeMode = 'my-classes' | 'school';
 
 const DEFAULT_SUMMARY: TeacherLeaderboardsResponse['summary'] = {
   totalStudents: 0,
@@ -67,18 +68,29 @@ export default function LeaderboardsPage() {
   const [timePeriod, setTimePeriod] = useState<LeaderboardTimePeriod>('all_time');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hideInactive, setHideInactive] = useState(true);
+  const [scope, setScope] = useState<ScopeMode>('my-classes');
+  const [scopeLoading, setScopeLoading] = useState(false);
 
   const fetchLeaderboards = async () => {
     if (!user?.id) return;
 
     try {
       setLoading(true);
+      setScopeLoading(true);
       setError(null);
 
       const params = new URLSearchParams({
         teacherId: user.id,
         timePeriod,
-        limit: '200'
+        limit: '200',
+        scope: scope
+      });
+
+      console.log('[LeaderboardsPage] Fetching with params:', {
+        teacherId: user.id,
+        timePeriod,
+        scope,
+        url: `/api/dashboard/leaderboards?${params.toString()}`
       });
 
       const response = await fetch(`/api/dashboard/leaderboards?${params.toString()}`, {
@@ -91,6 +103,12 @@ export default function LeaderboardsPage() {
       }
 
       const payload = (await response.json()) as { leaderboards: TeacherLeaderboardsResponse };
+      console.log('[LeaderboardsPage] Loaded data:', {
+        scope,
+        studentsCount: payload.leaderboards.students.length,
+        classesCount: payload.leaderboards.classes.length,
+        totalStudents: payload.leaderboards.summary.totalStudents
+      });
       setLeaderboards(payload.leaderboards);
     } catch (err) {
       console.error('[LeaderboardsPage] Failed to load data', err);
@@ -99,13 +117,14 @@ export default function LeaderboardsPage() {
     } finally {
       setLoading(false);
       setIsRefreshing(false);
+      setScopeLoading(false);
     }
   };
 
   useEffect(() => {
     fetchLeaderboards();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, timePeriod]);
+  }, [user?.id, timePeriod, scope]);
 
   useEffect(() => {
     if (!leaderboards) return;
@@ -192,9 +211,49 @@ export default function LeaderboardsPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         <DashboardHeader
           title="Leaderboards & Rankings"
-          description="Track competition and motivate your students with achievements"
+          description={scope === 'school' ? "School-wide competition and achievements" : "Track competition and motivate your students with achievements"}
           icon={<Trophy className="h-5 w-5 text-white" />}
         />
+
+        {/* Scope Toggle at Top */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-4 relative">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2 bg-slate-100/80 rounded-xl p-1">
+              <button
+                onClick={() => setScope('my-classes')}
+                disabled={scopeLoading}
+                className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  scope === 'my-classes' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                <Users className="h-5 w-5" />
+                My Classes
+              </button>
+              <button
+                onClick={() => setScope('school')}
+                disabled={scopeLoading}
+                className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  scope === 'school' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                <Trophy className="h-5 w-5" />
+                Whole School
+              </button>
+            </div>
+            <div className="text-sm text-slate-500">
+              {scopeLoading ? (
+                <span className="inline-flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span className="font-semibold text-indigo-600">Loading {scope === 'school' ? 'school-wide' : 'class'} data...</span>
+                </span>
+              ) : (
+                <>
+                  Viewing: <span className="font-semibold text-slate-700">{scope === 'school' ? 'All school students' : 'Your classes only'}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center justify-between">
@@ -295,7 +354,26 @@ export default function LeaderboardsPage() {
           </div>
         </div>
 
-        {view === 'cross-game' && (
+        {scopeLoading && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="relative">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200"></div>
+                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600 absolute top-0 left-0"></div>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-slate-900 mb-1">
+                  Loading {scope === 'school' ? 'School-Wide' : 'Class'} Leaderboards
+                </p>
+                <p className="text-sm text-slate-500">
+                  {scope === 'school' ? 'Gathering data from all classes in your school...' : 'Fetching your class data...'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!scopeLoading && view === 'cross-game' && (
           <CrossGameLeaderboard
             classId={selectedClass !== 'all' ? selectedClass : undefined}
             entries={leaderboards ? filteredCrossEntries : undefined}
@@ -310,11 +388,11 @@ export default function LeaderboardsPage() {
           />
         )}
 
-        {view === 'students' && (
+        {!scopeLoading && view === 'students' && (
           <StudentLeaderboard students={filteredStudents} loading={loading} timePeriod={timePeriod} />
         )}
 
-        {view === 'classes' && (
+        {!scopeLoading && view === 'classes' && (
           <ClassLeaderboard classes={filteredClasses} loading={loading} />
         )}
       </div>

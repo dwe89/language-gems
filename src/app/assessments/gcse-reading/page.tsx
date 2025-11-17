@@ -12,6 +12,7 @@ import AQAReadingAssessment from '@/components/assessments/AQAReadingAssessment'
 import { useAssignmentVocabulary } from '@/hooks/useAssignmentVocabulary';
 import { EnhancedGameSessionService } from '@/services/rewards/EnhancedGameSessionService';
 import { supabaseBrowser } from '@/components/auth/AuthProvider';
+import { normalizeAssessmentLanguage, normalizeExamBoard, extractAssessmentInstance } from '@/lib/assessmentConfigUtils';
 
 const AVAILABLE_LANGUAGES = [
   { code: 'es', countryCode: 'ES', name: 'Spanish' },
@@ -147,31 +148,48 @@ function GCSEReadingExamContent() {
     }
 
     // Extract configuration from assignment
-    const config = assignment.game_config || {};
-    const assessmentConfig = config.assessmentConfig || {};
-    const selectedAssessments = assessmentConfig.selectedAssessments || [];
-    const gcsReadingAssessment = selectedAssessments.find((a: any) =>
-      a.type === 'gcse-reading' || a.type === 'aqa-reading'
-    );
-    const instanceConfig = gcsReadingAssessment?.instanceConfig || {};
+    const instance = extractAssessmentInstance(assignment.game_config, 'gcse-reading')
+      || extractAssessmentInstance(assignment.game_config, 'aqa-reading');
 
-    const language = instanceConfig.language || 'spanish';
-    const difficulty = instanceConfig.difficulty || 'foundation';
+    if (!instance) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-center">
+            <p className="text-lg text-red-200">This assignment does not include a GCSE reading assessment configuration.</p>
+          </div>
+        </div>
+      );
+    }
+
+    const instanceConfig = instance.instanceConfig || {};
+    const normalizedExamBoard = normalizeExamBoard(instanceConfig.examBoard);
+    const normalizedLanguage = normalizeAssessmentLanguage(instanceConfig.language, 'iso') as 'es' | 'fr' | 'de';
+    const difficulty = (instanceConfig.difficulty || 'foundation') as 'foundation' | 'higher';
     const identifier = instanceConfig.paper || instanceConfig.identifier || 'paper-1';
 
+    if (normalizedExamBoard !== 'AQA') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-center">
+            <p className="text-lg">Only AQA GCSE reading papers are available in assignment mode right now. Please edit the assignment and choose an AQA paper.</p>
+          </div>
+        </div>
+      );
+    }
+
     console.log('📖 [GCSE READING] Assignment config:', {
-      language,
+      language: normalizedLanguage,
       difficulty,
       identifier,
-      examBoard: instanceConfig.examBoard
+      examBoard: normalizedExamBoard
     });
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
         <AQAReadingAssessment
-          language={language as 'es' | 'fr' | 'de'}
+          language={normalizedLanguage}
           level="KS4"
-          difficulty={difficulty as 'foundation' | 'higher'}
+          difficulty={difficulty}
           identifier={identifier}
           studentId={user.id}
           assignmentId={assignmentId}

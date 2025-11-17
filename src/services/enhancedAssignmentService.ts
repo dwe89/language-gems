@@ -444,12 +444,28 @@ export class EnhancedAssignmentService {
     // For grammar-only assignments, we still need a valid value
     const finalVocabularySelectionType = isGrammarAssignment ? 'custom_list' : vocabularySelectionType;
 
+    // Determine assignment_mode based on number of activities
+    // Note: selectedGames already defined earlier in the function
+    const selectedAssessments = assignmentData.config?.assessmentConfig?.selectedAssessments || [];
+    const selectedSkills = assignmentData.config?.skillsConfig?.selectedSkills || [];
+    const totalActivities = selectedGames.length + selectedAssessments.length + selectedSkills.length;
+    const assignmentMode = totalActivities > 1 ? 'multi_game' : 'single_game';
+
+    console.log('📝 [ASSIGNMENT SERVICE] Setting assignment_mode:', {
+      assignmentMode,
+      totalActivities,
+      gamesCount: selectedGames.length,
+      assessmentsCount: selectedAssessments.length,
+      skillsCount: selectedSkills.length
+    });
+
     const { data: assignment, error: assignmentError } = await this.supabase
       .from('assignments')
       .insert({
         title: assignmentData.title,
         description: assignmentData.description,
         game_type: assignmentData.game_type,
+        assignment_mode: assignmentMode,
         class_id: assignmentData.class_id,
         due_date: assignmentData.due_date ? new Date(assignmentData.due_date).toISOString() : null,
         vocabulary_assignment_list_id: vocabularyListId || null,

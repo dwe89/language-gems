@@ -416,41 +416,43 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
             </div>
 
             {/* Quick Actions Panel - Reused from previous design */}
-            <div className="lg:w-72 mt-4 lg:mt-0">
-              <div className="bg-slate-100 rounded-2xl border border-slate-200 p-4 shadow-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-slate-600 text-sm font-semibold uppercase tracking-wider">
-                    Quick Actions
-                  </div>
-                  <Link
-                    href={`/dashboard/classes/${classId}/edit`}
-                    className="p-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-600 transition-all duration-200 hover:scale-105 shadow border border-slate-200"
-                    title="Edit Class Settings"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Link>
-                </div>
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setShowAddStudentModal(true)}
-                    className="w-full text-left p-3 bg-white hover:bg-slate-50 rounded-xl transition-all duration-200 flex items-center text-slate-700 font-medium shadow border border-slate-200"
-                  >
-                    <UserPlus className="h-4 w-4 mr-3" />
-                    <span>Add Student</span>
-                  </button>
-                  {students.length > 0 && (
-                    <button
-                      onClick={downloadCredentialsPDF}
-                      disabled={downloadingPDF}
-                      className="w-full text-left p-3 bg-white hover:bg-slate-50 rounded-xl transition-all duration-200 flex items-center text-slate-700 font-medium disabled:opacity-50 shadow border border-slate-200"
+            {isClassOwner && (
+              <div className="lg:w-72 mt-4 lg:mt-0">
+                <div className="bg-slate-100 rounded-2xl border border-slate-200 p-4 shadow-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-slate-600 text-sm font-semibold uppercase tracking-wider">
+                      Quick Actions
+                    </div>
+                    <Link
+                      href={`/dashboard/classes/${classId}/edit`}
+                      className="p-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-600 transition-all duration-200 hover:scale-105 shadow border border-slate-200"
+                      title="Edit Class Settings"
                     >
-                      <FileText className="h-4 w-4 mr-3" />
-                      <span>Download Credentials</span>
+                      <Settings className="h-4 w-4" />
+                    </Link>
+                  </div>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setShowAddStudentModal(true)}
+                      className="w-full text-left p-3 bg-white hover:bg-slate-50 rounded-xl transition-all duration-200 flex items-center text-slate-700 font-medium shadow border border-slate-200"
+                    >
+                      <UserPlus className="h-4 w-4 mr-3" />
+                      <span>Add Student</span>
                     </button>
-                  )}
+                    {students.length > 0 && (
+                      <button
+                        onClick={downloadCredentialsPDF}
+                        disabled={downloadingPDF}
+                        className="w-full text-left p-3 bg-white hover:bg-slate-50 rounded-xl transition-all duration-200 flex items-center text-slate-700 font-medium disabled:opacity-50 shadow border border-slate-200"
+                      >
+                        <FileText className="h-4 w-4 mr-3" />
+                        <span>Download Credentials</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

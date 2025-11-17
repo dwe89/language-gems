@@ -27,6 +27,7 @@ import {
   Grid3X3,
   Sparkles,
   Shuffle,
+  Users,
 
 } from 'lucide-react';
 import Link from 'next/link';
@@ -209,15 +210,19 @@ export default function VocabularyPage() {
   const { user } = useAuth();
   const { supabase } = useSupabase();
 
-  const [activeTab, setActiveTab] = useState<'my-content' | 'content-library'>('my-content');
+  const [activeTab, setActiveTab] = useState<'my-content' | 'school-content' | 'content-library'>('my-content');
   const [selectedList, setSelectedList] = useState<EnhancedVocabularyList | null>(null);
   const [vocabularyService, setVocabularyService] = useState<EnhancedVocabularyService | null>(null);
   const [uploadService, setUploadService] = useState<VocabularyUploadService | null>(null);
   const [myLists, setMyLists] = useState<EnhancedVocabularyList[]>([]);
+  const [schoolLists, setSchoolLists] = useState<EnhancedVocabularyList[]>([]);
   const [publicLists, setPublicLists] = useState<EnhancedVocabularyList[]>([]);
   const [folders, setFolders] = useState<VocabularyFolder[]>([]);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tabLoading, setTabLoading] = useState(false);
+  const [hasSchoolAccess, setHasSchoolAccess] = useState(false);
+  const [schoolCode, setSchoolCode] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [languageFilter, setLanguageFilter] = useState('all');
   const [contentTypeFilter, setContentTypeFilter] = useState('all');
@@ -246,6 +251,54 @@ export default function VocabularyPage() {
       loadData();
     }
   }, [vocabularyService, uploadService, user]);
+
+  // Load school data when switching to school tab
+  useEffect(() => {
+    if (activeTab === 'school-content' && schoolLists.length === 0 && vocabularyService && user && schoolCode) {
+      loadSchoolData();
+    }
+  }, [activeTab]);
+
+  const loadSchoolData = async () => {
+    if (!vocabularyService || !user || !schoolCode) return;
+
+    setTabLoading(true);
+    try {
+      // Get all teachers in the school - check both school_code and school_initials
+      const { data: teacherProfiles } = await supabase
+        .from('user_profiles')
+        .select('user_id')
+        .or(`school_code.eq.${schoolCode},school_initials.eq.${schoolCode}`)
+        .in('role', ['teacher', 'admin']);
+
+      console.log('🏫 [VOCABULARY] Found teachers in school:', teacherProfiles?.length || 0);
+
+      const teacherIds = teacherProfiles?.map(t => t.user_id) || [];
+
+      if (teacherIds.length === 0) {
+        console.log('🏫 [VOCABULARY] No teachers found for school:', schoolCode);
+        setSchoolLists([]);
+        return;
+      }
+
+      // Get all vocabulary lists from teachers in the school
+      const allSchoolLists: EnhancedVocabularyList[] = [];
+      for (const teacherId of teacherIds) {
+        const lists = await vocabularyService.getVocabularyLists({
+          teacher_id: teacherId
+        });
+        console.log(`🏫 [VOCABULARY] Teacher ${teacherId} has ${lists.length} lists`);
+        allSchoolLists.push(...lists);
+      }
+
+      console.log('🏫 [VOCABULARY] Total school lists:', allSchoolLists.length);
+      setSchoolLists(allSchoolLists);
+    } catch (error) {
+      console.error('Error loading school data:', error);
+    } finally {
+      setTabLoading(false);
+    }
+  };
 
   // Refresh data when page becomes visible (user returns from another page/tab)
   useEffect(() => {
@@ -291,6 +344,26 @@ export default function VocabularyPage() {
 
     setLoading(true);
     try {
+      // Fetch teacher's school info
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('school_code, school_initials, is_school_owner, school_owner_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileData) {
+        const schoolIdentifier = profileData.school_code || profileData.school_initials;
+        setSchoolCode(schoolIdentifier);
+
+        // Check if user has school access
+        const hasAccess = !!(
+          profileData.is_school_owner ||
+          profileData.school_owner_id ||
+          schoolIdentifier
+        );
+        setHasSchoolAccess(hasAccess);
+      }
+
       // Load user's vocabulary lists
       const userLists = await vocabularyService.getVocabularyLists({
         teacher_id: user.id
@@ -477,11 +550,13 @@ export default function VocabularyPage() {
   };
 
   // Filter lists based on search and filters
-  const filterLists = (lists: EnhancedVocabularyList[]) => {
+  const filterLists = (lists: EnhancedVocabularyList[], applyFolderFilter = true) => {
     return lists.filter(list => {
-      // Folder filter
-      if (currentFolder && list.folder_id !== currentFolder) return false;
-      if (!currentFolder && list.folder_id) return false;
+      // Folder filter - only apply for "My Collections"
+      if (applyFolderFilter) {
+        if (currentFolder && list.folder_id !== currentFolder) return false;
+        if (!currentFolder && list.folder_id) return false;
+      }
 
       const matchesSearch = list.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            list.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -492,8 +567,9 @@ export default function VocabularyPage() {
     });
   };
 
-  const filteredMyLists = filterLists(myLists);
-  const filteredPublicLists = filterLists(publicLists);
+  const filteredMyLists = filterLists(myLists, true);
+  const filteredSchoolLists = filterLists(schoolLists, false);
+  const filteredPublicLists = filterLists(publicLists, false);
 
   // If viewing a specific list
   if (selectedList) {
@@ -703,11 +779,12 @@ export default function VocabularyPage() {
           <div className="flex">
             <button
               onClick={() => setActiveTab('my-content')}
+              disabled={tabLoading}
               className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${
                 activeTab === 'my-content'
                   ? 'text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/50'
-              }`}
+              } ${tabLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {activeTab === 'my-content' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600"></div>
@@ -726,13 +803,42 @@ export default function VocabularyPage() {
                 )}
               </span>
             </button>
+            {hasSchoolAccess && (
+              <button
+                onClick={() => setActiveTab('school-content')}
+                disabled={tabLoading}
+                className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${
+                  activeTab === 'school-content'
+                    ? 'text-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/50'
+                } ${tabLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {activeTab === 'school-content' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600"></div>
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <Users className="h-5 w-5" />
+                  School Collections
+                  {schoolLists.length > 0 && (
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      activeTab === 'school-content'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {schoolLists.length}
+                    </span>
+                  )}
+                </span>
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('content-library')}
+              disabled={tabLoading}
               className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${
                 activeTab === 'content-library'
                   ? 'text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/50'
-              }`}
+              } ${tabLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {activeTab === 'content-library' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600"></div>
@@ -947,7 +1053,20 @@ export default function VocabularyPage() {
 
                 {/* Main Content */}
                 <div className={activeTab === 'my-content' ? 'lg:col-span-3' : 'lg:col-span-5'}>
-                  {activeTab === 'my-content' ? (
+                  {/* Tab Loading State */}
+                  {tabLoading ? (
+                    <div className="text-center py-20">
+                      <div className="relative mb-8">
+                        <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                          <div className="animate-spin rounded-full h-8 w-8 border-4 border-emerald-600 border-t-transparent"></div>
+                        </div>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">Loading School Collections</h3>
+                      <p className="text-gray-600 max-w-sm mx-auto leading-relaxed">
+                        Gathering vocabulary collections from all teachers in your school
+                      </p>
+                    </div>
+                  ) : activeTab === 'my-content' ? (
                   filteredMyLists.length === 0 && myLists.length === 0 ? (
                     <div className="text-center py-16">
                       <div className="relative mb-8">
@@ -1002,6 +1121,39 @@ export default function VocabularyPage() {
                           onDragStart={handleCardDragStart}
                           onDragEnd={handleCardDragEnd}
                           showActions={true}
+                        />
+                      ))}
+                    </div>
+                  )
+                ) : activeTab === 'school-content' ? (
+                  filteredSchoolLists.length === 0 ? (
+                    <div className="text-center py-16">
+                      <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <Users className="h-10 w-10 text-emerald-600" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">No School Collections Found</h3>
+                      <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+                        {searchTerm || languageFilter !== 'all' || contentTypeFilter !== 'all'
+                          ? 'No collections match your current filters. Try adjusting your search.'
+                          : 'No vocabulary collections have been created by teachers in your school yet.'}
+                      </p>
+                      {schoolCode && (
+                        <div className="mt-4 inline-flex items-center px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                          <span className="text-sm font-medium text-emerald-900">School: </span>
+                          <span className="ml-2 text-sm font-bold text-emerald-700">{schoolCode}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {filteredSchoolLists.map(list => (
+                        <VocabularyCard
+                          key={list.id}
+                          list={list}
+                          onView={() => setSelectedList(list)}
+                          onDuplicate={() => handleDuplicateList(list)}
+                          showActions={false}
+                          isPublic={false}
                         />
                       ))}
                     </div>

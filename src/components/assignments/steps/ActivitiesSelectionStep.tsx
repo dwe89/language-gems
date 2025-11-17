@@ -45,7 +45,7 @@ const AVAILABLE_ASSESSMENTS = [
     skills: ['Writing'],
     description: 'AQA papers available',
     requiresExamBoard: true,
-    requiresPaper: false
+    requiresPaper: true
   },
   {
     id: 'gcse-speaking',
@@ -572,12 +572,14 @@ export default function ActivitiesSelectionStep({
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Assessments</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {AVAILABLE_ASSESSMENTS.map(assessment => (
-                  <div key={assessment.id} className={`border border-gray-200 rounded-lg p-4 transition-colors relative ${
-                    assessment.id === 'gcse-speaking' 
-                      ? 'opacity-60 cursor-not-allowed' 
-                      : 'hover:border-purple-300 cursor-pointer'
-                  }`}>
+                {AVAILABLE_ASSESSMENTS.map(assessment => {
+                  const isComingSoon = assessment.id === 'gcse-speaking' || assessment.id === 'dictation';
+                  return (
+                    <div key={assessment.id} className={`border border-gray-200 rounded-lg p-4 transition-colors relative ${
+                      isComingSoon
+                        ? 'opacity-60 cursor-not-allowed'
+                        : 'hover:border-purple-300 cursor-pointer'
+                    }`}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900 mb-1">{assessment.name}</h4>
@@ -587,7 +589,7 @@ export default function ActivitiesSelectionStep({
                           <span>🎯 {assessment.skills.join(', ')}</span>
                         </div>
                       </div>
-                      {assessment.id === 'gcse-speaking' ? (
+                      {isComingSoon ? (
                         <div className="flex items-center px-3 py-1 bg-gray-400 text-white rounded-md text-sm cursor-not-allowed">
                           Coming Soon
                         </div>
@@ -602,8 +604,8 @@ export default function ActivitiesSelectionStep({
                       )}
                     </div>
                     
-                    {/* Coming Soon Overlay for GCSE Speaking */}
-                    {assessment.id === 'gcse-speaking' && (
+                    {/* Coming Soon Overlay */}
+                    {isComingSoon && (
                       <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center rounded-lg">
                         <div className="bg-orange-100 border border-orange-300 rounded-lg px-4 py-2">
                           <div className="flex items-center space-x-2">
@@ -614,7 +616,8 @@ export default function ActivitiesSelectionStep({
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

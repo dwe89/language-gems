@@ -118,11 +118,14 @@ export default function StudentAssignmentDetailPage() {
           return;
         }
 
-        // Check if this is an assessment-only assignment
+        // Check if this is a single assessment-only assignment
+        // Multi-assessment assignments should NOT early-return here
+        const selectedAssessments = assignmentData.game_config?.assessmentConfig?.selectedAssessments || [];
         const isAssessmentOnly = assignmentData.game_type === 'assessment' &&
-                                 assignmentData.assignment_mode === 'single_game';
+                                 assignmentData.assignment_mode === 'single_game' &&
+                                 selectedAssessments.length === 1;
 
-        // If it's an assessment-only assignment, use the dedicated component
+        // If it's a single assessment-only assignment, use the dedicated component
         if (isAssessmentOnly) {
           setAssignment({
             id: assignmentData.id,
@@ -552,6 +555,18 @@ export default function StudentAssignmentDetailPage() {
         break;
       case 'aqa-listening':
         assessmentUrl = `/assessments/aqa-listening?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'gcse-reading':
+        assessmentUrl = `/assessments/gcse-reading?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'gcse-listening':
+        assessmentUrl = `/assessments/gcse-listening?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'gcse-writing':
+        assessmentUrl = `/assessments/gcse-writing?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'topic-based':
+        assessmentUrl = `/assessments/topic-based?assignment=${assignmentId}&mode=assignment${previewParam}`;
         break;
       case 'dictation':
         assessmentUrl = `/assessments/dictation?assignment=${assignmentId}&mode=assignment${previewParam}`;

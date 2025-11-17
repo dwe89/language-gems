@@ -211,6 +211,8 @@ export default function AssessmentConfigModal({
           endpoint = `/api/admin/aqa-reading/list?language=${language}&tier=${level}`;
         } else if (assessmentType.id === 'gcse-listening') {
           endpoint = `/api/admin/aqa-listening/list?language=${language}&tier=${level}`;
+        } else if (assessmentType.id === 'gcse-writing') {
+          endpoint = `/api/admin/aqa-writing/list?language=${language}&tier=${level}`;
         }
       } else if (config.examBoard === 'Edexcel') {
         // Edexcel papers exist in database but no API endpoints yet
@@ -257,8 +259,8 @@ export default function AssessmentConfigModal({
       // Edexcel papers not available yet - block completion
       if (config.examBoard === 'Edexcel') return false;
       
-      // For reading/listening exams, require paper selection when exam board is not General
-      if ((assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening') && config.examBoard !== 'General') {
+      // For reading/listening/writing exams, require paper selection when exam board is not General
+      if ((assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening' || assessmentType.id === 'gcse-writing') && config.examBoard !== 'General') {
         if (!config.paper) return false;
       }
       return true;
@@ -411,7 +413,7 @@ export default function AssessmentConfigModal({
             )}
 
             {/* Paper Selection for GCSE Exams */}
-            {(assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening') && config.examBoard !== 'General' && (
+            {(assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening' || assessmentType.id === 'gcse-writing') && config.examBoard !== 'General' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Paper <span className="text-red-500">*</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { PenTool, ArrowLeft, Clock, FileText, Award, CheckCircle, Settings } from 'lucide-react';
@@ -13,6 +13,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import { AQAWritingAssessment } from '../../../components/assessments/AQAWritingAssessment';
+import { normalizeAssessmentLanguage, normalizeExamBoard, extractAssessmentInstance } from '@/lib/assessmentConfigUtils';
 
 const AVAILABLE_LANGUAGES = [
   { code: 'es', countryCode: 'ES', name: 'Spanish' },
@@ -372,9 +373,27 @@ function GCSEWritingAssignmentMode({ assignmentId }: { assignmentId: string }) {
   const { assignment, loading, error: assignmentError } =
     useAssignmentVocabulary(assignmentId, 'gcse-writing', false);
 
+  const writingConfig = useMemo(() => {
+    if (!assignment?.game_config) return null;
+    const instance = extractAssessmentInstance(assignment.game_config, 'gcse-writing');
+    if (!instance) return null;
+
+    const instanceConfig = instance.instanceConfig || {};
+    return {
+      examBoard: normalizeExamBoard(instanceConfig.examBoard),
+      language: normalizeAssessmentLanguage(instanceConfig.language, 'iso') as 'es' | 'fr' | 'de',
+      level: instanceConfig.level || 'KS4',
+      difficulty: (instanceConfig.difficulty || 'foundation') as 'foundation' | 'higher',
+      identifier: instanceConfig.paper || instanceConfig.identifier || 'paper-1'
+    };
+  }, [assignment]);
+
   useEffect(() => {
     const initializeSession = async () => {
       if (!user?.id || !assignment || loading) return;
+      if (!writingConfig) {
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -389,9 +408,10 @@ function GCSEWritingAssignmentMode({ assignmentId }: { assignmentId: string }) {
           session_data: {
             assignmentId,
             assessmentType: 'gcse-writing',
-            examBoard: (assignment.game_config as any)?.assessmentConfig?.examBoard,
-            difficulty: (assignment.game_config as any)?.assessmentConfig?.difficulty,
-            identifier: (assignment.game_config as any)?.assessmentConfig?.identifier
+            examBoard: writingConfig.examBoard,
+            difficulty: writingConfig.difficulty,
+            identifier: writingConfig.identifier,
+            language: writingConfig.language
           }
         });
 
@@ -405,7 +425,7 @@ function GCSEWritingAssignmentMode({ assignmentId }: { assignmentId: string }) {
     };
 
     initializeSession();
-  }, [user?.id, assignment, assignmentId, loading]);
+  }, [user?.id, assignment, assignmentId, loading, writingConfig]);
 
   const handleComplete = async (results: any) => {
     if (!user?.id || !gameSessionId) return;
@@ -477,28 +497,34 @@ function GCSEWritingAssignmentMode({ assignmentId }: { assignmentId: string }) {
     );
   }
 
-  // Extract assessment config from assignment
-  const assessmentConfig = (assignment.game_config as any)?.assessmentConfig;
-  if (!assessmentConfig) {
+  if (!writingConfig) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-purple-50">
         <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-xl">
           <h2 className="text-xl font-semibold mb-2">Invalid Configuration</h2>
-          <p className="text-gray-600">Assessment configuration is missing.</p>
+          <p className="text-gray-600">Writing assessment configuration is missing.</p>
         </div>
       </div>
     );
   }
 
-  const { difficulty, identifier, language, level } = assessmentConfig;
+  if (writingConfig.examBoard !== 'AQA') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-purple-50">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-xl">
+          <h2 className="text-xl font-semibold mb-2">Unsupported Exam Board</h2>
+          <p className="text-gray-600">Only AQA writing assessments are available right now. Please update the assignment or select an AQA paper.</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Render AQA Writing Assessment (Edexcel not yet implemented)
   return (
     <AQAWritingAssessment
-      language={language}
-      level={level}
-      difficulty={difficulty}
-      identifier={identifier}
+      language={writingConfig.language}
+      level={writingConfig.level}
+      difficulty={writingConfig.difficulty}
+      identifier={writingConfig.identifier}
       onComplete={handleComplete}
       onQuestionComplete={() => {}}
     />

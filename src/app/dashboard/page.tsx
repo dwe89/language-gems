@@ -89,6 +89,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
   const [helpWidgetVisible, setHelpWidgetVisible] = useState(false);
   const [schoolCode, setSchoolCode] = useState<string | null>(null);
   const [viewScope, setViewScope] = useState<'my' | 'school'>('my');
+  const [scopeLoading, setScopeLoading] = useState(false);
   const [hasSchoolAccess, setHasSchoolAccess] = useState(false);
   const [stats, setStats] = useState({
     totalClasses: 0,
@@ -107,6 +108,9 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
     // Fetch dashboard data with a single, more efficient query
     async function fetchDashboardData() {
       try {
+        // Set loading state when scope changes
+        setScopeLoading(true);
+
         // Fetch teacher's school code and display name
         const { data: profileData, error: profileError } = await supabaseBrowser
           .from('user_profiles')
@@ -243,12 +247,16 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
           loading: false
         });
 
+        // Clear scope loading state
+        setScopeLoading(false);
+
         // Show welcome widget if the user has no classes
         setHelpWidgetVisible(data.length === 0);
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         setStats(prev => ({ ...prev, loading: false }));
+        setScopeLoading(false);
       }
     }
 
@@ -284,21 +292,23 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
               <div className="flex bg-slate-100 rounded-xl p-1">
                 <button
                   onClick={() => setViewScope('my')}
+                  disabled={scopeLoading}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     viewScope === 'my'
                       ? 'bg-white text-indigo-600 shadow-sm'
                       : 'text-slate-600 hover:text-slate-800'
-                  }`}
+                  } ${scopeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   My Classes
                 </button>
                 <button
                   onClick={() => setViewScope('school')}
+                  disabled={scopeLoading}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     viewScope === 'school'
                       ? 'bg-white text-indigo-600 shadow-sm'
                       : 'text-slate-600 hover:text-slate-800'
-                  }`}
+                  } ${scopeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   School
                 </button>
@@ -307,8 +317,26 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
           </div>
         </div>
       </section>
+
+      {/* Loading Overlay */}
+      {scopeLoading && (
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="flex flex-col items-center justify-center py-24 space-y-6">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-20 w-20 border-4 border-indigo-200 border-t-indigo-600"></div>
+            </div>
+            <div className="text-center space-y-2">
+              <p className="text-lg font-semibold text-slate-900">
+                {viewScope === 'school' ? 'Loading school-wide data...' : 'Loading your classes...'}
+              </p>
+              <p className="text-sm text-slate-600">This may take a few moments</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Main Dashboard Grid with Enhanced Design */}
+      {!scopeLoading && (
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           <StatCard
@@ -393,6 +421,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
           />
         </div>
       </section>
+      )}
 
       {/* Help Widget */}
       {helpWidgetVisible && (

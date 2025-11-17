@@ -7,19 +7,7 @@ import ReadingComprehensionEngine from '../../../components/assessments/ReadingC
 import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
-
-// KS3 category to theme mapping
-const KS3_CATEGORY_MAPPING: Record<string, string> = {
-  'identity_personal_life': 'identity_personal_life',
-  'local_area_holiday_travel': 'local_area_holiday_travel',
-  'school': 'school',
-  'future_aspirations_study_work': 'future_aspirations_study_work',
-  'international_global_dimension': 'international_global_dimension',
-  'home_local_area': 'home_local_area',
-  'health': 'health',
-  'leisure': 'leisure',
-  'customs_festivals': 'customs_festivals'
-};
+import { normalizeAssessmentLanguage, resolveReadingFilters } from '@/lib/assessmentConfigUtils';
 
 function ReadingComprehensionPageContent() {
   const searchParams = useSearchParams();
@@ -153,20 +141,11 @@ function ReadingComprehensionPageContent() {
     );
     const instanceConfig = readingAssessment?.instanceConfig || {};
 
-    const language = instanceConfig.language || 'spanish';
+    const normalizedLanguage = normalizeAssessmentLanguage(instanceConfig.language) as 'spanish' | 'french' | 'german';
     const difficulty = instanceConfig.difficulty || 'foundation';
-
-    // Determine theme/topic based on curriculum level
-    let theme: string | undefined;
-    let topic: string | undefined;
-
-    if (instanceConfig.level === 'KS3') {
-      theme = KS3_CATEGORY_MAPPING[instanceConfig.category] || instanceConfig.category || 'identity_personal_life';
-      topic = instanceConfig.subcategory;
-    } else {
-      theme = instanceConfig.theme;
-      topic = instanceConfig.topic;
-    }
+    const filters = resolveReadingFilters(instanceConfig);
+    const theme = filters.category || instanceConfig.theme || instanceConfig.category || 'identity_personal_life';
+    const topic = filters.subcategory || instanceConfig.topic || instanceConfig.subcategory;
 
     console.log('📖 [READING] Assignment config:', {
       language,
@@ -179,7 +158,7 @@ function ReadingComprehensionPageContent() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
         <ReadingComprehensionEngine
-          language={language as 'es' | 'fr' | 'de'}
+          language={normalizedLanguage}
           difficulty={difficulty as 'foundation' | 'higher'}
           theme={theme}
           topic={topic}

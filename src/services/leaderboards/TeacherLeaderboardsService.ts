@@ -155,14 +155,21 @@ interface TeacherLeaderboardsOptions {
   classId?: string;
   limit?: number;
   timePeriod?: LeaderboardTimePeriod;
+  scope?: 'my-classes' | 'school';
 }
 
 export class TeacherLeaderboardsService {
   constructor(private readonly supabase: SupabaseClient<any>) {}
 
   async getLeaderboards(teacherId: string, options: TeacherLeaderboardsOptions = {}): Promise<TeacherLeaderboardsResponse> {
-    const { classId, limit = 100, timePeriod = 'weekly' } = options;
+    const { classId, limit = 100, timePeriod = 'weekly', scope = 'my-classes' } = options;
 
+    // If scope is 'school', fetch school-wide data
+    if (scope === 'school') {
+      return this.getSchoolWideLeaderboards(teacherId, { classId, limit, timePeriod });
+    }
+
+    // Otherwise, fetch only teacher's classes
     const classes = await this.fetchClasses(teacherId, classId);
     if (classes.length === 0) {
       return this.getEmptyResponse(timePeriod);
@@ -295,6 +302,239 @@ export class TeacherLeaderboardsService {
 
     const classesLeaderboard = this.buildClassLeaderboard(classes, students);
 
+    const crossLeaderboard = this.buildCrossLeaderboard(students, sessionsByStudent, achievementsMap, streakMap, masteredWordsMap, limit);
+
+    const totalXP = students.reduce((sum, student) => sum + student.stats.xp, 0);
+    const totalGems = students.reduce((sum, student) => sum + student.stats.gems, 0);
+
+    return {
+      students,
+      classes: classesLeaderboard,
+      crossLeaderboard,
+      summary: {
+        totalStudents: students.length,
+        totalClasses: classesLeaderboard.length,
+        totalXP,
+        totalGems,
+        timePeriod,
+        generatedAt: new Date().toISOString()
+      }
+    };
+  }
+
+  async getSchoolWideLeaderboards(teacherId: string, options: Omit<TeacherLeaderboardsOptions, 'scope'> = {}): Promise<TeacherLeaderboardsResponse> {
+    const { limit = 100, timePeriod = 'weekly' } = options;
+
+    console.log('[SchoolWide] Starting for teacher:', teacherId);
+
+    // Get the teacher's profile to find their school_initials
+    const { data: teacherProfile, error: profileError } = await this.supabase
+      .from('user_profiles')
+      .select('school_initials')
+      .eq('user_id', teacherId)
+      .single();
+
+    console.log('[SchoolWide] Teacher profile:', { 
+      school_initials: teacherProfile?.school_initials,
+      error: profileError?.message 
+    });
+
+    // If teacher has no school_initials, try to get organization from their classes
+    if (!teacherProfile?.school_initials) {
+      console.log('[SchoolWide] No school_initials, trying via classes');
+      const teacherClasses = await this.fetchClasses(teacherId);
+      
+      if (teacherClasses.length === 0) {
+        console.log('[SchoolWide] No classes and no school_initials, returning empty');
+        return this.getEmptyResponse(timePeriod);
+      }
+
+      // Get organization_id from one of the teacher's classes
+      const { data: classData, error: classError } = await this.supabase
+        .from('classes')
+        .select('organization_id')
+        .eq('id', teacherClasses[0].id)
+        .single();
+
+      if (classError || !classData?.organization_id) {
+        console.log('[SchoolWide] No org_id from classes, falling back to my-classes');
+        return this.getLeaderboards(teacherId, { limit, timePeriod, scope: 'my-classes' });
+      }
+
+      const organizationId = classData.organization_id;
+      console.log('[SchoolWide] Organization ID from class:', organizationId);
+      return this.fetchSchoolDataByOrgId(organizationId, timePeriod, limit);
+    }
+
+    // Teacher has school_initials - find the organization for their school
+    const schoolInitials = teacherProfile.school_initials;
+    console.log('[SchoolWide] Looking for organization with school:', schoolInitials);
+
+    // Find organization by name (which we set to school_initials)
+    const { data: org, error: orgError } = await this.supabase
+      .from('organizations')
+      .select('id')
+      .eq('name', schoolInitials)
+      .single();
+
+    console.log('[SchoolWide] Organization lookup:', { 
+      orgId: org?.id,
+      error: orgError?.message 
+    });
+
+    if (orgError || !org?.id) {
+      // No organization found for this school, fall back to teacher's classes
+      console.log('[SchoolWide] No organization found for school, falling back');
+      return this.getLeaderboards(teacherId, { limit, timePeriod, scope: 'my-classes' });
+    }
+
+    return this.fetchSchoolDataByOrgId(org.id, timePeriod, limit);
+  }
+
+  private async fetchSchoolDataByOrgId(organizationId: string, timePeriod: LeaderboardTimePeriod, limit: number): Promise<TeacherLeaderboardsResponse> {
+    console.log('[SchoolWide] Fetching data for org:', organizationId);
+
+    // Fetch all classes in the organization
+    const { data: allClasses, error: allClassesError } = await this.supabase
+      .from('classes')
+      .select('id, name')
+      .eq('organization_id', organizationId);
+
+    console.log('[SchoolWide] Classes in org:', allClasses?.length, 'Error:', allClassesError?.message);
+
+    if (allClassesError || !allClasses || allClasses.length === 0) {
+      console.log('[SchoolWide] No classes in org, returning empty');
+      return this.getEmptyResponse(timePeriod);
+    }
+
+    const classes = allClasses.map(cls => ({ id: cls.id, name: cls.name }));
+    const classIds = classes.map(cls => cls.id);
+
+    // Now continue with the same logic as regular leaderboards
+    const enrollments = await this.fetchEnrollments(classIds);
+    const studentIds = Array.from(new Set(enrollments.map(enrollment => enrollment.student_id)));
+
+    if (studentIds.length === 0) {
+      return this.getEmptyResponse(timePeriod, classes);
+    }
+
+    const { startDate } = this.getTimePeriodRange(timePeriod);
+
+    const [profiles, sessions, achievements, streaks, masteredWords] = await Promise.all([
+      this.fetchProfiles(studentIds),
+      this.fetchSessions(studentIds, startDate),
+      this.fetchRecentAchievements(studentIds, timePeriod),
+      this.fetchStreakAggregates(studentIds),
+      this.fetchMasteredWords(studentIds)
+    ]);
+
+    const profileMap = new Map<string, StudentProfile>();
+    profiles.forEach(profile => profileMap.set(profile.user_id, profile));
+
+    const classMap = new Map<string, ClassInfo>();
+    classes.forEach(cls => classMap.set(cls.id, cls));
+
+    const studentClassMap = new Map<string, string>();
+    enrollments.forEach(enrollment => {
+      if (!studentClassMap.has(enrollment.student_id)) {
+        studentClassMap.set(enrollment.student_id, enrollment.class_id);
+      }
+    });
+
+    const sessionsByStudent = new Map<string, SessionRow[]>();
+    sessions.forEach(session => {
+      const list = sessionsByStudent.get(session.student_id) ?? [];
+      list.push(session);
+      sessionsByStudent.set(session.student_id, list);
+    });
+
+    const streakMap = new Map<string, StreakAggregateRow>();
+    streaks.forEach(row => {
+      streakMap.set(row.student_id, row);
+    });
+
+    const masteredWordsMap = new Map<string, number>();
+    masteredWords.forEach(row => {
+      masteredWordsMap.set(row.student_id, row.mastered_words);
+    });
+
+    const achievementsMap = this.buildAchievementMap(achievements);
+
+    const students = studentIds.map(studentId => {
+      const profile = profileMap.get(studentId);
+      const sessionsForStudent = sessionsByStudent.get(studentId) ?? [];
+      const streakAggregate = streakMap.get(studentId);
+      const masteredWordCount = masteredWordsMap.get(studentId) ?? 0;
+      const classIdForStudent = studentClassMap.get(studentId);
+      const classInfo = classIdForStudent ? classMap.get(classIdForStudent) : undefined;
+      const achievementSummary = achievementsMap.get(studentId) ?? {
+        total: 0,
+        rare: 0,
+        epic: 0,
+        legendary: 0,
+        recent: []
+      };
+
+      const xp = sessionsForStudent.reduce((sum, session) => sum + this.toNumber(session.xp_earned), 0);
+      const gems = sessionsForStudent.reduce((sum, session) => sum + this.toNumber(session.gems_total), 0);
+      const points = xp + gems * 5;
+
+      const accuracyValues = sessionsForStudent.map(session => this.toNumber(session.accuracy_percentage));
+      const completionValues = sessionsForStudent.map(session => this.toNumber(session.completion_percentage));
+      const totalTime = sessionsForStudent.reduce((sum, session) => sum + this.toNumber(session.duration_seconds), 0);
+      const lastActivity = sessionsForStudent.reduce<string | null>((latest, session) => {
+        if (!session.ended_at) {
+          return latest;
+        }
+        if (!latest) {
+          return session.ended_at;
+        }
+        return new Date(session.ended_at) > new Date(latest) ? session.ended_at : latest;
+      }, null);
+
+      const averageAccuracy = accuracyValues.length > 0 ? this.average(accuracyValues) : 0;
+      const averageCompletion = completionValues.length > 0 ? this.average(completionValues) : 0;
+      const gamesPlayed = sessionsForStudent.length;
+
+      const streak = streakAggregate?.max_current_streak ?? 0;
+      const longestStreak = streakAggregate?.max_best_streak ?? 0;
+
+      const avatarInitials = this.getInitials(profile?.display_name || profile?.email || 'Student');
+
+      const dataQualityWarnings = this.validateSessionQuality(sessionsForStudent);
+
+      return {
+        studentId,
+        studentName: profile?.display_name || 'Unknown Student',
+        email: profile?.email || '',
+        avatarInitials,
+        classId: classIdForStudent || '',
+        className: classInfo?.name || 'Unassigned',
+        stats: {
+          points,
+          xp,
+          gems,
+          accuracy: Number(averageAccuracy.toFixed(1)),
+          completion: Number(averageCompletion.toFixed(1)),
+          streak,
+          longestStreak,
+          gamesPlayed,
+          totalTime,
+          masteredWords: masteredWordCount
+        },
+        achievements: achievementSummary,
+        lastActivity,
+        rank: 0,
+        dataQualityWarnings: dataQualityWarnings.length > 0 ? dataQualityWarnings : undefined
+      } satisfies StudentLeaderboardEntry;
+    });
+
+    students.sort((a, b) => b.stats.points - a.stats.points);
+    students.forEach((student, index) => {
+      student.rank = index + 1;
+    });
+
+    const classesLeaderboard = this.buildClassLeaderboard(classes, students);
     const crossLeaderboard = this.buildCrossLeaderboard(students, sessionsByStudent, achievementsMap, streakMap, masteredWordsMap, limit);
 
     const totalXP = students.reduce((sum, student) => sum + student.stats.xp, 0);
