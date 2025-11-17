@@ -25,9 +25,10 @@ type StudentProps = {
   };
   classId: string;
   onStudentDeleted: (studentId: string) => void;
+  readOnly?: boolean;
 };
 
-export function StudentCard({ student, classId, onStudentDeleted }: StudentProps) {
+export function StudentCard({ student, classId, onStudentDeleted, readOnly = false }: StudentProps) {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [password, setPassword] = useState<string | null>(null);
@@ -201,28 +202,30 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
                   </div>
                 </div>
               </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-all duration-200">
-                <SimpleDropdown
-                  items={[
-                    {
-                      label: 'View Password',
-                      onClick: fetchStudentPassword,
-                      icon: <Key className="h-4 w-4" />
-                    },
-                    {
-                      label: 'Reset Password',
-                      onClick: resetStudentPassword,
-                      icon: <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                    },
-                    {
-                      label: 'Remove Student',
-                      onClick: () => setShowDeleteDialog(true),
-                      icon: <Trash2 className="h-4 w-4" />,
-                      variant: 'destructive'
-                    }
-                  ]}
-                />
-              </div>
+              {!readOnly && (
+                <div className="opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  <SimpleDropdown
+                    items={[
+                      {
+                        label: 'View Password',
+                        onClick: fetchStudentPassword,
+                        icon: <Key className="h-4 w-4" />
+                      },
+                      {
+                        label: 'Reset Password',
+                        onClick: resetStudentPassword,
+                        icon: <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                      },
+                      {
+                        label: 'Remove Student',
+                        onClick: () => setShowDeleteDialog(true),
+                        icon: <Trash2 className="h-4 w-4" />,
+                        variant: 'destructive'
+                      }
+                    ]}
+                  />
+                </div>
+              )}
             </div>
             
             {/* Stats */}

@@ -12,7 +12,7 @@ import {
   ArrowLeft, Users, Calendar, Clock, Book, Settings,
   Download, Upload, UserPlus, Mail, Pencil, Trash2,
   CheckCircle, ChevronRight, FileText, Sparkles, TrendingUp, Award, Activity, Star,
-  Bell, AlertCircle, Brain
+  Bell, AlertCircle, Brain, Eye
 } from 'lucide-react';
 import { Button } from "../../../../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
@@ -72,6 +72,7 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [isClassOwner, setIsClassOwner] = useState(false);
 
   useEffect(() => {
     async function fetchClassData() {
@@ -101,6 +102,9 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
         }
 
         setClassData(classDataResult);
+        
+        // Check if current user is the class owner
+        setIsClassOwner(classDataResult.teacher_id === user.id);
 
         // Fetch students in the class
         const { data: enrollments, error: studentsError } = await supabase
@@ -587,46 +591,58 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h2 className="text-2xl font-bold text-slate-900">Students</h2>
-                    <p className="text-slate-600 mt-1">Manage your class members and track their progress</p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    {students.length > 0 && (
-                      <button
-                        onClick={downloadCredentialsPDF}
-                        disabled={downloadingPDF}
-                        className="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
-                      >
-                        {downloadingPDF ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <FileText className="h-4 w-4 mr-2" />
-                            Download Credentials
-                          </>
-                        )}
-                      </button>
+                    <p className="text-slate-600 mt-1">
+                      {isClassOwner 
+                        ? 'Manage your class members and track their progress' 
+                        : `${students.length} student${students.length !== 1 ? 's' : ''} enrolled`}
+                    </p>
+                    {!isClassOwner && (
+                      <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
+                        <Eye className="h-4 w-4" />
+                        Read-only view (you don't own this class)
+                      </p>
                     )}
-
-                    <button
-                      onClick={() => setShowAddStudentModal(true)}
-                      className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Add Student
-                    </button>
-
-                    <button
-                      onClick={() => setShowBulkAddModal(true)}
-                      className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Add Multiple
-                    </button>
                   </div>
+
+                  {isClassOwner && (
+                    <div className="flex flex-wrap gap-3">
+                      {students.length > 0 && (
+                        <button
+                          onClick={downloadCredentialsPDF}
+                          disabled={downloadingPDF}
+                          className="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                        >
+                          {downloadingPDF ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Download Credentials
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => setShowAddStudentModal(true)}
+                        className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Add Student
+                      </button>
+
+                      <button
+                        onClick={() => setShowBulkAddModal(true)}
+                        className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Add Multiple
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {students.length > 0 ? (
@@ -639,6 +655,7 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                         onStudentDeleted={(studentId) => {
                           setStudents(students.filter(s => s.id !== studentId));
                         }}
+                        readOnly={!isClassOwner}
                       />
                     ))}
                   </div>
@@ -650,15 +667,19 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                       </div>
                       <h3 className="text-2xl font-bold text-slate-900 mb-3">No students yet</h3>
                       <p className="text-slate-600 mb-8 leading-relaxed">
-                        Add students to your class to track their progress and assign vocabulary work.
+                        {isClassOwner 
+                          ? 'Add students to your class to track their progress and assign vocabulary work.'
+                          : 'This class doesn\'t have any students yet.'}
                       </p>
-                      <button
-                        onClick={() => setShowAddStudentModal(true)}
-                        className="inline-flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Add Your First Student
-                      </button>
+                      {isClassOwner && (
+                        <button
+                          onClick={() => setShowAddStudentModal(true)}
+                          className="inline-flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Add Your First Student
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

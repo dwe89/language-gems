@@ -114,6 +114,17 @@ export async function GET(request: NextRequest) {
           if (ownerProfile) {
             console.log('✅ Found school owner:', ownerProfile.user_id);
 
+            // Get full owner profile with trial info
+            const { data: fullOwnerProfile, error: ownerProfileError } = await supabaseAdmin
+              .from('user_profiles')
+              .select('user_id, subscription_status, subscription_type, trial_status, trial_starts_at, trial_ends_at')
+              .eq('user_id', ownerProfile.user_id)
+              .single();
+
+            if (ownerProfileError) {
+              console.error('❌ Error fetching full owner profile:', ownerProfileError);
+            }
+
             // Check if school membership already exists
             const { data: existingMembership, error: checkError } = await supabaseAdmin
               .from('school_memberships')
@@ -150,21 +161,44 @@ export async function GET(request: NextRequest) {
               console.log('ℹ️ School membership already exists');
             }
 
-            // Update user profile
-            console.log('📝 Updating user profile...');
+            // Update user profile with inherited trial info from school owner
+            console.log('📝 Updating user profile with inherited trial data...');
+            const profileUpdate: any = {
+              school_code: invitation.school_code.toUpperCase(),
+              school_owner_id: fullOwnerProfile?.user_id || ownerProfile.user_id,
+              subscription_status: fullOwnerProfile?.subscription_status || ownerProfile.subscription_status || 'trialing'
+            };
+
+            // Inherit trial information and subscription_type from school owner
+            if (fullOwnerProfile) {
+              if (fullOwnerProfile.subscription_type) {
+                profileUpdate.subscription_type = fullOwnerProfile.subscription_type;
+              }
+              if (fullOwnerProfile.trial_status) {
+                profileUpdate.trial_status = fullOwnerProfile.trial_status;
+              }
+              if (fullOwnerProfile.trial_starts_at) {
+                profileUpdate.trial_starts_at = fullOwnerProfile.trial_starts_at;
+              }
+              if (fullOwnerProfile.trial_ends_at) {
+                profileUpdate.trial_ends_at = fullOwnerProfile.trial_ends_at;
+              }
+              console.log('✅ Inheriting trial data:', {
+                subscription_type: profileUpdate.subscription_type,
+                trial_status: profileUpdate.trial_status,
+                trial_ends_at: profileUpdate.trial_ends_at
+              });
+            }
+
             const { error: profileError } = await supabaseAdmin
               .from('user_profiles')
-              .update({
-                school_code: invitation.school_code.toUpperCase(),
-                school_owner_id: ownerProfile.user_id,
-                subscription_status: ownerProfile.subscription_status || 'trialing'
-              })
+              .update(profileUpdate)
               .eq('user_id', data.user.id);
 
             if (profileError) {
               console.error('❌ FAILED to update profile:', profileError);
             } else {
-              console.log('✅ Profile updated successfully');
+              console.log('✅ Profile updated successfully with inherited data');
             }
 
             // Mark invitation as accepted
