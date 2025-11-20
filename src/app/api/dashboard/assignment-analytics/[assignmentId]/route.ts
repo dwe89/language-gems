@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import { createServiceRoleClient } from '@/utils/supabase/client';
 import {
   TeacherAssignmentAnalyticsService,
@@ -17,7 +18,9 @@ export async function GET(
   _request: Request,
   { params }: { params: { assignmentId: string } }
 ) {
-  const { assignmentId } = params;
+  const assignmentId = params.assignmentId?.trim();
+
+  console.log('🔍 [API] Analytics request for assignment:', assignmentId);
 
   if (!assignmentId) {
     return NextResponse.json(
@@ -30,7 +33,7 @@ export async function GET(
     console.log('🔑 [API] Creating service role client...');
     console.log('🔑 [API] Service role key present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
     console.log('🔑 [API] Service role key length:', process.env.SUPABASE_SERVICE_ROLE_KEY?.length);
-    
+
     const supabaseAdmin = createServiceRoleClient();
     const analyticsService = new TeacherAssignmentAnalyticsService(supabaseAdmin);
 
@@ -50,7 +53,11 @@ export async function GET(
       analyticsService.getStudentRoster(assignmentId)
     ]);
 
-    const body: AnalyticsResponseBody = { overview, words, students };
+    const body: AnalyticsResponseBody = {
+      overview,
+      words,
+      students
+    };
 
     return NextResponse.json(body);
   } catch (error: any) {

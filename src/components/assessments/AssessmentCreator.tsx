@@ -184,6 +184,30 @@ export default function AssessmentCreator() {
     fetchClasses();
   }, [user, supabase]);
 
+  // Date and time handlers
+  const handleDueDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value; // e.g., "2025-08-04"
+    // Ensure time part exists, default to 23:59 if not
+    const existingTime = assignmentDetails.due_date?.split('T')[1] || '23:59';
+    setAssignmentDetails(prev => ({ ...prev, due_date: `${newDate}T${existingTime}` }));
+  };
+
+  const handleDueTimeHourChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newHour = e.target.value;
+    // Ensure date part exists, default to today if not
+    const existingDate = assignmentDetails.due_date?.split('T')[0] || new Date().toISOString().split('T')[0];
+    const existingMinute = assignmentDetails.due_date?.split('T')[1]?.split(':')[1] || '59';
+    setAssignmentDetails(prev => ({ ...prev, due_date: `${existingDate}T${newHour}:${existingMinute}` }));
+  };
+
+  const handleDueTimeMinuteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newMinute = e.target.value;
+    // Ensure date part exists, default to today if not
+    const existingDate = assignmentDetails.due_date?.split('T')[0] || new Date().toISOString().split('T')[0];
+    const existingHour = assignmentDetails.due_date?.split('T')[1]?.split(':')[0] || '23';
+    setAssignmentDetails(prev => ({ ...prev, due_date: `${existingDate}T${existingHour}:${newMinute}` }));
+  };
+
   const steps: AssessmentStep[] = [
     {
       id: 'details',
@@ -343,13 +367,40 @@ export default function AssessmentCreator() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                <input
-                  type="datetime-local"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  value={assignmentDetails.due_date}
-                  onChange={e => setAssignmentDetails(prev => ({ ...prev, due_date: e.target.value }))}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date & Time</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    value={assignmentDetails.due_date ? assignmentDetails.due_date.split('T')[0] : ''}
+                    onChange={handleDueDateChange}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                  <div className="flex space-x-2">
+                    <select
+                      value={assignmentDetails.due_date ? assignmentDetails.due_date.split('T')[1]?.split(':')[0] || '23' : '23'}
+                      onChange={handleDueTimeHourChange}
+                      className="w-full px-2 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    >
+                      {Array.from({ length: 24 }, (_, i) => (
+                        <option key={i} value={i.toString().padStart(2, '0')}>
+                          {i.toString().padStart(2, '0')}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="flex items-center text-gray-700">:</span>
+                    <select
+                      value={assignmentDetails.due_date ? assignmentDetails.due_date.split('T')[1]?.split(':')[1] || '59' : '59'}
+                      onChange={handleDueTimeMinuteChange}
+                      className="w-full px-2 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    >
+                      <option value="00">00</option>
+                      <option value="15">15</option>
+                      <option value="30">30</option>
+                      <option value="45">45</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 

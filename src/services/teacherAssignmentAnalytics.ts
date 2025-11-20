@@ -424,6 +424,7 @@ export class TeacherAssignmentAnalyticsService {
     }
 
     try {
+      console.log('📊 [ASSESSMENT RESULTS] Fetching all assessment types for:', assignmentId);
       const [reading, listening, dictation, writing, legacyReading] = await Promise.all([
         this.fetchAqaReadingResults(assignmentId),
         this.fetchAqaListeningResults(assignmentId),
@@ -431,6 +432,13 @@ export class TeacherAssignmentAnalyticsService {
         this.fetchAqaWritingResults(assignmentId),
         this.fetchReadingComprehensionResults(assignmentId)
       ]);
+      console.log('📊 [ASSESSMENT RESULTS] Fetched results:', {
+        reading: reading.length,
+        listening: listening.length,
+        dictation: dictation.length,
+        writing: writing.length,
+        legacyReading: legacyReading.length
+      });
 
       const combined = [
         ...reading,
@@ -838,10 +846,13 @@ export class TeacherAssignmentAnalyticsService {
 
   private async fetchReadingComprehensionResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
     try {
-      const { data, error } = await this.supabase
+      // console.log('📖 [READING COMP] Fetching results for:', assignmentId);
+      let { data, error } = await this.supabase
         .from('reading_comprehension_results')
         .select('id, user_id, assignment_id, text_id, total_questions, correct_answers, score, time_spent, passed, completed_at')
         .eq('assignment_id', assignmentId);
+
+      // console.log('📖 [READING COMP] Query result:', { count: data?.length, error });
 
       if (error) {
         console.error('❌ Error fetching reading comprehension results:', error);
@@ -849,37 +860,79 @@ export class TeacherAssignmentAnalyticsService {
       }
 
       if (!data || data.length === 0) {
+        // Fallback: Try to find results by querying students in the class
+        // This handles potential issues with direct assignment_id lookups (e.g. UUID casting quirks)
+        try {
+          const { data: assign } = await this.supabase
+            .from('assignments')
+            .select('class_id')
+            .eq('id', assignmentId)
+            .single();
+
+          if (assign?.class_id) {
+            const { data: students } = await this.supabase
+              .from('class_enrollments')
+              .select('student_id')
+              .eq('class_id', assign.class_id);
+
+            const studentIds = students?.map(s => s.student_id) || [];
+
+            if (studentIds.length > 0) {
+              const { data: userResults } = await this.supabase
+                .from('reading_comprehension_results')
+                .select('id, user_id, assignment_id, text_id, total_questions, correct_answers, score, time_spent, passed, completed_at')
+                .in('user_id', studentIds);
+
+              // Filter in memory to be safe
+              const validResults = userResults?.filter(r => r.assignment_id === assignmentId) || [];
+
+              if (validResults.length > 0) {
+                console.log('✅ [READING COMP] Found results via student lookup fallback:', validResults.length);
+                data = validResults;
+              }
+            }
+          }
+        } catch (fallbackError) {
+          console.warn('⚠️ Fallback lookup failed:', fallbackError);
+        }
+      }
+
+      if (!data || data.length === 0) {
         return [];
       }
 
-      const taskIds = Array.from(new Set(data.map(row => row.text_id).filter(Boolean)));
-      const tasks = taskIds.length > 0
-        ? await this.fetchReadingTaskMetadata(taskIds)
-        : new Map<string, any>();
+      // Get task details to enrich results
+      const textIds = [...new Set(data.map(r => r.text_id).filter(Boolean))];
+      const { data: tasks } = await this.supabase
+        .from('reading_comprehension_tasks')
+        .select('id, title, difficulty, language')
+        .in('id', textIds);
 
-      return data.map(row => {
-        const task = row.text_id ? tasks.get(row.text_id) : null;
+      const taskMap = new Map(tasks?.map(t => [t.id, t]) || []);
+
+      return data.map(result => {
+        const task = taskMap.get(result.text_id);
         return {
-          resultId: row.id,
-          studentId: row.user_id,
-          studentName: 'Unknown Student',
+          resultId: result.id,
+          studentId: result.user_id,
+          studentName: 'Unknown', // Will be populated later
           assessmentType: 'reading-comprehension',
-          examBoard: this.normalizeExamBoardName(task?.exam_board),
-          paperIdentifier: task?.title || row.text_id,
-          paperTitle: task?.title || null,
+          examBoard: null,
+          paperIdentifier: result.text_id,
+          paperTitle: task?.title || 'Unknown Text',
           tier: task?.difficulty || null,
           language: task?.language || null,
           attemptNumber: 1,
-          status: row.completed_at ? 'completed' : 'in_progress',
-          scorePercentage: this.resolvePercentage(row.score, row.correct_answers, row.total_questions),
-          rawScore: row.correct_answers ?? 0,
-          maxScore: row.total_questions ?? 0,
-          timeSpentSeconds: row.time_spent ?? 0,
-          completedAt: row.completed_at || null
+          status: result.completed_at ? 'completed' : 'in_progress',
+          scorePercentage: result.score,
+          rawScore: result.correct_answers,
+          maxScore: result.total_questions,
+          timeSpentSeconds: result.time_spent,
+          completedAt: result.completed_at
         };
       });
     } catch (error) {
-      console.error('❌ Unexpected error fetching reading comprehension results:', error);
+      console.error('❌ Error in fetchReadingComprehensionResults:', error);
       return [];
     }
   }
@@ -1295,73 +1348,77 @@ export class TeacherAssignmentAnalyticsService {
         const isAssessmentAssignment = assignmentData &&
           (assignmentData.game_type === 'assessment' || assignmentData.game_config?.assessmentConfig);
 
-        if (studentSessionIds.length > 0) {
-          if (isAssessmentAssignment) {
-            // For assessments, fetch actual results from the results tables
-            // This ensures manual overrides are reflected
-            const { data: rcResults } = await this.supabase
-              .from('reading_comprehension_results')
-              .select('score, correct_answers, total_questions, time_spent, completed_at')
-              .eq('assignment_id', assignmentId)
-              .eq('user_id', studentId)
-              .order('completed_at', { ascending: false })
-              .limit(1);
+        if (isAssessmentAssignment) {
+          // For assessments, ALWAYS fetch actual results from the results tables first
+          // This ensures we catch results even if sessions are missing or RLS hides them
+          const { data: rcResults } = await this.supabase
+            .from('reading_comprehension_results')
+            .select('score, correct_answers, total_questions, time_spent, completed_at')
+            .eq('assignment_id', assignmentId)
+            .eq('user_id', studentId)
+            .order('completed_at', { ascending: false })
+            .limit(1);
 
-            if (rcResults && rcResults.length > 0) {
-              const result = rcResults[0];
-              successScore = result.score || 0;
+          if (rcResults && rcResults.length > 0) {
+            const result = rcResults[0];
+            successScore = result.score || 0;
+            failureRate = 100 - successScore;
+            weakRetrievalPercent = failureRate;
+            lastAttempt = result.completed_at;
+            status = result.completed_at ? 'completed' : 'in_progress';
+
+            // Update time spent if we have it
+            if (result.time_spent) {
+              timeSpentMinutes = Math.round(result.time_spent / 60);
+            }
+          } else if (studentSessionIds.length > 0) {
+            // Fallback to session data if no results found but sessions exist
+            const sessionsWithData = studentSessions?.filter(s => s.ended_at) || [];
+            if (sessionsWithData.length > 0) {
+              const latestSession = sessionsWithData[sessionsWithData.length - 1] as any;
+              successScore = Math.round(latestSession.accuracy_percentage || 0);
               failureRate = 100 - successScore;
               weakRetrievalPercent = failureRate;
-              lastAttempt = result.completed_at;
-            } else {
-              // Fallback to session data if no results found
-              const sessionsWithData = studentSessions?.filter(s => s.ended_at) || [];
-              if (sessionsWithData.length > 0) {
-                const latestSession = sessionsWithData[sessionsWithData.length - 1] as any;
-                successScore = Math.round(latestSession.accuracy_percentage || 0);
-                failureRate = 100 - successScore;
-                weakRetrievalPercent = failureRate;
-                lastAttempt = latestSession.ended_at;
-              }
+              lastAttempt = latestSession.ended_at;
             }
-          } else {
-            // For games, use gem events
-            const gems = await this.fetchGemEvents<{
-              session_id: string;
-              gem_rarity: string;
-              word_text: string | null;
-              created_at: string;
-            }>(studentSessionIds, 'session_id, gem_rarity, word_text, created_at');
+          }
+        } else if (studentSessionIds.length > 0) {
+          // For games, use gem events
+          const gems = await this.fetchGemEvents<{
+            session_id: string;
+            gem_rarity: string;
+            word_text: string | null;
+            created_at: string;
+          }>(studentSessionIds, 'session_id, gem_rarity, word_text, created_at');
 
-            if (gems.length > 0) {
-              gems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          if (gems.length > 0) {
+            gems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-              const total = gems.length;
-              const strongWeak = gems.filter(g => ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)).length;
-              const weak = gems.filter(g => ['uncommon', 'common'].includes(g.gem_rarity)).length;
-              const failures = gems.filter(g => g.gem_rarity === 'common').length;
+            const total = gems.length;
+            const strongWeak = gems.filter(g => ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)).length;
+            const weak = gems.filter(g => ['uncommon', 'common'].includes(g.gem_rarity)).length;
+            const failures = gems.filter(g => g.gem_rarity === 'common').length;
 
-              successScore = Math.round((strongWeak / total) * 100);
-              weakRetrievalPercent = Math.round((weak / total) * 100);
-              failureRate = Math.round((failures / total) * 100);
-              lastAttempt = gems[0].created_at;
+            successScore = Math.round((strongWeak / total) * 100);
+            weakRetrievalPercent = Math.round((weak / total) * 100);
+            failureRate = Math.round((failures / total) * 100);
+            lastAttempt = gems[0].created_at;
 
-              // Get struggle words (words with high failure rate)
-              const wordFailures = new Map<string, { total: number; failures: number }>();
-              gems.forEach(gem => {
-                if (!gem.word_text) return;
-                const current = wordFailures.get(gem.word_text) || { total: 0, failures: 0 };
-                current.total++;
-                if (gem.gem_rarity === 'common') current.failures++;
-                wordFailures.set(gem.word_text, current);
-              });
+            // Get struggle words (words with high failure rate)
+            const wordFailures = new Map<string, { total: number; failures: number }>();
+            gems.forEach(gem => {
+              if (!gem.word_text) return;
+              const current = wordFailures.get(gem.word_text) || { total: 0, failures: 0 };
+              current.total++;
+              if (gem.gem_rarity === 'common') current.failures++;
+              wordFailures.set(gem.word_text, current);
+            });
 
-              keyStruggleWords = Array.from(wordFailures.entries())
-                .filter(([_, stats]) => stats.total >= 2 && (stats.failures / stats.total) > 0.5)
-                .sort((a, b) => (b[1].failures / b[1].total) - (a[1].failures / a[1].total))
-                .slice(0, 3)
-                .map(([word]) => word);
-            }
+            keyStruggleWords = Array.from(wordFailures.entries())
+              .filter(([_, stats]) => stats.total >= 2 && (stats.failures / stats.total) > 0.5)
+              .sort((a, b) => (b[1].failures / b[1].total) - (a[1].failures / a[1].total))
+              .slice(0, 3)
+              .map(([word]) => word);
           }
         }
 

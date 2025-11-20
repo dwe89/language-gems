@@ -11,7 +11,7 @@ import AssessmentAssignmentView from '@/components/student-dashboard/AssessmentA
 export default function StudentAssessmentDetailPage() {
   const { user } = useAuth();
   const params = useParams();
-  const id = params?.id as string;
+  const id = (params?.id as string)?.trim();
 
   const [loading, setLoading] = useState(true);
   const [assignment, setAssignment] = useState<any>(null);

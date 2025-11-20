@@ -50,6 +50,32 @@ export default function AssessmentAssignmentView({
   const [error, setError] = useState<string>('');
   const [assessmentUrl, setAssessmentUrl] = useState<string>('/assessments/gcse-listening');
 
+  // Function to format assessment type for display
+  const formatAssessmentType = (type: string): string => {
+    const typeMap: { [key: string]: string } = {
+      'reading-comprehension': 'Reading Comprehension',
+      'gcse-reading': 'GCSE Reading',
+      'gcse-listening': 'GCSE Listening',
+      'gcse-writing': 'GCSE Writing',
+      'gcse-speaking': 'GCSE Speaking',
+      'topic-based': 'Topic Based',
+      'dictation': 'Dictation Practice'
+    };
+
+    return typeMap[type] || type.replace(/-/g, ' ').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  // Function to format status for display
+  const formatStatus = (status: string): string => {
+    const statusMap: { [key: string]: string } = {
+      'not_started': 'Not Started',
+      'in_progress': 'In Progress',
+      'completed': 'Completed'
+    };
+
+    return statusMap[status] || status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   useEffect(() => {
     fetchAssessmentData();
   }, [assignmentId, studentId]);
@@ -445,12 +471,12 @@ export default function AssessmentAssignmentView({
                 <div key={part.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <div className="text-sm text-gray-500">{part.name}</div>
-                      <div className="text-lg font-semibold text-gray-900">{part.type}</div>
+                      <div className="text-lg font-semibold text-gray-900">{part.name}</div>
+                      <div className="text-sm text-gray-500">{formatAssessmentType(part.type)}</div>
                     </div>
                     <div className="text-right">
                       <div className={`text-2xl font-bold ${getScoreColor(part.result?.score || 0)}`}>{part.result?.score || 0}%</div>
-                      <div className="text-xs text-gray-500">{part.result?.status}</div>
+                      <div className="text-xs text-gray-500">{formatStatus(part.result?.status || 'not_started')}</div>
                     </div>
                   </div>
 

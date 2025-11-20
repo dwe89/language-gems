@@ -8,25 +8,15 @@ import {
     Eye, CheckCircle, XCircle, AlertTriangle, Download
 } from 'lucide-react';
 import { AssessmentResultsDetailView } from './AssessmentResultsDetailView';
-import { StudentProgress } from '@/services/teacherAssignmentAnalytics';
+import { StudentProgress, AssignmentOverviewMetrics } from '@/services/teacherAssignmentAnalytics';
 
 interface AssessmentAnalyticsDashboardProps {
     assignmentId: string;
     onBack: () => void;
 }
 
-interface OverviewMetrics {
-    totalStudents: number;
-    completedStudents: number;
-    inProgressStudents: number;
-    notStartedStudents: number;
-    averageScore: number;
-    completionRate: number;
-    studentsNeedingHelp: number;
-}
-
 export function AssessmentAnalyticsDashboard({ assignmentId, onBack }: AssessmentAnalyticsDashboardProps) {
-    const [overview, setOverview] = useState<OverviewMetrics | null>(null);
+    const [overview, setOverview] = useState<AssignmentOverviewMetrics | null>(null);
     const [studentRoster, setStudentRoster] = useState<StudentProgress[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'students'>('overview');
@@ -167,7 +157,7 @@ export function AssessmentAnalyticsDashboard({ assignmentId, onBack }: Assessmen
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm font-medium text-slate-600">Success Score</p>
-                                        <p className="text-3xl font-bold text-slate-900 mt-2">{overview.averageScore}%</p>
+                                        <p className="text-3xl font-bold text-slate-900 mt-2">{overview.classSuccessScore}%</p>
                                         <p className="text-sm text-slate-500 mt-1">Class-wide accuracy</p>
                                     </div>
                                     <Award className="h-12 w-12 text-purple-600 opacity-80" />
@@ -296,10 +286,10 @@ export function AssessmentAnalyticsDashboard({ assignmentId, onBack }: Assessmen
                                                 </td>
                                                 <td className="p-4">
                                                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${student.status === 'completed'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : student.status === 'in_progress'
-                                                                ? 'bg-yellow-100 text-yellow-700'
-                                                                : 'bg-slate-100 text-slate-700'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : student.status === 'in_progress'
+                                                            ? 'bg-yellow-100 text-yellow-700'
+                                                            : 'bg-slate-100 text-slate-700'
                                                         }`}>
                                                         {student.status === 'completed' ? 'COMPLETED' :
                                                             student.status === 'in_progress' ? 'IN PROGRESS' : 'NOT STARTED'}
