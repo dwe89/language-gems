@@ -15,7 +15,17 @@ import {
   ArrowRight,
   Download,
   Eye,
-  BarChart3
+  BarChart3,
+  Grid3X3,
+  MessageSquare,
+  Timer,
+  Mail,
+  ListChecks,
+  Heading,
+  Edit3,
+  BookOpen,
+  FileText,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../../../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../../../components/supabase/SupabaseProvider';
@@ -48,6 +58,38 @@ interface TestInfo {
   max_attempts: number;
   word_count: number;
 }
+
+const formatQuestionType = (type: string) => {
+    return type
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
+const getQuestionTypeIcon = (type: string) => {
+    const iconMap: Record<string, any> = {
+        'translation': BookOpen,
+        'student-grid': Grid3X3,
+        'open-response': MessageSquare,
+        'time-sequence': Timer,
+        'letter-matching': Mail,
+        'multiple-choice': ListChecks,
+        'headline-matching': Heading,
+        'sentence-completion': Edit3,
+        'vocabulary': BookOpen,
+        'grammar': FileText,
+        'listening': Activity,
+        'reading': BookOpen
+    };
+    return iconMap[type] || BarChart3;
+};
+
+const getAccuracyColor = (accuracy: number) => {
+    if (accuracy >= 80) return 'text-green-600 bg-green-100';
+    if (accuracy >= 60) return 'text-blue-600 bg-blue-100';
+    if (accuracy >= 40) return 'text-yellow-600 bg-yellow-100';
+    return 'text-red-600 bg-red-100';
+};
 
 export default function TestResultsPage() {
   const params = useParams();
@@ -273,24 +315,51 @@ export default function TestResultsPage() {
               Performance by Question Type
             </h3>
             <div className="space-y-4">
-              {Object.entries(result.performance_by_question_type).map(([type, stats]: [string, any]) => (
-                <div key={type} className="border-b border-gray-100 pb-4 last:border-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-700 capitalize">
-                      {type.replace(/_/g, ' ')}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {stats.correct} / {stats.total} correct
-                    </span>
+              {Object.entries(result.performance_by_question_type).map(([type, stats]: [string, any]) => {
+                const accuracy = (stats.correct / stats.total) * 100;
+                const IconComponent = getQuestionTypeIcon(type);
+                const colorClass = getAccuracyColor(accuracy);
+                
+                return (
+                  <div key={type} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center mb-3">
+                      <div className={`p-2 rounded-lg mr-3 ${colorClass}`}>
+                        <IconComponent className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 text-sm">
+                          {formatQuestionType(type)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {stats.correct}/{stats.total} correct
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="mb-2">
+                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Accuracy</span>
+                        <span className="font-medium">{Math.round(accuracy)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            accuracy >= 80 ? 'bg-green-500' :
+                            accuracy >= 60 ? 'bg-blue-500' :
+                            accuracy >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${Math.min(accuracy, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-xs text-gray-500">
+                      {stats.correct} out of {stats.total} questions answered correctly
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{ width: `${(stats.correct / stats.total) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}

@@ -327,7 +327,7 @@ export default function ActivitiesSelectionStep({
 
       {/* Tab Navigation - Only show in Advanced Mode */}
       {isAdvancedMode ? (
-        <div className="grid grid-cols-4 gap-2 bg-gradient-to-r from-gray-50 to-gray-100 p-2 rounded-xl border border-gray-200 shadow-sm">
+        <div className="grid grid-cols-3 gap-2 bg-gradient-to-r from-gray-50 to-gray-100 p-2 rounded-xl border border-gray-200 shadow-sm">
           <button
             onClick={() => setActiveTab('games')}
             className={`flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform ${
@@ -366,26 +366,6 @@ export default function ActivitiesSelectionStep({
                   : 'bg-gray-100 text-gray-500'
             }`}>
               {vocabMasterConfig.selectedModes.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('assessments')}
-            className={`flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform ${
-              activeTab === 'assessments'
-                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg scale-105 border-2 border-green-400'
-                : 'bg-white text-gray-700 hover:bg-green-50 hover:text-green-700 hover:shadow-md border border-gray-200'
-            }`}
-          >
-            <FileCheck className={`h-5 w-5 mr-2 ${activeTab === 'assessments' ? 'text-white' : 'text-green-600'}`} />
-            <span>Assessments</span>
-            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'assessments'
-                ? 'bg-white bg-opacity-20 text-white'
-                : assessmentConfig.selectedAssessments.length > 0
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-gray-100 text-gray-500'
-            }`}>
-              {assessmentConfig.selectedAssessments.length}
             </span>
           </button>
           <button
@@ -471,31 +451,6 @@ export default function ActivitiesSelectionStep({
               </div>
             </motion.div>
 
-            {/* Assessments Card */}
-            <motion.div
-              whileHover={{ scale: 1.02, y: -4 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                setSimpleActivityType('assessments');
-                setActiveTab('assessments');
-              }}
-              className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-8 cursor-pointer hover:border-green-400 hover:shadow-xl transition-all"
-            >
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-4">
-                  <FileCheck className="h-8 w-8 text-white" />
-                </div>
-                <h4 className="text-xl font-bold text-gray-900 mb-2">Assessments</h4>
-                <p className="text-sm text-gray-600 mb-4">
-                  Reading comprehension, listening exercises, and GCSE exam practice
-                </p>
-                <div className="flex items-center justify-center gap-2 text-xs text-green-600">
-                  <span className="px-3 py-1 bg-green-100 rounded-full">15-60 min</span>
-                  <span className="px-3 py-1 bg-green-100 rounded-full">Test Preparation</span>
-                </div>
-              </div>
-            </motion.div>
-
             {/* Skills Card */}
             <motion.div
               whileHover={{ scale: 1.02, y: -4 }}
@@ -549,143 +504,6 @@ export default function ActivitiesSelectionStep({
               }}
               maxSelections={isAdvancedMode ? 15 : 1}
             />
-          </div>
-        ) : activeTab === 'assessments' ? (
-          <div className="space-y-6">
-            {!isAdvancedMode && (
-              <div className="mb-4 space-y-3">
-                <button
-                  onClick={() => setSimpleActivityType(null)}
-                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                  Choose Different Activity Type
-                </button>
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800">
-                    <strong>Simple Mode:</strong> Select one assessment for testing. Switch to Advanced Mode for multi-activity assignments.
-                  </p>
-                </div>
-              </div>
-            )}
-            {/* Available Assessments */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Assessments</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {AVAILABLE_ASSESSMENTS.map(assessment => {
-                  const isComingSoon = assessment.id === 'gcse-speaking' || assessment.id === 'dictation';
-                  return (
-                    <div key={assessment.id} className={`border border-gray-200 rounded-lg p-4 transition-colors relative ${
-                      isComingSoon
-                        ? 'opacity-60 cursor-not-allowed'
-                        : 'hover:border-purple-300 cursor-pointer'
-                    }`}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-1">{assessment.name}</h4>
-                        <p className="text-sm text-gray-600 mb-2">{assessment.description}</p>
-                        <div className="flex items-center space-x-4 text-xs text-gray-500">
-                          <span>⏱️ {assessment.estimatedTime}</span>
-                          <span>🎯 {assessment.skills.join(', ')}</span>
-                        </div>
-                      </div>
-                      {isComingSoon ? (
-                        <div className="flex items-center px-3 py-1 bg-gray-400 text-white rounded-md text-sm cursor-not-allowed">
-                          Coming Soon
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => openConfigModal(assessment)}
-                          className="flex items-center px-3 py-1 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700 transition-colors"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add
-                        </button>
-                      )}
-                    </div>
-                    
-                    {/* Coming Soon Overlay */}
-                    {isComingSoon && (
-                      <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center rounded-lg">
-                        <div className="bg-orange-100 border border-orange-300 rounded-lg px-4 py-2">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-orange-800 font-medium text-sm">Coming Soon</span>
-                            <span className="text-orange-600">🚧</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Selected Assessments */}
-            {assessmentConfig.selectedAssessments.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Selected Assessments ({assessmentConfig.selectedAssessments.length})
-                </h3>
-                <div className="space-y-3">
-                  {assessmentConfig.selectedAssessments.map((assessment, index) => (
-                    <div key={assessment.id} className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3 flex-1">
-                          <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900">{assessment.name}</h4>
-                            <p className="text-sm text-gray-600">{assessment.estimatedTime} • {assessment.skills.join(', ')}</p>
-                            {assessment.instanceConfig && (
-                              <div className="mt-1 flex flex-wrap gap-2 text-xs">
-                                {assessment.instanceConfig.language && (
-                                  <span className="px-2 py-0.5 bg-white rounded-full text-purple-700 border border-purple-200">
-                                    {assessment.instanceConfig.language}
-                                  </span>
-                                )}
-                                {assessment.instanceConfig.level && (
-                                  <span className="px-2 py-0.5 bg-white rounded-full text-purple-700 border border-purple-200">
-                                    {assessment.instanceConfig.level}
-                                  </span>
-                                )}
-                                {assessment.instanceConfig.examBoard && assessment.instanceConfig.examBoard !== 'General' && (
-                                  <span className="px-2 py-0.5 bg-white rounded-full text-purple-700 border border-purple-200">
-                                    {assessment.instanceConfig.examBoard}
-                                  </span>
-                                )}
-                                {assessment.instanceConfig.difficulty && (
-                                  <span className="px-2 py-0.5 bg-white rounded-full text-purple-700 border border-purple-200">
-                                    {assessment.instanceConfig.difficulty}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => openEditModal(assessment)}
-                            className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-100 rounded-lg transition-colors"
-                            title="Configure assessment"
-                          >
-                            <Settings className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => removeAssessmentFromBasket(assessment.id)}
-                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors"
-                            title="Remove assessment"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : activeTab === 'vocabmaster' ? (
           <div>

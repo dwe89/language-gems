@@ -88,6 +88,7 @@ export default function AssignmentsPage() {
             `)
             .in('created_by', teacherIds)
             .neq('status', 'archived')
+            .neq('game_type', 'assessment')
             .order('created_at', { ascending: false });
 
           if (assignmentsError) {
@@ -104,6 +105,7 @@ export default function AssignmentsPage() {
             `)
             .eq('created_by', user.id)
             .neq('status', 'archived')
+            .neq('game_type', 'assessment')
             .order('created_at', { ascending: false });
 
           if (assignmentsError) {

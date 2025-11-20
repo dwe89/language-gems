@@ -301,12 +301,12 @@ const GameResultsBreakdown: React.FC<{
                             {mistake.question}
                           </div>
                           <div className="flex items-center space-x-4 text-xs">
-                            <span className="text-red-600">
-                              Your answer: {mistake.userAnswer}
-                            </span>
-                            <span className="text-green-600">
-                              Correct: {mistake.correctAnswer}
-                            </span>
+                            <div className="text-red-600">
+                              Your answer: {formatAnswer(mistake.userAnswer)}
+                            </div>
+                            <div className="text-green-600">
+                              Correct: {formatAnswer(mistake.correctAnswer)}
+                            </div>
                           </div>
                           {mistake.explanation && (
                             <div className="mt-2 text-gray-600">
@@ -410,6 +410,43 @@ const RecommendationsSection: React.FC<{
 // =====================================================
 // MAIN ENHANCED ASSIGNMENT FEEDBACK COMPONENT
 // =====================================================
+
+const formatAnswer = (answer: string | undefined | null) => {
+    if (answer === undefined || answer === null || answer === '') return '(No answer)';
+    
+    // Try to parse as JSON if it looks like an object/array
+    if (typeof answer === 'string' && (answer.trim().startsWith('{') || answer.trim().startsWith('['))) {
+        try {
+            const parsed = JSON.parse(answer);
+            if (typeof parsed === 'object' && parsed !== null) {
+                // Check if it's a simple key-value map
+                const entries = Object.entries(parsed);
+                if (entries.length > 0) {
+                     return (
+                        <div className="flex flex-col gap-1 mt-1 pl-2 border-l-2 border-slate-200">
+                            {entries.map(([key, value]) => {
+                                // Check if key is a number (index)
+                                const displayKey = !isNaN(Number(key)) 
+                                    ? `Q${Number(key) + 1}` 
+                                    : key;
+                                return (
+                                    <div key={key} className="flex items-center text-sm">
+                                        <span className="font-medium mr-2 min-w-[20px]">{displayKey}:</span>
+                                        <span>{String(value)}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                }
+            }
+        } catch (e) {
+            // Not valid JSON, fall through to return string
+        }
+    }
+
+    return answer;
+};
 
 export default function EnhancedAssignmentFeedback({
   assignmentId,

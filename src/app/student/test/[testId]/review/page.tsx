@@ -55,6 +55,43 @@ interface TestInfo {
   word_count: number;
 }
 
+const formatAnswer = (answer: string | undefined | null) => {
+    if (answer === undefined || answer === null || answer === '') return '(No answer provided)';
+    
+    // Try to parse as JSON if it looks like an object/array
+    if (typeof answer === 'string' && (answer.trim().startsWith('{') || answer.trim().startsWith('['))) {
+        try {
+            const parsed = JSON.parse(answer);
+            if (typeof parsed === 'object' && parsed !== null) {
+                // Check if it's a simple key-value map
+                const entries = Object.entries(parsed);
+                if (entries.length > 0) {
+                     return (
+                        <div className="flex flex-col gap-1 mt-1 pl-2 border-l-2 border-slate-200">
+                            {entries.map(([key, value]) => {
+                                // Check if key is a number (index)
+                                const displayKey = !isNaN(Number(key)) 
+                                    ? `Q${Number(key) + 1}` 
+                                    : key;
+                                return (
+                                    <div key={key} className="flex items-center text-sm">
+                                        <span className="font-medium mr-2 min-w-[20px]">{displayKey}:</span>
+                                        <span>{String(value)}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                }
+            }
+        } catch (e) {
+            // Not valid JSON, fall through to return string
+        }
+    }
+
+    return answer;
+};
+
 export default function ReviewAnswersPage() {
   const params = useParams();
   const router = useRouter();
@@ -283,7 +320,7 @@ export default function ReviewAnswersPage() {
               )}
               <div className="flex-1">
                 <div className="font-medium text-gray-900 mb-1">Your Answer:</div>
-                <div className="text-lg">{currentResponse?.student_answer || '(No answer provided)'}</div>
+                <div className="text-lg">{formatAnswer(currentResponse?.student_answer)}</div>
               </div>
             </div>
           </div>
@@ -295,7 +332,7 @@ export default function ReviewAnswersPage() {
                 <BookOpen className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                 <div className="flex-1">
                   <div className="font-medium text-gray-900 mb-1">Correct Answer:</div>
-                  <div className="text-lg text-blue-900 font-semibold">{currentQuestion.correct_answer}</div>
+                  <div className="text-lg text-blue-900 font-semibold">{formatAnswer(currentQuestion.correct_answer)}</div>
                 </div>
               </div>
             </div>

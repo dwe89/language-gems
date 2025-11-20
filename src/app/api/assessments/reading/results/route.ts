@@ -9,52 +9,41 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, assessmentId, results, assignmentMode } = body;
+    const { userId, assessmentId, results, assignmentMode, assignmentId } = body;
 
-    // For now, just log the results since the table doesn't exist yet
-    console.log('Assessment results:', {
+    console.log('Saving reading comprehension results:', {
       userId,
-      assessmentId,
+      assessmentId, // This maps to text_id
+      assignmentId,
       score: results.score,
-      totalQuestions: results.totalQuestions,
-      correctAnswers: results.correctAnswers,
-      timeSpent: results.timeSpent,
-      passed: results.passed,
-      assignmentMode
+      passed: results.passed
     });
 
-    // Try to save the assessment result, but handle gracefully if table doesn't exist
-    try {
-      const { data, error } = await supabase
-        .from('assessment_results')
-        .insert({
-          user_id: userId,
-          assessment_id: assessmentId,
-          assessment_type: 'reading-comprehension',
-          score: results.score,
-          total_questions: results.totalQuestions,
-          correct_answers: results.correctAnswers,
-          time_spent: results.timeSpent,
-          passed: results.passed,
-          detailed_results: results.detailedResults,
-          assignment_mode: assignmentMode || false,
-          completed_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+    // Save to reading_comprehension_results table
+    const { data, error } = await supabase
+      .from('reading_comprehension_results')
+      .insert({
+        user_id: userId,
+        text_id: assessmentId,
+        assignment_id: assignmentId,
+        score: results.score,
+        total_questions: results.totalQuestions,
+        correct_answers: results.correctAnswers,
+        time_spent: results.timeSpent,
+        passed: results.passed,
+        question_results: results.detailedResults,
+        assignment_mode: assignmentMode || false,
+        completed_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-      if (error) {
-        console.error('Error saving assessment result:', error);
-        // Don't fail the request if we can't save to DB
-        return NextResponse.json({ success: true, warning: 'Results not saved to database' });
-      }
-
-      return NextResponse.json({ success: true, result: data });
-    } catch (dbError) {
-      console.error('Database error:', dbError);
-      // Return success even if DB save fails
-      return NextResponse.json({ success: true, warning: 'Results not saved to database' });
+    if (error) {
+      console.error('Error saving reading comprehension result:', error);
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
+
+    return NextResponse.json({ success: true, result: data });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

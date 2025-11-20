@@ -1,10 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/client';
 import { assessmentSkillTrackingService, type WritingSkillMetrics } from './assessmentSkillTrackingService';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { calculateGCSEGrade } from '@/lib/gcseGrading';
 
 // Types for AQA Writing Assessment
 export interface AQAWritingAssessmentDefinition {
@@ -83,12 +79,14 @@ export type AQAQuestionResponse = {
 };
 
 export class AQAWritingAssessmentService {
+  private supabase = createClient();
+
   /**
    * Get all available writing assessments
    */
   async getAssessments(): Promise<AQAWritingAssessmentDefinition[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from('aqa_writing_assessments')
         .select('*')
         .eq('is_active', true)
@@ -113,7 +111,7 @@ export class AQAWritingAssessmentService {
    */
   async getAssessmentsByLevel(level: 'foundation' | 'higher', language?: string): Promise<AQAWritingAssessmentDefinition[]> {
     try {
-      let query = supabase
+      let query = this.supabase
         .from('aqa_writing_assessments')
         .select('*')
         .eq('is_active', true)
@@ -144,7 +142,7 @@ export class AQAWritingAssessmentService {
    */
   async getAssessment(level: 'foundation' | 'higher', language: string, identifier: string): Promise<AQAWritingAssessmentDefinition | null> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from('aqa_writing_assessments')
         .select('*')
         .eq('level', level)
@@ -170,7 +168,7 @@ export class AQAWritingAssessmentService {
    */
   async getQuestions(assessmentId: string): Promise<AQAWritingQuestion[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from('aqa_writing_questions')
         .select('*')
         .eq('assessment_id', assessmentId)
@@ -194,7 +192,7 @@ export class AQAWritingAssessmentService {
    */
   async createResult(assessmentId: string, studentId: string, schoolId?: string): Promise<string | null> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from('aqa_writing_results')
         .insert({
           assessment_id: assessmentId,
@@ -234,7 +232,7 @@ export class AQAWritingAssessmentService {
     maxScore: number = 10
   ): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const { error } = await this.supabase
         .from('aqa_writing_question_responses')
         .upsert({
           result_id: resultId,
@@ -270,12 +268,36 @@ export class AQAWritingAssessmentService {
     maxScore: number = 50
   ): Promise<boolean> {
     try {
-      const { error } = await supabase
+      // Calculate percentage and GCSE grade
+      const percentageScore = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+      
+      // Get assessment tier for GCSE grading
+      const { data: resultData } = await this.supabase
+        .from('aqa_writing_results')
+        .select('assessment_id')
+        .eq('id', resultId)
+        .single();
+
+      let gcseGrade = 1; // Default grade
+      if (resultData) {
+        const { data: assessmentData } = await this.supabase
+          .from('aqa_writing_assessments')
+          .select('level')
+          .eq('id', resultData.assessment_id)
+          .single();
+        
+        const tier = assessmentData?.level || 'higher';
+        gcseGrade = calculateGCSEGrade(percentageScore, tier);
+      }
+
+      const { error } = await this.supabase
         .from('aqa_writing_results')
         .update({
           total_score: totalScore,
           questions_completed: questionsCompleted,
           time_spent_seconds: totalTimeSpent,
+          percentage_score: percentageScore,
+          gcse_grade: gcseGrade,
           completed_at: new Date().toISOString(),
           is_completed: true
         })
@@ -287,23 +309,22 @@ export class AQAWritingAssessmentService {
       }
 
       // Get the assessment result to extract student_id and assessment_id for skill tracking
-      const { data: resultData, error: resultFetchError } = await supabase
+      const { data: skillResultData, error: resultFetchError } = await this.supabase
         .from('aqa_writing_results')
         .select('student_id, assessment_id')
         .eq('id', resultId)
         .single();
 
-      if (!resultFetchError && resultData) {
+      if (!resultFetchError && skillResultData) {
         // Get assessment details for language
-        const { data: assessmentData } = await supabase
+        const { data: assessmentData } = await this.supabase
           .from('aqa_writing_assessments')
           .select('language')
-          .eq('id', resultData.assessment_id)
+          .eq('id', skillResultData.assessment_id)
           .single();
 
         if (assessmentData) {
           // Calculate writing skill metrics
-          const percentageScore = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
           const averageTimePerQuestion = questionsCompleted > 0 ? totalTimeSpent / questionsCompleted : 0;
 
           const writingMetrics: WritingSkillMetrics = {
@@ -317,8 +338,8 @@ export class AQAWritingAssessmentService {
 
           // Track writing skills in assessment_skill_breakdown table
           await assessmentSkillTrackingService.trackWritingSkills(
-            resultData.student_id,
-            resultData.assessment_id,
+            skillResultData.student_id,
+            skillResultData.assessment_id,
             'aqa_writing',
             assessmentData.language,
             writingMetrics,
@@ -341,7 +362,7 @@ export class AQAWritingAssessmentService {
    */
   async getStudentResults(assessmentId: string, studentId: string): Promise<AQAWritingResult[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from('aqa_writing_results')
         .select('*')
         .eq('assessment_id', assessmentId)

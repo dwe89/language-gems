@@ -398,6 +398,7 @@ function AssignmentsPageContent() {
               vocabulary_count
             `)
             .in('class_id', classIds)
+            .neq('game_type', 'assessment')
             .order('created_at', { ascending: false }),
 
           supabase

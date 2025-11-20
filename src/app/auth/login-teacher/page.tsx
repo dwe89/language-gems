@@ -269,6 +269,20 @@ export default function TeacherLoginPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              transition={{ delay: 0.9 }}
+              className="mt-4 text-center"
+            >
+              <Link 
+                href="/auth/forgot-password" 
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
+              >
+                Forgot your password?
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
               className="mt-6 text-center"
             >

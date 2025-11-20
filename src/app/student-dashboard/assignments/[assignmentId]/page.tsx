@@ -61,21 +61,21 @@ export default function StudentAssignmentDetailPage() {
   const params = useParams();
   const router = useRouter();
   const assignmentId = params?.assignmentId as string;
-  
+
   const [loading, setLoading] = useState(true);
   const [assignment, setAssignment] = useState<any>(null);
   const [error, setError] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [masteryScore, setMasteryScore] = useState<MasteryScoreBreakdown | null>(null);
-  
+
   // Grammar skills expansion state
   const [expandedSkills, setExpandedSkills] = useState<Set<string>>(new Set());
   const [skillTopicsData, setSkillTopicsData] = useState<Map<string, any[]>>(new Map());
 
   // Check if this is a preview mode (teacher viewing the assignment)
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  
+
   useEffect(() => {
     // Check if preview mode is enabled from URL params
     const urlParams = new URLSearchParams(window.location.search);
@@ -122,8 +122,8 @@ export default function StudentAssignmentDetailPage() {
         // Multi-assessment assignments should NOT early-return here
         const selectedAssessments = assignmentData.game_config?.assessmentConfig?.selectedAssessments || [];
         const isAssessmentOnly = assignmentData.game_type === 'assessment' &&
-                                 assignmentData.assignment_mode === 'single_game' &&
-                                 selectedAssessments.length === 1;
+          assignmentData.assignment_mode === 'single_game' &&
+          selectedAssessments.length === 1;
 
         // If it's a single assessment-only assignment, use the dedicated component
         if (isAssessmentOnly) {
@@ -186,12 +186,12 @@ export default function StudentAssignmentDetailPage() {
 
         // Check if this is a multi-activity assignment (games, assessments, or skills)
         const isMultiGame = assignmentData.game_type === 'multi-game' ||
-                           assignmentData.game_type === 'mixed-mode' ||
-                           assignmentData.game_type === 'skills' ||
-                           (assignmentData.game_type === 'assessment' && !isAssessmentOnly) ||
-                           (assignmentData.game_config?.multiGame && assignmentData.game_config?.selectedGames?.length > 1) ||
-                           (assignmentData.game_config?.gameConfig?.selectedGames && assignmentData.game_config.gameConfig.selectedGames.length > 1);
-        
+          assignmentData.game_type === 'mixed-mode' ||
+          assignmentData.game_type === 'skills' ||
+          (assignmentData.game_type === 'assessment' && !isAssessmentOnly) ||
+          (assignmentData.game_config?.multiGame && assignmentData.game_config?.selectedGames?.length > 1) ||
+          (assignmentData.game_config?.gameConfig?.selectedGames && assignmentData.game_config.gameConfig.selectedGames.length > 1);
+
         const gameNameMap: Record<string, { name: string; description: string }> = {
           'vocabulary-mining': { name: 'Vocabulary Mining', description: 'Mine vocabulary gems to build your collection' },
           'memory-game': { name: 'Memory Match', description: 'Match vocabulary pairs to improve recall' },
@@ -208,16 +208,16 @@ export default function StudentAssignmentDetailPage() {
           'sentence-towers': { name: 'Sentence Towers', description: 'Build towers by constructing sentences' },
           'sentence-builder': { name: 'Sentence Builder', description: 'Drag and drop words to build sentences' },
           'word-association': { name: 'Word Association', description: 'Connect related words and concepts' },
-          'detective-listening': { name: 'Detective Listening', description: 'Listen and translate audio clues' }, 
+          'detective-listening': { name: 'Detective Listening', description: 'Listen and translate audio clues' },
           'case-file-translator': { name: 'Case File Translator', description: 'Translate words to solve mysteries' },
           'lava-temple-word-restore': { name: 'Lava Temple Word Restore', description: 'Restore words in a temple setting' },
           'verb-quest': { name: 'Verb Quest', description: 'Embark on quests to master verb conjugations' },
           'vocab-master': { name: 'Vocab Master', description: 'Master vocabulary through spaced repetition' },
           'noughts-and-crosses': { name: 'Noughts & Crosses', description: 'Strategic gameplay with vocabulary questions' },
           'vocabulary_test': { name: 'Vocabulary Test', description: 'Complete a vocabulary assessment' }
-      
-    
-          
+
+
+
         };
 
         let games: any[] = [];
@@ -227,8 +227,8 @@ export default function StudentAssignmentDetailPage() {
         if (isMultiGame) {
           // Multi-game assignment - handle both old and new config structures
           const selectedGames = assignmentData.game_config?.selectedGames ||
-                               assignmentData.game_config?.gameConfig?.selectedGames ||
-                               [];
+            assignmentData.game_config?.gameConfig?.selectedGames ||
+            [];
 
           // Load enhanced progress for each game
           const progressService = new AssignmentProgressTrackingService(supabase);
@@ -263,10 +263,56 @@ export default function StudentAssignmentDetailPage() {
           // Extract assessments from the assignment config
           const selectedAssessments = assignmentData.game_config?.assessmentConfig?.selectedAssessments || [];
 
+          // Fetch latest AQA assessment results by type so we can display them for assessments
+          const aqaListeningPromise = supabase
+            .from('aqa_listening_results')
+            .select('*')
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', user.id)
+            .order('created_at', { ascending: false });
+          const aqaReadingPromise = supabase
+            .from('aqa_reading_results')
+            .select('*')
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', user.id)
+            .order('created_at', { ascending: false });
+          const aqaWritingPromise = supabase
+            .from('aqa_writing_results')
+            .select('*')
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', user.id)
+            .order('created_at', { ascending: false });
+
+          const [listeningResultsRes, readingResultsRes, writingResultsRes] = await Promise.all([
+            aqaListeningPromise,
+            aqaReadingPromise,
+            aqaWritingPromise
+          ]);
+
+          const latestListening = listeningResultsRes?.data?.[0] || null;
+          const latestReading = readingResultsRes?.data?.[0] || null;
+          const latestWriting = writingResultsRes?.data?.[0] || null;
+
+          const latestResultsByType: Record<string, any> = {
+            'gcse-listening': latestListening,
+            'gcse-reading': latestReading,
+            'gcse-writing': latestWriting
+          };
+
+          console.log('🔍 [AQA RESULTS]', {
+            latestListening: latestListening?.id || null,
+            latestReading: latestReading?.id || null,
+            latestWriting: latestWriting?.id || null
+          });
+
           assessments = selectedAssessments.map((assessment: any) => {
             // Find individual assessment progress
             const assessmentProgress = gameProgressData?.find(gp => gp.game_id === assessment.id);
-            const isCompleted = assessmentProgress?.status === 'completed';
+            const aqaResult = latestResultsByType[assessment.type];
+            if (aqaResult) {
+              console.log('🔍 [AQA MAPPING] ', { assessmentId: assessment.id, assessmentType: assessment.type, resultId: aqaResult.id });
+            }
+            const isCompleted = (assessmentProgress?.status === 'completed') || (!!aqaResult && aqaResult.status === 'completed');
 
             return {
               id: assessment.id,
@@ -275,10 +321,10 @@ export default function StudentAssignmentDetailPage() {
               type: 'assessment',
               assessmentType: assessment.type,
               completed: isCompleted,
-              score: assessmentProgress?.score || 0,
-              accuracy: assessmentProgress?.accuracy || 0,
-              timeSpent: assessmentProgress?.time_spent || 0,
-              completedAt: assessmentProgress?.completed_at
+              score: aqaResult?.percentage_score || assessmentProgress?.score || 0,
+              accuracy: aqaResult?.percentage_score || assessmentProgress?.accuracy || 0,
+              timeSpent: aqaResult?.total_time_seconds || assessmentProgress?.time_spent || 0,
+              completedAt: aqaResult?.completion_time || assessmentProgress?.completed_at
             };
           });
 
@@ -387,7 +433,7 @@ export default function StudentAssignmentDetailPage() {
           // For assessments, progress is based on completion status
           const assessmentProgress = gameProgressData?.find(gp => gp.game_id === 'reading-comprehension');
           overallProgress = assessmentProgress?.status === 'completed' ? 100 :
-                           assessmentProgress?.status === 'in_progress' ? 50 : 0;
+            assessmentProgress?.status === 'in_progress' ? 50 : 0;
 
           // Get the latest session data for detailed assessment info
           const { data: latestSession } = await supabase
@@ -666,7 +712,7 @@ export default function StudentAssignmentDetailPage() {
 
   const toggleSkillExpansion = async (skillId: string, topicIds: string[]) => {
     const newExpanded = new Set(expandedSkills);
-    
+
     if (expandedSkills.has(skillId)) {
       // Collapse
       newExpanded.delete(skillId);
@@ -675,14 +721,14 @@ export default function StudentAssignmentDetailPage() {
       // Expand and fetch topic details if not already fetched
       newExpanded.add(skillId);
       setExpandedSkills(newExpanded);
-      
+
       if (!skillTopicsData.has(skillId) && topicIds.length > 0) {
         try {
           const { data: topicsData, error } = await supabaseBrowser
             .from('grammar_topics')
             .select('id, title, description, difficulty_level')
             .in('id', topicIds);
-          
+
           if (!error && topicsData) {
             const newMap = new Map(skillTopicsData);
             newMap.set(skillId, topicsData);
@@ -722,16 +768,13 @@ export default function StudentAssignmentDetailPage() {
     );
   }
 
-  // If this is an assessment-only assignment, use the dedicated component
+  // If this is an assessment-only assignment, redirect to the assessment detail page
   if (assignment.isAssessmentOnly) {
+    router.push(`/student-dashboard/assessments/${assignmentId}`);
     return (
-      <AssessmentAssignmentView
-        assignmentId={assignmentId as string}
-        studentId={user!.id}
-        assignmentTitle={assignment.title}
-        assignmentDescription={assignment.description}
-        dueDate={assignment.dueDate}
-      />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
     );
   }
 
@@ -756,7 +799,7 @@ export default function StudentAssignmentDetailPage() {
             Back to Assignments
           </Link>
         )}
-        
+
         {isPreviewMode && (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg mb-4">
             <div className="flex items-center">
@@ -768,7 +811,7 @@ export default function StudentAssignmentDetailPage() {
             </div>
           </div>
         )}
-        
+
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
@@ -776,7 +819,7 @@ export default function StudentAssignmentDetailPage() {
               {assignment.description && (
                 <p className="text-gray-600 text-lg mb-4">{assignment.description}</p>
               )}
-              
+
               <div className="flex items-center space-x-6 text-sm text-gray-500">
                 {assignment.dueDate && (
                   <div className="flex items-center">
@@ -852,15 +895,14 @@ export default function StudentAssignmentDetailPage() {
               ) : null}
             </div>
           </div>
-          
+
           {/* Progress Bar */}
           <div className="w-full bg-gray-200 rounded-full h-4 mb-4 shadow-inner">
             <div
-              className={`h-4 rounded-full transition-all duration-700 ${
-                assignment.overallProgress === 100
+              className={`h-4 rounded-full transition-all duration-700 ${assignment.overallProgress === 100
                   ? 'bg-gradient-to-r from-green-400 to-green-600'
                   : 'bg-gradient-to-r from-indigo-500 to-purple-500'
-              }`}
+                }`}
               style={{ width: `${assignment.overallProgress}%` }}
             ></div>
           </div>
@@ -882,11 +924,10 @@ export default function StudentAssignmentDetailPage() {
                   <h3 className="text-lg font-bold text-gray-900">Assessment Results</h3>
                 </div>
                 <div className="text-right">
-                  <div className={`text-4xl font-bold ${
-                    assignment.assessmentData.score >= 70 ? 'text-green-600' :
-                    assignment.assessmentData.score >= 50 ? 'text-yellow-600' :
-                    'text-red-600'
-                  }`}>
+                  <div className={`text-4xl font-bold ${assignment.assessmentData.score >= 70 ? 'text-green-600' :
+                      assignment.assessmentData.score >= 50 ? 'text-yellow-600' :
+                        'text-red-600'
+                    }`}>
                     {assignment.assessmentData.score}%
                   </div>
                   <div className="text-sm font-medium text-gray-600">Final Score</div>
@@ -1126,264 +1167,260 @@ export default function StudentAssignmentDetailPage() {
             };
 
             return (
-            <div
-              key={activity.id}
-              className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${
-                activity.completed
-                  ? 'border-green-400 bg-gradient-to-br from-green-50 to-green-100'
-                  : activity.status === 'in_progress'
-                  ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-yellow-100'
-                  : 'border-gray-300 bg-white hover:border-indigo-400'
-              }`}
-            >
-              {/* Header with title and status */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">{activity.name}</h3>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      activity.type === 'game'
-                        ? 'bg-blue-100 text-blue-700'
-                        : activity.type === 'assessment'
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-green-100 text-green-700'
-                    }`}>
-                      {activity.type === 'game' ? 'GAME' : activity.type === 'assessment' ? 'ASSESSMENT' : 'SKILL'}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 text-sm">{activity.description}</p>
-                </div>
-              </div>
-
-              {/* Status Badge */}
-              <div className="flex items-center gap-2 mb-4">
-                <StatusIcon className="h-4 w-4 text-white" />
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusBadge.color}`}>
-                  {statusBadge.text}
-                </span>
-                {activity.lastPlayedAt && (
-                  <span className="text-xs text-gray-500 ml-auto">
-                    {getLastPlayedText()}
-                  </span>
-                )}
-              </div>
-
-              {/* Activity Metrics - Show for all activities with data */}
-              {(activity.sessionsStarted > 0 || activity.completed) && (
-                <div className="bg-white/50 rounded-lg p-4 mb-4 border border-gray-200">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    {/* Sessions */}
-                    {activity.sessionsStarted > 0 && (
-                      <div className="flex items-center gap-2">
-                        <Gamepad2 className="h-4 w-4 text-indigo-500" />
-                        <div>
-                          <span className="text-gray-600 text-xs">Sessions</span>
-                          <p className="font-bold text-gray-900">{activity.sessionsStarted}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Words Practiced */}
-                    {activity.wordsAttempted > 0 && (
-                      <div className="flex items-center gap-2">
-                        <Target className="h-4 w-4 text-blue-500" />
-                        <div>
-                          <span className="text-gray-600 text-xs">Words</span>
-                          <p className="font-bold text-gray-900">{activity.wordsAttempted}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Gems Earned */}
-                    {activity.gemsEarned > 0 && (
-                      <div className="flex items-center gap-2">
-                        <Gem className="h-4 w-4 text-purple-500" />
-                        <div>
-                          <span className="text-gray-600 text-xs">Gems</span>
-                          <p className="font-bold text-gray-900">{activity.gemsEarned}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Time Spent */}
-                    {activity.timeSpent > 0 && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-orange-500" />
-                        <div>
-                          <span className="text-gray-600 text-xs">Time</span>
-                          <p className="font-bold text-gray-900">{Math.round(activity.timeSpent / 60)}m</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Accuracy */}
-                    {activity.accuracy > 0 && (
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                        <div>
-                          <span className="text-gray-600 text-xs">Accuracy</span>
-                          <p className="font-bold text-gray-900">{activity.accuracy}%</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Score */}
-                    {activity.score > 0 && (
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-yellow-500" />
-                        <div>
-                          <span className="text-gray-600 text-xs">Score</span>
-                          <p className="font-bold text-gray-900">{activity.score}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Grammar-specific progress for skills */}
-                  {activity.type === 'skill' && activity.sessionsCompleted !== undefined && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="text-xs text-gray-600 mb-1">
-                        Topics Progress: {activity.sessionsCompleted}/{activity.totalTopics} completed
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${activity.totalTopics > 0 ? (activity.sessionsCompleted / activity.totalTopics) * 100 : 0}%` }}
-                        />
-                      </div>
+              <div
+                key={activity.id}
+                className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${activity.completed
+                    ? 'border-green-400 bg-gradient-to-br from-green-50 to-green-100'
+                    : activity.status === 'in_progress'
+                      ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-yellow-100'
+                      : 'border-gray-300 bg-white hover:border-indigo-400'
+                  }`}
+              >
+                {/* Header with title and status */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-bold text-gray-900">{activity.name}</h3>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${activity.type === 'game'
+                          ? 'bg-blue-100 text-blue-700'
+                          : activity.type === 'assessment'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-green-100 text-green-700'
+                        }`}>
+                        {activity.type === 'game' ? 'GAME' : activity.type === 'assessment' ? 'ASSESSMENT' : 'SKILL'}
+                      </span>
                     </div>
+                    <p className="text-gray-600 text-sm">{activity.description}</p>
+                  </div>
+                </div>
+
+                {/* Status Badge */}
+                <div className="flex items-center gap-2 mb-4">
+                  <StatusIcon className="h-4 w-4 text-white" />
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusBadge.color}`}>
+                    {statusBadge.text}
+                  </span>
+                  {activity.lastPlayedAt && (
+                    <span className="text-xs text-gray-500 ml-auto">
+                      {getLastPlayedText()}
+                    </span>
                   )}
                 </div>
-              )}
 
-              {/* Progress bars removed - redundant with top-level assignment progress */}
-
-              {/* Action Button or Topic Expansion for Skills */}
-              {activity.type === 'skill' && activity.topicIds && activity.topicIds.length > 1 ? (
-                <div className="space-y-2">
-                  {/* Expand/Collapse Topics Button */}
-                  <button
-                    onClick={() => toggleSkillExpansion(activity.id, activity.topicIds)}
-                    className="w-full py-3 px-4 rounded-lg font-bold transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700"
-                  >
-                    {expandedSkills.has(activity.id) ? (
-                      <>
-                        <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                        </svg>
-                        Hide Topics ({activity.topicIds.length})
-                      </>
-                    ) : (
-                      <>
-                        <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                        Show All Topics ({activity.topicIds.length})
-                      </>
-                    )}
-                  </button>
-
-                  {/* Expanded Topics List */}
-                  {expandedSkills.has(activity.id) && (
-                    <div className="mt-3 space-y-2 pl-4 border-l-4 border-purple-300">
-                      {skillTopicsData.get(activity.id)?.map((topic, topicIndex) => {
-                        // Check if this specific topic has been completed
-                        // This would require session data per topic, which we'll implement
-                        const topicCompleted = false; // TODO: Check session data per topic
-                        
-                        return (
-                          <div key={topic.id} className="bg-white/70 border border-purple-200 rounded-lg p-3">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="flex items-center justify-center w-6 h-6 bg-purple-600 text-white text-xs font-bold rounded-full">
-                                    {topicIndex + 1}
-                                  </span>
-                                  <h4 className="font-bold text-gray-900">{topic.title}</h4>
-                                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                    topic.difficulty_level === 'beginner' ? 'bg-green-100 text-green-700' :
-                                    topic.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-red-100 text-red-700'
-                                  }`}>
-                                    {topic.difficulty_level}
-                                  </span>
-                                </div>
-                                {topic.description && (
-                                  <p className="text-xs text-gray-600 mt-1 ml-8">{topic.description}</p>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Content Type Buttons for Each Topic */}
-                            <div className="flex gap-2 ml-8">
-                              {activity.instanceConfig?.contentTypes?.includes('lesson') && (
-                                <button
-                                  onClick={() => handlePlaySkill({ ...activity, skillType: 'lesson' }, topic.id)}
-                                  className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors flex items-center justify-center gap-1"
-                                >
-                                  <BookOpen className="h-3 w-3" />
-                                  Lesson
-                                </button>
-                              )}
-                              {activity.instanceConfig?.contentTypes?.includes('practice') && (
-                                <button
-                                  onClick={() => handlePlaySkill({ ...activity, skillType: 'practice' }, topic.id)}
-                                  className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors flex items-center justify-center gap-1"
-                                >
-                                  <Target className="h-3 w-3" />
-                                  Practice
-                                </button>
-                              )}
-                              {activity.instanceConfig?.contentTypes?.includes('quiz') && (
-                                <button
-                                  onClick={() => handlePlaySkill({ ...activity, skillType: 'quiz' }, topic.id)}
-                                  className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors flex items-center justify-center gap-1"
-                                >
-                                  <Award className="h-3 w-3" />
-                                  Quiz
-                                </button>
-                              )}
-                            </div>
+                {/* Activity Metrics - Show for all activities with data */}
+                {(activity.sessionsStarted > 0 || activity.completed) && (
+                  <div className="bg-white/50 rounded-lg p-4 mb-4 border border-gray-200">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {/* Sessions */}
+                      {activity.sessionsStarted > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Gamepad2 className="h-4 w-4 text-indigo-500" />
+                          <div>
+                            <span className="text-gray-600 text-xs">Sessions</span>
+                            <p className="font-bold text-gray-900">{activity.sessionsStarted}</p>
                           </div>
-                        );
-                      }) || (
-                        <div className="text-center py-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto"></div>
-                          <p className="text-xs text-gray-500 mt-2">Loading topics...</p>
+                        </div>
+                      )}
+
+                      {/* Words Practiced */}
+                      {activity.wordsAttempted > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-blue-500" />
+                          <div>
+                            <span className="text-gray-600 text-xs">Words</span>
+                            <p className="font-bold text-gray-900">{activity.wordsAttempted}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Gems Earned */}
+                      {activity.gemsEarned > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Gem className="h-4 w-4 text-purple-500" />
+                          <div>
+                            <span className="text-gray-600 text-xs">Gems</span>
+                            <p className="font-bold text-gray-900">{activity.gemsEarned}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Time Spent */}
+                      {activity.timeSpent > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-orange-500" />
+                          <div>
+                            <span className="text-gray-600 text-xs">Time</span>
+                            <p className="font-bold text-gray-900">{Math.round(activity.timeSpent / 60)}m</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Accuracy */}
+                      {activity.accuracy > 0 && (
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                          <div>
+                            <span className="text-gray-600 text-xs">Accuracy</span>
+                            <p className="font-bold text-gray-900">{activity.accuracy}%</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Score */}
+                      {activity.score > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <div>
+                            <span className="text-gray-600 text-xs">Score</span>
+                            <p className="font-bold text-gray-900">{activity.score}</p>
+                          </div>
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              ) : (
-                /* Regular Action Button for single-topic skills, games, and assessments */
-                <button
-                  onClick={() => {
-                    if (activity.type === 'game') {
-                      handlePlayGame(activity.id);
-                    } else if (activity.type === 'assessment') {
-                      handlePlayAssessment(activity);
-                    } else if (activity.type === 'skill') {
-                      handlePlaySkill(activity);
-                    }
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-bold transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-lg ${
-                    activity.completed
-                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
+
+                    {/* Grammar-specific progress for skills */}
+                    {activity.type === 'skill' && activity.sessionsCompleted !== undefined && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="text-xs text-gray-600 mb-1">
+                          Topics Progress: {activity.sessionsCompleted}/{activity.totalTopics} completed
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${activity.totalTopics > 0 ? (activity.sessionsCompleted / activity.totalTopics) * 100 : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Progress bars removed - redundant with top-level assignment progress */}
+
+                {/* Action Button or Topic Expansion for Skills */}
+                {activity.type === 'skill' && activity.topicIds && activity.topicIds.length > 1 ? (
+                  <div className="space-y-2">
+                    {/* Expand/Collapse Topics Button */}
+                    <button
+                      onClick={() => toggleSkillExpansion(activity.id, activity.topicIds)}
+                      className="w-full py-3 px-4 rounded-lg font-bold transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700"
+                    >
+                      {expandedSkills.has(activity.id) ? (
+                        <>
+                          <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                          </svg>
+                          Hide Topics ({activity.topicIds.length})
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                          Show All Topics ({activity.topicIds.length})
+                        </>
+                      )}
+                    </button>
+
+                    {/* Expanded Topics List */}
+                    {expandedSkills.has(activity.id) && (
+                      <div className="mt-3 space-y-2 pl-4 border-l-4 border-purple-300">
+                        {skillTopicsData.get(activity.id)?.map((topic, topicIndex) => {
+                          // Check if this specific topic has been completed
+                          // This would require session data per topic, which we'll implement
+                          const topicCompleted = false; // TODO: Check session data per topic
+
+                          return (
+                            <div key={topic.id} className="bg-white/70 border border-purple-200 rounded-lg p-3">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="flex items-center justify-center w-6 h-6 bg-purple-600 text-white text-xs font-bold rounded-full">
+                                      {topicIndex + 1}
+                                    </span>
+                                    <h4 className="font-bold text-gray-900">{topic.title}</h4>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${topic.difficulty_level === 'beginner' ? 'bg-green-100 text-green-700' :
+                                        topic.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                                          'bg-red-100 text-red-700'
+                                      }`}>
+                                      {topic.difficulty_level}
+                                    </span>
+                                  </div>
+                                  {topic.description && (
+                                    <p className="text-xs text-gray-600 mt-1 ml-8">{topic.description}</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Content Type Buttons for Each Topic */}
+                              <div className="flex gap-2 ml-8">
+                                {activity.instanceConfig?.contentTypes?.includes('lesson') && (
+                                  <button
+                                    onClick={() => handlePlaySkill({ ...activity, skillType: 'lesson' }, topic.id)}
+                                    className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors flex items-center justify-center gap-1"
+                                  >
+                                    <BookOpen className="h-3 w-3" />
+                                    Lesson
+                                  </button>
+                                )}
+                                {activity.instanceConfig?.contentTypes?.includes('practice') && (
+                                  <button
+                                    onClick={() => handlePlaySkill({ ...activity, skillType: 'practice' }, topic.id)}
+                                    className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors flex items-center justify-center gap-1"
+                                  >
+                                    <Target className="h-3 w-3" />
+                                    Practice
+                                  </button>
+                                )}
+                                {activity.instanceConfig?.contentTypes?.includes('quiz') && (
+                                  <button
+                                    onClick={() => handlePlaySkill({ ...activity, skillType: 'quiz' }, topic.id)}
+                                    className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors flex items-center justify-center gap-1"
+                                  >
+                                    <Award className="h-3 w-3" />
+                                    Quiz
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }) || (
+                            <div className="text-center py-4">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto"></div>
+                              <p className="text-xs text-gray-500 mt-2">Loading topics...</p>
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Regular Action Button for single-topic skills, games, and assessments */
+                  <button
+                    onClick={() => {
+                      if (activity.type === 'game') {
+                        handlePlayGame(activity.id);
+                      } else if (activity.type === 'assessment') {
+                        handlePlayAssessment(activity);
+                      } else if (activity.type === 'skill') {
+                        handlePlaySkill(activity);
+                      }
+                    }}
+                    className={`w-full py-3 px-4 rounded-lg font-bold transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-lg ${activity.completed
+                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
+                        : activity.status === 'in_progress'
+                          ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
+                          : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
+                      }`}
+                  >
+                    <Play className="h-5 w-5 mr-2" />
+                    {activity.completed
+                      ? 'Play Again'
                       : activity.status === 'in_progress'
-                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
-                        : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
-                  }`}
-                >
-                  <Play className="h-5 w-5 mr-2" />
-                  {activity.completed
-                    ? 'Play Again'
-                    : activity.status === 'in_progress'
-                      ? 'Continue'
-                      : 'Start'}
-                </button>
-              )}
-            </div>
+                        ? 'Continue'
+                        : 'Start'}
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>

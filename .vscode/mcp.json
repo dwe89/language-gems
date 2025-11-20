@@ -1,8 +1,9 @@
 {
-  "servers": {
-    "Sentry": {
-      "url": "https://mcp.sentry.dev/mcp/language-gems/javascript-nextjs",
-      "type": "http"
-    }
-  }
+	"inputs": [],
+	"servers": {
+		"Sentry": {
+			"url": "https://mcp.sentry.dev/mcp/language-gems/javascript-nextjs",
+			"type": "http"
+		}
+	}
 }

@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import {
   ArrowLeft, Download, Users, CheckCircle, Clock, TrendingUp,
   AlertTriangle, Award, Target, BarChart3, ChevronDown, ChevronUp,
-  XCircle, Sparkles, BookOpen, Brain, AlertCircle
+  XCircle, Sparkles, BookOpen, Brain, AlertCircle, Eye
 } from 'lucide-react';
 import type { AssignmentOverviewMetrics, WordDifficulty, StudentProgress } from '@/services/teacherAssignmentAnalytics';
+import { AssessmentResultsDetailView } from './AssessmentResultsDetailView';
 
 interface ModernAssignmentDashboardProps {
   assignmentId: string;
@@ -23,6 +24,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
   const [activeTab, setActiveTab] = useState<'overview' | 'words' | 'students'>('overview');
   const [sortBy, setSortBy] = useState<'name' | 'score' | 'time' | 'accuracy'>('score');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewingStudentDetails, setViewingStudentDetails] = useState<{ studentId: string; studentName: string } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -71,7 +73,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
         s.timeSpentMinutes,
         s.interventionFlag || 'None'
       ]);
-      
+
       const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       downloadCSV(csv, `${overview?.assignmentTitle}_students.csv`);
     } else {
@@ -83,7 +85,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
         w.failureRate,
         w.actionableInsight
       ]);
-      
+
       const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       downloadCSV(csv, `${overview?.assignmentTitle}_vocabulary.csv`);
     }
@@ -129,16 +131,16 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
 
   const getInterventionBadge = (flag: StudentProgress['interventionFlag']) => {
     if (!flag) return null;
-    
+
     const badges = {
       high_failure: { icon: AlertTriangle, text: 'High Failure', color: 'bg-red-100 text-red-800 border-red-200' },
       unusually_long: { icon: Clock, text: 'Taking Too Long', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
       stopped_midway: { icon: XCircle, text: 'Stopped Midway', color: 'bg-orange-100 text-orange-800 border-orange-200' }
     };
-    
+
     const badge = badges[flag];
     if (!badge) return null;
-    
+
     const Icon = badge.icon;
     return (
       <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${badge.color}`}>
@@ -171,13 +173,30 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
     );
   }
 
-  const completionPercentage = overview.totalStudents > 0 
+  const completionPercentage = overview.totalStudents > 0
     ? Math.round((overview.completedStudents / overview.totalStudents) * 100)
     : 0;
 
   const engagementRate = overview.totalStudents > 0
     ? Math.round(((overview.completedStudents + overview.inProgressStudents) / overview.totalStudents) * 100)
     : 0;
+
+  // If viewing detailed results for a specific student in an assessment, show that view
+  if (viewingStudentDetails) {
+    return (
+      <AssessmentResultsDetailView
+        assignmentId={assignmentId}
+        studentId={viewingStudentDetails.studentId}
+        studentName={viewingStudentDetails.studentName}
+        onBack={() => {
+          setViewingStudentDetails(null);
+          // Refresh data when returning from detail view
+          fetchData();
+        }}
+        viewMode="teacher"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
@@ -290,22 +309,20 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
           <div className="flex space-x-2">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
-                activeTab === 'overview'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
+              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${activeTab === 'overview'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-600 hover:bg-slate-100'
+                }`}
             >
               <BarChart3 className="h-4 w-4 inline mr-2" />
               Overview
             </button>
             <button
               onClick={() => setActiveTab('students')}
-              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
-                activeTab === 'students'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
+              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${activeTab === 'students'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-600 hover:bg-slate-100'
+                }`}
             >
               <Users className="h-4 w-4 inline mr-2" />
               Student Performance
@@ -385,9 +402,8 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                   {wordDifficulty.slice(0, 10).map((word, index) => (
                     <div key={word.rank} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
                       <div className="flex items-center space-x-4 flex-1">
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-                          index < 3 ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-700'
-                        }`}>
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${index < 3 ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-700'
+                          }`}>
                           {index + 1}
                         </div>
                         <div className="flex-1">
@@ -398,12 +414,11 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <div className="text-sm font-medium text-slate-600">Failure Rate</div>
-                          <div className={`text-lg font-bold ${
-                            word.failureRate >= 70 ? 'text-red-600' :
+                          <div className={`text-lg font-bold ${word.failureRate >= 70 ? 'text-red-600' :
                             word.failureRate >= 50 ? 'text-orange-600' :
-                            word.failureRate >= 30 ? 'text-yellow-600' :
-                            'text-green-600'
-                          }`}>
+                              word.failureRate >= 30 ? 'text-yellow-600' :
+                                'text-green-600'
+                            }`}>
                             {word.failureRate}%
                           </div>
                         </div>
@@ -460,13 +475,15 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                       <th className="text-center py-3 px-4 font-semibold text-slate-700">Failure Rate</th>
                       <th className="text-center py-3 px-4 font-semibold text-slate-700">Time Spent</th>
                       <th className="text-center py-3 px-4 font-semibold text-slate-700">Intervention</th>
+                      {overview?.isAssessmentAssignment && (
+                        <th className="text-center py-3 px-4 font-semibold text-slate-700">Actions</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
                     {sortedStudents.map((student, index) => (
-                      <tr key={student.studentId} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
-                      }`}>
+                      <tr key={student.studentId} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
+                        }`}>
                         <td className="py-4 px-4">
                           <div className="font-medium text-slate-900">{student.studentName}</div>
                           {student.keyStruggleWords.length > 0 && (
@@ -482,22 +499,20 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                           </span>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <div className={`text-lg font-bold ${
-                            student.successScore >= 75 ? 'text-green-600' :
+                          <div className={`text-lg font-bold ${student.successScore >= 75 ? 'text-green-600' :
                             student.successScore >= 60 ? 'text-yellow-600' :
-                            student.successScore >= 40 ? 'text-orange-600' :
-                            'text-red-600'
-                          }`}>
+                              student.successScore >= 40 ? 'text-orange-600' :
+                                'text-red-600'
+                            }`}>
                             {student.successScore}%
                           </div>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <div className={`text-lg font-bold ${
-                            student.failureRate >= 70 ? 'text-red-600' :
+                          <div className={`text-lg font-bold ${student.failureRate >= 70 ? 'text-red-600' :
                             student.failureRate >= 50 ? 'text-orange-600' :
-                            student.failureRate >= 30 ? 'text-yellow-600' :
-                            'text-green-600'
-                          }`}>
+                              student.failureRate >= 30 ? 'text-yellow-600' :
+                                'text-green-600'
+                            }`}>
                             {student.failureRate}%
                           </div>
                         </td>
@@ -509,6 +524,24 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                         <td className="py-4 px-4 text-center">
                           {getInterventionBadge(student.interventionFlag)}
                         </td>
+                        {overview?.isAssessmentAssignment && (
+                          <td className="py-4 px-4 text-center">
+                            {student.status !== 'not_started' && (
+                              <Button
+                                onClick={() => setViewingStudentDetails({
+                                  studentId: student.studentId,
+                                  studentName: student.studentName
+                                })}
+                                variant="outline"
+                                size="sm"
+                                className="text-xs"
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View Details
+                              </Button>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -535,20 +568,18 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                 <CardContent className="pt-6">
                   <div className="space-y-2">
                     {wordDifficulty.filter(w => w.totalAttempts >= 5).map((word) => (
-                      <div key={word.rank} className={`p-4 rounded-lg border-2 ${
-                        word.insightLevel === 'problem' ? 'bg-red-50 border-red-200' :
+                      <div key={word.rank} className={`p-4 rounded-lg border-2 ${word.insightLevel === 'problem' ? 'bg-red-50 border-red-200' :
                         word.insightLevel === 'review' ? 'bg-yellow-50 border-yellow-200' :
-                        word.insightLevel === 'monitor' ? 'bg-blue-50 border-blue-200' :
-                        'bg-green-50 border-green-200'
-                      }`}>
+                          word.insightLevel === 'monitor' ? 'bg-blue-50 border-blue-200' :
+                            'bg-green-50 border-green-200'
+                        }`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4 flex-1">
-                            <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold ${
-                              word.insightLevel === 'problem' ? 'bg-red-200 text-red-800' :
+                            <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold ${word.insightLevel === 'problem' ? 'bg-red-200 text-red-800' :
                               word.insightLevel === 'review' ? 'bg-yellow-200 text-yellow-800' :
-                              word.insightLevel === 'monitor' ? 'bg-blue-200 text-blue-800' :
-                              'bg-green-200 text-green-800'
-                            }`}>
+                                word.insightLevel === 'monitor' ? 'bg-blue-200 text-blue-800' :
+                                  'bg-green-200 text-green-800'
+                              }`}>
                               {word.rank}
                             </div>
                             <div className="flex-1">
@@ -568,12 +599,11 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                             </div>
                             <div className="text-center">
                               <div className="text-xs font-medium text-slate-600">Failure Rate</div>
-                              <div className={`text-2xl font-bold ${
-                                word.failureRate >= 70 ? 'text-red-600' :
+                              <div className={`text-2xl font-bold ${word.failureRate >= 70 ? 'text-red-600' :
                                 word.failureRate >= 50 ? 'text-orange-600' :
-                                word.failureRate >= 30 ? 'text-yellow-600' :
-                                'text-green-600'
-                              }`}>
+                                  word.failureRate >= 30 ? 'text-yellow-600' :
+                                    'text-green-600'
+                                }`}>
                                 {word.failureRate}%
                               </div>
                             </div>

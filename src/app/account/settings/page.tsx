@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
   const [settings, setSettings] = useState({
     display_name: '',
     email: '',
@@ -92,6 +93,42 @@ export default function SettingsPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!user?.email) return;
+
+    setSendingReset(true);
+
+    try {
+      const response = await fetch('/api/auth/request-password-reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: user.email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Reset Email Sent!",
+          description: "Check your email for a password reset link.",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to send reset email');
+      }
+    } catch (error) {
+      console.error('Password reset error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send reset email. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingReset(false);
     }
   };
 
@@ -272,19 +309,42 @@ export default function SettingsPage() {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
                 <Lock className="h-5 w-5 mr-2" />
-                Account Information
+                Security
               </h3>
 
-              <div className="space-y-3 text-sm text-slate-600">
-                <p>
-                  <strong>Account Type:</strong> {settings.role === 'admin' ? 'Administrator' : settings.role === 'teacher' ? 'Teacher' : 'Student'}
-                </p>
-                <p>
-                  <strong>Email:</strong> {settings.email}
-                </p>
-                <p className="text-xs text-slate-500 mt-4">
-                  To change your password or delete your account, please contact support.
-                </p>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Password</h4>
+                  <p className="text-sm text-slate-600 mb-3">
+                    Reset your password to keep your account secure
+                  </p>
+                  <button
+                    onClick={handlePasswordReset}
+                    disabled={sendingReset}
+                    className="w-full py-2 px-4 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  >
+                    {sendingReset ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-700" />
+                    ) : (
+                      <>
+                        <Mail className="h-4 w-4 mr-2" />
+                        Send Reset Email
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="pt-4 border-t border-slate-200">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Account Information</h4>
+                  <div className="space-y-2 text-sm text-slate-600">
+                    <p>
+                      <strong>Account Type:</strong> {settings.role === 'admin' ? 'Administrator' : settings.role === 'teacher' ? 'Teacher' : 'Student'}
+                    </p>
+                    <p>
+                      <strong>Email:</strong> {settings.email}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

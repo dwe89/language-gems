@@ -29,6 +29,7 @@ import { UnifiedVocabularyService, VocabularyStats } from '../../services/unifie
 import GemsProgressCard from '../dashboard/GemsProgressCard';
 import DailyGemsGoal from './DailyGemsGoal';
 import { GemsAnalyticsService } from '../../services/analytics/GemsAnalyticsService';
+import PendingAssessmentsList from './PendingAssessmentsList';
 
 
 // =====================================================
@@ -329,6 +330,7 @@ export default function ModernStudentDashboard({
   const [loading, setLoading] = useState(true);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [pendingAssessmentsCount, setPendingAssessmentsCount] = useState(0);
 
 
   // Initialize unified services
@@ -495,18 +497,25 @@ export default function ModernStudentDashboard({
           const classIds = enrollments.map(e => e.class_id);
 
           // 🚀 OPTIMIZATION: Fetch assignments and completed status in parallel
-          const [assignmentResult, completedResult] = await Promise.all([
+          const [assignmentResult, completedResult, assessmentResult] = await Promise.all([
             // Get assignments for student's classes
             supabase
               .from('assignments')
               .select('id')
-              .in('class_id', classIds),
+              .in('class_id', classIds)
+              .neq('game_type', 'assessment'),
             // Get completed assignments for this student
             supabase
               .from('enhanced_assignment_progress')
               .select('assignment_id')
               .eq('student_id', user.id)
-              .eq('status', 'completed')
+              .eq('status', 'completed'),
+            // Get pending assessments
+            supabase
+              .from('assignments')
+              .select('id')
+              .in('class_id', classIds)
+              .eq('game_type', 'assessment')
           ]);
 
           totalAssignments = assignmentResult.data?.length || 0;
@@ -517,6 +526,22 @@ export default function ModernStudentDashboard({
             completedAssignments = completedResult.data?.filter(c => 
               assignmentIds.has(c.assignment_id)
             ).length || 0;
+          }
+
+          // Calculate pending assessments count
+          if (assessmentResult.data && assessmentResult.data.length > 0) {
+            const assessmentIds = assessmentResult.data.map(a => a.id);
+            const { data: completedAssessments } = await supabase
+              .from('enhanced_assignment_progress')
+              .select('assignment_id')
+              .eq('student_id', user.id)
+              .eq('status', 'completed')
+              .in('assignment_id', assessmentIds);
+            
+            const completedAssessmentIds = new Set(completedAssessments?.map(c => c.assignment_id));
+            setPendingAssessmentsCount(assessmentIds.filter(id => !completedAssessmentIds.has(id)).length);
+          } else {
+            setPendingAssessmentsCount(0);
           }
         }
       } catch (error) {
@@ -708,6 +733,7 @@ export default function ModernStudentDashboard({
           class_id
         `)
         .in('class_id', classIds)
+        .neq('game_type', 'assessment')
         .order('due_date', { ascending: true });
 
       if (error) {
@@ -834,6 +860,7 @@ export default function ModernStudentDashboard({
       id: 'assessments',
       label: 'Assessments',
       icon: BarChart3,
+      badge: pendingAssessmentsCount > 0 ? pendingAssessmentsCount : undefined,
       color: 'from-indigo-500 to-indigo-600',
       description: 'Track your assessment performance'
     },
@@ -1491,6 +1518,8 @@ export default function ModernStudentDashboard({
                 <span>Take Assessment</span>
               </Link>
             </div>
+
+            <PendingAssessmentsList />
 
             <div className="bg-white/50 backdrop-blur-lg rounded-2xl border border-gray-200 p-8 text-center shadow-md">
               <BarChart3 className="h-12 w-12 text-indigo-500 mx-auto mb-4" />

@@ -474,6 +474,172 @@ function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string })
     try {
       console.log('📖 [LISTENING] Assessment completed:', results);
 
+      // First, save assessment results to aqa_listening_results table
+      if (listeningConfig && results.answers) {
+        const aqaService = new AQAListeningAssessmentService();
+        
+        // Get assessment ID
+        const assessment = await aqaService.getAssessmentByLevel(
+          listeningConfig.difficulty as 'foundation' | 'higher',
+          listeningConfig.language as 'es' | 'fr' | 'de',
+          listeningConfig.identifier || 'paper-1'
+        );
+
+        if (assessment) {
+          console.log('📝 [LISTENING] Found assessment:', assessment.id);
+          
+          // Start assessment record
+          // For now, pass the generic assignment ID directly
+          // The FK constraint allows NULL, so we can link to either generic or assessment-specific assignments
+          const resultId = await aqaService.startAssessment(
+            user.id,
+            assessment.id,
+            assignmentId // Link to generic assignment for now
+          );
+
+          if (resultId) {
+            console.log('📝 [LISTENING] Created result record:', resultId);
+            
+            // Get the questions to score the answers
+            const questions = await aqaService.getAssessmentQuestions(assessment.id);
+            console.log('📝 [LISTENING] Loaded', questions.length, 'questions for scoring');
+            
+            // Convert answers to scored responses - expand sub-questions
+            // Loop through ALL questions (not just answered ones) to mark unanswered as incorrect
+            const responses: any[] = [];
+            
+            for (const question of questions) {
+              const rawAnswer = results.answers[question.id]; // May be undefined if not answered
+              const qData = question.question_data || {};
+              
+              // Handle different question types
+              if (question.question_type === 'letter-matching' && qData.questions) {
+                // Each sub-part is worth 1 mark
+                qData.questions.forEach((subQ: any) => {
+                  const studentAns = rawAnswer?.[subQ.id];
+                  const isCorrect = studentAns !== undefined && studentAns !== null && studentAns !== '' && studentAns === subQ.correctAnswer;
+                  responses.push({
+                    result_id: resultId,
+                    question_id: question.id,
+                    question_number: question.question_number,
+                    sub_question_number: subQ.id,
+                    student_answer: String(studentAns || ''),
+                    is_correct: isCorrect,
+                    points_awarded: isCorrect ? 1 : 0,
+                    time_spent_seconds: 0,
+                    audio_plays_used: 0,
+                    question_type: question.question_type,
+                    theme: question.theme,
+                    topic: question.topic,
+                    marks_possible: 1
+                  });
+                });
+              } else if (question.question_type === 'multiple-choice' && qData.questions) {
+                // Each sub-question worth 1 mark
+                qData.questions.forEach((subQ: any) => {
+                  const studentAns = rawAnswer?.[subQ.id];
+                  const isCorrect = studentAns !== undefined && studentAns !== null && studentAns !== '' && studentAns === subQ.correctAnswer;
+                  responses.push({
+                    result_id: resultId,
+                    question_id: question.id,
+                    question_number: question.question_number,
+                    sub_question_number: subQ.id,
+                    student_answer: String(studentAns || ''),
+                    is_correct: isCorrect,
+                    points_awarded: isCorrect ? 1 : 0,
+                    time_spent_seconds: 0,
+                    audio_plays_used: 0,
+                    question_type: question.question_type,
+                    theme: question.theme,
+                    topic: question.topic,
+                    marks_possible: 1
+                  });
+                });
+              } else if (question.question_type === 'lifestyle-grid' && qData.speakers) {
+                // Each speaker has 2 parts (good/needs improvement) worth 1 mark each
+                qData.speakers.forEach((speaker: any) => {
+                  const speakerAns = rawAnswer?.[speaker.id] || {};
+                  // Good aspect
+                  const goodAns = speakerAns.good;
+                  const goodCorrect = goodAns !== undefined && goodAns !== null && goodAns !== '' && goodAns === speaker.correctGood;
+                  responses.push({
+                    result_id: resultId,
+                    question_id: question.id,
+                    question_number: question.question_number,
+                    sub_question_number: `${speaker.id}_good`,
+                    student_answer: String(goodAns || ''),
+                    is_correct: goodCorrect,
+                    points_awarded: goodCorrect ? 1 : 0,
+                    time_spent_seconds: 0,
+                    audio_plays_used: 0,
+                    question_type: question.question_type,
+                    theme: question.theme,
+                    topic: question.topic,
+                    marks_possible: 1
+                  });
+                  // Needs improvement aspect
+                  const needsAns = speakerAns.needsImprovement;
+                  const needsCorrect = needsAns !== undefined && needsAns !== null && needsAns !== '' && needsAns === speaker.correctNeedsImprovement;
+                  responses.push({
+                    result_id: resultId,
+                    question_id: question.id,
+                    question_number: question.question_number,
+                    sub_question_number: `${speaker.id}_needs`,
+                    student_answer: String(needsAns || ''),
+                    is_correct: needsCorrect,
+                    points_awarded: needsCorrect ? 1 : 0,
+                    time_spent_seconds: 0,
+                    audio_plays_used: 0,
+                    question_type: question.question_type,
+                    theme: question.theme,
+                    topic: question.topic,
+                    marks_possible: 1
+                  });
+                });
+              } else {
+                // For other question types, store as single response with JSON answer
+                // Unanswered questions get empty string and 0 points
+                responses.push({
+                  result_id: resultId,
+                  question_id: question.id,
+                  question_number: question.question_number,
+                  sub_question_number: null,
+                  student_answer: rawAnswer ? JSON.stringify(rawAnswer) : '',
+                  is_correct: false, // Can't auto-score without knowing structure, treat as incorrect
+                  points_awarded: 0,
+                  time_spent_seconds: 0,
+                  audio_plays_used: 0,
+                  question_type: question.question_type,
+                  theme: question.theme,
+                  topic: question.topic,
+                  marks_possible: question.marks
+                });
+              }
+            }
+
+            console.log('📝 [LISTENING] Submitting', responses.length, 'responses');
+
+            // Submit assessment with responses
+            const success = await aqaService.submitAssessment(
+              resultId,
+              responses,
+              results.totalTimeSpent || 0,
+              results.audioPlayCounts || {}
+            );
+
+            if (!success) {
+              console.error('❌ Failed to save assessment results');
+            } else {
+              console.log('✅ [LISTENING] Assessment results saved to database');
+            }
+          } else {
+            console.error('❌ Failed to create assessment result record');
+          }
+        } else {
+          console.error('❌ Assessment not found for config:', listeningConfig);
+        }
+      }
+
       const sessionService = new EnhancedGameSessionService();
 
       // Calculate scores

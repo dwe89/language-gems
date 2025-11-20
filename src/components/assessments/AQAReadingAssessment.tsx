@@ -49,12 +49,12 @@ export default function AQAReadingAssessment({
   const [resultId, setResultId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<AQAReadingQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // UI state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
   const [isCompleted, setIsCompleted] = useState(false);
-  
+
   // Timer state - persistent across questions
   const [totalElapsedSeconds, setTotalElapsedSeconds] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState<Date | null>(null);
@@ -66,40 +66,42 @@ export default function AQAReadingAssessment({
     const loadAssessment = async () => {
       try {
         setIsLoading(true);
-        
+
         // Get assessment definition
         const assessment = await assessmentService.getAssessmentByLevel(difficulty, language, identifier);
         if (!assessment) {
           console.error('Assessment not found for level:', difficulty, 'language:', language, 'identifier:', identifier);
           return;
         }
-        
+
         setAssessmentId(assessment.id);
-        
+
         // Get questions
         const questionsData = await assessmentService.getAssessmentQuestions(assessment.id);
-        const formattedQuestions = questionsData.map(q => ({
-          id: q.id,
-          type: q.question_type as any,
-          title: q.title,
-          instructions: q.instructions,
-          text: q.reading_text,
-          marks: q.marks,
-          data: q.question_data
-        }));
-        
+        const formattedQuestions = questionsData
+          .filter(q => !q.title.includes("Standardization question") && !q.instructions.includes("Standardization question"))
+          .map(q => ({
+            id: q.id,
+            type: q.question_type as any,
+            title: q.title,
+            instructions: q.instructions,
+            text: q.reading_text,
+            marks: q.marks,
+            data: q.question_data
+          }));
+
         setQuestions(formattedQuestions);
-        
+
         // Start assessment attempt if user is authenticated
         if (studentId && assessment.id) {
           const newResultId = await assessmentService.startAssessment(
-            studentId, 
-            assessment.id, 
+            studentId,
+            assessment.id,
             assignmentId
           );
           setResultId(newResultId);
         }
-        
+
       } catch (error) {
         console.error('Error loading assessment:', error);
       } finally {
@@ -114,7 +116,7 @@ export default function AQAReadingAssessment({
   useEffect(() => {
     if (questions.length > 0 && !timerRef.current) {
       setQuestionStartTime(new Date());
-      
+
       // Start persistent timer
       timerRef.current = setInterval(() => {
         setTotalElapsedSeconds(prev => prev + 1);
@@ -152,7 +154,7 @@ export default function AQAReadingAssessment({
         ...prev,
         [currentQuestion.id]: timeSpentOnQuestion
       }));
-      
+
       if (onQuestionComplete) {
         onQuestionComplete(currentQuestion.id, userAnswers[currentQuestion.id], timeSpentOnQuestion);
       }
@@ -171,6 +173,103 @@ export default function AQAReadingAssessment({
     }
   };
 
+  const calculateQuestionScore = (question: AQAReadingQuestion, answer: any): number => {
+    if (!answer) return 0;
+    const data = question.data;
+    let score = 0;
+
+    try {
+      switch (question.type) {
+        case 'multiple-choice':
+          // data.questions is array of { question, options, correctAnswer? }
+          if (Array.isArray(data.questions)) {
+            data.questions.forEach((q: any, index: number) => {
+              // Check for correctAnswer property or if it's just stored in the object
+              const correct = q.correctAnswer || q.correct;
+              if (correct && answer[index] === correct) {
+                score += 1;
+              }
+            });
+          }
+          break;
+
+        case 'letter-matching':
+          // data.students is array of { name, text, correctLetter? }
+          if (Array.isArray(data.students)) {
+            data.students.forEach((s: any) => {
+              const correct = s.correctLetter || s.correct;
+              if (correct && answer[s.name] === correct) {
+                score += 1;
+              }
+            });
+          }
+          break;
+
+        case 'student-grid':
+          // data.questions is array of { question, correctStudent? }
+          if (Array.isArray(data.questions)) {
+            data.questions.forEach((q: any, index: number) => {
+              const correct = q.correctStudent || q.correct;
+              if (correct && answer[index] === correct) {
+                score += 1;
+              }
+            });
+          }
+          break;
+
+        case 'time-sequence':
+          // data.events is array of { event, correctSequence? }
+          if (Array.isArray(data.events)) {
+            data.events.forEach((e: any, index: number) => {
+              const correct = e.correctSequence || e.correct;
+              if (correct && answer[index] === correct) {
+                score += 1;
+              }
+            });
+          }
+          break;
+
+        case 'sentence-completion':
+          // data.sentences is array of { incomplete, correctCompletion? }
+          if (Array.isArray(data.sentences)) {
+            data.sentences.forEach((s: any, index: number) => {
+              const correct = s.correctCompletion || s.correct;
+              // Simple string matching, maybe case insensitive
+              if (correct && typeof answer[index] === 'string' &&
+                answer[index].trim().toLowerCase() === correct.trim().toLowerCase()) {
+                score += 1;
+              }
+            });
+          }
+          break;
+
+        case 'headline-matching':
+          // data.articles is array of { text, correctHeadline? }
+          if (Array.isArray(data.articles)) {
+            data.articles.forEach((a: any, index: number) => {
+              const correct = a.correctHeadline || a.correct;
+              if (correct && answer[index] === correct) {
+                score += 1;
+              }
+            });
+          }
+          break;
+
+        // For open response and translation, we might not be able to auto-grade easily
+        // without an AI service or strict matching. 
+        // For now, we'll leave them as 0 or implement basic keyword matching if data exists.
+        case 'open-response':
+        case 'translation':
+        default:
+          break;
+      }
+    } catch (e) {
+      console.error("Error calculating score for question", question.id, e);
+    }
+    // Cap score at question marks
+    return Math.min(score, question.marks);
+  };
+
   const handleComplete = async () => {
     // Stop the timer
     if (timerRef.current) {
@@ -178,12 +277,34 @@ export default function AQAReadingAssessment({
       timerRef.current = null;
     }
 
+    // Calculate total score
+    let totalScore = 0;
+    let totalPossibleScore = 0;
+
+    const scoredAnswers: Record<string, { score: number, max: number }> = {};
+
+    questions.forEach(question => {
+      const answer = userAnswers[question.id];
+      const score = calculateQuestionScore(question, answer);
+      totalScore += score;
+      totalPossibleScore += question.marks;
+
+      scoredAnswers[question.id] = {
+        score,
+        max: question.marks
+      };
+    });
+
     const results = {
       answers: userAnswers,
       questionsCompleted: Object.keys(userAnswers).length,
       totalTimeSpent: totalElapsedSeconds,
       difficulty,
-      language
+      language,
+      totalScore,
+      totalPossibleScore,
+      percentageScore: totalPossibleScore > 0 ? Math.round((totalScore / totalPossibleScore) * 100) : 0,
+      scoredAnswers
     };
 
     // If authenticated and using database, submit results
@@ -193,17 +314,14 @@ export default function AQAReadingAssessment({
         const responses: AQAQuestionResponse[] = questions.map((question, index) => {
           const answer = userAnswers[question.id];
           const timeSpent = questionTimeSpent[question.id] || 0;
-          
-          // This is a simplified scoring - in reality you'd need more complex logic
-          const isCorrect = false; // TODO: Implement proper answer checking
-          const pointsAwarded = isCorrect ? question.marks : 0;
-          
+          const score = calculateQuestionScore(question, answer);
+
           return {
             question_id: question.id,
             question_number: index + 1,
             student_answer: JSON.stringify(answer),
-            is_correct: isCorrect,
-            points_awarded: pointsAwarded,
+            is_correct: score === question.marks, // Simplified is_correct
+            points_awarded: score,
             time_spent_seconds: timeSpent,
             question_type: question.type,
             theme: 'Theme 1: People and lifestyle', // TODO: Get from question data
@@ -217,7 +335,7 @@ export default function AQAReadingAssessment({
         console.error('Error submitting assessment:', error);
       }
     }
-    
+
     setIsCompleted(true);
     onComplete(results);
   };
@@ -700,9 +818,9 @@ export default function AQAReadingAssessment({
             <span>{Math.floor(totalElapsedSeconds / 60)}:{(totalElapsedSeconds % 60).toString().padStart(2, '0')}</span>
           </div>
         </div>
-        
+
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className="bg-purple-600 h-2 rounded-full transition-all duration-300"
             style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
           />
@@ -729,11 +847,10 @@ export default function AQAReadingAssessment({
         <button
           onClick={handlePrevious}
           disabled={currentQuestionIndex === 0}
-          className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${
-            currentQuestionIndex === 0
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
+          className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${currentQuestionIndex === 0
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
           Previous

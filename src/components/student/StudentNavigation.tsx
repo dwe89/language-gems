@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSupabase } from '../supabase/SupabaseProvider';
 import {
   Sparkles,
   BookOpen,
@@ -28,6 +29,8 @@ export default function StudentNavigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { user, signOut, isAdmin } = useAuth(); // Assuming 'user' object contains level and points
+  const { supabase } = useSupabase();
+  const [pendingAssessmentsCount, setPendingAssessmentsCount] = useState<number>(0);
 
   // Navigation items for student dashboard
   const baseNavItems = [
@@ -66,17 +69,69 @@ export default function StudentNavigation() {
   // Add admin-only items
   const navItems = [
     ...baseNavItems,
-    ...(isAdmin || user?.email === 'danieletienne89@gmail.com' ? [{
+    {
       name: 'Assessments',
-      href: '/assessments',
+      href: '/student-dashboard/assessments',
       icon: Edit,
       description: 'Take practice assessments'
-    }] : [])
+    }
   ];
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Load pending assessments count so we can show a badge in navigation
+  useEffect(() => {
+    if (!user?.id || !supabase) return;
+
+    const loadPendingAssessments = async () => {
+      try {
+        // Get class enrollments for this student
+        const { data: enrollments } = await supabase
+          .from('class_enrollments')
+          .select('class_id')
+          .eq('student_id', user.id);
+
+        if (!enrollments || enrollments.length === 0) {
+          setPendingAssessmentsCount(0);
+          return;
+        }
+
+        const classIds = enrollments.map((e: any) => e.class_id);
+
+        // Get assessments assigned to these classes via class_assessments junction table
+        const { data: classAssessments } = await supabase
+          .from('class_assessments')
+          .select('assessment_id')
+          .in('class_id', classIds);
+
+        const assessmentIds = classAssessments?.map((a: any) => a.assessment_id) || [];
+
+        if (assessmentIds.length === 0) {
+          setPendingAssessmentsCount(0);
+          return;
+        }
+
+        // Get completed ones for the student from enhanced_assessment_progress
+        const { data: completed } = await supabase
+          .from('enhanced_assessment_progress')
+          .select('assessment_id')
+          .eq('student_id', user.id)
+          .eq('status', 'completed')
+          .in('assessment_id', assessmentIds);
+
+        const completedIds = new Set(completed?.map((c: any) => c.assessment_id));
+        const pendingCount = assessmentIds.filter((id: string) => !completedIds.has(id)).length;
+        setPendingAssessmentsCount(pendingCount);
+      } catch (error) {
+        console.error('Error loading pending assessments count:', error);
+        setPendingAssessmentsCount(0);
+      }
+    };
+
+    loadPendingAssessments();
+  }, [supabase, user?.id]);
 
   const isActive = (path: string) => {
     if (!pathname) return false;
@@ -129,7 +184,7 @@ export default function StudentNavigation() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            {navItems.slice(0, 5).map((item) => {
+              {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
 
@@ -145,6 +200,17 @@ export default function StudentNavigation() {
                 >
                   <Icon className="h-4 w-4" />
                   <span className="text-sm font-medium">{item.name}</span>
+                  {item.name === 'Assessments' && (
+                    <span
+                      className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                        pendingAssessmentsCount > 0
+                          ? 'bg-red-500 text-white'
+                          : 'bg-white/10 text-white/80'
+                      }`}
+                    >
+                      {pendingAssessmentsCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -225,6 +291,19 @@ export default function StudentNavigation() {
                       <div className="font-medium">{item.name}</div>
                       <div className="text-xs text-white/60">{item.description}</div>
                     </div>
+                    {item.name === 'Assessments' && (
+                      <div className="ml-auto flex items-center">
+                        <span
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                            pendingAssessmentsCount > 0
+                              ? 'bg-red-500 text-white'
+                              : 'bg-white/10 text-white/80'
+                          }`}
+                        >
+                          {pendingAssessmentsCount}
+                        </span>
+                      </div>
+                    )}
                   </Link>
                 );
               })}

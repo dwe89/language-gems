@@ -1,5 +1,79 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 
+export type AssessmentCategory =
+  | 'gcse-reading'
+  | 'gcse-listening'
+  | 'gcse-writing'
+  | 'gcse-dictation'
+  | 'edexcel-listening'
+  | 'reading-comprehension';
+
+export interface AssessmentTypeSummary {
+  assessmentType: AssessmentCategory;
+  paperCount: number;
+  attempts: number;
+  completedAttempts: number;
+  avgScore: number;
+  avgTimeMinutes: number;
+}
+
+export interface AssessmentPerformanceSnapshot {
+  correct?: number;
+  total?: number;
+  accuracy?: number;
+  averageTimeSeconds?: number;
+  scorePercentage?: number;
+  percentage?: number;
+}
+
+export interface CategoryPerformanceAggregate {
+  key: string;
+  attempts: number;
+  correct: number;
+  accuracy: number;
+  averageTimeSeconds: number;
+  averageScore: number;
+}
+
+export interface GradeDistributionEntry {
+  grade: number;
+  count: number;
+  percentage: number;
+}
+
+export interface AssessmentPerformanceBreakdown {
+  attempts: number;
+  averageScore: number;
+  averageTimeSeconds: number;
+  gradeDistribution: GradeDistributionEntry[];
+  byQuestionType: CategoryPerformanceAggregate[];
+  byTheme: CategoryPerformanceAggregate[];
+  byTopic: CategoryPerformanceAggregate[];
+}
+
+export interface AssessmentResultDetail {
+  resultId: string;
+  studentId: string;
+  studentName: string;
+  assessmentType: AssessmentCategory;
+  examBoard: string | null;
+  paperIdentifier: string | null;
+  paperTitle: string | null;
+  tier: string | null;
+  language: string | null;
+  attemptNumber: number;
+  status: string;
+  scorePercentage: number;
+  rawScore: number;
+  maxScore: number;
+  timeSpentSeconds: number;
+  completedAt: string | null;
+  gcseGrade?: number | null;
+  performanceByQuestionType?: Record<string, AssessmentPerformanceSnapshot> | null;
+  performanceByTheme?: Record<string, AssessmentPerformanceSnapshot> | null;
+  performanceByTopic?: Record<string, AssessmentPerformanceSnapshot> | null;
+}
+
 export interface AssignmentOverviewMetrics {
   assignmentId: string;
   assignmentTitle: string;
@@ -13,6 +87,9 @@ export interface AssignmentOverviewMetrics {
   expectedTimeMinutes: number;
   classSuccessScore: number; // (strong + weak retrieval) / total attempts
   studentsNeedingHelp: number;
+  isAssessmentAssignment: boolean;
+  assessmentSummary?: AssessmentTypeSummary[];
+  assessmentPerformanceBreakdown?: AssessmentPerformanceBreakdown;
 }
 
 export interface StudentProgress {
@@ -53,7 +130,9 @@ export interface StudentWordStruggle {
 }
 
 export class TeacherAssignmentAnalyticsService {
-  constructor(private supabase: SupabaseClient) {}
+  private assessmentResultsCache = new Map<string, AssessmentResultDetail[]>();
+
+  constructor(private supabase: SupabaseClient) { }
 
   /**
    * Get assignment overview metrics for the triage zone
@@ -100,185 +179,214 @@ export class TeacherAssignmentAnalyticsService {
       const { data: enrollments, error: enrollmentError } = await this.supabase
         .from('class_enrollments')
         .select('student_id')
-        .eq('class_id', (assignment as any).class_id)
+        .eq('class_id', assignment.class_id)
         .eq('status', 'active');
 
-      if (enrollmentError) throw enrollmentError;
+      if (enrollmentError) {
+        console.error('❌ Error fetching class enrollments:', enrollmentError);
+        throw enrollmentError;
+      }
 
       const totalStudents = enrollments?.length || 0;
 
-      // Get game sessions to determine actual student activity
-      // Add cache-busting by using a timestamp filter that's always true
-      // This forces PostgREST to bypass cache and fetch fresh data
-      
-      console.log('🔍 [DEBUG] Fetching sessions for assignment:', assignmentId);
-      console.log('🔍 [DEBUG] Is assessment type:', assignment?.game_type === 'assessment');
-      
-      let { data: sessions, error: sessionError } = await this.supabase
-        .from('enhanced_game_sessions')
-        .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage')
-        .eq('assignment_id', assignmentId);
-
-      console.log('🔍 [DEBUG] Sessions query result - error:', sessionError);
-      console.log('🔍 [DEBUG] Sessions found:', sessions?.length);
-      console.log('🔍 [DEBUG] First few sessions:', JSON.stringify(sessions?.slice(0, 3), null, 2));
-
-      if (sessionError) {
-        console.error('❌ Error fetching sessions:', sessionError);
-        throw sessionError;
-      }
-
-      // 🎯 FALLBACK: For assessment-type assignments, also check reading_comprehension_results
-      // if sessions are empty (in case sessions weren't created properly)
       const isAssessmentType = assignment?.game_type === 'assessment' ||
-                               assignment?.game_config?.assessmentConfig;
+        assignment?.game_config?.assessmentConfig;
 
-      if (isAssessmentType && (!sessions || sessions.length === 0)) {
-        console.log('📊 [ASSESSMENT FALLBACK] No sessions found, checking reading_comprehension_results');
-        
-        const { data: results, error: resultsError } = await this.supabase
-          .from('reading_comprehension_results')
-          .select('id, student_id, user_id, score_percentage, score, time_spent_seconds, time_spent, completed_at, submitted_at')
-          .eq('assignment_id', assignmentId);
-
-        if (!resultsError && results && results.length > 0) {
-          console.log('📊 [ASSESSMENT FALLBACK] Found', results.length, 'results, using those instead');
-          
-          // Map results to session-like structure
-          const mappedSessions = results.map(r => ({
-            id: r.id ? `result-${r.id}` : `result-${r.student_id || r.user_id}`,
-            student_id: r.student_id || r.user_id,
-            duration_seconds: (r.time_spent_seconds ?? r.time_spent) || 0,
-            started_at: r.completed_at || r.submitted_at,
-            ended_at: r.completed_at || r.submitted_at,
-            completion_status: 'completed' as const,
-            accuracy_percentage: (r.score_percentage ?? r.score) || 0
-          }));
-
-          // Use mapped results as sessions
-          sessions = mappedSessions as any;
-          console.log('📊 [ASSESSMENT FALLBACK] Converted to sessions:', sessions?.length || 0);
-        }
-      }
-
-      // Calculate completion from actual sessions (not from enhanced_assignment_progress which may be stale)
-      const studentsWithSessions = new Set(sessions?.map(s => s.student_id) || []);
-      const completedSessions = sessions?.filter(s => s.completion_status === 'completed' || s.ended_at) || [];
-      console.log('🔍 [DEBUG] Completed sessions count:', completedSessions.length);
-      console.log('🔍 [DEBUG] Completed sessions:', JSON.stringify(completedSessions.slice(0, 2), null, 2));
-      
-      const studentsCompleted = new Set(completedSessions.map(s => s.student_id));
-
-      const completedStudents = studentsCompleted.size;
-      const inProgressStudents = studentsWithSessions.size - studentsCompleted.size;
-      const notStartedStudents = totalStudents - studentsWithSessions.size;
-
-      console.log('📊 Completion stats:', { completedStudents, inProgressStudents, notStartedStudents });
-
-      // Calculate average time PER STUDENT (not per session)
-      // Group sessions by student and sum their time
-      const studentTimeMap = new Map<string, number>();
-
-      completedSessions.forEach(s => {
-        const sessionData = s as any;
-        let sessionSeconds = 0;
-
-        // If duration_seconds is available and non-zero, use it
-        if (sessionData.duration_seconds && sessionData.duration_seconds > 0) {
-          sessionSeconds = sessionData.duration_seconds;
-        }
-        // Otherwise, calculate from timestamps if both are available
-        else if (sessionData.started_at && sessionData.ended_at) {
-          const startTime = new Date(sessionData.started_at).getTime();
-          const endTime = new Date(sessionData.ended_at).getTime();
-          sessionSeconds = Math.round((endTime - startTime) / 1000);
-        }
-
-        // Add to student's total time
-        const currentTime = studentTimeMap.get(sessionData.student_id) || 0;
-        studentTimeMap.set(sessionData.student_id, currentTime + sessionSeconds);
-      });
-
-      // Calculate average time per student
-      const totalStudentTimeSeconds = Array.from(studentTimeMap.values()).reduce((sum, time) => sum + time, 0);
-      const averageTimeSeconds = studentTimeMap.size > 0
-        ? totalStudentTimeSeconds / studentTimeMap.size
-        : 0;
-
-      // Get class success score from gem_events OR assessment scores
-      const sessionIds = sessions?.map(s => s.id) || [];
-
+      let completedStudents = 0;
+      let inProgressStudents = 0;
+      let notStartedStudents = totalStudents;
+      let averageTimeSeconds = 0;
       let classSuccessScore = 0;
       let studentsNeedingHelp = 0;
+      let assessmentSummary: AssessmentTypeSummary[] | undefined;
+      let assessmentPerformanceBreakdown: AssessmentPerformanceBreakdown | undefined;
 
-      // Check if this is an assessment assignment (game_type === 'assessment')
-      const isAssessmentAssignment = assignment &&
-        ((assignment as any).game_type === 'assessment' ||
-        (assignment as any).game_config?.assessmentConfig);
+      if (isAssessmentType) {
+        const assessmentResults = await this.getAssessmentResults(assignmentId);
+        assessmentSummary = this.buildAssessmentSummary(assessmentResults);
+        assessmentPerformanceBreakdown = this.buildAssessmentPerformanceBreakdown(assessmentResults);
 
-      if (sessionIds.length > 0) {
-        if (isAssessmentAssignment) {
-          // For assessments, calculate success from accuracy_percentage in sessions
-          console.log('📊 [ASSESSMENT] Calculating success from session accuracy');
+        const studentsWithAttempts = new Set(assessmentResults.map(r => r.studentId));
+        const studentBestMap = new Map<string, { bestScore: number; status: string; timeSeconds: number; completedAt: string | null }>();
 
-          const sessionsWithAccuracy = sessions?.filter(s => s.ended_at) || [];
-          if (sessionsWithAccuracy.length > 0) {
-            const totalAccuracy = sessionsWithAccuracy.reduce((sum, s) => {
-              const sessionData = s as any;
-              return sum + (sessionData.accuracy_percentage || 0);
-            }, 0);
-            classSuccessScore = Math.round(totalAccuracy / sessionsWithAccuracy.length);
+        assessmentResults.forEach(result => {
+          const entry = studentBestMap.get(result.studentId);
+          const roundedScore = Math.round(result.scorePercentage || 0);
+          const shouldReplace = !entry || roundedScore > entry.bestScore || (
+            roundedScore === entry.bestScore &&
+            (result.completedAt || '') > (entry.completedAt || '')
+          );
 
-            // Students needing help: accuracy < 50%
-            const studentAccuracyMap = new Map<string, number[]>();
-            sessionsWithAccuracy.forEach(s => {
-              const sessionData = s as any;
-              const accuracies = studentAccuracyMap.get(s.student_id) || [];
-              accuracies.push(sessionData.accuracy_percentage || 0);
-              studentAccuracyMap.set(s.student_id, accuracies);
+          if (shouldReplace) {
+            studentBestMap.set(result.studentId, {
+              bestScore: roundedScore,
+              status: result.status,
+              timeSeconds: result.timeSpentSeconds || 0,
+              completedAt: result.completedAt
             });
+          }
+        });
 
-            studentsNeedingHelp = Array.from(studentAccuracyMap.values()).filter(accuracies => {
-              const avgAccuracy = accuracies.reduce((sum, acc) => sum + acc, 0) / accuracies.length;
-              return avgAccuracy < 50;
-            }).length;
+        completedStudents = Array.from(studentBestMap.values()).filter(value => {
+          const normalizedStatus = value.status?.toLowerCase() || '';
+          return ['completed', 'complete'].includes(normalizedStatus);
+        }).length;
+        inProgressStudents = studentsWithAttempts.size - completedStudents;
+        notStartedStudents = Math.max(0, totalStudents - studentsWithAttempts.size);
+
+        if (studentBestMap.size > 0) {
+          classSuccessScore = Math.round(
+            Array.from(studentBestMap.values()).reduce((sum, item) => sum + item.bestScore, 0) /
+            studentBestMap.size
+          );
+          averageTimeSeconds = Array.from(studentBestMap.values()).reduce((sum, item) => sum + item.timeSeconds, 0) /
+            studentBestMap.size;
+          studentsNeedingHelp = Array.from(studentBestMap.values()).filter(item => item.bestScore < 50).length;
+        }
+      } else {
+        console.log('🔍 [DEBUG] Fetching sessions for assignment:', assignmentId);
+        console.log('🔍 [DEBUG] Is assessment type:', assignment?.game_type === 'assessment');
+
+        let { data: sessions, error: sessionError } = await this.supabase
+          .from('enhanced_game_sessions')
+          .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage')
+          .eq('assignment_id', assignmentId);
+
+        console.log('🔍 [DEBUG] Sessions query result - error:', sessionError);
+        console.log('🔍 [DEBUG] Sessions found:', sessions?.length);
+        console.log('🔍 [DEBUG] First few sessions:', JSON.stringify(sessions?.slice(0, 3), null, 2));
+
+        if (sessionError) {
+          console.error('❌ Error fetching sessions:', sessionError);
+          throw sessionError;
+        }
+
+        // 🎯 FALLBACK: For assessment-type assignments, also check reading_comprehension_results
+        // if sessions are empty (in case sessions weren't created properly)
+        if (isAssessmentType && (!sessions || sessions.length === 0)) {
+          console.log('📊 [ASSESSMENT FALLBACK] No sessions found, checking reading_comprehension_results');
+
+          const { data: results, error: resultsError } = await this.supabase
+            .from('reading_comprehension_results')
+            .select('id, student_id, user_id, score_percentage, score, time_spent_seconds, time_spent, completed_at, submitted_at')
+            .eq('assignment_id', assignmentId);
+
+          if (!resultsError && results && results.length > 0) {
+            console.log('📊 [ASSESSMENT FALLBACK] Found', results.length, 'results, using those instead');
+
+            const mappedSessions = results.map(r => ({
+              id: r.id ? `result-${r.id}` : `result-${r.student_id || r.user_id}`,
+              student_id: r.student_id || r.user_id,
+              duration_seconds: (r.time_spent_seconds ?? r.time_spent) || 0,
+              started_at: r.completed_at || r.submitted_at,
+              ended_at: r.completed_at || r.submitted_at,
+              completion_status: 'completed' as const,
+              accuracy_percentage: (r.score_percentage ?? r.score) || 0
+            }));
+
+            sessions = mappedSessions as any;
+            console.log('📊 [ASSESSMENT FALLBACK] Converted to sessions:', sessions?.length || 0);
+          }
+        }
+
+        const studentsWithSessions = new Set(sessions?.map(s => s.student_id) || []);
+        const completedSessions = sessions?.filter(s => s.completion_status === 'completed' || s.ended_at) || [];
+        console.log('🔍 [DEBUG] Completed sessions count:', completedSessions.length);
+        console.log('🔍 [DEBUG] Completed sessions:', JSON.stringify(completedSessions.slice(0, 2), null, 2));
+
+        const studentsCompleted = new Set(completedSessions.map(s => s.student_id));
+
+        completedStudents = studentsCompleted.size;
+        inProgressStudents = studentsWithSessions.size - studentsCompleted.size;
+        notStartedStudents = totalStudents - studentsWithSessions.size;
+
+        console.log('📊 Completion stats:', { completedStudents, inProgressStudents, notStartedStudents });
+
+        const studentTimeMap = new Map<string, number>();
+
+        completedSessions.forEach(s => {
+          const sessionData = s as any;
+          let sessionSeconds = 0;
+
+          if (sessionData.duration_seconds && sessionData.duration_seconds > 0) {
+            sessionSeconds = sessionData.duration_seconds;
+          } else if (sessionData.started_at && sessionData.ended_at) {
+            const startTime = new Date(sessionData.started_at).getTime();
+            const endTime = new Date(sessionData.ended_at).getTime();
+            sessionSeconds = Math.round((endTime - startTime) / 1000);
           }
 
-          console.log('📊 [ASSESSMENT] Success score:', classSuccessScore, '%');
-          console.log('📊 [ASSESSMENT] Students needing help:', studentsNeedingHelp);
-        } else {
-          // For games, use gem_events
-          const gemData = await this.fetchGemEvents<{
-            session_id: string;
-            gem_rarity: string;
-            student_id: string;
-          }>(sessionIds, 'session_id, gem_rarity, student_id');
+          const currentTime = studentTimeMap.get(sessionData.student_id) || 0;
+          studentTimeMap.set(sessionData.student_id, currentTime + sessionSeconds);
+        });
 
-          console.log('📊 Gem events found:', gemData.length);
+        const totalStudentTimeSeconds = Array.from(studentTimeMap.values()).reduce((sum, time) => sum + time, 0);
+        averageTimeSeconds = studentTimeMap.size > 0
+          ? totalStudentTimeSeconds / studentTimeMap.size
+          : 0;
 
-          const totalGems = gemData.length;
-          const strongWeakGems = gemData.filter(g =>
-            ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)
-          ).length;
-          classSuccessScore = totalGems > 0 ? Math.round((strongWeakGems / totalGems) * 100) : 0;
+        const sessionIds = sessions?.map(s => s.id) || [];
 
-          console.log('📊 Success score:', classSuccessScore, '% (', strongWeakGems, '/', totalGems, ')');
+        if (sessionIds.length > 0) {
+          if (isAssessmentType) {
+            console.log('📊 [ASSESSMENT] Calculating success from session accuracy');
 
-          // Count students with high failure rate
-          const studentFailureRates = new Map<string, { total: number; failures: number }>();
-          gemData.forEach(gem => {
-            if (!gem.student_id) return;
-            const current = studentFailureRates.get(gem.student_id) || { total: 0, failures: 0 };
-            current.total++;
-            if (gem.gem_rarity === 'common') current.failures++;
-            studentFailureRates.set(gem.student_id, current);
-          });
+            const sessionsWithAccuracy = sessions?.filter(s => s.ended_at) || [];
+            if (sessionsWithAccuracy.length > 0) {
+              const totalAccuracy = sessionsWithAccuracy.reduce((sum, s) => {
+                const sessionData = s as any;
+                return sum + (sessionData.accuracy_percentage || 0);
+              }, 0);
+              classSuccessScore = Math.round(totalAccuracy / sessionsWithAccuracy.length);
 
-          studentsNeedingHelp = Array.from(studentFailureRates.values())
-            .filter(stats => stats.total > 0 && (stats.failures / stats.total) > 0.3)
-            .length;
+              const studentAccuracyMap = new Map<string, number[]>();
+              sessionsWithAccuracy.forEach(s => {
+                const sessionData = s as any;
+                const accuracies = studentAccuracyMap.get(s.student_id) || [];
+                accuracies.push(sessionData.accuracy_percentage || 0);
+                studentAccuracyMap.set(s.student_id, accuracies);
+              });
 
-          console.log('📊 Students needing help:', studentsNeedingHelp);
+              studentsNeedingHelp = Array.from(studentAccuracyMap.values()).filter(accuracies => {
+                const avgAccuracy = accuracies.reduce((sum, acc) => sum + acc, 0) / accuracies.length;
+                return avgAccuracy < 50;
+              }).length;
+            }
+
+            console.log('📊 [ASSESSMENT] Success score:', classSuccessScore, '%');
+            console.log('📊 [ASSESSMENT] Students needing help:', studentsNeedingHelp);
+          } else {
+            const gemData = await this.fetchGemEvents<{
+              session_id: string;
+              gem_rarity: string;
+              student_id: string;
+            }>(sessionIds, 'session_id, gem_rarity, student_id');
+
+            console.log('📊 Gem events found:', gemData.length);
+
+            const totalGems = gemData.length;
+            const strongWeakGems = gemData.filter(g =>
+              ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)
+            ).length;
+            classSuccessScore = totalGems > 0 ? Math.round((strongWeakGems / totalGems) * 100) : 0;
+
+            console.log('📊 Success score:', classSuccessScore, '% (', strongWeakGems, '/', totalGems, ')');
+
+            const studentFailureRates = new Map<string, { total: number; failures: number }>();
+            gemData.forEach(gem => {
+              if (!gem.student_id) return;
+              const current = studentFailureRates.get(gem.student_id) || { total: 0, failures: 0 };
+              current.total++;
+              if (gem.gem_rarity === 'common') current.failures++;
+              studentFailureRates.set(gem.student_id, current);
+            });
+
+            studentsNeedingHelp = Array.from(studentFailureRates.values())
+              .filter(stats => stats.total > 0 && (stats.failures / stats.total) > 0.3)
+              .length;
+
+            console.log('📊 Students needing help:', studentsNeedingHelp);
+          }
         }
       }
 
@@ -294,7 +402,10 @@ export class TeacherAssignmentAnalyticsService {
         averageTimeMinutes: Math.round(averageTimeSeconds / 60),
         expectedTimeMinutes: 30, // TODO: Get from assignment config
         classSuccessScore,
-        studentsNeedingHelp
+        studentsNeedingHelp,
+        isAssessmentAssignment: isAssessmentType,
+        assessmentSummary,
+        assessmentPerformanceBreakdown
       };
     } catch (error: any) {
       console.error('❌ Error getting assignment overview:', error);
@@ -304,6 +415,572 @@ export class TeacherAssignmentAnalyticsService {
       console.error('❌ Error hint:', error?.hint);
       throw error;
     }
+  }
+
+  private async getAssessmentResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    const cached = this.assessmentResultsCache.get(assignmentId);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      const [reading, listening, dictation, writing, legacyReading] = await Promise.all([
+        this.fetchAqaReadingResults(assignmentId),
+        this.fetchAqaListeningResults(assignmentId),
+        this.fetchAqaDictationResults(assignmentId),
+        this.fetchAqaWritingResults(assignmentId),
+        this.fetchReadingComprehensionResults(assignmentId)
+      ]);
+
+      const combined = [
+        ...reading,
+        ...listening,
+        ...dictation,
+        ...writing,
+        ...legacyReading
+      ];
+
+      if (combined.length > 0) {
+        const studentIds = Array.from(new Set(combined.map(result => result.studentId).filter(Boolean)));
+        if (studentIds.length > 0) {
+          const { data: profiles } = await this.supabase
+            .from('user_profiles')
+            .select('user_id, display_name')
+            .in('user_id', studentIds);
+
+          const nameMap = new Map(profiles?.map(profile => [profile.user_id, profile.display_name]) || []);
+          combined.forEach(result => {
+            result.studentName = nameMap.get(result.studentId) || result.studentName || 'Unknown Student';
+          });
+        }
+      }
+
+      this.assessmentResultsCache.set(assignmentId, combined);
+      return combined;
+    } catch (error) {
+      console.error('❌ Error aggregating assessment results:', error);
+      return [];
+    }
+  }
+
+  private buildAssessmentSummary(results: AssessmentResultDetail[]): AssessmentTypeSummary[] | undefined {
+    if (!results || results.length === 0) {
+      return undefined;
+    }
+
+    const summaryMap = new Map<AssessmentCategory, {
+      paperIds: Set<string>;
+      attempts: number;
+      completed: number;
+      totalScore: number;
+      totalTimeSeconds: number;
+    }>();
+
+    results.forEach(result => {
+      const category = result.assessmentType;
+      if (!category) return;
+
+      const current = summaryMap.get(category) || {
+        paperIds: new Set<string>(),
+        attempts: 0,
+        completed: 0,
+        totalScore: 0,
+        totalTimeSeconds: 0
+      };
+
+      if (result.paperIdentifier) {
+        current.paperIds.add(result.paperIdentifier);
+      }
+
+      current.attempts += 1;
+      const status = (result.status || '').toLowerCase();
+      if (status.includes('complete') || status === 'passed' || status === 'graded') {
+        current.completed += 1;
+      }
+
+      current.totalScore += result.scorePercentage || 0;
+      current.totalTimeSeconds += result.timeSpentSeconds || 0;
+
+      summaryMap.set(category, current);
+    });
+
+    return Array.from(summaryMap.entries()).map(([category, data]) => ({
+      assessmentType: category,
+      paperCount: data.paperIds.size,
+      attempts: data.attempts,
+      completedAttempts: data.completed,
+      avgScore: data.attempts > 0 ? Math.round(data.totalScore / data.attempts) : 0,
+      avgTimeMinutes: data.completed > 0 ? Math.round((data.totalTimeSeconds / data.completed) / 60) : 0
+    }));
+  }
+
+  private buildAssessmentPerformanceBreakdown(results: AssessmentResultDetail[]): AssessmentPerformanceBreakdown | undefined {
+    if (!results || results.length === 0) {
+      return undefined;
+    }
+
+    const hasCategoryData = results.some(result =>
+      result.performanceByQuestionType || result.performanceByTheme || result.performanceByTopic
+    );
+
+    const dataset = hasCategoryData
+      ? results.filter(result =>
+        result.performanceByQuestionType || result.performanceByTheme || result.performanceByTopic
+      )
+      : results;
+
+    const gradeDistribution = this.buildGradeDistribution(results);
+
+    if (dataset.length === 0 && gradeDistribution.length === 0) {
+      return undefined;
+    }
+
+    const attempts = dataset.length;
+    const averageScore = attempts > 0
+      ? Math.round(dataset.reduce((sum, item) => sum + (item.scorePercentage || 0), 0) / attempts)
+      : 0;
+
+    const timeSamples = dataset.filter(item => (item.timeSpentSeconds || 0) > 0);
+    const averageTimeSeconds = timeSamples.length > 0
+      ? Math.round(timeSamples.reduce((sum, item) => sum + (item.timeSpentSeconds || 0), 0) / timeSamples.length)
+      : 0;
+
+    return {
+      attempts,
+      averageScore,
+      averageTimeSeconds,
+      gradeDistribution,
+      byQuestionType: hasCategoryData ? this.aggregateCategoryPerformance(dataset, 'performanceByQuestionType') : [],
+      byTheme: hasCategoryData ? this.aggregateCategoryPerformance(dataset, 'performanceByTheme') : [],
+      byTopic: hasCategoryData ? this.aggregateCategoryPerformance(dataset, 'performanceByTopic') : []
+    };
+  }
+
+  private aggregateCategoryPerformance(
+    results: AssessmentResultDetail[],
+    accessor: 'performanceByQuestionType' | 'performanceByTheme' | 'performanceByTopic'
+  ): CategoryPerformanceAggregate[] {
+    const categoryMap = new Map<string, {
+      attempts: number;
+      correct: number;
+      totalTimeSeconds: number;
+      timeSamples: number;
+      scoreSum: number;
+      scoreSamples: number;
+    }>();
+
+    results.forEach(result => {
+      const performance = result[accessor];
+      if (!performance) return;
+
+      Object.entries(performance).forEach(([key, snapshot]) => {
+        if (!snapshot) return;
+        const entry = categoryMap.get(key) || {
+          attempts: 0,
+          correct: 0,
+          totalTimeSeconds: 0,
+          timeSamples: 0,
+          scoreSum: 0,
+          scoreSamples: 0
+        };
+
+        const total = snapshot.total ?? 0;
+        const correct = snapshot.correct ?? 0;
+        entry.attempts += total;
+        entry.correct += correct;
+
+        const avgTime = snapshot.averageTimeSeconds;
+        const timeMultiplier = total > 0 ? total : 1;
+        if (typeof avgTime === 'number' && avgTime > 0) {
+          entry.totalTimeSeconds += avgTime * timeMultiplier;
+          entry.timeSamples += timeMultiplier;
+        }
+
+        const scoreValue = snapshot.scorePercentage ?? snapshot.accuracy ?? snapshot.percentage;
+        if (typeof scoreValue === 'number' && !Number.isNaN(scoreValue)) {
+          entry.scoreSum += scoreValue;
+          entry.scoreSamples += 1;
+        }
+
+        categoryMap.set(key, entry);
+      });
+    });
+
+    return Array.from(categoryMap.entries()).map(([key, stats]) => ({
+      key,
+      attempts: stats.attempts,
+      correct: stats.correct,
+      accuracy: stats.attempts > 0 ? Math.round((stats.correct / Math.max(stats.attempts, 1)) * 100) : 0,
+      averageTimeSeconds: stats.timeSamples > 0 ? Number((stats.totalTimeSeconds / stats.timeSamples).toFixed(1)) : 0,
+      averageScore: stats.scoreSamples > 0 ? Number((stats.scoreSum / stats.scoreSamples).toFixed(1)) : 0
+    })).sort((a, b) => b.attempts - a.attempts);
+  }
+
+  private buildGradeDistribution(results: AssessmentResultDetail[]): GradeDistributionEntry[] {
+    const gradeCounts = new Map<number, number>();
+
+    results.forEach(result => {
+      if (typeof result.gcseGrade === 'number') {
+        gradeCounts.set(result.gcseGrade, (gradeCounts.get(result.gcseGrade) || 0) + 1);
+      }
+    });
+
+    const total = Array.from(gradeCounts.values()).reduce((sum, count) => sum + count, 0);
+    if (total === 0) {
+      return [];
+    }
+
+    return Array.from(gradeCounts.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([grade, count]) => ({
+        grade,
+        count,
+        percentage: Math.round((count / total) * 100)
+      }));
+  }
+
+  private async fetchAqaReadingResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    try {
+      const assignmentFilters = await this.buildAssignmentFilterIds('aqa_reading_assignments', assignmentId);
+      const { data, error } = await this.supabase
+        .from('aqa_reading_results')
+        .select('id, student_id, assessment_id, assignment_id, attempt_number, raw_score, total_possible_score, percentage_score, total_time_seconds, completion_time, status, gcse_grade, performance_by_question_type, performance_by_theme, performance_by_topic')
+        .in('assignment_id', assignmentFilters);
+
+      if (error) {
+        console.error('❌ Error fetching AQA reading results:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      const assessmentIds = Array.from(new Set(data.map(row => row.assessment_id)));
+      const metadata = await this.fetchAssessmentMetadata('aqa_reading_assessments', assessmentIds, ['title', 'level', 'language']);
+
+      return data.map(row => {
+        const meta = metadata.get(row.assessment_id);
+        return {
+          resultId: row.id,
+          studentId: row.student_id,
+          studentName: 'Unknown Student',
+          assessmentType: 'gcse-reading',
+          examBoard: 'AQA',
+          paperIdentifier: meta?.title || row.assessment_id,
+          paperTitle: meta?.title || null,
+          tier: meta?.level || null,
+          language: meta?.language || null,
+          attemptNumber: row.attempt_number ?? 1,
+          status: row.status || 'completed',
+          scorePercentage: this.resolvePercentage(row.percentage_score, row.raw_score, row.total_possible_score),
+          rawScore: row.raw_score ?? 0,
+          maxScore: row.total_possible_score ?? 0,
+          timeSpentSeconds: row.total_time_seconds ?? 0,
+          completedAt: row.completion_time || null,
+          gcseGrade: row.gcse_grade ?? null,
+          performanceByQuestionType: row.performance_by_question_type || null,
+          performanceByTheme: row.performance_by_theme || null,
+          performanceByTopic: row.performance_by_topic || null
+        };
+      });
+    } catch (error) {
+      console.error('❌ Unexpected error fetching AQA reading results:', error);
+      return [];
+    }
+  }
+
+  private async fetchAqaListeningResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    try {
+      const assignmentFilters = await this.buildAssignmentFilterIds('aqa_listening_assignments', assignmentId);
+      const { data, error } = await this.supabase
+        .from('aqa_listening_results')
+        .select('id, student_id, assessment_id, assignment_id, attempt_number, raw_score, total_possible_score, percentage_score, total_time_seconds, completion_time, status, gcse_grade, performance_by_question_type, performance_by_theme, performance_by_topic')
+        .in('assignment_id', assignmentFilters);
+
+      if (error) {
+        console.error('❌ Error fetching AQA listening results:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      const assessmentIds = Array.from(new Set(data.map(row => row.assessment_id)));
+      const metadata = await this.fetchAssessmentMetadata('aqa_listening_assessments', assessmentIds, ['title', 'identifier', 'level', 'language']);
+
+      return data.map(row => {
+        const meta = metadata.get(row.assessment_id);
+        return {
+          resultId: row.id,
+          studentId: row.student_id,
+          studentName: 'Unknown Student',
+          assessmentType: 'gcse-listening',
+          examBoard: 'AQA',
+          paperIdentifier: meta?.identifier || meta?.title || row.assessment_id,
+          paperTitle: meta?.title || null,
+          tier: meta?.level || null,
+          language: meta?.language || null,
+          attemptNumber: row.attempt_number ?? 1,
+          status: row.status || 'completed',
+          scorePercentage: this.resolvePercentage(row.percentage_score, row.raw_score, row.total_possible_score),
+          rawScore: row.raw_score ?? 0,
+          maxScore: row.total_possible_score ?? 0,
+          timeSpentSeconds: row.total_time_seconds ?? 0,
+          completedAt: row.completion_time || null,
+          gcseGrade: row.gcse_grade ?? null,
+          performanceByQuestionType: row.performance_by_question_type || null,
+          performanceByTheme: row.performance_by_theme || null,
+          performanceByTopic: row.performance_by_topic || null
+        };
+      });
+    } catch (error) {
+      console.error('❌ Unexpected error fetching AQA listening results:', error);
+      return [];
+    }
+  }
+
+  private async fetchAqaDictationResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    try {
+      const assignmentFilters = await this.buildAssignmentFilterIds('aqa_dictation_assignments', assignmentId);
+      const { data, error } = await this.supabase
+        .from('aqa_dictation_results')
+        .select('id, student_id, assessment_id, assignment_id, attempt_number, raw_score, total_possible_score, percentage_score, total_time_seconds, completion_time, status')
+        .in('assignment_id', assignmentFilters);
+
+      if (error) {
+        console.error('❌ Error fetching AQA dictation results:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      const assessmentIds = Array.from(new Set(data.map(row => row.assessment_id)));
+      const metadata = await this.fetchAssessmentMetadata('aqa_dictation_assessments', assessmentIds, ['title', 'identifier', 'level', 'language']);
+
+      return data.map(row => {
+        const meta = metadata.get(row.assessment_id);
+        return {
+          resultId: row.id,
+          studentId: row.student_id,
+          studentName: 'Unknown Student',
+          assessmentType: 'gcse-dictation',
+          examBoard: 'AQA',
+          paperIdentifier: meta?.identifier || meta?.title || row.assessment_id,
+          paperTitle: meta?.title || null,
+          tier: meta?.level || null,
+          language: meta?.language || null,
+          attemptNumber: row.attempt_number ?? 1,
+          status: row.status || 'completed',
+          scorePercentage: this.resolvePercentage(row.percentage_score, row.raw_score, row.total_possible_score),
+          rawScore: row.raw_score ?? 0,
+          maxScore: row.total_possible_score ?? 0,
+          timeSpentSeconds: row.total_time_seconds ?? 0,
+          completedAt: row.completion_time || null
+        };
+      });
+    } catch (error) {
+      console.error('❌ Unexpected error fetching AQA dictation results:', error);
+      return [];
+    }
+  }
+
+  private async fetchAqaWritingResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    try {
+      const assignmentFilters = await this.buildAssignmentFilterIds('aqa_writing_assignments', assignmentId);
+      const { data, error } = await this.supabase
+        .from('aqa_writing_results')
+        .select('id, student_id, assessment_id, assignment_id, total_score, max_score, percentage_score, time_spent_seconds, completed_at, is_completed, gcse_grade')
+        .in('assignment_id', assignmentFilters);
+
+      if (error) {
+        console.error('❌ Error fetching AQA writing results:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      const assessmentIds = Array.from(new Set(data.map(row => row.assessment_id)));
+      const metadata = await this.fetchAssessmentMetadata('aqa_writing_assessments', assessmentIds, ['title', 'identifier', 'level', 'language']);
+
+      return data.map(row => {
+        const meta = metadata.get(row.assessment_id);
+        return {
+          resultId: row.id,
+          studentId: row.student_id,
+          studentName: 'Unknown Student',
+          assessmentType: 'gcse-writing',
+          examBoard: 'AQA',
+          paperIdentifier: meta?.identifier || meta?.title || row.assessment_id,
+          paperTitle: meta?.title || null,
+          tier: meta?.level || null,
+          language: meta?.language || null,
+          attemptNumber: 1,
+          status: row.is_completed ? 'completed' : 'in_progress',
+          scorePercentage: this.resolvePercentage(row.percentage_score, row.total_score, row.max_score),
+          rawScore: row.total_score ?? 0,
+          maxScore: row.max_score ?? 0,
+          timeSpentSeconds: row.time_spent_seconds ?? 0,
+          completedAt: row.completed_at || null,
+          gcseGrade: row.gcse_grade ?? null
+        };
+      });
+    } catch (error) {
+      console.error('❌ Unexpected error fetching AQA writing results:', error);
+      return [];
+    }
+  }
+
+  private async fetchReadingComprehensionResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('reading_comprehension_results')
+        .select('id, user_id, assignment_id, text_id, total_questions, correct_answers, score, time_spent, passed, completed_at')
+        .eq('assignment_id', assignmentId);
+
+      if (error) {
+        console.error('❌ Error fetching reading comprehension results:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      const taskIds = Array.from(new Set(data.map(row => row.text_id).filter(Boolean)));
+      const tasks = taskIds.length > 0
+        ? await this.fetchReadingTaskMetadata(taskIds)
+        : new Map<string, any>();
+
+      return data.map(row => {
+        const task = row.text_id ? tasks.get(row.text_id) : null;
+        return {
+          resultId: row.id,
+          studentId: row.user_id,
+          studentName: 'Unknown Student',
+          assessmentType: 'reading-comprehension',
+          examBoard: this.normalizeExamBoardName(task?.exam_board),
+          paperIdentifier: task?.title || row.text_id,
+          paperTitle: task?.title || null,
+          tier: task?.difficulty || null,
+          language: task?.language || null,
+          attemptNumber: 1,
+          status: row.completed_at ? 'completed' : 'in_progress',
+          scorePercentage: this.resolvePercentage(row.score, row.correct_answers, row.total_questions),
+          rawScore: row.correct_answers ?? 0,
+          maxScore: row.total_questions ?? 0,
+          timeSpentSeconds: row.time_spent ?? 0,
+          completedAt: row.completed_at || null
+        };
+      });
+    } catch (error) {
+      console.error('❌ Unexpected error fetching reading comprehension results:', error);
+      return [];
+    }
+  }
+
+  private async buildAssignmentFilterIds(bridgeTable: string, assignmentId: string): Promise<string[]> {
+    const ids = new Set<string>([assignmentId]);
+    try {
+      const { data, error } = await this.supabase
+        .from(bridgeTable)
+        .select('id')
+        .eq('assignment_id', assignmentId);
+
+      if (!error && data) {
+        data.forEach(record => {
+          if (record.id) {
+            ids.add(record.id);
+          }
+        });
+      }
+    } catch (error) {
+      console.warn(`⚠️ Unable to resolve assignment bridge for ${bridgeTable}:`, error);
+    }
+
+    return Array.from(ids);
+  }
+
+  private async fetchAssessmentMetadata(table: string, ids: string[], extraColumns: string[]): Promise<Map<string, any>> {
+    if (!ids || ids.length === 0) {
+      return new Map();
+    }
+
+    const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+    if (uniqueIds.length === 0) {
+      return new Map();
+    }
+
+    const selectColumns = ['id', ...extraColumns].join(', ');
+    const { data, error } = await this.supabase
+      .from(table)
+      .select(selectColumns)
+      .in('id', uniqueIds);
+
+    if (error || !data) {
+      if (error) {
+        console.warn(`⚠️ Unable to fetch assessment metadata from ${table}:`, error);
+      }
+      return new Map();
+    }
+
+    return new Map((data as any[]).map(record => [record.id, record]));
+  }
+
+  private async fetchReadingTaskMetadata(taskIds: string[]): Promise<Map<string, any>> {
+    if (!taskIds || taskIds.length === 0) {
+      return new Map();
+    }
+
+    const { data, error } = await this.supabase
+      .from('reading_comprehension_tasks')
+      .select('id, title, difficulty, exam_board, language')
+      .in('id', taskIds);
+
+    if (error || !data) {
+      if (error) {
+        console.warn('⚠️ Unable to fetch reading comprehension task metadata:', error);
+      }
+      return new Map();
+    }
+
+    return new Map(data.map(task => [task.id, task]));
+  }
+
+  private resolvePercentage(
+    storedPercentage?: number | string | null,
+    rawScore?: number | null,
+    maxScore?: number | null
+  ): number {
+    if (storedPercentage !== null && storedPercentage !== undefined) {
+      const numeric = typeof storedPercentage === 'number'
+        ? storedPercentage
+        : Number(storedPercentage);
+
+      if (!Number.isNaN(numeric)) {
+        return Math.round(numeric);
+      }
+    }
+
+    if (typeof rawScore === 'number' && typeof maxScore === 'number' && maxScore > 0) {
+      return Math.round((rawScore / maxScore) * 100);
+    }
+
+    return 0;
+  }
+
+  private normalizeExamBoardName(value?: string | null): string | null {
+    if (!value) return null;
+    const normalized = value.toString().trim();
+    if (!normalized) return null;
+    if (normalized.toLowerCase() === 'aqa') return 'AQA';
+    if (normalized.toLowerCase() === 'edexcel') return 'Edexcel';
+    return normalized;
   }
 
   /**
@@ -620,14 +1297,32 @@ export class TeacherAssignmentAnalyticsService {
 
         if (studentSessionIds.length > 0) {
           if (isAssessmentAssignment) {
-            // For assessments, use accuracy_percentage from sessions
-            const sessionsWithData = studentSessions?.filter(s => s.ended_at) || [];
-            if (sessionsWithData.length > 0) {
-              const latestSession = sessionsWithData[sessionsWithData.length - 1] as any;
-              successScore = Math.round(latestSession.accuracy_percentage || 0);
+            // For assessments, fetch actual results from the results tables
+            // This ensures manual overrides are reflected
+            const { data: rcResults } = await this.supabase
+              .from('reading_comprehension_results')
+              .select('score, correct_answers, total_questions, time_spent, completed_at')
+              .eq('assignment_id', assignmentId)
+              .eq('user_id', studentId)
+              .order('completed_at', { ascending: false })
+              .limit(1);
+
+            if (rcResults && rcResults.length > 0) {
+              const result = rcResults[0];
+              successScore = result.score || 0;
               failureRate = 100 - successScore;
               weakRetrievalPercent = failureRate;
-              lastAttempt = latestSession.ended_at;
+              lastAttempt = result.completed_at;
+            } else {
+              // Fallback to session data if no results found
+              const sessionsWithData = studentSessions?.filter(s => s.ended_at) || [];
+              if (sessionsWithData.length > 0) {
+                const latestSession = sessionsWithData[sessionsWithData.length - 1] as any;
+                successScore = Math.round(latestSession.accuracy_percentage || 0);
+                failureRate = 100 - successScore;
+                weakRetrievalPercent = failureRate;
+                lastAttempt = latestSession.ended_at;
+              }
             }
           } else {
             // For games, use gem events

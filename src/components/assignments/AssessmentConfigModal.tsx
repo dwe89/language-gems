@@ -137,7 +137,7 @@ export default function AssessmentConfigModal({
   onSave
 }: AssessmentConfigModalProps) {
   // Check if this is a GCSE exam
-  const isGCSEExam = assessmentType.id.startsWith('gcse-');
+  const isGCSEExam = assessmentType?.id?.startsWith('gcse-') || false;
 
   const [config, setConfig] = useState({
     language: currentConfig?.language || 'spanish',
@@ -282,7 +282,7 @@ export default function AssessmentConfigModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !assessmentType) return null;
 
   return (
     <AnimatePresence>

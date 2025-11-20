@@ -10,6 +10,7 @@ import {
 import Link from 'next/link';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
+import PendingAssessmentsList from '../../../components/student/PendingAssessmentsList';
 
 interface AssessmentResult {
   id: string;
@@ -217,7 +218,7 @@ export default function AssessmentsAnalyticsPage() {
           const sessionData = session.session_data as any;
           return {
             id: session.id,
-            assessment_type: mapGameTypeToAssessmentType(session.game_type),
+            assessment_type: mapGameTypeToAssessmentType(session.game_type) as AssessmentResult['assessment_type'],
             curriculum_level: sessionData?.level || 'KS3',
             exam_board: sessionData?.examBoard || 'General',
             difficulty: sessionData?.difficulty || 'foundation',
@@ -300,6 +301,9 @@ export default function AssessmentsAnalyticsPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Assessment Analytics</h1>
           <p className="text-gray-600">Track your progress across listening, reading, speaking, and writing assessments</p>
         </div>
+
+        {/* Pending Assessments */}
+        <PendingAssessmentsList />
 
         {/* Overview Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

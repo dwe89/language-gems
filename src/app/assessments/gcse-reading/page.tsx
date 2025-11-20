@@ -13,6 +13,7 @@ import { useAssignmentVocabulary } from '@/hooks/useAssignmentVocabulary';
 import { EnhancedGameSessionService } from '@/services/rewards/EnhancedGameSessionService';
 import { supabaseBrowser } from '@/components/auth/AuthProvider';
 import { normalizeAssessmentLanguage, normalizeExamBoard, extractAssessmentInstance } from '@/lib/assessmentConfigUtils';
+import { AssessmentResultsDetailView } from '@/components/dashboard/AssessmentResultsDetailView';
 
 const AVAILABLE_LANGUAGES = [
   { code: 'es', countryCode: 'ES', name: 'Spanish' },
@@ -26,6 +27,7 @@ function GCSEReadingExamContent() {
   const { user } = useAuth();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
+  const review = searchParams?.get('review') === 'true';
 
   const isAssignmentMode = assignmentId && mode === 'assignment';
 
@@ -77,26 +79,25 @@ function GCSEReadingExamContent() {
     if (isAssignmentMode && sessionService && gameSessionId && user) {
       try {
         // Record completion with EnhancedGameSessionService
-        // Note: AQA Reading Assessment returns { answers, questionsCompleted, totalTimeSpent, difficulty, language }
-        // It doesn't have scoring data yet, so we'll use questionsCompleted as a proxy
         const totalQuestions = results.questionsCompleted || 0;
         const totalTimeSpent = results.totalTimeSpent || 0;
 
-        // For now, we can't calculate accuracy without proper scoring in AQA Reading Assessment
-        // This is a known limitation that needs to be fixed in the AQA Reading Assessment component
-        const percentage = 0; // TODO: Fix AQA Reading Assessment to return proper scoring
+        // Use scoring data from results if available
+        const totalScore = results.totalScore || 0;
+        const totalPossibleScore = results.totalPossibleScore || (totalQuestions * 100); // Fallback
+        const percentage = results.percentageScore || 0;
 
         await sessionService.endGameSession(gameSessionId, {
           student_id: user.id,
           assignment_id: assignmentId!,
           game_type: 'gcse-reading',
           session_mode: 'assignment',
-          final_score: 0, // TODO: Fix AQA Reading Assessment to return proper scoring
-          max_score_possible: totalQuestions * 100,
+          final_score: totalScore,
+          max_score_possible: totalPossibleScore,
           accuracy_percentage: percentage,
           completion_percentage: 100,
           words_attempted: totalQuestions,
-          words_correct: 0, // TODO: Fix AQA Reading Assessment to return proper scoring
+          words_correct: totalScore, // Using score as proxy for "words correct" in this context
           unique_words_practiced: totalQuestions,
           duration_seconds: totalTimeSpent,
           session_data: results
@@ -113,6 +114,31 @@ function GCSEReadingExamContent() {
       }
     }
   };
+
+  // Handle review mode
+  if (review && assignmentId && user) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
+            <button
+              onClick={() => router.push('/dashboard/student')}
+              className="inline-flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </button>
+          </div>
+          <AssessmentResultsDetailView
+            assignmentId={assignmentId}
+            studentId={user.id}
+            onBack={() => router.push('/dashboard/student')}
+            viewMode="student"
+          />
+        </div>
+      </div>
+    );
+  }
 
   // If assignment mode, extract configuration and render with assignment data
   if (isAssignmentMode) {
@@ -293,7 +319,7 @@ function GCSEReadingStandalonePage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Assessments
           </Link>
-          
+
           <div className="flex items-center mb-4">
             <div className="p-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white mr-4">
               <BookOpen className="h-8 w-8" />
@@ -313,7 +339,7 @@ function GCSEReadingStandalonePage() {
         {/* Filter Section */}
         <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Select Your Exam</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Exam Board Selection */}
             <div>
@@ -374,7 +400,7 @@ function GCSEReadingStandalonePage() {
         {selectedExamBoard === 'AQA' && selectedLanguage && selectedTier && (
           <div className="bg-white rounded-xl shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Papers</h2>
-            
+
             {isLoadingAssessments ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -392,7 +418,7 @@ function GCSEReadingStandalonePage() {
                       <h3 className="text-xl font-bold text-gray-900">{assessment.title}</h3>
                       <FileText className="h-6 w-6 text-blue-600" />
                     </div>
-                    
+
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-gray-600">
                         <Clock className="h-4 w-4 mr-2" />
@@ -437,7 +463,7 @@ function GCSEReadingStandalonePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
               About GCSE Reading Exams
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">What to Expect</h3>

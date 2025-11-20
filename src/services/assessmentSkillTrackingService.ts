@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 
 export interface AssessmentSkillBreakdown {
   id?: string;
@@ -62,7 +62,7 @@ export interface SpeakingSkillMetrics {
 }
 
 export class AssessmentSkillTrackingService {
-  private supabase = supabase;
+  private supabase = createClient();
 
   // Track listening assessment skills
   async trackListeningSkills(

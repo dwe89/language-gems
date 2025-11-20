@@ -111,12 +111,12 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
   const completionRate = metrics?.completionRate ?? (assignment.totalStudents && assignment.totalStudents > 0
     ? Math.round((assignment.completed_by || 0) / assignment.totalStudents * 100)
     : 0);
-  
+
   return (
     <Card className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
       {/* Gradient overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      
+
       <CardContent className="relative p-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-3 sm:space-y-0">
@@ -138,12 +138,16 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
               )}
             </div>
           </div>
-          
+
           {/* Actions Menu */}
           {onDelete && (
             <div className="flex items-center justify-end space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
               <Link
-                href={`/dashboard/progress/assignment/${assignment.id}`}
+                href={
+                  (assignment as any).game_type === 'assessment'
+                    ? `/dashboard/assessments/${assignment.id}/analytics`
+                    : `/dashboard/progress/assignment/${assignment.id}`
+                }
                 className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                 title="View Analytics"
               >
@@ -177,7 +181,7 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
               </span>
             </div>
           )}
-          
+
           {(assignment as any).game_type && (
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center text-slate-600">
@@ -189,7 +193,7 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
               </span>
             </div>
           )}
-          
+
           {assignment.word_count && (
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center text-slate-600">
@@ -199,7 +203,7 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
               <span className="font-semibold text-slate-900">{assignment.word_count}</span>
             </div>
           )}
-          
+
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center text-slate-600">
               <Calendar className="h-4 w-4 mr-2" />
@@ -209,7 +213,7 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
               {formatDate(assignment.created_at || assignment.assigned_date || '')}
             </span>
           </div>
-          
+
           {assignment.due_date && (
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center text-slate-600">
@@ -233,19 +237,17 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
               </div>
               <div>
                 <div className="text-xs text-slate-600 mb-1">Success Score</div>
-                <div className={`text-lg font-bold ${
-                  metrics.classSuccessScore >= 75 ? 'text-green-600' :
+                <div className={`text-lg font-bold ${metrics.classSuccessScore >= 75 ? 'text-green-600' :
                   metrics.classSuccessScore >= 60 ? 'text-yellow-600' :
-                  'text-red-600'
-                }`}>
+                    'text-red-600'
+                  }`}>
                   {metrics.classSuccessScore}%
                 </div>
               </div>
               <div>
                 <div className="text-xs text-slate-600 mb-1">Need Help</div>
-                <div className={`text-lg font-bold ${
-                  metrics.studentsNeedingHelp > 0 ? 'text-red-600' : 'text-green-600'
-                }`}>
+                <div className={`text-lg font-bold ${metrics.studentsNeedingHelp > 0 ? 'text-red-600' : 'text-green-600'
+                  }`}>
                   {metrics.studentsNeedingHelp}
                   {metrics.studentsNeedingHelp > 0 && (
                     <AlertTriangle className="inline h-4 w-4 ml-1" />
@@ -284,7 +286,11 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
         <div className="mt-6 pt-4 border-t border-slate-200/60">
           <div className="grid grid-cols-3 gap-2">
             <Link
-              href={`/dashboard/progress/assignment/${assignment.id}`}
+              href={
+                (assignment as any).game_type === 'assessment'
+                  ? `/dashboard/assessments/${assignment.id}/analytics`
+                  : `/dashboard/progress/assignment/${assignment.id}`
+              }
               className="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-3 rounded-xl transition-all duration-200 text-center shadow-md hover:shadow-lg flex items-center justify-center text-sm"
             >
               <BarChart3 className="h-4 w-4 mr-1" />

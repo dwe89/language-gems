@@ -1,5 +1,6 @@
-import { supabase } from '../lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { assessmentSkillTrackingService, type ListeningSkillMetrics } from './assessmentSkillTrackingService';
+import { calculateGCSEGrade } from '@/lib/gcseGrading';
 
 export interface AQAListeningAssessmentDefinition {
   id: string;
@@ -51,7 +52,7 @@ export interface AQAListeningQuestionResponse {
 }
 
 export class AQAListeningAssessmentService {
-  private supabase = supabase;
+  public supabase = createClient();
 
   // Get all available assessments (for listing)
   async getAllAssessments(): Promise<AQAListeningAssessmentDefinition[]> {
@@ -165,6 +166,23 @@ export class AQAListeningAssessmentService {
     assessmentId: string,
     assignmentId?: string
   ): Promise<string | null> {
+    // First, check if there's an existing incomplete attempt for this assignment
+    if (assignmentId) {
+      const { data: existingIncomplete } = await this.supabase
+        .from('aqa_listening_results')
+        .select('id, attempt_number')
+        .eq('student_id', studentId)
+        .eq('assessment_id', assessmentId)
+        .eq('assignment_id', assignmentId)
+        .eq('status', 'incomplete')
+        .maybeSingle();
+
+      if (existingIncomplete) {
+        console.log('Resuming existing incomplete listening assessment attempt:', existingIncomplete.id);
+        return existingIncomplete.id;
+      }
+    }
+
     // Get the next attempt number for this student/assessment combination
     const { data: existingAttempts } = await this.supabase
       .from('aqa_listening_results')
@@ -224,6 +242,36 @@ export class AQAListeningAssessmentService {
     const totalPossible = responses.reduce((sum, r) => sum + r.marks_possible, 0);
     const percentageScore = totalPossible > 0 ? (rawScore / totalPossible) * 100 : 0;
 
+    // Fetch metadata required for GCSE grading and later tracking
+    const { data: resultMetadata, error: resultMetadataError } = await this.supabase
+      .from('aqa_listening_results')
+      .select('student_id, assessment_id')
+      .eq('id', resultId)
+      .single();
+
+    if (resultMetadataError) {
+      console.error('Error fetching listening result metadata:', resultMetadataError);
+    }
+
+    let gcseGrade: number | null = 1; // Default grade
+    let assessmentLanguage: string | undefined;
+
+    if (resultMetadata?.assessment_id) {
+      const { data: assessmentData, error: assessmentError } = await this.supabase
+        .from('aqa_listening_assessments')
+        .select('level, language')
+        .eq('id', resultMetadata.assessment_id)
+        .single();
+
+      if (assessmentError) {
+        console.error('Error fetching listening assessment metadata:', assessmentError);
+      } else if (assessmentData) {
+        const tier = assessmentData.level || 'higher';
+        gcseGrade = percentageScore !== null ? calculateGCSEGrade(percentageScore, tier) : null;
+        assessmentLanguage = assessmentData.language || undefined;
+      }
+    }
+
     // Calculate performance by question type, theme, and topic
     const performanceByType = this.calculatePerformanceByCategory(responses, 'question_type');
     const performanceByTheme = this.calculatePerformanceByCategory(responses, 'theme');
@@ -252,6 +300,7 @@ export class AQAListeningAssessmentService {
         raw_score: rawScore,
         total_possible_score: totalPossible,
         percentage_score: percentageScore,
+        gcse_grade: gcseGrade,
         status: 'completed',
         responses: responses,
         audio_play_counts: audioPlayCounts,
@@ -269,8 +318,8 @@ export class AQAListeningAssessmentService {
 
     // Insert detailed question responses
     const questionResponses = responses.map(response => ({
-      result_id: resultId,
-      ...response
+      ...response,
+      result_id: resultId
     }));
 
     const { error: responsesError } = await this.supabase
@@ -282,28 +331,25 @@ export class AQAListeningAssessmentService {
       return false;
     }
 
-    // Get the assessment result to extract student_id and assessment_id for skill tracking
-    const { data: resultData, error: resultFetchError } = await this.supabase
-      .from('aqa_listening_results')
-      .select('student_id, assessment_id')
-      .eq('id', resultId)
-      .single();
+    if (resultMetadata?.student_id && resultMetadata.assessment_id) {
+      let languageForTracking = assessmentLanguage;
 
-    if (!resultFetchError && resultData) {
-      // Get assessment details for language
-      const { data: assessmentData } = await this.supabase
-        .from('aqa_listening_assessments')
-        .select('language')
-        .eq('id', resultData.assessment_id)
-        .single();
+      if (!languageForTracking) {
+        const { data: assessmentData } = await this.supabase
+          .from('aqa_listening_assessments')
+          .select('language')
+          .eq('id', resultMetadata.assessment_id)
+          .single();
 
-      if (assessmentData) {
-        // Track listening skills in assessment_skill_breakdown table
+        languageForTracking = assessmentData?.language || undefined;
+      }
+
+      if (languageForTracking) {
         await assessmentSkillTrackingService.trackListeningSkills(
-          resultData.student_id,
-          resultData.assessment_id,
+          resultMetadata.student_id,
+          resultMetadata.assessment_id,
           'aqa_listening',
-          assessmentData.language,
+          languageForTracking,
           listeningMetrics,
           responses.length,
           correctAnswers,

@@ -26,6 +26,8 @@ function ReadingComprehensionPageContent() {
 
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const [sessionService, setSessionService] = useState<EnhancedGameSessionService | null>(null);
+  const [existingResults, setExistingResults] = useState<any | null>(null);
+  const [checkingResults, setCheckingResults] = useState(false);
 
   // Initialize session service
   useEffect(() => {
@@ -35,10 +37,51 @@ function ReadingComprehensionPageContent() {
     }
   }, [user]);
 
+  // Check for existing results
+  useEffect(() => {
+    const checkResults = async () => {
+      if (isAssignmentMode && user && assignmentId) {
+        setCheckingResults(true);
+        try {
+          const { data, error } = await supabaseBrowser
+            .from('reading_comprehension_results')
+            .select('*')
+            .eq('assignment_id', assignmentId)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (data) {
+            console.log('📖 [READING] Found existing results:', data);
+            // Map DB results to AssessmentResults interface
+            // The question_results column stores the detailedResults array
+            const mappedResults = {
+              score: data.score,
+              totalQuestions: data.total_questions,
+              correctAnswers: data.correct_answers,
+              timeSpent: data.time_spent,
+              passed: data.passed,
+              detailedResults: data.question_results || []
+            };
+            setExistingResults(mappedResults);
+          }
+        } catch (err) {
+          console.error('Error checking existing results:', err);
+        } finally {
+          setCheckingResults(false);
+        }
+      }
+    };
+
+    checkResults();
+  }, [isAssignmentMode, user, assignmentId]);
+
   // Create game session for assignment mode
   useEffect(() => {
     const createSession = async () => {
-      if (isAssignmentMode && sessionService && user && assignment && !gameSessionId) {
+      // Only create session if we don't have existing results and aren't currently checking
+      if (isAssignmentMode && sessionService && user && assignment && !gameSessionId && !existingResults && !checkingResults) {
         try {
           console.log('📖 [READING] Creating assignment session...');
           const sessionId = await sessionService.startGameSession({
@@ -59,7 +102,7 @@ function ReadingComprehensionPageContent() {
       }
     };
     createSession();
-  }, [isAssignmentMode, sessionService, user, assignment, gameSessionId, assignmentId]);
+  }, [isAssignmentMode, sessionService, user, assignment, gameSessionId, assignmentId, existingResults, checkingResults]);
 
   // Handle assessment completion
   const handleComplete = async (results: any) => {
@@ -89,10 +132,7 @@ function ReadingComprehensionPageContent() {
 
         console.log('✅ [READING] Progress recorded successfully');
 
-        // Redirect to assignment page after a delay
-        setTimeout(() => {
-          router.push(`/student-dashboard/assignments/${assignmentId}`);
-        }, 3000);
+        // No auto-redirect - user can use the "Back to Assignment" button
       } catch (error) {
         console.error('🚨 [READING] Failed to record progress:', error);
       }
@@ -111,7 +151,7 @@ function ReadingComprehensionPageContent() {
       );
     }
 
-    if (assignmentLoading) {
+    if (assignmentLoading || checkingResults) {
       return (
         <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
           <div className="text-white text-center">
@@ -148,7 +188,7 @@ function ReadingComprehensionPageContent() {
     const topic = filters.subcategory || instanceConfig.topic || instanceConfig.subcategory;
 
     console.log('📖 [READING] Assignment config:', {
-      language,
+      language: normalizedLanguage,
       difficulty,
       theme,
       topic,
@@ -164,6 +204,8 @@ function ReadingComprehensionPageContent() {
           topic={topic}
           assignmentMode={true}
           onComplete={handleComplete}
+          initialResults={existingResults}
+          assignmentId={assignmentId || undefined}
         />
       </div>
     );

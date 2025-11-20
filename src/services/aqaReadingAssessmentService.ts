@@ -1,6 +1,7 @@
-import { supabase } from '../lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import type { AQAReadingQuestion } from '@/components/assessments/AQAReadingAssessment';
 import { assessmentSkillTrackingService, type ReadingSkillMetrics } from './assessmentSkillTrackingService';
+import { calculateGCSEGrade } from '@/lib/gcseGrading';
 
 export interface AQAAssessmentDefinition {
   id: string;
@@ -65,11 +66,7 @@ export interface AQAQuestionResponse {
 }
 
 export class AQAReadingAssessmentService {
-  private supabase;
-
-  constructor() {
-    this.supabase = supabase;
-  }
+  private supabase = createClient();
 
   // Get assessment definition by level, language, and identifier
   async getAssessmentByLevel(level: 'foundation' | 'higher', language: string = 'es', identifier: string = 'paper-1'): Promise<AQAAssessmentDefinition | null> {
@@ -165,6 +162,24 @@ export class AQAReadingAssessmentService {
     assessmentId: string, 
     assignmentId?: string
   ): Promise<string | null> {
+    // First, check if there's an existing incomplete attempt for this assignment
+    // This prevents duplicate attempts when refreshing or race conditions
+    if (assignmentId) {
+      const { data: existingIncomplete } = await this.supabase
+        .from('aqa_reading_results')
+        .select('id, attempt_number')
+        .eq('student_id', studentId)
+        .eq('assessment_id', assessmentId)
+        .eq('assignment_id', assignmentId)
+        .eq('status', 'incomplete')
+        .maybeSingle();
+
+      if (existingIncomplete) {
+        console.log('Resuming existing incomplete assessment attempt:', existingIncomplete.id);
+        return existingIncomplete.id;
+      }
+    }
+
     // Get the next attempt number
     const { data: existingAttempts } = await this.supabase
       .from('aqa_reading_results')
@@ -203,6 +218,25 @@ export class AQAReadingAssessmentService {
 
     if (error) {
       console.error('Error starting assessment:', error);
+      
+      // Handle unique constraint violation (race condition)
+      if (error.code === '23505') {
+        console.log('Duplicate attempt detected, trying to fetch existing attempt...');
+        // Try to fetch the attempt that caused the conflict
+        const { data: conflictAttempt } = await this.supabase
+          .from('aqa_reading_results')
+          .select('id')
+          .eq('student_id', studentId)
+          .eq('assessment_id', assessmentId)
+          .eq('attempt_number', nextAttemptNumber)
+          .maybeSingle();
+          
+        if (conflictAttempt) {
+          console.log('Recovered from race condition, using attempt:', conflictAttempt.id);
+          return conflictAttempt.id;
+        }
+      }
+      
       return null;
     }
 
@@ -221,6 +255,30 @@ export class AQAReadingAssessmentService {
     const rawScore = responses.reduce((sum, r) => sum + r.points_awarded, 0);
     const totalPossible = responses.reduce((sum, r) => sum + r.marks_possible, 0);
     const percentageScore = totalPossible > 0 ? (rawScore / totalPossible) * 100 : 0;
+
+    // Get assessment details (level) for GCSE grading
+    // First fetch the result to get the assessment_id
+    const { data: currentResult } = await this.supabase
+      .from('aqa_reading_results')
+      .select('assessment_id')
+      .eq('id', resultId)
+      .single();
+      
+    let tier = 'higher';
+    
+    if (currentResult?.assessment_id) {
+      const { data: assessmentData } = await this.supabase
+        .from('aqa_reading_assessments')
+        .select('level')
+        .eq('id', currentResult.assessment_id)
+        .single();
+        
+      if (assessmentData?.level) {
+        tier = assessmentData.level;
+      }
+    }
+    
+    const gcseGrade = calculateGCSEGrade(percentageScore, tier as 'foundation' | 'higher');
 
     // Calculate performance by question type
     const performanceByType = this.calculatePerformanceByCategory(responses, 'question_type');
@@ -259,6 +317,7 @@ export class AQAReadingAssessmentService {
         raw_score: rawScore,
         total_possible_score: totalPossible,
         percentage_score: percentageScore,
+        gcse_grade: gcseGrade,
         status: 'completed',
         responses: responses,
         performance_by_question_type: performanceByType,

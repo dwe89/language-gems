@@ -41,6 +41,8 @@ interface ReadingComprehensionEngineProps {
   topic?: string;
   onComplete?: (results: AssessmentResults) => void;
   assignmentMode?: boolean;
+  initialResults?: AssessmentResults | null;
+  assignmentId?: string;
 }
 
 interface AssessmentResults {
@@ -68,7 +70,9 @@ export default function ReadingComprehensionEngine({
   theme,
   topic,
   onComplete,
-  assignmentMode = false
+  assignmentMode = false,
+  initialResults,
+  assignmentId: assignmentUuid
 }: ReadingComprehensionEngineProps) {
   const { user } = useAuth();
   const [assessment, setAssessment] = useState<ReadingAssessment | null>(null);
@@ -86,16 +90,24 @@ export default function ReadingComprehensionEngine({
     loadAssessment();
   }, [assessmentId, language, difficulty, theme, topic]);
 
+  // Initialize with previous results if provided
+  useEffect(() => {
+    if (initialResults) {
+      setResults(initialResults);
+      setIsCompleted(true);
+    }
+  }, [initialResults]);
+
   // Set up timer when assessment is loaded
   useEffect(() => {
-    if (assessment && !timeRemaining) {
+    if (assessment && !timeRemaining && !initialResults) {
       setTimeRemaining(assessment.timeLimit * 60); // Convert minutes to seconds
       setStartTime(new Date());
       if (assessment.questions.length > 0) {
         setQuestionStartTimes({ [assessment.questions[0].id]: new Date() });
       }
     }
-  }, [assessment]);
+  }, [assessment, initialResults]);
 
   // Timer effect
   useEffect(() => {
@@ -112,8 +124,11 @@ export default function ReadingComprehensionEngine({
   const loadAssessment = async () => {
     try {
       setIsLoading(true);
-      setIsCompleted(false); // Reset completion state
-      setResults(null); // Reset results
+      // Don't reset completion if we have initial results
+      if (!initialResults) {
+        setIsCompleted(false); // Reset completion state
+        setResults(null); // Reset results
+      }
 
       // If specific assessment ID is provided, load that
       if (assessmentId) {
@@ -176,7 +191,7 @@ export default function ReadingComprehensionEngine({
 
         const response = await fetch(`/api/reading-comprehension/tasks?${params.toString()}`);
         const data = await response.json();
-        
+
         console.log('ReadingComprehensionEngine - API response:', data);
 
         if (data.tasks && data.tasks.length > 0) {
@@ -652,7 +667,8 @@ export default function ReadingComprehensionEngine({
           userId: user?.id,
           assessmentId: assessment?.id,
           results: assessmentResults,
-          assignmentMode
+          assignmentMode,
+          assignmentId: assignmentUuid
         })
       });
 
@@ -735,6 +751,20 @@ export default function ReadingComprehensionEngine({
             </div>
           </div>
 
+          {assignmentMode && (
+            <div className="flex justify-center mb-8">
+              <button
+                onClick={() => window.history.back()}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m12 19-7-7 7-7" />
+                  <path d="M19 12H5" />
+                </svg>
+                Back to Assignment
+              </button>
+            </div>
+          )}
           {/* Detailed Results Table */}
           <div className="mb-8">
             <h3 className="text-2xl font-bold mb-4">Your Answers</h3>

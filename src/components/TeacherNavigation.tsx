@@ -17,7 +17,8 @@ import {
   BarChart3,
   Brain,
   Gem,
-  ClipboardCheck
+  ClipboardCheck,
+  GraduationCap
 } from 'lucide-react';
 
 interface TeacherNavigationProps {
@@ -50,6 +51,12 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
       href: '/dashboard/assignments',
       icon: FileText,
       description: 'Create and manage assignments'
+    },
+    {
+      name: 'Assessments',
+      href: '/dashboard/assessments',
+      icon: GraduationCap,
+      description: 'Create and track assessments'
     },
     {
       name: 'Classes',
