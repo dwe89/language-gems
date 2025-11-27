@@ -18,7 +18,7 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-300">
               <li><Link href="/games" className="hover:text-white transition-colors flex items-center"><Gamepad2 className="w-4 h-4 mr-2" />Interactive Games</Link></li>
               <li><Link href="/explore" className="hover:text-white transition-colors flex items-center"><Search className="w-4 h-4 mr-2" />Explore Features</Link></li>
-              <li><Link href="/resources" className="hover:text-white transition-colors flex items-center"><BookOpen className="w-4 h-4 mr-2" />Learning Resources</Link></li>
+              <li><a href="https://www.secondarymfl.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center"><BookOpen className="w-4 h-4 mr-2" />Learning Resources</a></li>
               <li><Link href="/blog" className="hover:text-white transition-colors flex items-center"><FileText className="w-4 h-4 mr-2" />Blog & Insights</Link></li>
             </ul>
           </div>

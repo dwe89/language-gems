@@ -91,7 +91,7 @@ export default function AQATopicReadingAssessment({
         setTimeRemaining(assessmentData.time_limit_minutes * 60);
 
         const questionsData = await assessmentService.getQuestionsByAssessmentId(assessmentData.id);
-        
+
         if (!questionsData || questionsData.length === 0) {
           setError('No questions found for this assessment.');
           return;
@@ -159,7 +159,7 @@ export default function AQATopicReadingAssessment({
   const handleNextQuestion = () => {
     const currentQuestion = questions[currentQuestionIndex];
     const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
-    
+
     if (onQuestionComplete) {
       onQuestionComplete(currentQuestion.id, answers[currentQuestion.id], timeSpent);
     }
@@ -186,7 +186,7 @@ export default function AQATopicReadingAssessment({
     const totalTimeSpent = Math.floor((Date.now() - totalStartTime) / 1000);
     const questionsCompleted = Object.keys(answers).filter(key => answers[key] !== undefined && answers[key] !== '').length;
     const totalMarks = questions.reduce((sum, q) => sum + q.marks, 0);
-    
+
     let score = 0;
     questions.forEach(question => {
       if (question.type === 'translation' || question.type === 'sentence-completion' || question.type === 'open-response' || question.type === 'multiple-choice' || question.type === 'letter-matching' || question.type === 'student-grid' || question.type === 'time-sequence' || question.type === 'headline-matching') {
@@ -201,36 +201,36 @@ export default function AQATopicReadingAssessment({
             }
           });
         } else if (question.data.questions) {
-             question.data.questions.forEach((_q: any, qIdx: number) => {
-                if (answers[`${question.id}-${qIdx}`] && answers[`${question.id}-${qIdx}`] !== '') {
-                    hasAnyAnswer = true;
-                }
-             });
+          question.data.questions.forEach((_q: any, qIdx: number) => {
+            if (answers[`${question.id}-${qIdx}`] && answers[`${question.id}-${qIdx}`] !== '') {
+              hasAnyAnswer = true;
+            }
+          });
         } else if (question.data.students) { // For letter-matching, student-grid
-             question.data.students.forEach((_s: any, sIdx: number) => {
-                // Assuming letter-matching's answers are keyed by `${currentQuestion.id}-${student.name}`
-                // and student-grid's by `${currentQuestion.id}-${idx}` for the question part
-                if (answers[`${question.id}-${sIdx}`] && answers[`${question.id}-${sIdx}`] !== '') {
-                    hasAnyAnswer = true;
-                }
-             });
+          question.data.students.forEach((_s: any, sIdx: number) => {
+            // Assuming letter-matching's answers are keyed by `${currentQuestion.id}-${student.name}`
+            // and student-grid's by `${currentQuestion.id}-${idx}` for the question part
+            if (answers[`${question.id}-${sIdx}`] && answers[`${question.id}-${sIdx}`] !== '') {
+              hasAnyAnswer = true;
+            }
+          });
         } else if (question.data.events) { // For time-sequence
-             question.data.events.forEach((_e: any, eIdx: number) => {
-                if (answers[`${question.id}-${eIdx}`] && answers[`${question.id}-${eIdx}`] !== '') {
-                    hasAnyAnswer = true;
-                }
-             });
+          question.data.events.forEach((_e: any, eIdx: number) => {
+            if (answers[`${question.id}-${eIdx}`] && answers[`${question.id}-${eIdx}`] !== '') {
+              hasAnyAnswer = true;
+            }
+          });
         } else if (question.data.articles) { // For headline-matching
-             question.data.articles.forEach((_a: any, aIdx: number) => {
-                if (answers[`${question.id}-${aIdx}`] && answers[`${question.id}-${aIdx}`] !== '') {
-                    hasAnyAnswer = true;
-                }
-             });
+          question.data.articles.forEach((_a: any, aIdx: number) => {
+            if (answers[`${question.id}-${aIdx}`] && answers[`${question.id}-${aIdx}`] !== '') {
+              hasAnyAnswer = true;
+            }
+          });
         } else {
-             // Fallback for types that might just have one answer field tied directly to question.id
-             if (answers[question.id]) {
-                 hasAnyAnswer = true;
-             }
+          // Fallback for types that might just have one answer field tied directly to question.id
+          if (answers[question.id]) {
+            hasAnyAnswer = true;
+          }
         }
 
         if (hasAnyAnswer) {
@@ -239,7 +239,7 @@ export default function AQATopicReadingAssessment({
       } else {
         // Fallback for any other types not explicitly handled above
         if (answers[question.id]) {
-          score += question.marks; 
+          score += question.marks;
         }
       }
     });
@@ -326,17 +326,17 @@ export default function AQATopicReadingAssessment({
               <div className="text-sm font-medium text-orange-800 mt-1">Time Taken</div>
             </div>
           </div>
-          
+
           <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 text-left">
             <h3 className="font-semibold text-gray-900 text-lg mb-2">Assessment Overview</h3>
             <p className="text-gray-700 leading-relaxed">
-              This assessment focused on <strong>{topic}</strong> within the <strong>{theme.split(': ')[1]}</strong> theme. 
+              This assessment focused on <strong>{topic}</strong> within the <strong>{theme.split(': ')[1]}</strong> theme.
               You completed the assessment in <strong>{formatTime(results.totalTimeSpent)}</strong>, out of a total time limit of <strong>{assessment?.time_limit_minutes} minutes</strong>.
             </p>
           </div>
 
           <div className="mt-8 flex justify-center">
-             <button
+            <button
               onClick={() => { /* Implement navigation back to topic selection or dashboard */ }}
               className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
             >
@@ -466,7 +466,7 @@ export default function AQATopicReadingAssessment({
       case 'time-sequence':
         return (
           <div className="space-y-5">
-             <h3 className="font-semibold text-gray-900 text-lg mb-3">Order these events:</h3>
+            <h3 className="font-semibold text-gray-900 text-lg mb-3">Order these events:</h3>
             {currentQuestion.data.events?.map((event: any, idx: number) => (
               <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-yellow-50 p-5 rounded-lg border border-yellow-200 shadow-sm">
                 <span className="text-gray-900 font-medium text-base flex-1 mb-3 sm:mb-0 sm:mr-4">{event.event}</span>
@@ -576,12 +576,12 @@ export default function AQATopicReadingAssessment({
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 flex flex-col items-center">
       <div className="w-full max-w-4xl">
-        {/* Header with Progress and Timer */}
+        {/* Header */}
         <div className="bg-white rounded-xl shadow-lg mb-6 p-5 flex flex-col sm:flex-row items-center justify-between border-b-4 border-purple-500">
           <div className="flex items-center mb-4 sm:mb-0">
             <Target className="h-6 w-6 text-purple-600 mr-3" />
             <span className="text-md font-semibold text-gray-800">
-              Question {currentQuestionIndex + 1} of {questions.length}
+              {assessment?.exam_board === 'Edexcel' ? 'Edexcel' : assessment?.curriculum_level === 'ks3' ? 'KS3' : 'AQA'} Reading - Question {currentQuestionIndex + 1} of {questions.length}
             </span>
           </div>
           <div className="flex items-center">

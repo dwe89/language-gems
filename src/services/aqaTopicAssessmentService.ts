@@ -11,10 +11,13 @@ export interface AQATopicAssessmentDefinition {
   title: string;
   description?: string;
   level: 'foundation' | 'higher';
+  curriculum_level?: 'ks3' | 'ks4';
+  exam_board?: 'AQA' | 'Edexcel';
   language: string;
   identifier: string;
   theme: string;
   topic: string;
+  type?: 'reading' | 'writing' | 'listening' | 'speaking';
   version: string;
   total_questions: number;
   time_limit_minutes: number;
@@ -48,18 +51,24 @@ export class AQATopicAssessmentService {
     level: 'foundation' | 'higher',
     language: string,
     theme: string,
-    topic: string
+    topic: string,
+    type?: 'reading' | 'writing' | 'listening' | 'speaking'
   ): Promise<AQATopicAssessmentDefinition[]> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('aqa_topic_assessments')
         .select('*')
         .eq('level', level)
         .eq('language', language)
         .eq('theme', theme)
         .eq('topic', topic)
-        .eq('is_active', true)
-        .order('identifier', { ascending: true });
+        .eq('is_active', true);
+
+      if (type) {
+        query = query.eq('type', type);
+      }
+
+      const { data, error } = await query.order('identifier', { ascending: true });
 
       if (error) {
         console.error('Error fetching topic assessments:', error);

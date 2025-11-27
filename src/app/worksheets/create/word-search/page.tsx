@@ -83,7 +83,7 @@ interface WordSearchSettings {
 
 export default function WordSearchPage() {
   const router = useRouter();
-  
+
   const [title, setTitle] = useState('Word Search Puzzle');
   const [subject, setSubject] = useState('spanish');
   const [level, setLevel] = useState('intermediate');
@@ -95,7 +95,7 @@ export default function WordSearchPage() {
 
   const generationSteps = [
     "Selecting vocabulary words...",
-    "Creating puzzle grid...", 
+    "Creating puzzle grid...",
     "Placing words in grid...",
     "Adding random letters...",
     "Finalizing puzzle..."
@@ -134,7 +134,7 @@ export default function WordSearchPage() {
   // Load categories based on curriculum level and exam board
   useEffect(() => {
     console.log('Loading categories for:', vocabularyConfig.curriculumLevel, vocabularyConfig.examBoard);
-    
+
     if (vocabularyConfig.curriculumLevel === 'KS3') {
       console.log('Setting KS3 categories:', VOCABULARY_CATEGORIES);
       setAvailableCategories(VOCABULARY_CATEGORIES);
@@ -347,17 +347,17 @@ export default function WordSearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <LoadingModal 
+      <LoadingModal
         isOpen={isGenerating}
         title="Generating Your Word Search"
         description="Please wait while we create your puzzle..."
         steps={generationSteps}
         currentStep={generationStep}
       />
-        {/* Hero Background Pattern */}
-        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
+      {/* Hero Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Header */}
         <div className="flex items-center space-x-4 mb-12">
           <Link href="/worksheets/create" passHref>
@@ -625,7 +625,7 @@ export default function WordSearchPage() {
                 <Label className="text-slate-700 font-semibold mb-4 block">
                   Choose Vocabulary Category
                 </Label>
-                
+
                 {availableCategories.length === 0 && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 text-amber-700 mb-2">
@@ -654,11 +654,10 @@ export default function WordSearchPage() {
                               subcategoryId: undefined,
                             }))
                           }
-                          className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all duration-200 text-sm font-medium ${
-                            isSelected
+                          className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all duration-200 text-sm font-medium ${isSelected
                               ? `bg-gradient-to-r ${category.color} text-white border-transparent shadow-lg scale-105`
                               : 'bg-white border-slate-200 hover:border-purple-300 hover:shadow-md hover:scale-102'
-                          }`}
+                            }`}
                         >
                           <IconComponent className="h-6 w-6" />
                           <span className="text-center leading-tight">{category.displayName}</span>
@@ -698,11 +697,10 @@ export default function WordSearchPage() {
                                 subcategoryId: isSelected ? undefined : subcategory.id,
                               }))
                             }
-                            className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 text-sm font-medium ${
-                              isSelected
+                            className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 text-sm font-medium ${isSelected
                                 ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-transparent shadow-lg'
                                 : 'bg-white border-slate-200 hover:border-green-300 hover:shadow-md'
-                            }`}
+                              }`}
                           >
                             <span className="text-center">{subcategory.displayName}</span>
                           </button>
@@ -740,42 +738,117 @@ export default function WordSearchPage() {
             <CardContent>
               {useCustomWords && (
                 <div className="space-y-4">
-                  <div className="flex space-x-2">
-                    <Input
-                      value={newWord}
-                      onChange={(e) => setNewWord(e.target.value.toUpperCase())}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Enter a word"
-                      className="flex-1 bg-white border-slate-300 hover:border-slate-400 focus:border-purple-500 focus:ring-purple-500/20"
+                  {/* Bulk Paste Section */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <Label htmlFor="bulkPaste" className="text-slate-700 font-semibold flex items-center gap-2 mb-2">
+                      <ClipboardList className="h-4 w-4 text-blue-600" />
+                      Paste from Excel
+                    </Label>
+                    <p className="text-sm text-slate-600 mb-3">
+                      Copy cells from Excel and paste them here. Words will be automatically extracted.
+                    </p>
+                    <Textarea
+                      id="bulkPaste"
+                      placeholder="Paste words here (one per line or from Excel table)..."
+                      rows={4}
+                      className="bg-white border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-blue-500/20 resize-none font-mono text-sm"
+                      onPaste={(e) => {
+                        const pastedText = e.clipboardData.getData('text');
+                        if (pastedText.trim()) {
+                          // Parse the pasted text
+                          // Handle both tab-separated (Excel) and newline-separated values
+                          const lines = pastedText.split(/\r?\n/);
+                          const newWords: string[] = [];
+
+                          lines.forEach(line => {
+                            // Split by tabs (Excel columns) or commas
+                            const cells = line.split(/\t|,/);
+                            cells.forEach(cell => {
+                              const word = cell.trim().toUpperCase();
+                              // Only add non-empty words that aren't already in the list
+                              if (word && !words.includes(word) && !newWords.includes(word)) {
+                                newWords.push(word);
+                              }
+                            });
+                          });
+
+                          if (newWords.length > 0) {
+                            setWords([...words, ...newWords]);
+                            // Clear the textarea after processing
+                            setTimeout(() => {
+                              const textarea = document.getElementById('bulkPaste') as HTMLTextAreaElement;
+                              if (textarea) textarea.value = '';
+                            }, 100);
+                          }
+                        }
+                      }}
                     />
-                    <Button onClick={addWord} disabled={!newWord.trim()}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add
-                    </Button>
+                    <p className="text-xs text-slate-500 mt-2">
+                      💡 Tip: Select cells in Excel, copy (Ctrl+C / Cmd+C), and paste here
+                    </p>
                   </div>
 
+                  <Separator />
+
+                  {/* Single Word Entry */}
+                  <div>
+                    <Label className="text-slate-700 font-semibold mb-2 block">
+                      Or add words individually
+                    </Label>
+                    <div className="flex space-x-2">
+                      <Input
+                        value={newWord}
+                        onChange={(e) => setNewWord(e.target.value.toUpperCase())}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Enter a word"
+                        className="flex-1 bg-white border-slate-300 hover:border-slate-400 focus:border-purple-500 focus:ring-purple-500/20"
+                      />
+                      <Button onClick={addWord} disabled={!newWord.trim()}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Word List */}
                   {words.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {words.map((word, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
-                          <span className="font-mono text-sm">{word}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeWord(index)}
-                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="text-slate-700 font-semibold">
+                          Words ({words.length})
+                        </Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setWords([])}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Clear All
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {words.map((word, index) => (
+                          <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                            <span className="font-mono text-sm">{word}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeWord(index)}
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
                   {words.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       <Grid3x3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No words added yet. Enter words above to build your puzzle.</p>
+                      <p>No words added yet. Paste from Excel or enter words above to build your puzzle.</p>
                     </div>
                   )}
                 </div>
@@ -795,7 +868,7 @@ export default function WordSearchPage() {
                   <Label className="text-base font-semibold mb-3 block">Word Directions</Label>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
+                      <Checkbox
                         id="horizontal"
                         checked={settings.directions.horizontal}
                         onCheckedChange={(checked) => updateDirection('horizontal', checked as boolean)}
@@ -803,7 +876,7 @@ export default function WordSearchPage() {
                       <Label htmlFor="horizontal">Horizontal →</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
+                      <Checkbox
                         id="vertical"
                         checked={settings.directions.vertical}
                         onCheckedChange={(checked) => updateDirection('vertical', checked as boolean)}
@@ -811,7 +884,7 @@ export default function WordSearchPage() {
                       <Label htmlFor="vertical">Vertical ↓</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
+                      <Checkbox
                         id="diagonal"
                         checked={settings.directions.diagonal}
                         onCheckedChange={(checked) => updateDirection('diagonal', checked as boolean)}
@@ -819,7 +892,7 @@ export default function WordSearchPage() {
                       <Label htmlFor="diagonal">Diagonal ↘</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
+                      <Checkbox
                         id="backwards"
                         checked={settings.directions.backwards}
                         onCheckedChange={(checked) => updateDirection('backwards', checked as boolean)}
@@ -862,17 +935,17 @@ export default function WordSearchPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  onClick={generateWithAI} 
-                  variant="outline" 
+                <Button
+                  onClick={generateWithAI}
+                  variant="outline"
                   className="flex-1"
                   disabled={isGenerating}
                 >
                   <Wand2 className="h-4 w-4 mr-2" />
                   Generate Words with AI
                 </Button>
-                <Button 
-                  onClick={generatePuzzle} 
+                <Button
+                  onClick={generatePuzzle}
                   className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500"
                   disabled={isGenerating || (!useCustomWords && !vocabularyConfig.categoryId) || (useCustomWords && words.length === 0)}
                 >
@@ -889,7 +962,7 @@ export default function WordSearchPage() {
                   )}
                 </Button>
               </div>
-              
+
               {!useCustomWords && !vocabularyConfig.categoryId && (
                 <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-amber-700 mb-2">

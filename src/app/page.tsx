@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Gamepad2,
   BookOpen,
@@ -80,6 +81,7 @@ function useTypewriter(texts: any[], speed = 100) {
 export default function Home() {
   const { text: animatedText, color: textColor } = useTypewriter(heroTextVariations);
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [showSignupModal, setShowSignupModal] = useState(false);
 
   // Load editable page content
@@ -90,6 +92,11 @@ export default function Home() {
 
   // Auto-redirect logged-in users to their appropriate dashboard
   useEffect(() => {
+    const from = searchParams.get('from');
+    if (from === 'dashboard') {
+      // Skip redirect if coming from dashboard
+      return;
+    }
     if (user?.user_metadata?.role === 'student') {
       window.location.href = '/student-dashboard';
     } else if (user?.user_metadata?.role === 'learner') {
@@ -97,7 +104,7 @@ export default function Home() {
     } else if (user?.user_metadata?.role === 'teacher') {
       window.location.href = '/dashboard';
     }
-  }, [user]);
+  }, [user, searchParams]);
 
   // Fallback features if page data not loaded
   const defaultFeatures = [

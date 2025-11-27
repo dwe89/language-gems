@@ -144,7 +144,7 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
     },
     {
       name: 'Resources',
-      path: '/resources',
+      path: 'https://www.secondarymfl.com',
       enabled: true,
       comingSoon: false,
       comingSoonPath: null,

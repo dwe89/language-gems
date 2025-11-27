@@ -11,10 +11,13 @@ interface TopicAssessment {
   title: string;
   description?: string;
   level: 'foundation' | 'higher';
+  curriculum_level?: 'ks3' | 'ks4';
+  exam_board?: 'AQA' | 'Edexcel';
   language: string;
   identifier: string;
   theme: string;
   topic: string;
+  type: 'reading' | 'writing' | 'listening' | 'speaking';
   version: string;
   total_questions: number;
   time_limit_minutes: number;
@@ -74,33 +77,72 @@ const AQA_THEMES = [
 // Edexcel Themes and Topics
 const EDEXCEL_THEMES = [
   {
-    id: 'Theme 1: Identity and culture',
-    name: 'Theme 1: Identity and culture',
+    id: 'My personal world',
+    name: 'My personal world',
     topics: [
-      'Me, my family and friends',
-      'Technology in everyday life',
-      'Free-time activities',
-      'Customs and festivals'
+      'Family',
+      'Friends and relationships',
+      'Home',
+      'Equality'
     ]
   },
   {
-    id: 'Theme 2: Local, national, international and global areas of interest',
-    name: 'Theme 2: Local, national, international and global areas of interest',
+    id: 'Lifestyle and wellbeing',
+    name: 'Lifestyle and wellbeing',
     topics: [
-      'Home, town, neighbourhood and region',
-      'Social issues',
-      'Global issues',
-      'Travel and tourism'
+      'Physical wellbeing',
+      'Mental wellbeing',
+      'Healthy living',
+      'Food and drink',
+      'Sports',
+      'Illnesses'
     ]
   },
   {
-    id: 'Theme 3: Current and future study and employment',
-    name: 'Theme 3: Current and future study and employment',
+    id: 'My neighbourhood',
+    name: 'My neighbourhood',
     topics: [
-      'My studies',
-      'Life at school/college',
-      'Education post-16',
-      'Jobs, career choices and ambitions'
+      'Home and local area',
+      'Places in town',
+      'Shopping',
+      'The natural world',
+      'Environmental issues'
+    ]
+  },
+  {
+    id: 'Media and technology',
+    name: 'Media and technology',
+    topics: [
+      'Life online - advantages and disadvantages',
+      'Technology',
+      'TV and film',
+      'Music',
+      'Social media',
+      'Gaming'
+    ]
+  },
+  {
+    id: 'Studying and my future',
+    name: 'Studying and my future',
+    topics: [
+      'School subjects',
+      'Opinions about school',
+      'School rules',
+      'Future plans',
+      'Current employment',
+      'Future employment'
+    ]
+  },
+  {
+    id: 'Travel and tourism',
+    name: 'Travel and tourism',
+    topics: [
+      'Holidays',
+      'Transport',
+      'Accommodation',
+      'Planning and describing a holiday',
+      'Weather',
+      'Tourist attractions'
     ]
   }
 ];
@@ -138,8 +180,10 @@ export default function TopicAssessmentAdminModal({
   // Filters
   const [filterLanguage, setFilterLanguage] = useState<string>('');
   const [filterLevel, setFilterLevel] = useState<string>('');
+  const [filterExamBoard, setFilterExamBoard] = useState<string>('AQA');
   const [filterTheme, setFilterTheme] = useState<string>('');
   const [filterTopic, setFilterTopic] = useState<string>('');
+  const [filterType, setFilterType] = useState<string>('');
 
   // Form state
   const [editingAssessment, setEditingAssessment] = useState<TopicAssessment | null>(null);
@@ -153,6 +197,7 @@ export default function TopicAssessmentAdminModal({
     identifier: '',
     theme: '',
     topic: '',
+    type: 'reading' as 'reading' | 'writing' | 'listening' | 'speaking',
     version: '1.0',
     total_questions: 5,
     time_limit_minutes: 20,
@@ -186,6 +231,10 @@ export default function TopicAssessmentAdminModal({
       filtered = filtered.filter(a => a.level === filterLevel);
     }
 
+    if (filterType) {
+      filtered = filtered.filter(a => a.type === filterType);
+    }
+
     if (filterTheme) {
       filtered = filtered.filter(a => a.theme === filterTheme);
     }
@@ -195,14 +244,14 @@ export default function TopicAssessmentAdminModal({
     }
 
     setFilteredAssessments(filtered);
-  }, [assessments, filterLanguage, filterLevel, filterTheme, filterTopic]);
+  }, [assessments, filterLanguage, filterLevel, filterTheme, filterTopic, filterType, filterExamBoard]);
 
   const loadAssessments = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch('/api/topic-assessments');
-      
+
       if (!response.ok) {
         throw new Error('Failed to load assessments');
       }
@@ -210,7 +259,7 @@ export default function TopicAssessmentAdminModal({
       const data = await response.json();
       const loadedAssessments = data.assessments || [];
       setAssessments(loadedAssessments);
-      
+
       // Generate identifier suggestions based on existing assessments
       const identifiers = loadedAssessments.map((a: TopicAssessment) => a.identifier);
       setSuggestedIdentifiers(identifiers);
@@ -233,6 +282,15 @@ export default function TopicAssessmentAdminModal({
       difficulty_rating: 3,
       question_data: {}
     };
+
+    // Add type-specific default data
+    if (formData.type === 'listening') {
+      newQuestion.question_data = { audio_url: '' };
+    } else if (formData.type === 'writing') {
+      newQuestion.question_type = 'writing-90-words'; // Default for writing
+      newQuestion.question_data = { bullets: ['Bullet 1', 'Bullet 2', 'Bullet 3', 'Bullet 4'] };
+    }
+
     setQuestions([...questions, newQuestion]);
   };
 
@@ -266,34 +324,54 @@ export default function TopicAssessmentAdminModal({
   };
 
   // Generate suggested identifier based on existing ones
+  // Generate suggested identifier based on existing ones
   const generateSuggestedIdentifier = () => {
-    const { language, level, theme, topic } = formData;
-    
+    const { language, level, theme, topic, type, curriculum_level, exam_board } = formData;
+
+    // Board code
+    const boardCode = curriculum_level === 'ks3' ? 'KS3' : (exam_board === 'Edexcel' ? 'EDX' : 'AQA');
+
     // Create a short code from theme and topic
-    const themeCode = theme.includes('Theme 1') ? 'T1' : 
-                      theme.includes('Theme 2') ? 'T2' : 
-                      theme.includes('Theme 3') ? 'T3' : 'T0';
-    
-    const topicCode = topic.substring(0, 3).toUpperCase().replace(/\s/g, '');
-    
-    const prefix = `AQA-${language.toUpperCase()}-${level.charAt(0).toUpperCase()}-${themeCode}-${topicCode}`;
-    
+    let themeCode = 'T0';
+    if (curriculum_level !== 'ks3') {
+      themeCode = theme.includes('Theme 1') ? 'T1' :
+        theme.includes('Theme 2') ? 'T2' :
+          theme.includes('Theme 3') ? 'T3' : 'T0';
+    }
+
+    const topicCode = topic ? topic.substring(0, 3).toUpperCase().replace(/\s/g, '') : 'GEN';
+
+    // Type code
+    const typeCode = type === 'reading' ? 'READ' :
+      type === 'writing' ? 'WRIT' :
+        type === 'listening' ? 'LIST' : 'SPKG';
+
+    // Construct prefix
+    let prefix = '';
+    if (curriculum_level === 'ks3') {
+      // KS3 Format: KS3-LANG-TOPIC-TYPE-NUM
+      prefix = `${boardCode}-${language.toUpperCase()}-${topicCode}-${typeCode}`;
+    } else {
+      // GCSE Format: BOARD-LANG-LEVEL-THEME-TOPIC-TYPE-NUM
+      prefix = `${boardCode}-${language.toUpperCase()}-${level.charAt(0).toUpperCase()}-${themeCode}-${topicCode}-${typeCode}`;
+    }
+
     // Find existing identifiers with similar prefix
-    const existing = suggestedIdentifiers.filter(id => id.includes(themeCode) && id.includes(topicCode));
-    
+    const existing = suggestedIdentifiers.filter(id => id.startsWith(prefix));
+
     if (existing.length === 0) {
       return `${prefix}-001`;
     }
-    
+
     // Extract numbers and find the highest
     const numbers = existing.map(id => {
-      const match = id.match(/\d+$/);
-      return match ? parseInt(match[0]) : 0;
+      const match = id.match(/-(\d+)$/);
+      return match ? parseInt(match[1]) : 0;
     });
-    
-    const highest = Math.max(...numbers);
+
+    const highest = Math.max(0, ...numbers);
     const next = (highest + 1).toString().padStart(3, '0');
-    
+
     return `${prefix}-${next}`;
   };
 
@@ -328,16 +406,17 @@ export default function TopicAssessmentAdminModal({
       version: '1.0',
       total_questions: 5,
       time_limit_minutes: 20,
-      is_active: true
+      is_active: true,
+      type: 'reading'
     });
     setQuestions([]);
     setJsonMode(false);
     setJsonInput('');
-    
+
     // Generate suggested identifier for new assessment
     const suggested = generateSuggestedIdentifier();
     setFormData(prev => ({ ...prev, identifier: suggested }));
-    
+
     setView('create');
   };
 
@@ -356,16 +435,17 @@ export default function TopicAssessmentAdminModal({
       version: assessment.version,
       total_questions: assessment.total_questions,
       time_limit_minutes: assessment.time_limit_minutes,
-      is_active: assessment.is_active
+      is_active: assessment.is_active,
+      type: assessment.type || 'reading'
     });
     setJsonMode(false);
     setJsonInput('');
-    
+
     // Load questions if editing existing assessment
     if (assessment.id) {
       loadAssessmentQuestions(assessment.id);
     }
-    
+
     setView('edit');
   };
 
@@ -384,7 +464,7 @@ export default function TopicAssessmentAdminModal({
             ...formData,
             ...parsedData
           };
-          
+
           // Extract questions if present in JSON
           if (parsedData.questions) {
             setQuestions(parsedData.questions);
@@ -472,7 +552,7 @@ export default function TopicAssessmentAdminModal({
     if (formData.curriculum_level === 'ks3') {
       return []; // KS3 doesn't use themes
     } else if (formData.curriculum_level === 'ks4') {
-      return formData.exam_board === 'AQA' ? AQA_THEMES : EDEXCEL_THEMES;
+      return formData.exam_board === 'Edexcel' ? EDEXCEL_THEMES : AQA_THEMES;
     }
     return [];
   };
@@ -490,11 +570,12 @@ export default function TopicAssessmentAdminModal({
 
   const getFilteredThemes = () => {
     // For filter dropdown in list view
-    return AQA_THEMES; // Can expand this to support Edexcel filtering too
+    return filterExamBoard === 'Edexcel' ? EDEXCEL_THEMES : AQA_THEMES;
   };
 
   const getFilteredTopics = () => {
-    const selectedTheme = AQA_THEMES.find(t => t.id === filterTheme);
+    const themes = getFilteredThemes();
+    const selectedTheme = themes.find(t => t.id === filterTheme);
     return selectedTheme ? selectedTheme.topics : [];
   };
 
@@ -568,9 +649,32 @@ export default function TopicAssessmentAdminModal({
                       onChange={(e) => setFilterLevel(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
-                      <option value="">All Levels</option>
                       <option value="foundation">Foundation</option>
                       <option value="higher">Higher</option>
+                    </select>
+
+                    <select
+                      value={filterExamBoard}
+                      onChange={(e) => {
+                        setFilterExamBoard(e.target.value);
+                        setFilterTheme('');
+                        setFilterTopic('');
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="AQA">AQA</option>
+                      <option value="Edexcel">Edexcel</option>
+                    </select>
+
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">All Types</option>
+                      <option value="reading">Reading</option>
+                      <option value="writing">Writing</option>
+                      <option value="listening">Listening</option>
                     </select>
 
                     <select
@@ -582,7 +686,7 @@ export default function TopicAssessmentAdminModal({
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
                       <option value="">All Themes</option>
-                      {AQA_THEMES.map(theme => (
+                      {getFilteredThemes().map(theme => (
                         <option key={theme.id} value={theme.id}>{theme.name}</option>
                       ))}
                     </select>
@@ -637,6 +741,12 @@ export default function TopicAssessmentAdminModal({
                             </span>
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
                               {assessment.level}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${assessment.type === 'listening' ? 'bg-yellow-100 text-yellow-800' :
+                              assessment.type === 'writing' ? 'bg-green-100 text-green-800' :
+                                'bg-blue-100 text-blue-800'
+                              } capitalize`}>
+                              {assessment.type || 'reading'}
                             </span>
                             <span className="text-xs text-gray-500">
                               {assessment.identifier}
@@ -771,21 +881,22 @@ export default function TopicAssessmentAdminModal({
 
                 {/* Exam Board and GCSE Level (only for KS4) */}
                 {formData.curriculum_level === 'ks4' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Exam Board *
+                    </label>
+                    <select
+                      value={formData.exam_board}
+                      onChange={(e) => setFormData({ ...formData, exam_board: e.target.value as 'AQA' | 'Edexcel', theme: '', topic: '' })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="AQA">AQA</option>
+                      <option value="Edexcel">Edexcel</option>
+                    </select>
+                  </div>
+                )}
+                {formData.curriculum_level === 'ks4' && (
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Exam Board *
-                      </label>
-                      <select
-                        value={formData.exam_board}
-                        onChange={(e) => setFormData({ ...formData, exam_board: e.target.value as 'AQA' | 'Edexcel', theme: '', topic: '' })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      >
-                        <option value="AQA">AQA</option>
-                        <option value="Edexcel">Edexcel</option>
-                      </select>
-                    </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         GCSE Level *
@@ -801,6 +912,22 @@ export default function TopicAssessmentAdminModal({
                     </div>
                   </div>
                 )}
+
+                {/* Assessment Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Assessment Type *
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="reading">Reading</option>
+                    <option value="writing">Writing</option>
+                    <option value="listening">Listening</option>
+                  </select>
+                </div>
 
                 {/* Theme and Topic */}
                 {formData.curriculum_level === 'ks4' && (
@@ -955,11 +1082,10 @@ export default function TopicAssessmentAdminModal({
                     <button
                       type="button"
                       onClick={() => setJsonMode(!jsonMode)}
-                      className={`px-4 py-2 rounded-lg transition-colors ${
-                        jsonMode
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                      className={`px-4 py-2 rounded-lg transition-colors ${jsonMode
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
                     >
                       {jsonMode ? 'Form Mode' : 'JSON Mode'}
                     </button>
@@ -1148,6 +1274,44 @@ export default function TopicAssessmentAdminModal({
                                   />
                                 </div>
                               </div>
+
+                              {/* Type-specific fields */}
+                              {formData.type === 'listening' && (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    Audio URL
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={question.question_data?.audio_url || ''}
+                                    onChange={(e) => {
+                                      const newData = { ...question.question_data, audio_url: e.target.value };
+                                      updateQuestion(index, 'question_data', newData);
+                                    }}
+                                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                                    placeholder="https://example.com/audio.mp3"
+                                  />
+                                </div>
+                              )}
+
+                              {formData.type === 'writing' && (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    Writing Instructions (Bullets)
+                                  </label>
+                                  <textarea
+                                    value={Array.isArray(question.question_data?.bullets) ? question.question_data.bullets.join('\n') : ''}
+                                    onChange={(e) => {
+                                      const bullets = e.target.value.split('\n').filter(line => line.trim() !== '');
+                                      const newData = { ...question.question_data, bullets };
+                                      updateQuestion(index, 'question_data', newData);
+                                    }}
+                                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                                    rows={4}
+                                    placeholder="Enter each bullet point on a new line"
+                                  />
+                                </div>
+                              )}
 
                               {/* Question Data (JSON editor for flexible question content) */}
                               <div>

@@ -95,7 +95,7 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
           <div className="flex justify-between items-center h-16">
             {/* Logo and Back to Site Link */}
             <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center text-blue-200 hover:text-white text-sm transition-colors">
+              <Link href="/?from=dashboard" className="flex items-center text-blue-200 hover:text-white text-sm transition-colors">
                 ← Back to Site
               </Link>
               <Link href="/dashboard" className="flex items-center space-x-2 group">

@@ -4,6 +4,8 @@ import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import ReadingComprehensionEngine from '../../../components/assessments/ReadingComprehensionEngine';
+import AQATopicReadingAssessment from '../../../components/assessments/AQATopicReadingAssessment';
+import { AQATopicAssessmentService } from '../../../services/aqaTopicAssessmentService';
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { normalizeAssessmentLanguage, resolveReadingFilters } from '@/lib/assessmentConfigUtils';
@@ -22,6 +24,9 @@ function TopicBasedAssessmentPageContent() {
   const [error, setError] = useState<string>('');
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const [sessionService, setSessionService] = useState<EnhancedGameSessionService | null>(null);
+
+  const [topicAssessment, setTopicAssessment] = useState<any>(null);
+  const [checkingTopicAssessment, setCheckingTopicAssessment] = useState(true);
 
   // Initialize session service
   useEffect(() => {
@@ -83,6 +88,44 @@ function TopicBasedAssessmentPageContent() {
     loadAssignment();
   }, [assignmentId]);
 
+  // Check for specific topic assessment
+  useEffect(() => {
+    const checkTopicAssessment = async () => {
+      if (!assignment?.assessmentConfig) return;
+
+      setCheckingTopicAssessment(true);
+      try {
+        const { language, difficulty, category, subcategory } = assignment.assessmentConfig;
+
+        const service = new AQATopicAssessmentService();
+        const langCode = language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'de';
+
+        // Try to find a matching assessment
+        const assessments = await service.getAssessmentsByFilters(
+          difficulty,
+          langCode,
+          category,
+          subcategory
+        );
+
+        if (assessments && assessments.length > 0) {
+          console.log('✅ Found specific topic assessment:', assessments[0]);
+          setTopicAssessment(assessments[0]);
+        } else {
+          console.log('⚠️ No specific topic assessment found, falling back to reading comprehension engine');
+        }
+      } catch (err) {
+        console.error('Error checking for topic assessment:', err);
+      } finally {
+        setCheckingTopicAssessment(false);
+      }
+    };
+
+    if (assignment) {
+      checkTopicAssessment();
+    }
+  }, [assignment]);
+
   // Create game session for assignment mode
   useEffect(() => {
     const createSession = async () => {
@@ -98,7 +141,8 @@ function TopicBasedAssessmentPageContent() {
               assignmentId: assignmentId,
               assessmentType: 'topic-based',
               category: assignment.assessmentConfig?.category,
-              subcategory: assignment.assessmentConfig?.subcategory
+              subcategory: assignment.assessmentConfig?.subcategory,
+              specificAssessmentId: topicAssessment?.id
             }
           });
           setGameSessionId(sessionId);
@@ -108,8 +152,12 @@ function TopicBasedAssessmentPageContent() {
         }
       }
     };
-    createSession();
-  }, [isAssignmentMode, sessionService, user, assignment, gameSessionId, assignmentId]);
+
+    // Only create session once we've finished checking for the specific assessment type
+    if (!checkingTopicAssessment) {
+      createSession();
+    }
+  }, [isAssignmentMode, sessionService, user, assignment, gameSessionId, assignmentId, checkingTopicAssessment, topicAssessment]);
 
   // Handle assessment completion
   const handleComplete = async (results: any) => {
@@ -118,7 +166,7 @@ function TopicBasedAssessmentPageContent() {
     if (isAssignmentMode && sessionService && gameSessionId && user) {
       try {
         const totalQuestions = results.totalQuestions || 1;
-        const correctAnswers = results.correctAnswers || 0;
+        const correctAnswers = results.correctAnswers || (results.score && results.totalMarks ? Math.round((results.score / results.totalMarks) * totalQuestions) : 0);
 
         await sessionService.endGameSession(gameSessionId, {
           student_id: user.id,
@@ -126,13 +174,13 @@ function TopicBasedAssessmentPageContent() {
           game_type: 'topic-based',
           session_mode: 'assignment',
           final_score: results.score || 0,
-          max_score_possible: totalQuestions * 100,
-          accuracy_percentage: results.score || 0,
+          max_score_possible: results.totalMarks || (totalQuestions * 100),
+          accuracy_percentage: results.percentage || 0,
           completion_percentage: 100,
           words_attempted: totalQuestions,
           words_correct: correctAnswers,
           unique_words_practiced: totalQuestions,
-          duration_seconds: results.timeSpent || 0,
+          duration_seconds: results.totalTimeSpent || results.timeSpent || 0,
           session_data: results
         });
 
@@ -146,7 +194,7 @@ function TopicBasedAssessmentPageContent() {
     }
   };
 
-  if (loading) {
+  if (loading || checkingTopicAssessment) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -189,6 +237,22 @@ function TopicBasedAssessmentPageContent() {
   const category = assignment?.assessmentConfig?.category;
   const subcategory = assignment?.assessmentConfig?.subcategory;
 
+  // If we found a specific topic assessment, render that engine
+  if (topicAssessment) {
+    return (
+      <AQATopicReadingAssessment
+        language={language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'de'}
+        level="KS4" // Type requirement, though unused for KS3 logic
+        difficulty={difficulty}
+        theme={category}
+        topic={subcategory}
+        identifier={topicAssessment.identifier}
+        onComplete={handleComplete}
+      />
+    );
+  }
+
+  // Fallback to standard reading comprehension engine
   return (
     <ReadingComprehensionEngine
       language={language}
