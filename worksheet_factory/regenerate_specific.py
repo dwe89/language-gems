@@ -5,7 +5,7 @@ from factory import fetch_jobs_from_supabase, process_job, OUTPUT_DIR
 
 # Define the targets we want to regenerate
 TARGETS = [
-    "basics_core_language"
+    "at_the_doctors"
 ]
 
 async def main():
@@ -18,8 +18,8 @@ async def main():
     selected_jobs = []
     for job in all_jobs:
         topic = job['topic']
-        # Check if any target string is in the topic AND language is Spanish
-        if any(t in topic for t in TARGETS) and job['language'] == 'es':
+        # Check if any target string is in the topic AND language is French
+        if any(t in topic for t in TARGETS) and job['language'] == 'fr':
             selected_jobs.append(job)
             
     if not selected_jobs:

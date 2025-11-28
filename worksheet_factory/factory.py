@@ -81,7 +81,7 @@ Schema:
       { "answer": "string", "clue": "string" } 
   ], // 8-10 items. 'answer' must be from vocab. 'clue' in English. KEEP ACCENTS and SPACES in 'answer'.
   "matching": [ {"target": "string", "english": "string"} ], // 10 items
-  "translation": [ "string" ], // 10 English words to translate
+  "translation": [ {"english": "string", "target": "string"} ], // 10 items. 'english' prompt, 'target' answer.
   "unjumble_solutions": [ "string" ], // 6 items. Single words from vocab.
   "multiple_choice": [
       { 
@@ -96,6 +96,7 @@ Constraints:
 2. Unjumble solutions: Must be single words from vocab (no phrases).
 3. Crossword Clues: Must be in English.
 4. Multiple Choice: Questions in English, Answers in Target Language. KEEP SPACES and ACCENTS.
+5. Translation: Select 10 items from the provided vocabulary. Provide the 'english' and the expected 'target' translation. Do NOT generate new sentences.
 """
 
 # --- 2. GEOMETRY ENGINE (Custom Implementation) ---
@@ -240,17 +241,31 @@ def build_crossword_layout(word_list):
     for item in word_list:
         # Keep accents, just remove spaces/punctuation
         clean = item['answer'].upper().replace(" ", "").replace("-", "").replace("'", "")
-        if 2 < len(clean) < 12:
+        if 2 < len(clean) < 20:
             clean_list.append({**item, 'answer': clean})
             
-    generator = CrosswordGenerator()
+    # Calculate optimal grid size
+    max_len = 0
+    if clean_list:
+        max_len = max(len(item['answer']) for item in clean_list)
+    
+    # Dynamic grid size: at least 12, max 18 (or word length if longer)
+    grid_size = max(12, max_len)
+    if grid_size > 18:
+        grid_size = 18 # Try to cap at 18 to prevent tiny cells
+        # If we have a word > 18 chars, we might have issues, but we filtered < 20.
+        # Let's allow up to 20 if absolutely necessary, but prefer smaller.
+        if max_len > 18:
+            grid_size = max_len
+
+    generator = CrosswordGenerator(width=grid_size, height=grid_size)
     layout = generator.generate(clean_list)
     
     if not layout:
         print("⚠️ Crossword generation failed. Sending empty grid.")
-        return []
+        return [], 12
 
-    return layout
+    return layout, grid_size
 
 def validate_data(data):
     """
@@ -469,7 +484,7 @@ Generate worksheet content using ONLY the provided vocabulary.
         data = validate_data(raw_data)
         
         # B. COMPUTE GEOMETRY (Python does this, not AI)
-        data['crossword_layout'] = build_crossword_layout(data.get('crossword_words', []))
+        data['crossword_layout'], data['grid_size'] = build_crossword_layout(data.get('crossword_words', []))
         
         # C. RENDER (The "Print Twice" Strategy)
         async with async_playwright() as p:

@@ -6,7 +6,6 @@ import Head from 'next/head';
 import { useAuth } from '../../components/auth/AuthProvider';
 import ResourceFilterSidebar, { FilterState } from '../../components/resources/ResourceFilterSidebar';
 import ResourceCard from '../../components/resources/ResourceCard';
-import ProductAdminModal from '../../components/resources/ProductAdminModal';
 import {
   Search, Gift, ShoppingCart, Menu, BookOpen, Loader, Settings
 } from 'lucide-react';
@@ -22,7 +21,6 @@ export default function ResourcesPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [showAdminModal, setShowAdminModal] = useState(false);
   const { addItem, toggleCart, getTotalItems } = useCart();
 
   // Filter state
@@ -334,27 +332,6 @@ export default function ResourcesPage() {
         )}
 
         <CartSidebar />
-
-        {/* Floating Admin Button */}
-        {userIsAdmin && (
-          <button
-            onClick={() => setShowAdminModal(true)}
-            className="fixed bottom-8 left-8 flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg shadow-lg hover:bg-indigo-700 transition-all hover:shadow-xl z-40"
-            title="Manage Products"
-          >
-            <Settings className="w-5 h-5" />
-            <span className="font-medium">Manage Products</span>
-          </button>
-        )}
-
-        {/* Admin Modal */}
-        {userIsAdmin && (
-          <ProductAdminModal
-            isOpen={showAdminModal}
-            onClose={() => setShowAdminModal(false)}
-            onRefresh={fetchProducts}
-          />
-        )}
       </div>
 
       <Footer />
