@@ -12,21 +12,30 @@ const config = {
   },
   distDir: '.next',
   trailingSlash: false,
-  
+
   // Increase API route timeout for bulk operations
   experimental: {
     proxyTimeout: 120000, // 2 minutes
   },
-  
+
   // Allow student subdomain for development
   async headers() {
     return [
+      {
+        source: '/_next/static/chunks/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: process.env.NODE_ENV === 'development' 
+            value: process.env.NODE_ENV === 'development'
               ? 'http://students.localhost:3000'
               : 'https://students.languagegems.com',
           },
@@ -42,12 +51,12 @@ const config = {
       },
     ];
   },
-  
+
   // Allow cross-origin requests from student subdomain in development
   ...(process.env.NODE_ENV === 'development' && {
     allowedDevOrigins: ['students.localhost'],
   }),
-  
+
   // Optimize webpack for large template strings and Edge Runtime
   webpack: (config, { isServer }) => {
     // Disable serialization caching for large strings
@@ -55,7 +64,7 @@ const config = {
       config.cache.compression = 'gzip'; // Compress cache to reduce size
       config.cache.maxAge = 1000 * 60 * 60 * 24 * 7; // 1 week cache
     }
-    
+
     // Optimize module concatenation for API routes
     if (isServer) {
       config.optimization = {
@@ -63,7 +72,7 @@ const config = {
         moduleIds: 'deterministic',
       };
     }
-    
+
     // Exclude source map files from webpack processing
     config.module.rules.push({
       test: /\.js\.map$/,
@@ -74,7 +83,7 @@ const config = {
     if (isServer) {
       // Externalize heavy packages to reduce bundle size
       config.externals = config.externals || [];
-      
+
       // Keep puppeteer external to prevent bundling ~100MB chromium
       if (Array.isArray(config.externals)) {
         config.externals.push({
@@ -94,7 +103,7 @@ const config = {
         tls: false,
         child_process: false,
       };
-      
+
       // Add chunk loading retry logic to handle 403 errors and stale chunks
       // This helps with Windows PC cache issues and CDN problems
       const originalEntry = config.entry;
@@ -106,12 +115,12 @@ const config = {
         return entries;
       };
     }
-    
+
     return config;
   },
 };
 
-module.exports = withBundleAnalyzer(config); 
+module.exports = withBundleAnalyzer(config);
 
 // The Sentry configuration has been disabled to speed up the build process.
 // If you need to debug production errors with Sentry, you can re-enable it.

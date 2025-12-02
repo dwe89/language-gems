@@ -5,6 +5,7 @@ import { generateCrosswordHTML } from './generators/crossword';
 import { generateWordSearchHTML } from './generators/word-search';
 import { generateWorksheetHTML } from './generators/standard-worksheet';
 import { generateGrammarExercisesHTML } from './generators/grammar-exercises';
+import { generateAssessmentWorksheetHTML } from './generators/assessment-worksheet';
 
 // Optimize serverless function bundle size
 export const runtime = 'nodejs';
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (templateId === 'word-search' || templateId === 'word_search' || templateId === 'vocabulary_wordsearch' ||
-        metadataTemplate === 'word-search' || metadataTemplate === 'word_search' || metadataTemplate === 'vocabulary_wordsearch') {
+      metadataTemplate === 'word-search' || metadataTemplate === 'word_search' || metadataTemplate === 'vocabulary_wordsearch') {
       console.log('✅ [HTML API] Using word search HTML generator');
       const html = generateWordSearchHTML(worksheet, options);
       const duration = Date.now() - startTime;
@@ -132,11 +133,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (templateId === 'vocabulary_crossword' || templateId === 'crossword' ||
-        metadataTemplate === 'vocabulary_crossword' || metadataTemplate === 'crossword') {
+      metadataTemplate === 'vocabulary_crossword' || metadataTemplate === 'crossword') {
       console.log('✅ [HTML API] Using crossword HTML generator');
       const html = generateCrosswordHTML(worksheet, options);
       const duration = Date.now() - startTime;
       console.log('✅ [HTML API] Crossword HTML generated, length:', html.length, 'in', duration + 'ms');
+      return NextResponse.json({ html, generationTime: duration });
+    }
+
+    if (templateId === 'assessment_worksheet') {
+      console.log('✅ [HTML API] Using assessment worksheet HTML generator');
+      const html = generateAssessmentWorksheetHTML(worksheet, options);
+      const duration = Date.now() - startTime;
+      console.log('✅ [HTML API] Assessment worksheet HTML generated, length:', html.length, 'in', duration + 'ms');
       return NextResponse.json({ html, generationTime: duration });
     }
 
@@ -161,9 +170,9 @@ export async function POST(request: NextRequest) {
       duration: `${duration}ms`,
       timestamp: new Date().toISOString(),
     });
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to generate HTML',
         details: error instanceof Error ? error.message : String(error),
         worksheetId: worksheet?.id,
