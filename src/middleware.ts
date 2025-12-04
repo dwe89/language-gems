@@ -136,12 +136,7 @@ async function checkSubscriptionAccess(supabase: any, profileData: any, userId: 
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|_next/data|favicon.ico|audio|images|public|\\.).*)',
   ],
 };
+
