@@ -22,22 +22,31 @@ const config = {
   async headers() {
     return [
       {
+        // 1. Static chunks headers (ensure they are always wide open)
         source: '/_next/static/chunks/:path*',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: '*',
+            value: '*', // Keep open to prevent CORS issues on static assets
+          },
+          // Adding explicit Cache-Control here is good practice
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
       {
+        // 2. General requests headers (where the restrictive CORS header was causing the 403)
         source: '/(.*)',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
+            // FIX: Explicitly ADDED 'https://www.languagegems.com' 
+            // This ensures the main site can load its own assets/make API calls without failing the CORS check.
             value: process.env.NODE_ENV === 'development'
               ? 'http://students.localhost:3000'
-              : 'https://students.languagegems.com',
+              : 'https://students.languagegems.com, https://www.languagegems.com', 
           },
           {
             key: 'Access-Control-Allow-Methods',
@@ -109,7 +118,8 @@ const config = {
       const originalEntry = config.entry;
       config.entry = async () => {
         const entries = await originalEntry();
-        if (entries['main.js'] && !entries['main.js'].includes('./scripts/chunk-retry.js')) {
+        // Check if entries['main.js'] exists and is an array before unshifting
+        if (entries['main.js'] && Array.isArray(entries['main.js']) && !entries['main.js'].includes('./scripts/chunk-retry.js')) {
           entries['main.js'].unshift('./scripts/chunk-retry.js');
         }
         return entries;
