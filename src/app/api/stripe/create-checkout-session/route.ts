@@ -8,10 +8,10 @@ export const dynamic = 'force-dynamic';
 const validateEnvVars = () => {
   const required = [
     'STRIPE_SECRET_KEY',
-    'NEXT_PUBLIC_SUPABASE_URL', 
+    'NEXT_PUBLIC_SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY'
   ];
-  
+
   const missing = required.filter(key => !process.env[key]);
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
@@ -25,7 +25,7 @@ try {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2023-10-16',
+  apiVersion: '2023-10-16',
 });
 
 const supabase = createClient(
@@ -36,7 +36,7 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     console.log('Checkout session request received');
-    
+
     // Log environment variable status (without exposing values)
     console.log('Environment check:', {
       hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Verify products exist and are active
     const productIds = items.map(item => item.product_id);
     console.log('Fetching products:', productIds);
-    
+
     const { data: products, error: productsError } = await supabase
       .from('products')
       .select('*')
@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!products || products.length !== productIds.length) {
-      console.log('Product validation failed:', { 
-        requested: productIds.length, 
-        found: products?.length || 0 
+      console.log('Product validation failed:', {
+        requested: productIds.length,
+        found: products?.length || 0
       });
       return NextResponse.json(
         { error: 'Some products are not available' },
@@ -88,10 +88,25 @@ export async function POST(request: NextRequest) {
 
     console.log('Products validated successfully');
 
+    let hasSubscription = false;
+
     // Create Stripe line items
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item) => {
       const product = products.find(p => p.id === item.product_id);
-      
+
+      if (product.resource_type === 'Subscription') {
+        hasSubscription = true;
+
+        if (!product.stripe_price_id) {
+          throw new Error(`Subscription product ${product.id} missing stripe_price_id`);
+        }
+
+        return {
+          price: product.stripe_price_id,
+          quantity: item.quantity,
+        };
+      }
+
       return {
         price_data: {
           currency: 'gbp',
@@ -115,15 +130,15 @@ export async function POST(request: NextRequest) {
     }, 0);
 
     // Get base URL - fallback to request origin if env var not set
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                    `${request.nextUrl.protocol}//${request.nextUrl.host}`;
-    
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
+      `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+
     console.log('Using base URL:', baseUrl);
 
     // Create Stripe checkout session
     const sessionConfig: any = {
       line_items: lineItems,
-      mode: 'payment',
+      mode: hasSubscription ? 'subscription' : 'payment',
       success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/cart`,
       metadata: {
@@ -131,12 +146,18 @@ export async function POST(request: NextRequest) {
         product_ids: JSON.stringify(productIds),
         total_cents: totalCents.toString(),
       },
-      payment_intent_data: {
+      payment_intent_data: hasSubscription ? undefined : {
         metadata: {
           customer_email: customer_email || 'guest',
           product_ids: JSON.stringify(productIds),
         },
       },
+      subscription_data: hasSubscription ? {
+        metadata: {
+          customer_email: customer_email || 'guest',
+          product_ids: JSON.stringify(productIds),
+        },
+      } : undefined,
       billing_address_collection: 'auto',
       allow_promotion_codes: true,
     };
@@ -154,25 +175,25 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    
+
     // More detailed error information
     const errorDetails: Record<string, any> = {
       message: error instanceof Error ? error.message : 'Unknown error',
       type: error?.constructor?.name || 'Unknown',
     };
-    
+
     if (error && typeof error === 'object' && 'code' in error) {
       errorDetails.code = (error as any).code;
     }
-    
+
     if (error && typeof error === 'object' && 'type' in error) {
       errorDetails.stripeType = (error as any).type;
     }
-    
+
     console.error('Detailed error:', errorDetails);
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
         details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
       },

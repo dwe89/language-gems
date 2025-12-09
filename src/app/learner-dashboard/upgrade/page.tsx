@@ -80,7 +80,7 @@ export default function UpgradePage() {
         },
         body: JSON.stringify({
           items: [{
-            product_id: 'prod_TZhA4ZGf1OfnX9', // Pro Plan Product ID
+            product_id: '1f1ec20a-2c35-454e-8a2c-dedd700f37bb', // Pro Plan Product ID (from DB)
             quantity: 1
           }],
           customer_email: user?.email
