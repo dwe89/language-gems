@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
@@ -16,7 +16,7 @@ import {
   Trophy
 } from 'lucide-react';
 
-export default function LearnerSignupPage() {
+function SignupForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -67,15 +67,15 @@ export default function LearnerSignupPage() {
           plan
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Signup failed');
       }
-      
+
       console.log('Learner signup successful');
-      
+
       if (data.needsEmailVerification) {
         // Use a small delay to prevent React DOM conflicts
         setTimeout(() => {
@@ -107,7 +107,7 @@ export default function LearnerSignupPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email!</h2>
           <p className="text-gray-600 mb-6">
-            We've sent a verification link to <strong>{email}</strong>. 
+            We've sent a verification link to <strong>{email}</strong>.
             Click the link to activate your account and start learning!
           </p>
           <Link
@@ -298,5 +298,13 @@ export default function LearnerSignupPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function LearnerSignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-purple-600"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div></div>}>
+      <SignupForm />
+    </Suspense>
   );
 }

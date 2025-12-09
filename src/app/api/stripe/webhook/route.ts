@@ -61,20 +61,20 @@ export async function POST(request: NextRequest) {
         await handleSuccessfulPayment(session);
         break;
       }
-      
+
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log('Payment succeeded:', paymentIntent.id);
         break;
       }
-      
+
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log('Payment failed:', paymentIntent.id);
         await handleFailedPayment(paymentIntent);
         break;
       }
-      
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -158,7 +158,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
 
     // Create order items using product IDs from session metadata
     const orderItems = [];
-    
+
     // Get product details from Supabase
     const { data: products, error: productsError } = await supabase
       .from('products')
@@ -199,6 +199,54 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
         .from('user_carts')
         .delete()
         .eq('user_id', userId);
+
+      // Check if this is a Pro Plan purchase
+      const isProPlan = productIds.includes('prod_TZhA4ZGf1OfnX9');
+
+      if (isProPlan) {
+        console.log(`Upgrading user ${userId} to premium`);
+
+        // Update user profile
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .update({
+            subscription_type: 'premium',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+
+        if (profileError) {
+          console.error('Error updating user profile:', profileError);
+        }
+
+        // Create subscription record
+        // Note: For one-time payments that act as subscriptions (like this MVP), 
+        // we'll set a manual period (e.g., 1 month)
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1); // 1 month duration
+
+        const { error: subError } = await supabase
+          .from('subscriptions')
+          .insert({
+            user_id: userId,
+            stripe_subscription_id: session.subscription as string || session.id, // Use session ID if not a real sub yet
+            stripe_customer_id: session.customer as string,
+            status: 'active',
+            plan_name: 'Pro',
+            plan_price_cents: 999,
+            current_period_start: startDate.toISOString(),
+            current_period_end: endDate.toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (subError) {
+          console.error('Error creating subscription record:', subError);
+        } else {
+          console.log(`Subscription record created for user ${userId}`);
+        }
+      }
     }
 
     console.log(`Order ${order.id} created successfully for ${customerEmail}`);
@@ -301,7 +349,7 @@ async function sendOrderConfirmationEmail(order: any, orderItems: any[], custome
 async function handleFailedPayment(paymentIntent: Stripe.PaymentIntent) {
   try {
     const customerEmail = paymentIntent.metadata?.customer_email;
-    
+
     if (!customerEmail) {
       console.error('No customer email in failed payment metadata');
       return;
