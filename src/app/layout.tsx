@@ -59,14 +59,14 @@ export function generateMetadata(): Metadata {
       address: false,
       telephone: false,
     },
-    metadataBase: new URL('https://languagegems.com'),
+    metadataBase: new URL('https://www.languagegems.com'),
     alternates: {
       canonical: '/',
     },
     openGraph: {
       title: 'Language Gems - Interactive GCSE Language Learning Games',
       description: 'Transform GCSE language learning with 15+ interactive games, adaptive vocabulary practice, and comprehensive teacher analytics.',
-      url: 'https://languagegems.com',
+      url: 'https://www.languagegems.com',
       siteName: 'Language Gems',
       images: [
         {

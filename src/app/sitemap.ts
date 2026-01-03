@@ -155,7 +155,7 @@ async function getGrammarPages(): Promise<{ url: string; priority: number; chang
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://languagegems.com'
+  const baseUrl = 'https://www.languagegems.com'
   const currentDate = new Date().toISOString()
 
   // Fetch dynamic grammar pages from database

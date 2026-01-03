@@ -2,18 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSideClient } from '@/utils/supabase/client';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const plan = searchParams.get('plan') || 'standard';
-    
+
     // Get the current user using proper server-side client
     const cookieStore = await cookies();
     const supabase = createServerSideClient(cookieStore);
-    
+
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       // User not logged in - redirect to signup
       return NextResponse.redirect(new URL('/auth/signup?error=not-authenticated', request.url));
