@@ -80,7 +80,7 @@ export default function StudentGameRedirect() {
             <div className="mb-6">
               <div className="flex items-center justify-center space-x-2 mb-3">
                 <AlertCircle className="h-5 w-5 text-yellow-300" />
-                <p className="text-yellow-100">Demo Mode</p>
+                <p className="text-yellow-100">Open Beta</p>
               </div>
               <p className="text-blue-200 text-sm">Progress won't be saved. Log in to track your learning!</p>
             </div>

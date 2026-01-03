@@ -214,6 +214,24 @@ export default function UnifiedCategorySelector({
   const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>('KS3');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [learnerMode, setLearnerMode] = useState<'school' | 'independent'>('school');
+
+  // Persist learner mode preference
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('languagegems_learner_mode');
+      if (savedMode === 'independent') {
+        setLearnerMode('independent');
+      }
+    }
+  }, []);
+
+  const toggleLearnerMode = (mode: 'school' | 'independent') => {
+    setLearnerMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('languagegems_learner_mode', mode);
+    }
+  };
 
   // Custom mode state
   const [customContentType, setCustomContentType] = useState<'vocabulary' | 'sentences' | 'mixed'>(preferredContentType);
@@ -247,10 +265,10 @@ export default function UnifiedCategorySelector({
   // Get current category data
   const currentCategory = currentCategories.find(cat => cat.id === selectedCategory);
 
-  // Demo restrictions - only allow first category to be fully unlocked
+  // Demo restrictions - OPEN BETA: Remove all restrictions
   const isDemoRestricted = (categoryId: string) => {
-    if (!isDemo) return false;
-    return categoryId !== 'basics_core_language';
+    // Open Beta: All categories unlocked!
+    return false;
   };
 
   // Demo subcategory restrictions - only allow specific subcategories for demo users
@@ -264,10 +282,8 @@ export default function UnifiedCategorySelector({
   };
 
   const isSubcategoryAvailable = (categoryId: string, subcategoryId: string): boolean => {
-    if (!isDemo) return true; // Non-demo users have access to all subcategories
-
-    const availableSubcategories = DEMO_AVAILABLE_SUBCATEGORIES[categoryId];
-    return availableSubcategories?.includes(subcategoryId) || false;
+    // Open Beta: All subcategories unlocked!
+    return true;
   };
 
   const handleLanguageSelect = (languageCode: string) => {
@@ -404,40 +420,36 @@ export default function UnifiedCategorySelector({
             </div>
 
             {isDemo && (
-              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg px-4 py-2">
-                <span className="text-yellow-200 text-sm font-medium">DEMO MODE</span>
+              <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg px-4 py-2">
+                <span className="text-blue-200 text-sm font-medium">OPEN BETA</span>
               </div>
             )}
           </div>
 
           {/* Progress Indicator */}
           <div className="flex items-center justify-center mb-8">
-            <div className="flex items-center space-x-4">
-              {['language', 'curriculum', 'category', step === 'custom' ? 'custom' : 'subcategory'].map((stepName, index) => {
-                const isActive = step === stepName;
-                const stepOrder = ['language', 'curriculum', 'category', step === 'custom' ? 'custom' : 'subcategory'];
-                const isCompleted = stepOrder.indexOf(step) > index;
+            {['language', 'curriculum', 'category', step === 'custom' ? 'custom' : 'subcategory'].map((stepName, index) => {
+              const isActive = step === stepName;
+              const stepOrder = ['language', 'curriculum', 'category', step === 'custom' ? 'custom' : 'subcategory'];
+              const isCompleted = stepOrder.indexOf(step) > index;
 
-                return (
-                  <React.Fragment key={stepName}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                      isActive
-                        ? 'bg-white text-purple-900'
-                        : isCompleted
-                          ? 'bg-green-500 text-white'
-                          : 'bg-white/20 text-white/60'
+              return (
+                <React.Fragment key={stepName}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${isActive
+                    ? 'bg-white text-purple-900'
+                    : isCompleted
+                      ? 'bg-green-500 text-white'
+                      : 'bg-white/20 text-white/60'
                     }`}>
-                      {isCompleted ? <Check className="h-4 w-4" /> : stepName === 'custom' ? <Pencil className="h-4 w-4" /> : index + 1}
-                    </div>
-                    {index < 3 && (
-                      <div className={`w-8 h-0.5 transition-all ${
-                        isCompleted ? 'bg-green-500' : 'bg-white/20'
+                    {isCompleted ? <Check className="h-4 w-4" /> : stepName === 'custom' ? <Pencil className="h-4 w-4" /> : index + 1}
+                  </div>
+                  {index < 3 && (
+                    <div className={`w-8 h-0.5 transition-all ${isCompleted ? 'bg-green-500' : 'bg-white/20'
                       }`} />
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
 
           {/* Content */}
@@ -454,8 +466,10 @@ export default function UnifiedCategorySelector({
                 levels={CURRICULUM_LEVELS}
                 onSelect={handleCurriculumSelect}
                 onCustomMode={showCustomMode ? handleCustomMode : undefined}
-                canAccessCustom={safeCanAccessFeature('customVocabularyLists')}
+                canAccessCustom={true}
                 selectedLanguage={selectedLanguage}
+                learnerMode={learnerMode}
+                onToggleLearnerMode={toggleLearnerMode}
               />
             )}
 
@@ -464,7 +478,7 @@ export default function UnifiedCategorySelector({
                 categories={currentCategories}
                 onSelect={handleCategorySelect}
                 onCustomMode={showCustomMode ? handleCustomMode : undefined}
-                canAccessCustom={safeCanAccessFeature('customVocabularyLists')}
+                canAccessCustom={true}
                 isDemoRestricted={isDemoRestricted}
               />
             )}
@@ -547,8 +561,21 @@ const CurriculumSelection: React.FC<{
   onCustomMode?: () => void;
   canAccessCustom?: boolean;
   selectedLanguage: string;
-}> = ({ levels, onSelect, onCustomMode, canAccessCustom = true, selectedLanguage }) => {
+  learnerMode: 'school' | 'independent';
+  onToggleLearnerMode: (mode: 'school' | 'independent') => void;
+}> = ({ levels, onSelect, onCustomMode, canAccessCustom = true, selectedLanguage, learnerMode, onToggleLearnerMode }) => {
   const language = AVAILABLE_LANGUAGES.find(l => l.code === selectedLanguage);
+
+  // Derive levels based on learner mode
+  const displayLevels = levels.map(level => {
+    if (learnerMode === 'independent') {
+      if (level.code === 'KS2') return { ...level, name: 'Primary (Ages 7-11)', description: 'Fun language introduction for kids' };
+      if (level.code === 'KS3') return { ...level, name: 'Beginner (A1-A2)', description: 'Essential phrases and foundation vocab' };
+      if (level.code === 'KS4') return { ...level, name: 'Intermediate (B1-B2)', description: 'Conversational fluency and core topics' };
+      if (level.code === 'KS5') return { ...level, name: 'Advanced (C1-C2)', description: 'Complex themes and native-level fluency' };
+    }
+    return level;
+  });
 
   return (
     <motion.div
@@ -560,8 +587,33 @@ const CurriculumSelection: React.FC<{
     >
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-white mb-2">Choose Your Curriculum Level</h2>
+
+        {/* Learner Mode Toggle */}
+        <div className="flex justify-center mb-4">
+          <div className="bg-white/10 p-1 rounded-xl flex backdrop-blur-sm border border-white/10">
+            <button
+              onClick={() => onToggleLearnerMode('school')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${learnerMode === 'school'
+                ? 'bg-white text-blue-900 shadow-md'
+                : 'text-white/70 hover:text-white'
+                }`}
+            >
+              School
+            </button>
+            <button
+              onClick={() => onToggleLearnerMode('independent')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${learnerMode === 'independent'
+                ? 'bg-white text-blue-900 shadow-md'
+                : 'text-white/70 hover:text-white'
+                }`}
+            >
+              Independent
+            </button>
+          </div>
+        </div>
+
         <p className="text-white/80">
-          Learning {language?.name} - Select your educational level
+          Learning {language?.name} - Select your level
         </p>
       </div>
 
@@ -569,12 +621,10 @@ const CurriculumSelection: React.FC<{
         {/* Custom Content Option - First */}
         {onCustomMode && (
           <motion.button
-            onClick={() => canAccessCustom && onCustomMode()}
-            whileHover={canAccessCustom ? { scale: 1.02, y: -4 } : {}}
-            whileTap={canAccessCustom ? { scale: 0.98 } : {}}
-            className={`bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden ${
-              canAccessCustom ? 'hover:shadow-xl cursor-pointer' : 'cursor-not-allowed'
-            }`}
+            onClick={() => onCustomMode()}
+            whileHover={{ scale: 1.02, y: -4 }}
+            whileTap={{ scale: 0.98 }}
+            className={`bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden cursor-pointer`}
           >
             <div className="relative z-10">
               <Pencil className="h-8 w-8" />
@@ -587,41 +637,25 @@ const CurriculumSelection: React.FC<{
               <ArrowRight className="h-4 w-4 ml-2" />
             </div>
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-            {/* Padlock overlay - matching category style */}
-            {!canAccessCustom && (
-              <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center">
-                <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 mb-2 shadow-lg">
-                  <Lock className="w-6 h-6 text-gray-700" />
-                </div>
-                <span className="text-white font-medium text-sm bg-black/50 px-3 py-1 rounded-full">
-                  Sign up to unlock
-                </span>
-              </div>
-            )}
           </motion.button>
         )}
 
         {/* Standard Curriculum Levels */}
-        {levels.map((level) => (
+        {displayLevels.map((level) => (
           <motion.button
             key={level.code}
             onClick={() => onSelect(level.code)}
             whileHover={!level.comingSoon ? { scale: 1.02, y: -4 } : {}}
             whileTap={!level.comingSoon ? { scale: 0.98 } : {}}
             disabled={level.comingSoon}
-            className={`bg-gradient-to-br ${level.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden ${
-              level.comingSoon
-                ? 'opacity-60 cursor-not-allowed'
-                : 'hover:shadow-xl cursor-pointer'
-            }`}
+            className={`bg-gradient-to-br ${level.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden ${level.comingSoon
+              ? 'opacity-60 cursor-not-allowed'
+              : 'hover:shadow-xl cursor-pointer'
+              }`}
           >
             <div className="relative z-10">
               {/* This was already correct as level.icon already holds JSX */}
               {level.icon}
-              {level.comingSoon && (
-                <Lock className="h-5 w-5 ml-2 text-white/80" />
-              )}
             </div>
             <h3 className="text-xl font-bold mb-2">{level.name}</h3>
             <p className="text-white/90 text-sm mb-2">{level.description}</p>
@@ -681,21 +715,17 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSel
           >
             <motion.button
               onClick={() => !isRestricted && onSelect(category.id)}
-              whileHover={!isRestricted ? { scale: 1.02, y: -4 } : {}}
-              whileTap={!isRestricted ? { scale: 0.98 } : {}}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
               disabled={isRestricted}
-              className={`w-full bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 relative overflow-hidden ${
-                isRestricted
-                  ? 'opacity-60 cursor-not-allowed'
-                  : 'hover:shadow-xl cursor-pointer'
-              }`}
+              className={`w-full bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 relative overflow-hidden ${isRestricted
+                ? 'opacity-60 cursor-not-allowed'
+                : 'hover:shadow-xl cursor-pointer'
+                }`}
             >
               <div className="relative z-10">
                 {/* FIX IS HERE: Render the component directly */}
                 <IconComponent className="h-8 w-8" />
-                {isRestricted && (
-                  <Lock className="h-5 w-5 text-white/80" />
-                )}
               </div>
               <h3 className="text-lg font-bold mb-2 text-left">{category.displayName}</h3>
               <p className="text-white/90 text-sm text-left mb-3">
@@ -705,22 +735,11 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSel
                 <span className="text-white/70 text-xs">
                   {category.subcategories.length} topics
                 </span>
-                {!isRestricted && (
-                  <ArrowRight className="h-4 w-4 text-white/80 group-hover:text-white transition-colors" />
-                )}
+                <ArrowRight className="h-4 w-4 text-white/80 group-hover:text-white transition-colors" />
               </div>
             </motion.button>
 
-            {isRestricted && (
-              <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center">
-                <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 mb-2 shadow-lg">
-                  <Lock className="w-6 h-6 text-gray-700" />
-                </div>
-                <span className="text-white font-medium text-sm bg-black/50 px-3 py-1 rounded-full">
-                  Sign up to unlock
-                </span>
-              </div>
-            )}
+            {/* Overlays removed for Open Beta */}
           </motion.div>
         );
       })}
@@ -728,12 +747,10 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSel
       {/* Custom Mode Option */}
       {onCustomMode && (
         <motion.button
-          onClick={() => canAccessCustom && onCustomMode()}
-          whileHover={canAccessCustom ? { scale: 1.02, y: -4 } : {}}
-          whileTap={canAccessCustom ? { scale: 0.98 } : {}}
-          className={`bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden border-2 border-purple-400/50 ${
-            canAccessCustom ? 'hover:shadow-xl cursor-pointer' : 'cursor-not-allowed'
-          }`}
+          onClick={() => onCustomMode()}
+          whileHover={{ scale: 1.02, y: -4 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden border-2 border-purple-400/50 cursor-pointer`}
         >
           <div className="relative z-10">
             <Pencil className="h-8 w-8 mb-3 mx-auto" />
@@ -750,18 +767,6 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSel
           <div className="absolute top-2 right-2">
             <Sparkles className="h-5 w-5 text-purple-200 animate-pulse" />
           </div>
-
-          {/* Padlock overlay - matching category style */}
-          {!canAccessCustom && (
-            <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center">
-              <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 mb-2 shadow-lg">
-                <Lock className="w-6 h-6 text-gray-700" />
-              </div>
-              <span className="text-white font-medium text-sm bg-black/50 px-3 py-1 rounded-full">
-                Sign up to unlock
-              </span>
-            </div>
-          )}
         </motion.button>
       )}
     </div>
@@ -797,41 +802,25 @@ const SubcategorySelection: React.FC<{
         {category.subcategories.map((subcategory, index) => {
           const isRestricted = !isSubcategoryAvailable(category.id, subcategory.id);
           return (
-          <motion.button
-            key={subcategory.id}
-            onClick={() => !isRestricted && onSelect(subcategory.id)}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={!isRestricted ? { scale: 1.02, y: -4 } : {}}
-            whileTap={!isRestricted ? { scale: 0.98 } : {}}
-            className={`bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden ${
-              isRestricted
-                ? 'cursor-not-allowed'
-                : 'hover:shadow-xl cursor-pointer'
-            }`}
-          >
-            <div className="relative z-10">
-              <IconComponent className="h-8 w-8 text-white mb-4" />
-              <h3 className="text-lg font-bold mb-2 text-left">{subcategory.displayName}</h3>
-              <div className="flex items-center justify-end mt-4">
-                <Play className="h-5 w-5 text-white/80 group-hover:text-white transition-colors" />
-              </div>
-            </div>
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-            {/* Padlock overlay - matching category style */}
-            {isRestricted && (
-              <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center">
-                <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 mb-2 shadow-lg">
-                  <Lock className="w-6 h-6 text-gray-700" />
+            <motion.button
+              key={subcategory.id}
+              onClick={() => !isRestricted && onSelect(subcategory.id)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              className={`bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden cursor-pointer`}
+            >
+              <div className="relative z-10">
+                <IconComponent className="h-8 w-8 text-white mb-4" />
+                <h3 className="text-lg font-bold mb-2 text-left">{subcategory.displayName}</h3>
+                <div className="flex items-center justify-end mt-4">
+                  <Play className="h-5 w-5 text-white/80 group-hover:text-white transition-colors" />
                 </div>
-                <span className="text-white font-medium text-sm bg-black/50 px-3 py-1 rounded-full">
-                  Sign up to unlock
-                </span>
               </div>
-            )}
-          </motion.button>
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </motion.button>
           );
         })}
       </div>
@@ -867,196 +856,193 @@ const CustomContentSelection: React.FC<{
   gameCompatibility,
   language
 }) => {
-  const [activeTab, setActiveTab] = useState<'input' | 'lists' | 'upload'>('input');
+    const [activeTab, setActiveTab] = useState<'input' | 'lists' | 'upload'>('input');
 
-  const getContentTypeIcon = (type: 'vocabulary' | 'sentences' | 'mixed') => {
-    switch (type) {
-      case 'vocabulary': return <Type className="h-8 w-8" />;
-      case 'sentences': return <MessageSquare className="h-8 w-8" />;
-      case 'mixed': return <Shuffle className="h-8 w-8" />;
-    }
-  };
+    const getContentTypeIcon = (type: 'vocabulary' | 'sentences' | 'mixed') => {
+      switch (type) {
+        case 'vocabulary': return <Type className="h-8 w-8" />;
+        case 'sentences': return <MessageSquare className="h-8 w-8" />;
+        case 'mixed': return <Shuffle className="h-8 w-8" />;
+      }
+    };
 
-  const getContentTypeDescription = (type: 'vocabulary' | 'sentences' | 'mixed') => {
-    switch (type) {
-      case 'vocabulary': return 'Individual words with translations';
-      case 'sentences': return 'Complete sentences for practice';
-      case 'mixed': return 'Combination of words and sentences';
-    }
-  };
+    const getContentTypeDescription = (type: 'vocabulary' | 'sentences' | 'mixed') => {
+      switch (type) {
+        case 'vocabulary': return 'Individual words with translations';
+        case 'sentences': return 'Complete sentences for practice';
+        case 'mixed': return 'Combination of words and sentences';
+      }
+    };
 
-  const isContentTypeSupported = (type: 'vocabulary' | 'sentences' | 'mixed') => {
-    if (!gameCompatibility) return true;
-    switch (type) {
-      case 'vocabulary': return gameCompatibility.supportsVocabulary;
-      case 'sentences': return gameCompatibility.supportsSentences;
-      case 'mixed': return gameCompatibility.supportsMixed;
-    }
-  };
+    const isContentTypeSupported = (type: 'vocabulary' | 'sentences' | 'mixed') => {
+      if (!gameCompatibility) return true;
+      switch (type) {
+        case 'vocabulary': return gameCompatibility.supportsVocabulary;
+        case 'sentences': return gameCompatibility.supportsSentences;
+        case 'mixed': return gameCompatibility.supportsMixed;
+      }
+    };
 
-  const getInputPlaceholder = () => {
-    switch (contentType) {
-      case 'vocabulary':
-        return `casa - house
+    const getInputPlaceholder = () => {
+      switch (contentType) {
+        case 'vocabulary':
+          return `casa - house
 perro - dog
 gato - cat
 libro - book`;
-      case 'sentences':
-        return `Hola, ¿cómo estás? - Hello, how are you?
+        case 'sentences':
+          return `Hola, ¿cómo estás? - Hello, how are you?
 Me gusta la pizza - I like pizza
 ¿Dónde está el baño? - Where is the bathroom?`;
-      case 'mixed':
-        return `casa - house
+        case 'mixed':
+          return `casa - house
 Hola, ¿cómo estás? - Hello, how are you?
 perro - dog
 Me gusta la pizza - I like pizza`;
-    }
-  };
+      }
+    };
 
-  const canComplete = customInput.trim().length > 0 || selectedCustomList;
+    const canComplete = customInput.trim().length > 0 || selectedCustomList;
 
-  return (
-    <motion.div
-      key="custom"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-6"
-    >
-      <div className="text-center">
-        <Pencil className="h-16 w-16 mb-4 mx-auto text-white" />
-        <h2 className="text-2xl font-bold text-white mb-2">Create Custom Content</h2>
-        <p className="text-white/80">
-          Add your own vocabulary or sentences for personalized practice
-        </p>
-      </div>
+    return (
+      <motion.div
+        key="custom"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="space-y-6"
+      >
+        <div className="text-center">
+          <Pencil className="h-16 w-16 mb-4 mx-auto text-white" />
+          <h2 className="text-2xl font-bold text-white mb-2">Create Custom Content</h2>
+          <p className="text-white/80">
+            Add your own vocabulary or sentences for personalized practice
+          </p>
+        </div>
 
-      {/* Content Type Selection */}
-      <div className="max-w-2xl mx-auto">
-        <h3 className="text-lg font-semibold text-white mb-4 text-center">Content Type</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {(['vocabulary', 'sentences', 'mixed'] as const).map((type) => {
-            const isSupported = isContentTypeSupported(type);
-            const isSelected = contentType === type;
+        {/* Content Type Selection */}
+        <div className="max-w-2xl mx-auto">
+          <h3 className="text-lg font-semibold text-white mb-4 text-center">Content Type</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {(['vocabulary', 'sentences', 'mixed'] as const).map((type) => {
+              const isSupported = isContentTypeSupported(type);
+              const isSelected = contentType === type;
 
-            return (
-              <button
-                key={type}
-                onClick={() => isSupported && onContentTypeChange(type)}
-                disabled={!isSupported}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  isSelected
+              return (
+                <button
+                  key={type}
+                  onClick={() => isSupported && onContentTypeChange(type)}
+                  disabled={!isSupported}
+                  className={`p-4 rounded-xl border-2 transition-all ${isSelected
                     ? 'border-white bg-white/20 text-white'
                     : isSupported
                       ? 'border-white/30 bg-white/10 text-white/80 hover:border-white/50 hover:bg-white/15'
                       : 'border-white/10 bg-white/5 text-white/40 cursor-not-allowed'
-                }`}
-              >
-                <div className="mb-2 flex justify-center">{getContentTypeIcon(type)}</div>
-                <div className="font-medium capitalize">{type}</div>
-                <div className="text-xs mt-1 opacity-80">
-                  {getContentTypeDescription(type)}
-                </div>
-                {!isSupported && (
-                  <div className="text-xs mt-1 text-red-300">Not supported</div>
-                )}
-              </button>
-            );
-          })}
+                    }`}
+                >
+                  <div className="mb-2 flex justify-center">{getContentTypeIcon(type)}</div>
+                  <div className="font-medium capitalize">{type}</div>
+                  <div className="text-xs mt-1 opacity-80">
+                    {getContentTypeDescription(type)}
+                  </div>
+                  {!isSupported && (
+                    <div className="text-xs mt-1 text-red-300">Not supported</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Tab Selection */}
-      <div className="max-w-2xl mx-auto">
-        <div className="flex bg-white/10 rounded-lg p-1">
-          {[
-            { id: 'input', label: 'Quick Input', icon: Pencil },
-            { id: 'lists', label: 'My Collections', icon: BookOpen },
-            { id: 'upload', label: 'Upload File', icon: Folder }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                activeTab === tab.id
+        {/* Tab Selection */}
+        <div className="max-w-2xl mx-auto">
+          <div className="flex bg-white/10 rounded-lg p-1">
+            {[
+              { id: 'input', label: 'Quick Input', icon: Pencil },
+              { id: 'lists', label: 'My Collections', icon: BookOpen },
+              { id: 'upload', label: 'Upload File', icon: Folder }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${activeTab === tab.id
                   ? 'bg-white text-purple-900'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <tab.icon className="h-4 w-4 mr-2" />
-              {tab.label}
-            </button>
-          ))}
+                  }`}
+              >
+                <tab.icon className="h-4 w-4 mr-2" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Tab Content */}
-      <div className="max-w-2xl mx-auto">
-        {activeTab === 'input' && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-white font-medium mb-2">
-                Enter your {contentType} (one per line)
-              </label>
-              <textarea
-                value={customInput}
-                onChange={(e) => onCustomInputChange(e.target.value)}
-                placeholder={getInputPlaceholder()}
-                className="w-full h-48 p-4 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent resize-none"
-              />
-              <p className="text-white/60 text-sm mt-2">
-                Format: {contentType === 'vocabulary' ? 'Spanish word - English translation (optional for some games)' : 'Spanish sentence - English translation'}
-              </p>
-              <p className="text-white/50 text-xs mt-1">
-                💡 Tip: For games like Hangman, you can enter just the Spanish words without translations
-              </p>
+        {/* Tab Content */}
+        <div className="max-w-2xl mx-auto">
+          {activeTab === 'input' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-white font-medium mb-2">
+                  Enter your {contentType} (one per line)
+                </label>
+                <textarea
+                  value={customInput}
+                  onChange={(e) => onCustomInputChange(e.target.value)}
+                  placeholder={getInputPlaceholder()}
+                  className="w-full h-48 p-4 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent resize-none"
+                />
+                <p className="text-white/60 text-sm mt-2">
+                  Format: {contentType === 'vocabulary' ? 'Spanish word - English translation (optional for some games)' : 'Spanish sentence - English translation'}
+                </p>
+                <p className="text-white/50 text-xs mt-1">
+                  💡 Tip: For games like Hangman, you can enter just the Spanish words without translations
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {activeTab === 'lists' && (
-          <CustomVocabularyLists
-            selectedListId={selectedCustomList}
-            onSelectList={onCustomListChange}
-            language={language}
-            contentType={contentType}
-          />
-        )}
+          {activeTab === 'lists' && (
+            <CustomVocabularyLists
+              selectedListId={selectedCustomList}
+              onSelectList={onCustomListChange}
+              language={language}
+              contentType={contentType}
+            />
+          )}
 
-        {activeTab === 'upload' && (
-          <div className="text-center py-8">
-            <Folder className="h-16 w-16 mb-4 mx-auto text-white" />
-            <h3 className="text-lg font-semibold text-white mb-2">Upload File</h3>
-            <p className="text-white/60 mb-4">Upload a CSV or TXT file with your content</p>
-            <div className="text-white/40 text-sm">
-              Coming soon - file upload functionality
+          {activeTab === 'upload' && (
+            <div className="text-center py-8">
+              <Folder className="h-16 w-16 mb-4 mx-auto text-white" />
+              <h3 className="text-lg font-semibold text-white mb-2">Upload File</h3>
+              <p className="text-white/60 mb-4">Upload a CSV or TXT file with your content</p>
+              <div className="text-white/40 text-sm">
+                Coming soon - file upload functionality
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Complete Button */}
-      <div className="text-center">
-        <button
-          onClick={onComplete}
-          disabled={!canComplete}
-          className={`px-8 py-3 rounded-xl font-bold text-lg transition-all ${
-            canComplete
+        {/* Complete Button */}
+        <div className="text-center">
+          <button
+            onClick={onComplete}
+            disabled={!canComplete}
+            className={`px-8 py-3 rounded-xl font-bold text-lg transition-all ${canComplete
               ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
               : 'bg-white/20 text-white/50 cursor-not-allowed'
-          }`}
-        >
-          Continue with Custom Content
-        </button>
-        {!canComplete && (
-          <p className="text-white/60 text-sm mt-2">
-            Please enter some {contentType} to continue
-          </p>
-        )}
-      </div>
-    </motion.div>
-  );
-};
+              }`}
+          >
+            Continue with Custom Content
+          </button>
+          {!canComplete && (
+            <p className="text-white/60 text-sm mt-2">
+              Please enter some {contentType} to continue
+            </p>
+          )}
+        </div>
+      </motion.div>
+    );
+  };
 
 // Custom Vocabulary Lists Component
 const CustomVocabularyLists: React.FC<{
@@ -1099,7 +1085,7 @@ const CustomVocabularyLists: React.FC<{
       try {
         const supabase = supabaseBrowser;
         const { data: user } = await supabase.auth.getUser();
-        
+
         if (!user.user) {
           setCustomLists([]);
           return;
@@ -1163,7 +1149,7 @@ const CustomVocabularyLists: React.FC<{
       try {
         const supabase = supabaseBrowser;
         const listData = customLists.find(list => list.id === selectedListId);
-        
+
         if (!listData) return;
 
         // Get first 5 items for preview
@@ -1201,7 +1187,7 @@ const CustomVocabularyLists: React.FC<{
       <div className="text-center py-8">
         <BookOpen className="h-16 w-16 mb-4 mx-auto text-white/60" />
         <h3 className="text-lg font-semibold text-white mb-2">No Collections Found</h3>
-        <p className="text-white/60 mb-4">You haven't created any vocabulary collections yet</p>
+        <p className="text-white/60 mb-4">You haven&apos;t created any vocabulary collections yet</p>
         <div className="bg-white/10 rounded-lg p-4 max-w-md mx-auto">
           <p className="text-white/80 text-sm">
             Create vocabulary collections in the{' '}

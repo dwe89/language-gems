@@ -14,9 +14,9 @@ interface DemoBannerProps {
   onSignupClick?: () => void;
 }
 
-export default function DemoBanner({ 
-  message, 
-  showStats = false, 
+export default function DemoBanner({
+  message,
+  showStats = false,
   variant = 'compact',
   className = '',
   onSignupClick
@@ -29,7 +29,7 @@ export default function DemoBanner({
     return null;
   }
 
-  const defaultMessage = "Demo Mode: Explore basic vocabulary in Spanish, French & German. Sign up for full access to 14+ categories and all languages!";
+  const defaultMessage = "Open Beta: Exploring vocabulary in Spanish, French & German. Sign up to save your progress!";
 
   // Check if banner was previously dismissed
   React.useEffect(() => {
@@ -52,19 +52,19 @@ export default function DemoBanner({
   };
 
   const renderCompactBanner = () => (
-    <div className={`bg-gradient-to-r from-orange-100 to-yellow-100 border border-orange-300 rounded-lg p-4 ${className}`}>
+    <div className={`bg-gradient-to-r from-blue-100 to-indigo-100 border border-blue-300 rounded-lg p-4 ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="bg-orange-500 rounded-full p-2">
-            <Lock className="h-4 w-4 text-white" />
+          <div className="bg-blue-500 rounded-full p-2">
+            <Sparkles className="h-4 w-4 text-white" />
           </div>
           <div>
-            <p className="text-orange-800 font-medium text-sm">
+            <p className="text-blue-800 font-medium text-sm">
               {message || defaultMessage}
             </p>
             {showStats && (
-              <p className="text-orange-600 text-xs mt-1">
-                Demo: 1 category • 3 languages 
+              <p className="text-blue-600 text-xs mt-1">
+                Beta Access: All categories and languages unlocked
               </p>
             )}
           </div>
@@ -72,14 +72,14 @@ export default function DemoBanner({
         {onSignupClick ? (
           <button
             onClick={handleSignupClick}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
           >
             Sign Up
           </button>
         ) : (
           <Link
             href="/auth/signup"
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
           >
             <span>Sign Up</span>
             <ArrowRight className="h-4 w-4" />
@@ -99,7 +99,7 @@ export default function DemoBanner({
           <div>
             <h3 className="text-xl font-bold mb-1">Welcome to Language Gems Demo!</h3>
             <p className="text-blue-100 mb-2">
-              {message || "You're exploring our basic vocabulary collection. Sign up to unlock the full experience!"}
+              {message || "Welcome to the Open Beta! Enjoy full access to our vocabulary collection. Sign up to save your progress!"}
             </p>
             {showStats && (
               <div className="flex items-center space-x-4 text-sm text-blue-200">
@@ -202,7 +202,7 @@ export default function DemoBanner({
 export function GameDemoBanner({ gameName }: { gameName: string }) {
   return (
     <DemoBanner
-      message={`Demo Mode: Try ${gameName} with basic vocabulary. Sign up to unlock all categories and advanced features!`}
+      message={`Open Beta: Playing ${gameName}. Sign up to save your progress and compete on leaderboards!`}
       showStats={true}
       variant="compact"
     />
@@ -212,7 +212,7 @@ export function GameDemoBanner({ gameName }: { gameName: string }) {
 export function CategoryDemoBanner() {
   return (
     <DemoBanner
-      message="Demo Mode: Limited categories available. Sign up for full access to 14+ vocabulary categories!"
+      message="Open Beta: All categories unlocked! Sign up to save your progress."
       variant="compact"
     />
   );
@@ -221,7 +221,7 @@ export function CategoryDemoBanner() {
 export function VocabularyDemoBanner() {
   return (
     <DemoBanner
-      message="Demo Mode: Sample vocabulary shown. Sign up to access thousands of words with audio and examples!"
+      message="Open Beta: Full vocabulary access enabled. Sign up to track your learning journey!"
       showStats={true}
       variant="compact"
     />

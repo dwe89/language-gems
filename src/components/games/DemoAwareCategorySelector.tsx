@@ -51,6 +51,20 @@ export default function DemoAwareCategorySelector({
   const [currentCurriculumLevel, setCurrentCurriculumLevel] = useState<CurriculumLevel>(curriculumLevel as CurriculumLevel);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [restrictedItem, setRestrictedItem] = useState<string>('');
+  const [learnerMode, setLearnerMode] = useState<'school' | 'independent'>('school');
+
+  // Persist learner mode preference
+  React.useEffect(() => {
+    const savedMode = localStorage.getItem('languagegems_learner_mode');
+    if (savedMode === 'independent') {
+      setLearnerMode('independent');
+    }
+  }, []);
+
+  const toggleLearnerMode = (mode: 'school' | 'independent') => {
+    setLearnerMode(mode);
+    localStorage.setItem('languagegems_learner_mode', mode);
+  };
 
   // Get categories based on curriculum level
   const currentCategories = getCategoriesByCurriculum(currentCurriculumLevel);
@@ -58,34 +72,21 @@ export default function DemoAwareCategorySelector({
   // Filter categories based on search
   const filteredCategories = currentCategories.filter(category =>
     category.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.subcategories.some(sub => 
+    category.subcategories.some(sub =>
       sub.displayName.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
   // Check if a category is available in demo mode
   const isCategoryAvailable = (categoryId: string): boolean => {
-    if (isAdmin) return true; // Admin always has access
-
-    // Use the new access control system
-    if (userType === 'demo') {
-      return DEMO_AVAILABLE_CATEGORIES.includes(categoryId);
-    }
-
-    return true; // Non-demo users have access
+    // Open Beta: All categories unlocked!
+    return true;
   };
 
   // Check if a subcategory is available in demo mode
   const isSubcategoryAvailable = (categoryId: string, subcategoryId: string): boolean => {
-    if (isAdmin) return true; // Admin always has access
-
-    // Use the new access control system
-    if (userType === 'demo') {
-      const availableSubcategories = DEMO_AVAILABLE_SUBCATEGORIES[categoryId];
-      return availableSubcategories?.includes(subcategoryId) || false;
-    }
-
-    return true; // Non-demo users have access
+    // Open Beta: All subcategories unlocked!
+    return true;
   };
 
   const handleCategoryClick = (category: Category) => {
@@ -138,7 +139,7 @@ export default function DemoAwareCategorySelector({
 
   const renderCategoryCard = (category: Category) => {
     const isAvailable = isCategoryAvailable(category.id);
-    
+
     return (
       <motion.div
         key={category.id}
@@ -147,17 +148,9 @@ export default function DemoAwareCategorySelector({
         className={`group ${isAvailable ? 'cursor-pointer' : 'cursor-not-allowed'}`}
         onClick={() => handleCategoryClick(category)}
       >
-        <div className={`bg-gradient-to-br ${category.color} p-6 rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden ${
-          !isAvailable ? 'opacity-60' : ''
-        }`}>
-          {/* Lock icon for restricted categories */}
-          {!isAvailable && (
-            <div className="absolute top-4 right-4 z-10">
-              <div className="bg-black bg-opacity-50 rounded-full p-2">
-                <Lock className="h-5 w-5 text-white" />
-              </div>
-            </div>
-          )}
+        <div className={`bg-gradient-to-br ${category.color} p-6 rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden ${!isAvailable ? 'opacity-60' : ''
+          }`}>
+
 
           {/* Admin crown for admin users */}
           {isAdmin && (
@@ -173,35 +166,27 @@ export default function DemoAwareCategorySelector({
             <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
           </div>
-          
+
           <div className="relative z-10">
-            <div className="text-4xl mb-4">{category.icon}</div>
+            <div className="mb-4 text-white">
+              <category.icon className="h-10 w-10" />
+            </div>
             <h3 className="text-xl font-bold mb-2">{category.displayName}</h3>
             <p className="text-sm opacity-90 mb-4">
               {category.subcategories.length} subcategories
             </p>
-            
-            {/* Demo restriction message */}
-            {!isAvailable && (
-              <div className="text-xs bg-black bg-opacity-30 px-2 py-1 rounded-full inline-block">
-                Sign up to unlock
-              </div>
-            )}
-            
+
+
+
             {/* Mini subcategory preview */}
             <div className="flex flex-wrap gap-1">
               {category.subcategories.slice(0, 3).map((sub) => (
                 <span
                   key={sub.id}
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    isSubcategoryAvailable(category.id, sub.id) 
-                      ? 'bg-white bg-opacity-20' 
-                      : 'bg-black bg-opacity-30'
-                  }`}
+                  className={`text-xs px-2 py-1 rounded-full bg-white bg-opacity-20`}
                 >
-                  {isSubcategoryAvailable(category.id, sub.id) ? '' : '🔒 '}
-                  {sub.displayName.length > 12 
-                    ? sub.displayName.substring(0, 12) + '...' 
+                  {sub.displayName.length > 12
+                    ? sub.displayName.substring(0, 12) + '...'
                     : sub.displayName
                   }
                 </span>
@@ -231,8 +216,8 @@ export default function DemoAwareCategorySelector({
           </div>
         )}
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Select a vocabulary category to start your learning adventure. 
-          {isDemo ? ' Demo users can access basic vocabulary to try out the platform.' : ''}
+          Select a vocabulary category to start your learning adventure.
+          {isDemo ? ' Welcome to the Open Beta! Enjoy full access to all categories.' : ''}
         </p>
       </div>
 
@@ -248,15 +233,41 @@ export default function DemoAwareCategorySelector({
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-        
-        <div className="flex gap-2">
+
+        <div className="flex gap-4 items-center">
+          {/* Learner Mode Toggle */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => toggleLearnerMode('school')}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${learnerMode === 'school'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              School
+            </button>
+            <button
+              onClick={() => toggleLearnerMode('independent')}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${learnerMode === 'independent'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Independent
+            </button>
+          </div>
+
           <select
             value={currentCurriculumLevel}
             onChange={(e) => setCurrentCurriculumLevel(e.target.value as CurriculumLevel)}
-            className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
           >
-            <option value="KS3">KS3 Level</option>
-            <option value="KS4">KS4/GCSE Level</option>
+            <option value="KS3">
+              {learnerMode === 'school' ? 'KS3 Level (Ages 11-14)' : 'Beginner (A1-A2)'}
+            </option>
+            <option value="KS4">
+              {learnerMode === 'school' ? 'KS4/GCSE Level (Ages 14-16)' : 'Intermediate (B1-B2)'}
+            </option>
           </select>
         </div>
       </div>
@@ -295,7 +306,9 @@ export default function DemoAwareCategorySelector({
             {/* Selected Category Header */}
             {selectedCategory && (
               <div className="text-center mb-8">
-                <div className="text-6xl mb-4">{selectedCategory.icon}</div>
+                <div className="mb-4 text-blue-600">
+                  <selectedCategory.icon className="h-16 w-16 mx-auto" />
+                </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
                   {selectedCategory.displayName}
                 </h2>
@@ -310,27 +323,21 @@ export default function DemoAwareCategorySelector({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {selectedCategory.subcategories.map((subcategory) => {
                   const isAvailable = isSubcategoryAvailable(selectedCategory.id, subcategory.id);
-                  
+
                   return (
                     <motion.div
                       key={subcategory.id}
                       whileHover={isAvailable ? { scale: 1.02 } : {}}
                       whileTap={isAvailable ? { scale: 0.98 } : {}}
-                      className={`p-4 border-2 rounded-xl transition-all duration-200 relative ${
-                        selectedSubcategories.has(subcategory.id)
-                          ? `border-blue-500 bg-blue-50`
-                          : isAvailable 
-                            ? 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 cursor-pointer'
-                            : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
-                      }`}
+                      className={`p-4 border-2 rounded-xl transition-all duration-200 relative ${selectedSubcategories.has(subcategory.id)
+                        ? `border-blue-500 bg-blue-50`
+                        : isAvailable
+                          ? 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 cursor-pointer'
+                          : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                        }`}
                       onClick={() => handleSubcategoryClick(subcategory)}
                     >
-                      {/* Lock icon for restricted subcategories */}
-                      {!isAvailable && (
-                        <div className="absolute top-2 right-2">
-                          <Lock className="h-4 w-4 text-gray-400" />
-                        </div>
-                      )}
+
 
                       <div className="flex items-center justify-between">
                         <h3 className={`font-semibold ${isAvailable ? 'text-gray-900' : 'text-gray-500'}`}>
@@ -340,12 +347,8 @@ export default function DemoAwareCategorySelector({
                           <CheckCircle className="h-5 w-5 text-blue-500" />
                         )}
                       </div>
-                      
-                      {!isAvailable && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          Sign up to unlock this topic
-                        </p>
-                      )}
+
+
                     </motion.div>
                   );
                 })}

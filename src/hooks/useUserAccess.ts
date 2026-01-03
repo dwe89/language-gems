@@ -3,27 +3,25 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useDemoAuth } from '@/components/auth/DemoAuthProvider';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useState, useEffect } from 'react';
-import { 
-  UserType, 
-  AccessControlConfig, 
-  getAccessConfig, 
-  canAccessFeature, 
+import {
+  UserType,
+  AccessControlConfig,
+  getAccessConfig,
+  canAccessFeature,
   getDailyGameLimit,
-  getUpgradeMessage 
+  getUpgradeMessage
 } from '@/lib/access-control';
 
 interface UserAccessData {
   userType: UserType;
-  canPlayGames: boolean;
-  gamesPlayedToday: number;
-  dailyLimit: number;
-  gamesRemaining: number;
-  recordGamePlayed: () => void;
-  upgradeMessage: string;
+  accessConfig: AccessControlConfig;
+  isLoading: boolean;
+  canAccess: (feature: keyof AccessControlConfig) => boolean;
   canAccessFeature: (feature: keyof AccessControlConfig) => boolean;
+  getDailyLimit: () => number;
+  getUpgradeMsg: (feature: string) => string;
   subscriptionStatus: string | null;
   subscriptionTier: string | null;
-  isLoading: boolean;
 }
 
 export const useUserAccess = (): UserAccessData => {
@@ -200,7 +198,7 @@ export const useUserAccess = (): UserAccessData => {
 // Helper hook for specific feature checks
 export const useFeatureAccess = (feature: keyof AccessControlConfig) => {
   const { canAccess, getUpgradeMsg, userType } = useUserAccess();
-  
+
   return {
     hasAccess: canAccess(feature),
     upgradeMessage: getUpgradeMsg(feature),
@@ -210,9 +208,9 @@ export const useFeatureAccess = (feature: keyof AccessControlConfig) => {
 
 // Helper hook for game access with daily limits
 export const useGameAccess = () => {
-  const { canAccess, getDailyLimit, userType, getUpgradeMsg } = useUserAccess();
+  const { canAccess, getDailyLimit, userType, getUpgradeMsg, subscriptionStatus, subscriptionTier, isLoading } = useUserAccess();
   const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
-  
+
   useEffect(() => {
     // Load games played today from localStorage
     const today = new Date().toDateString();
@@ -229,7 +227,7 @@ export const useGameAccess = () => {
 
   const dailyLimit = getDailyLimit();
   const hasGamesRemaining = dailyLimit === -1 || gamesPlayedToday < dailyLimit;
-  
+
   return {
     canPlayGames: canAccess('gamesAccess') && hasGamesRemaining,
     gamesPlayedToday,

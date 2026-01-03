@@ -5,12 +5,12 @@ import { useUserAccess } from '@/hooks/useUserAccess';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Users, 
-  BookOpen, 
-  ClipboardList, 
-  BarChart3, 
-  Crown, 
+import {
+  Users,
+  BookOpen,
+  ClipboardList,
+  BarChart3,
+  Crown,
   Zap,
   Lock,
   CheckCircle,
@@ -34,8 +34,8 @@ export const TierRestrictionsDisplay: React.FC<TierRestrictionsDisplayProps> = (
     switch (userType) {
       case 'demo':
         return {
-          name: 'Demo Mode',
-          description: 'Limited access to explore LanguageGems',
+          name: 'Open Beta',
+          description: 'Full access to explore LanguageGems',
           color: 'bg-blue-100 text-blue-800',
           icon: <Zap className="w-4 h-4" />
         };
@@ -173,7 +173,7 @@ export const TierRestrictionsDisplay: React.FC<TierRestrictionsDisplayProps> = (
           {features.map((feature) => {
             const hasAccess = accessConfig[feature.key as keyof typeof accessConfig];
             const value = feature.getValue();
-            
+
             return (
               <div key={feature.key} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                 <div className="flex items-center space-x-2">
@@ -223,7 +223,7 @@ export const TierRestrictionsDisplay: React.FC<TierRestrictionsDisplayProps> = (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-3">
-                {userType === 'demo' 
+                {userType === 'demo'
                   ? 'Create a free account to unlock more features!'
                   : 'Upgrade to Pro for unlimited access to all features!'
                 }

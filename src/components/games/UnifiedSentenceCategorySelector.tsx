@@ -38,6 +38,15 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// Helper to determine learner mode from localStorage
+const getInitialLearnerMode = (): 'school' | 'independent' => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('languagegems_learner_mode');
+    if (saved === 'independent') return 'independent';
+  }
+  return 'school';
+};
+
 // Types
 export interface SentenceSelectionConfig {
   language: string;
@@ -339,6 +348,19 @@ export default function UnifiedSentenceCategorySelector({
   const [loading, setLoading] = useState(false);
   const [urlParamsChecked, setUrlParamsChecked] = useState(false);
 
+  const [learnerMode, setLearnerMode] = useState<'school' | 'independent'>('school');
+
+  useEffect(() => {
+    setLearnerMode(getInitialLearnerMode());
+  }, []);
+
+  const toggleLearnerMode = (mode: 'school' | 'independent') => {
+    setLearnerMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('languagegems_learner_mode', mode);
+    }
+  };
+
   // Filter languages based on supported languages
   const availableLanguages = AVAILABLE_LANGUAGES.filter(lang =>
     supportedLanguages.includes(lang.code)
@@ -347,10 +369,10 @@ export default function UnifiedSentenceCategorySelector({
   // Get current category data
   const currentCategory = categories.find(cat => cat.id === selectedCategory);
 
-  // Demo restrictions - only allow first category to be fully unlocked
+  // Demo restrictions - OPEN BETA: Remove all restrictions
   const isDemoRestricted = (categoryId: string) => {
-    if (!isDemo) return false;
-    return categoryId !== 'basics_core_language';
+    // Open Beta: All categories unlocked!
+    return false;
   };
 
   // Load categories from database
@@ -566,8 +588,8 @@ export default function UnifiedSentenceCategorySelector({
             </div>
 
             {isDemo && (
-              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg px-4 py-2">
-                <span className="text-yellow-200 text-sm font-medium">DEMO MODE</span>
+              <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg px-4 py-2">
+                <span className="text-blue-200 text-sm font-medium">OPEN BETA</span>
               </div>
             )}
           </div>
@@ -581,19 +603,17 @@ export default function UnifiedSentenceCategorySelector({
 
                 return (
                   <React.Fragment key={stepName}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                      isActive
-                        ? 'bg-white text-purple-900'
-                        : isCompleted
-                          ? 'bg-green-500 text-white'
-                          : 'bg-white/20 text-white/60'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${isActive
+                      ? 'bg-white text-purple-900'
+                      : isCompleted
+                        ? 'bg-green-500 text-white'
+                        : 'bg-white/20 text-white/60'
+                      }`}>
                       {isCompleted ? '✓' : index + 1}
                     </div>
                     {index < 3 && (
-                      <div className={`w-8 h-0.5 transition-all ${
-                        isCompleted ? 'bg-green-500' : 'bg-white/20'
-                      }`} />
+                      <div className={`w-8 h-0.5 transition-all ${isCompleted ? 'bg-green-500' : 'bg-white/20'
+                        }`} />
                     )}
                   </React.Fragment>
                 );
@@ -614,8 +634,9 @@ export default function UnifiedSentenceCategorySelector({
               <CurriculumSelection
                 levels={CURRICULUM_LEVELS}
                 onSelect={handleCurriculumSelect}
-                onCustomMode={showCustomMode ? handleCustomMode : undefined}
                 selectedLanguage={selectedLanguage}
+                learnerMode={learnerMode}
+                onToggleLearnerMode={toggleLearnerMode}
               />
             )}
 
@@ -702,8 +723,21 @@ const CurriculumSelection: React.FC<{
   levels: typeof CURRICULUM_LEVELS;
   onSelect: (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => void;
   selectedLanguage: string;
-}> = ({ levels, onSelect, selectedLanguage }) => {
+  learnerMode: 'school' | 'independent';
+  onToggleLearnerMode: (mode: 'school' | 'independent') => void;
+}> = ({ levels, onSelect, selectedLanguage, learnerMode, onToggleLearnerMode }) => {
   const language = AVAILABLE_LANGUAGES.find(l => l.code === selectedLanguage);
+
+  // Derive levels based on learner mode
+  const displayLevels = levels.map(level => {
+    if (learnerMode === 'independent') {
+      if (level.code === 'KS2') return { ...level, name: 'Primary (Ages 7-11)', description: 'Fun language introduction for kids' };
+      if (level.code === 'KS3') return { ...level, name: 'Beginner (A1-A2)', description: 'Essential phrases and foundation vocab' };
+      if (level.code === 'KS4') return { ...level, name: 'Intermediate (B1-B2)', description: 'Conversational fluency and core topics' };
+      if (level.code === 'KS5') return { ...level, name: 'Advanced (C1-C2)', description: 'Complex themes and native-level fluency' };
+    }
+    return level;
+  });
 
   return (
     <motion.div
@@ -715,24 +749,48 @@ const CurriculumSelection: React.FC<{
     >
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-white mb-2">Choose Your Curriculum Level</h2>
+
+        {/* Learner Mode Toggle */}
+        <div className="flex justify-center mb-4">
+          <div className="bg-white/10 p-1 rounded-xl flex backdrop-blur-sm border border-white/10">
+            <button
+              onClick={() => onToggleLearnerMode('school')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${learnerMode === 'school'
+                ? 'bg-white text-blue-900 shadow-md'
+                : 'text-white/70 hover:text-white'
+                }`}
+            >
+              School
+            </button>
+            <button
+              onClick={() => onToggleLearnerMode('independent')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${learnerMode === 'independent'
+                ? 'bg-white text-blue-900 shadow-md'
+                : 'text-white/70 hover:text-white'
+                }`}
+            >
+              Independent
+            </button>
+          </div>
+        </div>
+
         <p className="text-white/80">
-          Learning {language?.name} sentences - Select your educational level
+          Learning {language?.name} sentences - Select your level
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        {levels.map((level) => (
+        {displayLevels.map((level) => (
           <motion.button
             key={level.code}
             onClick={() => onSelect(level.code)}
             whileHover={!level.comingSoon ? { scale: 1.02, y: -4 } : {}}
             whileTap={!level.comingSoon ? { scale: 0.98 } : {}}
             disabled={level.comingSoon}
-            className={`bg-gradient-to-br ${level.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden ${
-              level.comingSoon
-                ? 'opacity-60 cursor-not-allowed'
-                : 'hover:shadow-xl cursor-pointer'
-            }`}
+            className={`bg-gradient-to-br ${level.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden ${level.comingSoon
+              ? 'opacity-60 cursor-not-allowed'
+              : 'hover:shadow-xl cursor-pointer'
+              }`}
           >
             <div className="relative z-10">
               <div className="flex items-center justify-center mb-4">
@@ -808,18 +866,14 @@ const CategorySelection: React.FC<{
                 whileHover={!isRestricted ? { scale: 1.02, y: -4 } : {}}
                 whileTap={!isRestricted ? { scale: 0.98 } : {}}
                 disabled={isRestricted}
-                className={`w-full bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 relative overflow-hidden ${
-                  isRestricted
-                    ? 'opacity-60 cursor-not-allowed'
-                    : 'hover:shadow-xl cursor-pointer'
-                }`}
+                className={`w-full bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 relative overflow-hidden ${isRestricted
+                  ? 'opacity-60 cursor-not-allowed'
+                  : 'hover:shadow-xl cursor-pointer'
+                  }`}
               >
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
                     <IconComponent className="h-8 w-8" />
-                    {isRestricted && (
-                      <Lock className="h-5 w-5 text-white/80" />
-                    )}
                   </div>
                   <h3 className="text-lg font-bold mb-2 text-left">{category.displayName}</h3>
                   <p className="text-white/90 text-sm text-left mb-3">
@@ -829,9 +883,7 @@ const CategorySelection: React.FC<{
                     <span className="text-white/70 text-xs">
                       {category.subcategories.length} topics
                     </span>
-                    {!isRestricted && (
-                      <ArrowRight className="h-4 w-4 text-white/80 group-hover:text-white transition-colors" />
-                    )}
+                    <ArrowRight className="h-4 w-4 text-white/80 group-hover:text-white transition-colors" />
                   </div>
                 </div>
 
@@ -840,14 +892,7 @@ const CategorySelection: React.FC<{
                 )}
               </motion.button>
 
-              {isRestricted && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
-                  <div className="text-center">
-                    <Lock className="h-8 w-8 text-white mx-auto mb-2" />
-                    <p className="text-white text-sm font-medium">Sign up to unlock</p>
-                  </div>
-                </div>
-              )}
+
             </motion.div>
           );
         })}

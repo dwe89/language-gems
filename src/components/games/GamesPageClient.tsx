@@ -384,7 +384,7 @@ export default function GamesPageClient() {
             <Gamepad2 className="h-6 w-6 text-indigo-600 mr-2" />
             <h1 className="text-3xl font-bold text-gray-900">Language Learning Games</h1>
             {(isDemo || !user) && (
-              <span className="ml-3 bg-orange-500 text-white text-sm px-3 py-1 rounded-full font-bold">DEMO</span>
+              <span className="ml-3 bg-blue-500 text-white text-sm px-3 py-1 rounded-full font-bold">BETA</span>
             )}
           </div>
           <p className="text-gray-600 max-w-2xl">
@@ -395,7 +395,7 @@ export default function GamesPageClient() {
           {isDemo && (
             <div className="mt-6 max-w-4xl mx-auto px-4 sm:px-0">
               <DemoBanner
-                message="Demo Mode: Try our games with basic vocabulary. Sign up to unlock all categories, languages, and features!"
+                message="Open Beta: Enjoy full access to all games and categories! Sign up to save your progress."
                 showStats={true}
                 variant="compact"
                 onSignupClick={() => setShowSignupSelector(true)}
@@ -474,8 +474,8 @@ export default function GamesPageClient() {
                       />
                       {/* Display 'DEMO' tag based on isDemo prop or other logic */}
                       {(isDemo || !user) && (
-                        <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                          DEMO
+                        <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                          BETA
                         </div>
                       )}
                       {/* Display the main category, or a subcategory if it's a sentences game */}
