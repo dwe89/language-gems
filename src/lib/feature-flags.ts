@@ -11,19 +11,19 @@ export type LaunchPhase = 'BETA' | 'FULL';
 export interface FeatureFlags {
   // Launch Phase
   launchPhase: LaunchPhase;
-  
+
   // Core Features (Always Available)
   games: boolean;
   assessments: boolean;
   authentication: boolean;
   content: boolean;
   blog: boolean;
-  
+
   // Beta Features (Limited Functionality)
   basicTeacherDashboard: boolean;
   basicStudentDashboard: boolean;
   basicAssignments: boolean;
-  
+
   // Full Launch Features (Coming Soon in Beta)
   advancedAnalytics: boolean;
   assignmentManagement: boolean;
@@ -31,7 +31,7 @@ export interface FeatureFlags {
   progressTracking: boolean;
   subscriptionSystem: boolean;
   schoolAdminPanel: boolean;
-  
+
   // Beta-Specific Features
   betaFeedbackCollection: boolean;
   comingSoonOverlays: boolean;
@@ -43,7 +43,7 @@ export interface FeatureFlags {
 const getEnvironmentConfig = (): Partial<FeatureFlags> => {
   const env = process.env.NODE_ENV;
   const launchPhase = (process.env.NEXT_PUBLIC_LAUNCH_PHASE as LaunchPhase) || 'BETA';
-  
+
   if (launchPhase === 'FULL') {
     return {
       launchPhase: 'FULL',
@@ -59,7 +59,7 @@ const getEnvironmentConfig = (): Partial<FeatureFlags> => {
       betaMessaging: false,
     };
   }
-  
+
   // Default BETA configuration
   return {
     launchPhase: 'BETA',
@@ -80,19 +80,19 @@ const getEnvironmentConfig = (): Partial<FeatureFlags> => {
 const defaultFlags: FeatureFlags = {
   // Launch Phase
   launchPhase: 'BETA',
-  
+
   // Core Features (Always Available)
   games: true,
   assessments: true,
   authentication: true,
   content: true,
   blog: true,
-  
+
   // Beta Features (Limited Functionality)
   basicTeacherDashboard: true,
   basicStudentDashboard: true,
   basicAssignments: true,
-  
+
   // Full Launch Features (Coming Soon in Beta)
   advancedAnalytics: false,
   assignmentManagement: false,
@@ -100,13 +100,13 @@ const defaultFlags: FeatureFlags = {
   progressTracking: false,
   subscriptionSystem: false,
   schoolAdminPanel: false,
-  
+
   // Beta-Specific Features
   betaFeedbackCollection: true,
   comingSoonOverlays: true,
   emailCapture: true,
   betaMessaging: true,
-  
+
   // Apply environment overrides
   ...getEnvironmentConfig(),
 };
@@ -144,25 +144,28 @@ export const isFullLaunch = (): boolean => {
  */
 export const getBetaConfig = () => {
   const flags = getFeatureFlags();
-  
+
   return {
     showBetaMessaging: flags.betaMessaging,
     showComingSoon: flags.comingSoonOverlays,
     collectFeedback: flags.betaFeedbackCollection,
     captureEmails: flags.emailCapture,
-    
+
     // Beta messaging content
     betaBadge: "BETA ACCESS",
     heroTagline: "Shape the Future of Language Learning",
     ctaText: "Get Free Beta Access",
     comingSoonText: "Coming Soon in Full Launch",
-    
+
     // Feature availability messages
     gamesAvailable: "✅ All 11+ Interactive Games Available Now",
     assessmentsAvailable: "✅ Complete Assessment System Ready",
     dashboardComingSoon: "🚀 Advanced Teacher Dashboard Coming Soon",
     analyticsComingSoon: "📊 Comprehensive Analytics Coming Soon",
-    
+
+    // Top banner specific
+    topBannerText: "- All Premium features are FREE until February Half-Term 2026!",
+
     // Email capture
     emailCaptureHeading: "Be First to Access the Complete Platform",
     emailCaptureSubtext: "Join 500+ educators already signed up for early access",
@@ -175,7 +178,7 @@ export const getBetaConfig = () => {
 export const useFeatureFlags = () => {
   const flags = getFeatureFlags();
   const betaConfig = getBetaConfig();
-  
+
   return {
     flags,
     betaConfig,

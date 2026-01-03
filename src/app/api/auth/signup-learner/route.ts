@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
         {
           cookies: {
             get() { return undefined; },
-            set() {},
-            remove() {},
+            set() { },
+            remove() { },
           },
         }
       );
@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
         .from('user_profiles')
         .update({
           subscription_type: plan === 'pro' ? 'premium' : 'free',
+          subscription_status: 'trialing',
+          trial_ends_at: '2026-02-20', // Beta trial end date (Feb Half Term)
           role: 'learner',
           user_type: 'b2c',
           // No school-related fields for B2C users

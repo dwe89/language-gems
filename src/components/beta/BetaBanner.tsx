@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  X, 
-  ArrowRight, 
+import {
+  Sparkles,
+  X,
+  ArrowRight,
   Users,
   Gamepad2,
   BookOpen
@@ -20,9 +20,9 @@ interface BetaBannerProps {
   onSignupClick?: () => void;
 }
 
-export default function BetaBanner({ 
-  message, 
-  showStats = false, 
+export default function BetaBanner({
+  message,
+  showStats = false,
   variant = 'top',
   dismissible = true,
   className = '',
@@ -79,7 +79,7 @@ export default function BetaBanner({
                   <div className="text-sm text-white/80">Ready to play now</div>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
                 <BookOpen className="h-8 w-8 text-blue-300" />
                 <div className="text-left">
@@ -87,7 +87,7 @@ export default function BetaBanner({
                   <div className="text-sm text-white/80">AQA & Edexcel ready</div>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
                 <Users className="h-8 w-8 text-purple-300" />
                 <div className="text-left">
@@ -106,7 +106,7 @@ export default function BetaBanner({
                 {betaConfig.ctaText}
                 <ArrowRight className="h-5 w-5" />
               </a>
-              
+
               <a
                 href="/games"
                 className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/30 transition-colors border border-white/30"
@@ -128,22 +128,22 @@ export default function BetaBanner({
           <div className="p-2 bg-purple-100 rounded-lg">
             <Sparkles className="h-6 w-6 text-purple-600" />
           </div>
-          
+
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-semibold">
                 {betaConfig.betaBadge}
               </span>
             </div>
-            
+
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               You're Using the Beta Version
             </h3>
-            
+
             <p className="text-gray-700 mb-4">
               All games and assessments are fully functional. Advanced dashboard features are coming soon!
             </p>
-            
+
             <div className="flex flex-wrap gap-3">
               <a
                 href="/games"
@@ -152,13 +152,13 @@ export default function BetaBanner({
                 Explore Games
                 <ArrowRight className="h-4 w-4" />
               </a>
-              
+
               <button className="text-purple-600 hover:text-purple-800 font-medium">
                 What's Coming Soon?
               </button>
             </div>
           </div>
-          
+
           {dismissible && (
             <button
               onClick={handleDismiss}
@@ -180,13 +180,13 @@ export default function BetaBanner({
           <div className="flex items-center gap-3">
             <Sparkles className="h-5 w-5 text-yellow-300" />
             <span className="font-semibold">
-              {betaConfig.betaBadge}
+              {betaConfig.betaBadge} {betaConfig.topBannerText || "- All Premium features are FREE until February Half-Term 2026!"}
             </span>
             <span className="hidden sm:inline text-white/90">
-              - All games available now, advanced features coming soon!
+              - No credit card required.
             </span>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {onSignupClick ? (
               <button
@@ -203,7 +203,7 @@ export default function BetaBanner({
                 {betaConfig.ctaText}
               </a>
             )}
-            
+
             {dismissible && (
               <button
                 onClick={handleDismiss}

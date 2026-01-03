@@ -12,7 +12,10 @@ import {
   Volume2,
   VolumeX,
   Minimize,
-  Trophy
+  Trophy,
+  Mic,
+  Crown,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -24,6 +27,10 @@ import VideoPlayer from '@/components/youtube/VideoPlayer';
 
 import VideoQuizGame from '@/components/youtube/VideoQuizGame';
 import VideoGrammarNotes from '@/components/youtube/VideoGrammarNotes';
+import LyricsTrainingPlayer, { LyricLine, KaraokeQuestion } from '@/components/youtube/LyricsTrainingPlayer';
+import QuestionModePlayer from '@/components/youtube/QuestionModePlayer';
+import AdminVideoEditor from '@/components/admin/AdminVideoEditor';
+import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 
 interface YouTubeVideo {
   id: string;
@@ -52,36 +59,96 @@ export default function VideoPage() {
   const router = useRouter();
   const language = params.language as string;
   const videoId = params.id as string;
-  
+
   const [video, setVideo] = useState<YouTubeVideo | null>(null);
   const [vocabularyWords, setVocabularyWords] = useState<VocabularyWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('watch');
+  const [lyrics, setLyrics] = useState<LyricLine[]>([]);
+  const [karaokeQuestions, setKaraokeQuestions] = useState<KaraokeQuestion[]>([]);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { supabase } = useSupabase();
+
+  // Check if user has Learner+ tier for karaoke access
+  const userTier = user?.user_metadata?.plan || 'free';
+  const hasKaraokeAccess = isAdmin || ['learner', 'student', 'pro'].includes(userTier);
 
   useEffect(() => {
     if (videoId) {
       fetchVideo();
       fetchVocabulary();
+      fetchLyrics();
+      fetchKaraokeQuestions();
     }
   }, [videoId]);
+
+  const fetchLyrics = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('video_lyrics')
+        .select('*')
+        .eq('video_id', videoId)
+        .order('timestamp_seconds', { ascending: true });
+
+      if (error) throw error;
+
+      const formattedLyrics: LyricLine[] = (data || []).map((line: any) => ({
+        id: line.id,
+        timestamp: line.timestamp_seconds,
+        endTimestamp: line.end_timestamp_seconds,
+        text: line.text,
+        translation: line.translation
+      }));
+
+      setLyrics(formattedLyrics);
+    } catch (error) {
+      console.error('Error fetching lyrics:', error);
+    }
+  };
+
+  const fetchKaraokeQuestions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('video_karaoke_questions')
+        .select('*')
+        .eq('video_id', videoId)
+        .eq('is_active', true)
+        .order('timestamp_seconds', { ascending: true });
+
+      if (error) throw error;
+
+      const questions: KaraokeQuestion[] = (data || []).map((q: any) => ({
+        id: q.id,
+        timestamp: q.timestamp_seconds,
+        question: q.question_text,
+        options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
+        correctAnswer: q.correct_answer,
+        explanation: q.explanation,
+        type: q.question_type || 'vocabulary'
+      }));
+
+      setKaraokeQuestions(questions);
+    } catch (error) {
+      console.error('Error fetching karaoke questions:', error);
+    }
+  };
 
   const fetchVideo = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase
         .from('youtube_videos')
         .select('*')
         .eq('id', videoId)
         .eq('is_active', true)
         .single();
-      
+
       if (error) throw error;
       setVideo(data);
-      
+
     } catch (error) {
       console.error('Error fetching video:', error);
     } finally {
@@ -105,9 +172,9 @@ export default function VideoPage() {
         `)
         .eq('video_id', videoId)
         .order('timestamp_seconds', { ascending: true });
-      
+
       if (error) throw error;
-      
+
       const words: VocabularyWord[] = data?.map(item => ({
         id: (item.centralized_vocabulary as any).id,
         word: (item.centralized_vocabulary as any).word,
@@ -115,9 +182,9 @@ export default function VideoPage() {
         timestamp: item.timestamp_seconds || 0,
         context: item.context_text || ''
       })) || [];
-      
+
       setVocabularyWords(words);
-      
+
     } catch (error) {
       console.error('Error fetching vocabulary:', error);
     }
@@ -218,7 +285,45 @@ export default function VideoPage() {
             </div>
 
             {video.description && (
-              <p className="text-slate-600 text-lg leading-relaxed">{video.description}</p>
+              <div className="relative">
+                <div className={`text-slate-600 text-lg leading-relaxed whitespace-pre-wrap transition-all duration-300 ${showFullDescription ? '' : 'max-h-32 overflow-hidden mask-fade-bottom'
+                  }`}>
+                  {video.description}
+                </div>
+
+                {video.description.length > 300 && (
+                  <button
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    className="flex items-center gap-2 text-blue-600 font-medium mt-2 hover:text-blue-700 transition-colors"
+                  >
+                    {showFullDescription ? (
+                      <>Show Less <ChevronUp className="w-4 h-4" /></>
+                    ) : (
+                      <>Show More <ChevronDown className="w-4 h-4" /></>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="mt-4 border-t pt-4">
+                <AdminVideoEditor
+                  videoId={video.id}
+                  youtubeId={video.youtube_id}
+                  initialData={{
+                    title: video.title,
+                    description: video.description,
+                    lyrics: lyrics,
+                    questions: karaokeQuestions
+                  }}
+                  onUpdate={() => {
+                    fetchVideo();
+                    fetchLyrics();
+                    fetchKaraokeQuestions();
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -226,29 +331,67 @@ export default function VideoPage() {
         {/* Enhanced Navigation Tabs */}
         <div className="mb-8">
           <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-2">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
               <button
                 onClick={() => setActiveTab('watch')}
-                className={`flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                  activeTab === 'watch'
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 transform scale-[1.02]'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                className={`flex items-center justify-center gap-3 px-4 py-4 rounded-xl font-semibold text-sm transition-all duration-200 ${activeTab === 'watch'
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 transform scale-[1.02]'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                  }`}
               >
                 <Play className="w-5 h-5" />
                 <span className="hidden sm:inline">Watch</span>
               </button>
 
+              {/* Karaoke Tab - Premium Feature */}
+              <button
+                onClick={() => hasKaraokeAccess ? setActiveTab('karaoke') : null}
+                className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-semibold text-sm transition-all duration-200 relative ${!hasKaraokeAccess
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : activeTab === 'karaoke'
+                    ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/25 transform scale-[1.02]'
+                    : 'text-slate-600 hover:bg-pink-50 hover:text-pink-700'
+                  }`}
+              >
+                {!hasKaraokeAccess ? <Lock className="w-4 h-4" /> : <Mic className="w-5 h-5" />}
+                <span className="hidden sm:inline">Karaoke</span>
+                {!hasKaraokeAccess && (
+                  <span className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    PRO
+                  </span>
+                )}
+              </button>
+
+              {/* Question Mode Tab */}
+              <button
+                onClick={() => hasKaraokeAccess && karaokeQuestions.length > 0 ? setActiveTab('questions') : null}
+                className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-semibold text-sm transition-all duration-200 relative ${karaokeQuestions.length === 0
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : !hasKaraokeAccess
+                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                      : activeTab === 'questions'
+                        ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25 transform scale-[1.02]'
+                        : 'text-slate-600 hover:bg-indigo-50 hover:text-indigo-700'
+                  }`}
+              >
+                <HelpCircle className="w-5 h-5" />
+                <span className="hidden sm:inline">Questions</span>
+                {karaokeQuestions.length > 0 && (
+                  <span className="bg-white/20 text-xs px-2 py-1 rounded-full">
+                    {karaokeQuestions.length}
+                  </span>
+                )}
+              </button>
+
               <button
                 onClick={() => setActiveTab('vocabulary')}
-                className={`flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                  activeTab === 'vocabulary'
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 transform scale-[1.02]'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-semibold text-sm transition-all duration-200 ${activeTab === 'vocabulary'
+                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 transform scale-[1.02]'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                  }`}
               >
                 <BookOpen className="w-5 h-5" />
-                <span className="hidden sm:inline">Vocabulary</span>
+                <span className="hidden sm:inline">Vocab</span>
                 <span className="bg-white/20 text-xs px-2 py-1 rounded-full">
                   {vocabularyWords.length}
                 </span>
@@ -256,11 +399,10 @@ export default function VideoPage() {
 
               <button
                 onClick={() => setActiveTab('quiz')}
-                className={`flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                  activeTab === 'quiz'
-                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25 transform scale-[1.02]'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-semibold text-sm transition-all duration-200 ${activeTab === 'quiz'
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25 transform scale-[1.02]'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                  }`}
               >
                 <Trophy className="w-5 h-5" />
                 <span className="hidden sm:inline">Quiz</span>
@@ -268,11 +410,10 @@ export default function VideoPage() {
 
               <button
                 onClick={() => setActiveTab('grammar')}
-                className={`flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                  activeTab === 'grammar'
-                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 transform scale-[1.02]'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-semibold text-sm transition-all duration-200 ${activeTab === 'grammar'
+                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 transform scale-[1.02]'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                  }`}
               >
                 <BookOpen className="w-5 h-5" />
                 <span className="hidden sm:inline">Grammar</span>
@@ -280,14 +421,13 @@ export default function VideoPage() {
 
               <button
                 onClick={() => setActiveTab('transcript')}
-                className={`flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold text-sm transition-all duration-200 col-span-2 md:col-span-1 ${
-                  activeTab === 'transcript'
-                    ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 transform scale-[1.02]'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-semibold text-sm transition-all duration-200 ${activeTab === 'transcript'
+                  ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 transform scale-[1.02]'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                  }`}
               >
                 <Volume2 className="w-5 h-5" />
-                <span className="hidden sm:inline">Transcript</span>
+                <span className="hidden sm:inline">Lyrics</span>
               </button>
             </div>
           </div>
@@ -308,6 +448,75 @@ export default function VideoPage() {
                 />
               </div>
             </div>
+          )}
+
+          {/* Karaoke Mode - LyricsTraining Style */}
+          {activeTab === 'karaoke' && hasKaraokeAccess && (
+            <LyricsTrainingPlayer
+              videoId={video.id}
+              youtubeId={video.youtube_id}
+              lyrics={lyrics}
+              questions={karaokeQuestions}
+              language={language}
+              title={video.title}
+              difficulty="intermediate"
+              onComplete={(results) => {
+                console.log('Lyrics Training complete:', results);
+                // Could save results, award gems, etc.
+              }}
+            />
+          )}
+
+          {/* Locked Karaoke Upsell */}
+          {activeTab === 'karaoke' && !hasKaraokeAccess && (
+            <div className="bg-gradient-to-br from-purple-900 via-pink-900 to-rose-900 rounded-2xl p-8 text-white text-center">
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Lock className="w-10 h-10" />
+              </div>
+              <h2 className="text-3xl font-bold mb-4">🎤 Unlock Karaoke Mode</h2>
+              <p className="text-xl text-purple-200 mb-6 max-w-xl mx-auto">
+                Sing along with synchronized lyrics, answer questions as you learn, and master vocabulary through music!
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 mb-8">
+                <div className="bg-white/10 rounded-lg px-4 py-2">
+                  <span className="text-sm">✨ Synced lyrics</span>
+                </div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">
+                  <span className="text-sm">🧠 Auto-pause questions</span>
+                </div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">
+                  <span className="text-sm">⭐ Points & streaks</span>
+                </div>
+              </div>
+              <Link href="/pricing">
+                <button className="bg-white text-purple-700 font-bold text-lg px-8 py-4 rounded-xl hover:bg-purple-100 transition-colors flex items-center gap-2 mx-auto">
+                  <Crown className="w-6 h-6" />
+                  Upgrade from £4.99/month
+                </button>
+              </Link>
+            </div>
+          )}
+
+          {/* Question Mode - Timed Questions */}
+          {activeTab === 'questions' && hasKaraokeAccess && karaokeQuestions.length > 0 && (
+            <QuestionModePlayer
+              videoId={video.id}
+              youtubeId={video.youtube_id}
+              questions={karaokeQuestions.map(q => ({
+                id: q.id,
+                timestamp: q.timestamp,
+                question: q.question,
+                options: q.options,
+                correctAnswer: q.correctAnswer,
+                explanation: q.explanation,
+                type: q.type
+              }))}
+              language={language}
+              title={video.title}
+              onComplete={(results) => {
+                console.log('Question Mode complete:', results);
+              }}
+            />
           )}
 
           {activeTab === 'vocabulary' && (

@@ -147,6 +147,8 @@ export async function POST(request: NextRequest) {
       // Prepare profile update data
       const profileUpdate: any = {
         subscription_type: 'free',
+        subscription_status: 'trialing',
+        trial_ends_at: '2026-02-20', // Beta trial end date (Feb Half Term)
         school_initials: schoolCode  // Store the actual selected school code in school_initials
       };
 

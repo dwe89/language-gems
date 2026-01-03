@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isInitializing = useRef(true);
   const authTimeout = useRef<NodeJS.Timeout | null>(null);
   const currentUserId = useRef<string | null>(null);
-  
+
   // Derived authentication states
   const isAdmin = userRole === 'admin';
   const isTeacher = userRole === 'teacher' || isAdmin;
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching user profile:', error);
       }
     }
-    
+
     return null;
   }, []);
 
@@ -210,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Temporary admin override for specific email during testing - MUST BE FIRST
       const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@languagegems.com";
       const devAdminEmail = "danieletienne89@gmail.com";
-      
+
       if (currentUser.email === adminEmail || currentUser.email === devAdminEmail) {
         console.log('Setting admin role for email:', currentUser.email);
         return { role: 'admin', hasSubscription: true };
@@ -219,22 +219,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // First check metadata (fastest)
       let role = currentUser.user_metadata?.role;
       console.log('Role from user_metadata:', role);
-      
+
       // If no role in metadata, check user_profiles table with timeout
       if (!role) {
         try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 1000); // 1s timeout
-          
+
           const { data: profileData, error: profileError } = await supabaseBrowser
             .from('user_profiles')
             .select('role')
             .eq('user_id', currentUser.id)
             .abortSignal(controller.signal)
             .single();
-          
+
           clearTimeout(timeoutId);
-            
+
           if (profileError && profileError.code !== 'PGRST116') {
             console.error('Error fetching user profile:', profileError);
           } else if (profileData) {
@@ -254,7 +254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Proper subscription logic - check actual subscription status
       const hasSubscription = await checkUserSubscription(currentUser.id, role || 'student');
-      
+
       const result = { role, hasSubscription };
       console.log('getUserData returning:', result);
       return result;
@@ -274,10 +274,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Get complete user data if we have a user
       if (currentSession?.user) {
         console.log('Getting user data for:', currentSession.user.email);
-        
+
         // Run user data fetch with timeout to prevent hanging
         const userDataPromise = getUserData(currentSession.user);
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('User data fetch timeout')), 2000)
         );
 
@@ -301,7 +301,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setHasSubscription(false);
         currentUserId.current = null;
       }
-      
+
       setIsLoading(false);
       console.log('updateAuthState completed');
     } catch (error) {
@@ -323,7 +323,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const { data: { session: refreshedSession }, error } = await supabaseBrowser.auth.getSession();
-      
+
       if (error) {
         console.error('Error refreshing session:', error);
         return;
@@ -337,7 +337,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    
+
     // If already initialized, don't run again
     if (isInitializing.current === false) {
       return;
@@ -369,7 +369,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Normal session check with abort signal
         const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
-        
+
         clearTimeout(timeoutId);
 
         if (error) {
@@ -418,9 +418,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event: any, currentSession: Session | null) => {
         if (!mounted) return;
-        
+
         console.log('Auth state change event:', event, 'Session:', !!currentSession);
-        
+
         try {
           // Skip processing during initial load to avoid conflicts
           if (isInitializing.current) {
@@ -468,15 +468,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setSession(null);
       setIsLoading(false);
-      
+
       // Clear caches
       profileCache.current.clear();
       lastProfileFetch.current.clear();
       currentUserId.current = null;
-      
+
       // Set a signedOut cookie to help middleware detect signout
       document.cookie = "signedOut=true; path=/; max-age=60";
-      
+
       // Clear any authentication cookies or localStorage items
       document.cookie.split(';').forEach(cookie => {
         const [name] = cookie.split('=');
@@ -484,18 +484,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           document.cookie = `${name.trim()}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
         }
       });
-      
+
       // Then perform Supabase sign out with timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
-      
+
       const { error } = await supabaseBrowser.auth.signOut();
       clearTimeout(timeoutId);
-      
+
       if (error) {
         console.error('Error signing out:', error);
       }
-      
+
       // Force a hard redirect to home page and prevent back navigation
       router.refresh();
       setTimeout(() => {

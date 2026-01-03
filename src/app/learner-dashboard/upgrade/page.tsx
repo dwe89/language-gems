@@ -30,43 +30,76 @@ export default function UpgradePage() {
     features: string[];
     limitations?: string[];
     popular?: boolean;
+    tier: 'free' | 'learner' | 'student' | 'pro';
   }
 
   const plans: Record<string, Plan> = {
     free: {
       name: 'Free',
       price: 0,
-      description: 'Perfect for getting started',
+      tier: 'free',
+      description: 'Try before you commit',
       features: [
-        '5 games per day',
-        'Basic vocabulary lists',
-        'Progress tracking',
-        'Spanish only'
+        '3 song lessons per day',
+        '5 vocabulary games per day',
+        'Basic progress tracking',
+        'All 3 languages'
       ],
       limitations: [
         'Limited daily usage',
-        'No offline access',
-        'Basic support only',
-        'Single language'
+        'No karaoke mode',
+        'No offline access'
       ]
+    },
+    learner: {
+      name: 'Learner',
+      price: 4.99,
+      tier: 'learner',
+      description: 'Perfect for casual learners',
+      features: [
+        'Unlimited song lessons',
+        '🎤 Karaoke mode',
+        'Unlimited vocabulary games',
+        'All 3 languages',
+        'Song quizzes',
+        'Flashcard export'
+      ],
+      limitations: [
+        'No worksheets',
+        'No offline mode'
+      ]
+    },
+    student: {
+      name: 'Student',
+      price: 7.99,
+      tier: 'student',
+      description: 'Ideal for GCSE/KS3 prep',
+      features: [
+        'Everything in Learner, plus:',
+        '📝 AI worksheets',
+        '🎧 Listening tests',
+        '📖 Reading exercises',
+        'Exam alignment (AQA/Edexcel)',
+        'Grammar practice',
+        'Progress reports'
+      ],
+      popular: true
     },
     pro: {
       name: 'Pro',
       price: 9.99,
-      description: 'Unlimited learning for serious students',
+      tier: 'pro',
+      description: 'Ultimate learning experience',
       features: [
-        'Unlimited games & practice',
-        'All 3 languages (Spanish, French, German)',
-        'Advanced analytics & insights',
-        'Offline mode',
-        'Priority support',
-        'Custom vocabulary lists',
-        'Achievement system',
-        'Daily challenges',
-        'Spaced repetition optimization',
-        'Export progress reports'
-      ],
-      popular: true
+        'Everything in Student, plus:',
+        '🏆 Sing-Along Challenge',
+        '📱 Offline mode',
+        '🎨 Custom vocab lists',
+        '🏅 Achievements',
+        '⚡ Daily challenges',
+        '🎯 Personalized paths',
+        '👥 Priority support'
+      ]
     }
   };
 

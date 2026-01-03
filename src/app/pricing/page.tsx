@@ -20,49 +20,84 @@ export default function PricingPage() {
     free: {
       name: 'Free',
       price: { monthly: 0, yearly: 0 },
-      description: 'Perfect for getting started',
+      description: 'Try before you commit',
       features: [
-        '5 games per day',
-        'Basic vocabulary lists',
-        'Progress tracking',
+        '3 song lessons per day',
+        '5 vocabulary games per day',
+        'Basic progress tracking',
         'All 3 languages (Spanish, French, German)',
         'Community support'
       ],
       limitations: [
         'Limited daily usage',
-        'No offline access'
+        'No karaoke mode',
+        'No offline access',
+        'Basic analytics only'
       ],
       cta: 'Start Free',
       ctaLink: '/auth/signup-learner'
     },
+    learner: {
+      name: 'Learner',
+      price: { monthly: 4.99, yearly: 49.99 },
+      description: 'Perfect for casual learners & TikTok fans',
+      features: [
+        'Unlimited song lessons',
+        '🎤 Karaoke mode with lyrics sync',
+        'Unlimited vocabulary games',
+        'All 3 languages (Spanish, French, German)',
+        'Song-based learning with quizzes',
+        'Vocabulary flashcard export',
+        'Basic progress tracking',
+        'Email support'
+      ],
+      limitations: [
+        'No offline mode',
+        'No worksheets',
+        'Basic analytics'
+      ],
+      cta: 'Start Learning',
+      ctaLink: '/auth/signup-learner?plan=learner'
+    },
+    student: {
+      name: 'Student',
+      price: { monthly: 7.99, yearly: 79.99 },
+      description: 'Ideal for GCSE/KS3 exam prep',
+      features: [
+        'Everything in Learner, plus:',
+        '🎯 AQA & Edexcel exam alignment',
+        '📝 AI-generated worksheets',
+        '🎧 Listening comprehension tests',
+        '📖 Reading comprehension exercises',
+        'Dictation practice with audio',
+        'Grammar & conjugation practice',
+        'Spaced repetition optimization',
+        'Detailed progress analytics',
+        'Export progress reports',
+        'Priority email support'
+      ],
+      popular: true,
+      cta: 'Start Student Plan',
+      ctaLink: '/auth/signup-learner?plan=student'
+    },
     pro: {
       name: 'Pro',
       price: { monthly: 9.99, yearly: 99.99 },
-      description: 'Unlimited learning for serious students',
+      description: 'Ultimate learning for serious polyglots',
       features: [
-        'Unlimited games & practice',
-        'All 3 languages (Spanish, French, German)',
-        'Advanced analytics & insights',
-        'Offline mode',
-        'Priority support',
-        'Custom vocabulary lists',
-        'Achievement system',
-        'Daily challenges',
-        'Spaced repetition optimization',
-        'Export progress reports',
-        'AI-generated worksheets',
-        'Reading comprehension exercises',
-        'Dictation practice with audio',
-        'Interactive song-based learning',
-        'AQA & Edexcel assessment prep',
-        'Professional text-to-speech audio',
-        'Listening comprehension tests',
-        'Grammar & conjugation practice',
-        'Vocabulary mastery tracking',
-        'Personalized learning paths'
+        'Everything in Student, plus:',
+        '🏆 Sing-Along Challenge mode',
+        '📱 Offline mode for all content',
+        '🎨 Custom vocabulary lists',
+        '🏅 Achievement & badge system',
+        '⚡ Daily learning challenges',
+        '🎯 Personalized learning paths',
+        '📊 Advanced analytics dashboard',
+        '🎤 Pronunciation scoring (Coming Soon)',
+        '👥 Priority 1-on-1 support',
+        '✨ Early access to new features'
       ],
-      popular: true,
-      cta: 'Start Free Trial',
+      cta: 'Go Pro',
       ctaLink: '/auth/signup-learner?plan=pro'
     }
   };
@@ -152,10 +187,7 @@ export default function PricingPage() {
   };
 
   return (
-    <SEOWrapper
-      title="Pricing - LanguageGems | Affordable Language Learning for Everyone"
-      description="Choose the perfect LanguageGems plan for you. Free for individuals, affordable plans for families, and comprehensive solutions for schools."
-    >
+    <SEOWrapper>
       <div className="flex min-h-screen flex-col">
         <main className="flex-grow">
           {/* Header */}
