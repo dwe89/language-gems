@@ -212,7 +212,7 @@ export default function GamesPageClient() {
           id: 'word-towers',
           name: 'Word Towers',
           description: 'Build towers by matching vocabulary words to translations. Wrong answers make towers fall!',
-          thumbnail: '/images/games/word-towers.jpg',
+          thumbnail: '/images/games/sentence-towers.jpg',
           category: 'vocabulary',
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German'],

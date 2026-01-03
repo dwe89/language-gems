@@ -51,8 +51,8 @@ const GameCard = ({ game, isSelected, isDisabled, onPlayNowClick }: {
         ${isSelected
           ? 'bg-green-50 border-green-500 shadow-xl ring-2 ring-green-200'
           : isDisabled
-          ? 'bg-white border-gray-200 opacity-50 pointer-events-none'
-          : 'bg-white border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300'
+            ? 'bg-white border-gray-200 opacity-50 pointer-events-none'
+            : 'bg-white border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300'
         }`}
     >
       <div className="h-40 relative overflow-hidden">
@@ -114,7 +114,7 @@ const GameCard = ({ game, isSelected, isDisabled, onPlayNowClick }: {
                   : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105'
                 }`}
             >
-              {isSelected ? (<><Gamepad2 className="inline-block h-4 w-4 mr-2"/>Change Game</>) : (<><Gamepad2 className="inline-block h-4 w-4 mr-2"/>Play Now</>)}
+              {isSelected ? (<><Gamepad2 className="inline-block h-4 w-4 mr-2" />Change Game</>) : (<><Gamepad2 className="inline-block h-4 w-4 mr-2" />Play Now</>)}
             </button>
           )}
         </div>
@@ -215,17 +215,31 @@ export default function GamesPage() {
       players: 'Single Player'
     },
     {
-      id: 'sentence-towers',
+      id: 'word-towers',
       name: 'Word Towers',
       description: 'Build towers by matching words to translations. Wrong answers make towers fall!',
       thumbnail: '/images/games/sentence-towers.jpg',
       category: 'vocabulary',
       popular: true,
       languages: ['English', 'Spanish', 'French', 'German'],
-      path: '/student-dashboard/games/sentence-towers',
+      path: '/student-dashboard/games/word-towers',
       playTime: '5-15 min',
       gemColor: 'text-yellow-500',
       difficulty: 4,
+      players: 'Single Player'
+    },
+    {
+      id: 'sentence-towers',
+      name: 'Sentence Towers',
+      description: 'Build towers by matching full sentences to translations. Practice sentence comprehension!',
+      thumbnail: '/images/games/sentence-towers.jpg',
+      category: 'sentences',
+      popular: true,
+      languages: ['English', 'Spanish', 'French', 'German'],
+      path: '/student-dashboard/games/sentence-towers',
+      playTime: '8-15 min',
+      gemColor: 'text-purple-500',
+      difficulty: 5,
       players: 'Single Player'
     },
     {
@@ -412,8 +426,8 @@ export default function GamesPage() {
   const handlePlayNowClick = (game: Game) => {
     // If the same game is clicked again, deselect it.
     if (selectedGameForSetup?.id === game.id) {
-        handleDeselectGame();
-        return;
+      handleDeselectGame();
+      return;
     }
 
     setSelectedGameForSetup(game);

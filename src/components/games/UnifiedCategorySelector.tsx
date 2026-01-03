@@ -42,7 +42,7 @@ import {
 import { useDemoAuth } from '../auth/DemoAuthProvider';
 import { useUserAccess } from '@/hooks/useUserAccess';
 import { supabaseBrowser } from '../auth/AuthProvider';
-import { VOCABULARY_CATEGORIES as KS3_CATEGORIES } from './ModernCategorySelector';
+import { VOCABULARY_CATEGORIES as KS3_CATEGORIES, KS2_VOCABULARY_CATEGORIES as KS2_CATEGORIES } from './ModernCategorySelector';
 import { KS4_VOCABULARY_CATEGORIES as KS4_CATEGORIES } from './KS4CategorySystem';
 
 // Types
@@ -118,11 +118,11 @@ const CURRICULUM_LEVELS = [
     code: 'KS2' as const,
     name: 'KS2',
     displayName: 'Key Stage 2',
-    description: 'Coming Soon - Primary language introduction',
+    description: 'Primary vocabulary and fun entry-level topics',
     ageRange: 'Ages 7-11',
     icon: <BookOpen className="h-8 w-8" />, // This is already correctly rendering JSX
     color: 'from-green-500 to-emerald-600',
-    comingSoon: true
+    comingSoon: false
   },
   {
     code: 'KS3' as const,
@@ -187,7 +187,8 @@ export interface Subcategory {
 const getCategoriesByCurriculum = (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => {
   if (level === 'KS4') return KS4_CATEGORIES;
   if (level === 'KS3') return KS3_CATEGORIES;
-  // For KS2 and KS5 (coming soon), return empty array for now
+  if (level === 'KS2') return KS2_CATEGORIES;
+  // For KS5 (coming soon), return empty array for now
   return [];
 };
 
@@ -902,6 +903,77 @@ Me gusta la pizza - I like pizza`;
       }
     };
 
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const fileName = file.name.toLowerCase();
+
+      // Handle Excel files (.xlsx, .xls)
+      if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        try {
+          // Dynamically import xlsx to avoid SSR issues
+          const XLSX = await import('xlsx');
+
+          const arrayBuffer = await file.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+          // Get the first sheet
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+
+          // Convert to array of arrays
+          const data: string[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          // Convert each row to "term - translation" format
+          // Assuming first column is term, second is translation
+          const lines = data
+            .filter(row => row.length >= 1 && row[0]) // Filter empty rows
+            .map(row => {
+              const term = String(row[0] || '').trim();
+              const translation = String(row[1] || '').trim();
+              return translation ? `${term} - ${translation}` : term;
+            })
+            .join('\n');
+
+          onCustomInputChange(lines);
+          setActiveTab('input');
+        } catch (error) {
+          console.error('Error reading Excel file:', error);
+          alert('Error reading Excel file. Please try a .csv or .txt file instead.');
+        }
+        return;
+      }
+
+      // Handle text files (.txt, .csv)
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        if (text) {
+          // For CSV, convert comma-separated values to dash-separated
+          let processed = text;
+          if (fileName.endsWith('.csv')) {
+            // Split by lines and process each
+            processed = text.split('\n')
+              .map(line => {
+                // If line contains comma but no dash, convert first comma to dash
+                if (line.includes(',') && !line.includes(' - ')) {
+                  const parts = line.split(',');
+                  if (parts.length >= 2) {
+                    return `${parts[0].trim()} - ${parts.slice(1).join(',').trim()}`;
+                  }
+                }
+                return line;
+              })
+              .join('\n');
+          }
+          onCustomInputChange(processed);
+          setActiveTab('input');
+        }
+      };
+      reader.readAsText(file);
+    };
+
     const canComplete = customInput.trim().length > 0 || selectedCustomList;
 
     return (
@@ -1014,10 +1086,23 @@ Me gusta la pizza - I like pizza`;
             <div className="text-center py-8">
               <Folder className="h-16 w-16 mb-4 mx-auto text-white" />
               <h3 className="text-lg font-semibold text-white mb-2">Upload File</h3>
-              <p className="text-white/60 mb-4">Upload a CSV or TXT file with your content</p>
-              <div className="text-white/40 text-sm">
-                Coming soon - file upload functionality
+              <p className="text-white/60 mb-6">Upload an Excel, CSV, or TXT file with your vocabulary</p>
+
+              <div className="flex justify-center">
+                <label className="cursor-pointer bg-white/20 hover:bg-white/30 text-white font-medium py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                  <span>Select File</span>
+                  <input
+                    type="file"
+                    accept=".txt,.csv,.xlsx,.xls"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </label>
               </div>
+
+              <p className="text-white/40 text-sm mt-4">
+                Supported formats: .xlsx, .xls, .csv, .txt
+              </p>
             </div>
           )}
         </div>

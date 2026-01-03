@@ -133,6 +133,7 @@
     "stripe": "^14.15.0",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

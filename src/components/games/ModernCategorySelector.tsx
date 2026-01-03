@@ -290,6 +290,69 @@ export const VOCABULARY_CATEGORIES: Category[] = [
   }
 ];
 
+// KS2 Categories - Subset of KS3 for Primary level (Ages 7-11)
+// Focus on concrete, visual, fun vocabulary that's age-appropriate
+export const KS2_VOCABULARY_CATEGORIES: Category[] = [
+  // 1. Basics & Core Language - Everything from KS3
+  VOCABULARY_CATEGORIES.find(cat => cat.id === 'basics_core_language')!,
+
+  // 2. Identity & Personal Life - Selected topics only
+  {
+    ...VOCABULARY_CATEGORIES.find(cat => cat.id === 'identity_personal_life')!,
+    subcategories: VOCABULARY_CATEGORIES.find(cat => cat.id === 'identity_personal_life')!.subcategories.filter(sub =>
+      ['personal_information', 'family_friends', 'pets'].includes(sub.id)
+    )
+  },
+
+  // 3. Home & Local Area - House, Rooms, Furniture (concrete, visual)
+  {
+    ...VOCABULARY_CATEGORIES.find(cat => cat.id === 'home_local_area')!,
+    subcategories: VOCABULARY_CATEGORIES.find(cat => cat.id === 'home_local_area')!.subcategories.filter(sub =>
+      ['house_rooms', 'furniture'].includes(sub.id)
+    )
+  },
+
+  // 4. Food & Drink - Very popular with primary students
+  {
+    ...VOCABULARY_CATEGORIES.find(cat => cat.id === 'food_drink')!,
+    subcategories: VOCABULARY_CATEGORIES.find(cat => cat.id === 'food_drink')!.subcategories.filter(sub =>
+      ['meals', 'food_drink_vocabulary'].includes(sub.id)
+    )
+  },
+
+  // 5. Free Time & Leisure - Fun, relatable topics
+  {
+    ...VOCABULARY_CATEGORIES.find(cat => cat.id === 'free_time_leisure')!,
+    subcategories: VOCABULARY_CATEGORIES.find(cat => cat.id === 'free_time_leisure')!.subcategories.filter(sub =>
+      ['hobbies_interests', 'sports'].includes(sub.id)
+    )
+  },
+
+  // 6. Nature & Environment - Animals are a hit with younger learners!
+  {
+    ...VOCABULARY_CATEGORIES.find(cat => cat.id === 'nature_environment')!,
+    subcategories: VOCABULARY_CATEGORIES.find(cat => cat.id === 'nature_environment')!.subcategories.filter(sub =>
+      ['farm_animals', 'wild_animals', 'seasons'].includes(sub.id)
+    )
+  },
+
+  // 7. Holidays, Travel & Culture - Countries, Weather, Seasons
+  {
+    ...VOCABULARY_CATEGORIES.find(cat => cat.id === 'holidays_travel_culture')!,
+    subcategories: VOCABULARY_CATEGORIES.find(cat => cat.id === 'holidays_travel_culture')!.subcategories.filter(sub =>
+      ['countries', 'weathers', 'transport'].includes(sub.id)
+    )
+  },
+
+  // 8. Clothes & Shopping - Practical, visual vocabulary
+  {
+    ...VOCABULARY_CATEGORIES.find(cat => cat.id === 'clothes_shopping')!,
+    subcategories: VOCABULARY_CATEGORIES.find(cat => cat.id === 'clothes_shopping')!.subcategories.filter(sub =>
+      ['clothes_accessories'].includes(sub.id)
+    )
+  }
+];
+
 interface ModernCategorySelectorProps {
   onCategorySelect: (categoryId: string, subcategoryId: string | null) => void;
   selectedLanguage?: string;
@@ -386,11 +449,10 @@ export default function ModernCategorySelector({
                     setSelectedCategory(null);
                     setView('categories');
                   }}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                    currentCurriculumLevel === level.code
-                      ? 'bg-blue-500 text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${currentCurriculumLevel === level.code
+                    ? 'bg-blue-500 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
                 >
                   <IconComponent className="h-4 w-4" /> {/* Render the Lucide icon */}
                   {level.displayName}
@@ -527,11 +589,10 @@ export default function ModernCategorySelector({
                     key={subcategory.id}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                      selectedSubcategories.has(subcategory.id)
-                        ? `border-blue-500 bg-blue-50`
-                        : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50'
-                    }`}
+                    className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${selectedSubcategories.has(subcategory.id)
+                      ? `border-blue-500 bg-blue-50`
+                      : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50'
+                      }`}
                     onClick={() => handleSubcategoryClick(subcategory)}
                   >
                     <div className="flex items-center justify-between">
