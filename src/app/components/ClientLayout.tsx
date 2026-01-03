@@ -7,6 +7,7 @@ import MainNavigation from './MainNavigation';
 import StudentNavigation from '../../components/student/StudentNavigation';
 import BetaBanner from '../../components/beta/BetaBanner';
 import SmartSignupSelector from '../../components/auth/SmartSignupSelector';
+import BetaFeedbackWidget from '../../components/ui/BetaFeedbackWidget';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -66,6 +67,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           onClose={() => setIsSignupModalOpen(false)}
         />
       </div>
+      <BetaFeedbackWidget />
     </div>
   );
 }

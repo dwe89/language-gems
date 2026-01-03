@@ -97,14 +97,14 @@ export function generateMetadata(): Metadata {
       },
     },
     verification: {
-      google: 'your-google-verification-code',
-      yandex: 'your-yandex-verification-code',
+      google: 'ZJi5l8ZBh1kFEFjdLavm0_YJcSVGcNMAD4_IJkLm9JQ',
+      yandex: 'your-yandex-verification-code', // Still placeholder, update if needed
     },
     other: {
       ...Sentry.getTraceData()
     }
   };
-}export default function RootLayout({
+} export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
@@ -116,7 +116,7 @@ export function generateMetadata(): Metadata {
   ];
 
   return (
-        <html lang="en">
+    <html lang="en">
       <head>
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

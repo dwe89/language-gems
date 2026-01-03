@@ -25,10 +25,10 @@ export default function CheckoutSuccessPage() {
           link.href = data.downloadUrl;
           link.download = productName;
           link.style.display = 'none';
-          
+
           document.body.appendChild(link);
           link.click();
-          
+
           // Safe cleanup with timeout
           setTimeout(() => {
             try {
@@ -63,22 +63,17 @@ export default function CheckoutSuccessPage() {
   const fetchOrderDetails = async () => {
     try {
       let response;
-      
+
       if (sessionId) {
-        console.log('Fetching order details for session:', sessionId);
         response = await fetch(`/api/orders/by-session/${sessionId}`);
       } else if (orderId) {
-        console.log('Fetching order details for order:', orderId);
         response = await fetch(`/api/orders/${orderId}`);
       } else {
         throw new Error('No session ID or order ID provided');
       }
-      
-      console.log('Order fetch response:', response.status, response.ok);
-      
+
       if (response.ok) {
         const data = await response.json();
-        console.log('Order details received:', data);
         setOrderDetails(data);
       } else {
         const errorText = await response.text();
@@ -128,11 +123,11 @@ export default function CheckoutSuccessPage() {
           <div className="mx-auto flex items-center justify-center h-20 w-20 bg-green-100 rounded-full mb-6">
             <CheckCircle className="h-12 w-12 text-green-600" />
           </div>
-          
+
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
             Payment Successful!
           </h1>
-          
+
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             Thank you for your purchase. Your educational resources are now available for download.
           </p>
@@ -158,7 +153,7 @@ export default function CheckoutSuccessPage() {
               </p>
             )}
           </div>
-          
+
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -177,7 +172,7 @@ export default function CheckoutSuccessPage() {
                   <div className="flex justify-between">
                     <span className="text-slate-600">Order Date:</span>
                     <span className="font-medium">
-                      {orderDetails?.order?.created_at 
+                      {orderDetails?.order?.created_at
                         ? new Date(orderDetails.order.created_at).toLocaleDateString()
                         : new Date().toLocaleDateString()
                       }
@@ -193,7 +188,7 @@ export default function CheckoutSuccessPage() {
                   )}
                 </div>
               </div>
-              
+
               <div>
                 <h3 className="font-medium text-slate-800 mb-3">Next Steps</h3>
                 <ul className="space-y-2 text-sm text-slate-600">
@@ -222,7 +217,7 @@ export default function CheckoutSuccessPage() {
               <h2 className="text-lg font-semibold text-slate-800">Your Purchases</h2>
               <p className="text-sm text-slate-600 mt-1">Click download to access your educational resources</p>
             </div>
-            
+
             <div className="divide-y divide-slate-200">
               {orderDetails.order.order_items.map((item: any) => (
                 <div key={item.id} className="p-6">
@@ -231,7 +226,7 @@ export default function CheckoutSuccessPage() {
                       <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <span className="text-2xl">📚</span>
                       </div>
-                      
+
                       <div>
                         <h3 className="font-semibold text-slate-800 mb-1">
                           {item.product?.name || 'Educational Resource'}
@@ -246,7 +241,7 @@ export default function CheckoutSuccessPage() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <button
                       onClick={() => handleDownload(
                         orderDetails.order.id,

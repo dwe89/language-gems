@@ -52,6 +52,65 @@ const config = {
     ];
   },
 
+  // SEO: Redirect old/incorrect URLs to correct ones
+  // Based on Google Search Console soft 404s and 404s
+  async redirects() {
+    return [
+      // === SPANISH GRAMMAR REDIRECTS ===
+      { source: '/grammar/spanish/articles/definite', destination: '/grammar/spanish/articles/definite-articles', permanent: true },
+      { source: '/grammar/spanish/articles/indefinite', destination: '/grammar/spanish/articles/definite-indefinite', permanent: true },
+      { source: '/grammar/spanish/verbs/imperative', destination: '/grammar/spanish/verbs/present-tense', permanent: true }, // No imperative, redirect to present
+
+      // === FRENCH GRAMMAR REDIRECTS ===
+      { source: '/grammar/french/verbs/conditional', destination: '/grammar/french/verbs/conditional-tense', permanent: true },
+      { source: '/grammar/french/verbs/imperative', destination: '/grammar/french/verbs/imperative-mood', permanent: true },
+      { source: '/grammar/french/verbs/subjunctive', destination: '/grammar/french/verbs/subjunctive-mood', permanent: true },
+      { source: '/grammar/french/verbs/future', destination: '/grammar/french/verbs/future-tense', permanent: true },
+      { source: '/grammar/french/verbs/verbs-infinitive', destination: '/grammar/french/verbs/regular-conjugation', permanent: true },
+      { source: '/grammar/french/verbs/auxiliary-verbs', destination: '/grammar/french/verbs/regular-conjugation', permanent: true },
+      { source: '/grammar/french/adverbs/time-place', destination: '/grammar/french/adverbs/adverb-time-place', permanent: true },
+      { source: '/grammar/french/adverbs/frequency', destination: '/grammar/french/adverbs/adverb-frequency', permanent: true },
+      { source: '/grammar/french/adverbs/degree', destination: '/grammar/french/adverbs/adverb-degree', permanent: true },
+      { source: '/grammar/french/adverbs/quantifiers', destination: '/grammar/french/adverbs/adverb-quantifiers', permanent: true },
+      { source: '/grammar/french/adverbs/comparative', destination: '/grammar/french/adverbs/adverb-comparative', permanent: true },
+      { source: '/grammar/french/pronouns/direct-object', destination: '/grammar/french/pronouns/direct-object-pronouns', permanent: true },
+      { source: '/grammar/french/pronouns/indirect-object', destination: '/grammar/french/pronouns/indirect-object-pronouns', permanent: true },
+      { source: '/grammar/french/pronouns/demonstrative', destination: '/grammar/french/pronouns/demonstrative-pronouns', permanent: true },
+      { source: '/grammar/french/pronouns/possessive', destination: '/grammar/french/pronouns/possessive-pronouns', permanent: true },
+      { source: '/grammar/french/pronouns/reflexive', destination: '/grammar/french/pronouns/reflexive-pronouns', permanent: true },
+      { source: '/grammar/french/pronouns/interrogative', destination: '/grammar/french/pronouns/interrogative-pronouns', permanent: true },
+      { source: '/grammar/french/pronouns/indefinite', destination: '/grammar/french/pronouns/indefinite-pronouns', permanent: true },
+      { source: '/grammar/french/pronouns/disjunctive', destination: '/grammar/french/pronouns/disjunctive-pronouns', permanent: true },
+      { source: '/grammar/french/nouns/gender-rules', destination: '/grammar/french/nouns/gender-number', permanent: true },
+      { source: '/grammar/french/numbers/cardinal', destination: '/grammar/french/numbers/fractions', permanent: true },
+      { source: '/grammar/french/numbers/dates-time', destination: '/grammar/french/numbers/fractions', permanent: true },
+      { source: '/grammar/french/numbers/advanced-time', destination: '/grammar/french/numbers/fractions', permanent: true },
+
+      // === GERMAN GRAMMAR REDIRECTS ===
+      { source: '/grammar/german/nouns/gender-rules', destination: '/grammar/german/nouns/gender', permanent: true },
+      { source: '/grammar/german/nouns/plural-formation', destination: '/grammar/german/nouns/plurals', permanent: true },
+      { source: '/grammar/german/nouns/declension', destination: '/grammar/german/nouns/noun-articles', permanent: true },
+      { source: '/grammar/german/nouns/compound-nouns', destination: '/grammar/german/nouns/compound-nouns', permanent: false }, // This exists!
+      { source: '/grammar/german/nouns/weak-nouns', destination: '/grammar/german/nouns/noun-articles', permanent: true },
+      { source: '/grammar/german/adjectives/adjective-endings', destination: '/grammar/german/adjectives/endings', permanent: true },
+      { source: '/grammar/german/adjectives/comparative-superlative', destination: '/grammar/german/adjectives/comparative', permanent: true },
+
+      // === OLD SITE STRUCTURE REDIRECTS ===
+      { source: '/learn/:path*', destination: '/grammar', permanent: true },
+      { source: '/vocabmaster', destination: '/games', permanent: true },
+      { source: '/vocabulary', destination: '/games', permanent: true },
+      { source: '/coming-soon/:path*', destination: '/', permanent: true },
+      { source: '/resources', destination: '/library', permanent: true },
+      { source: '/resources/blog', destination: '/blog', permanent: true },
+      { source: '/index.html', destination: '/', permanent: true },
+      { source: '/sitemap', destination: '/sitemap.xml', permanent: true },
+      { source: '/exercises', destination: '/games', permanent: true },
+      { source: '/themes', destination: '/grammar', permanent: true },
+      { source: '/premium', destination: '/pricing', permanent: true },
+      { source: '/shop', destination: '/library', permanent: true },
+    ];
+  },
+
   // Allow cross-origin requests from student subdomain in development
   ...(process.env.NODE_ENV === 'development' && {
     allowedDevOrigins: ['students.localhost'],

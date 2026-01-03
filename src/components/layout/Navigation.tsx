@@ -21,6 +21,7 @@ export default function Navigation() {
               <Gem className="w-6 h-6 text-cyan-400" />
             </motion.div>
             Language<span className="text-cyan-400">Gems</span>
+            <span className="ml-2 px-2 py-0.5 bg-indigo-500/30 border border-indigo-400/50 text-indigo-200 text-[10px] font-bold tracking-wider rounded-full uppercase backdrop-blur-sm">Beta</span>
           </Link>
           <ul className="hidden md:flex space-x-2">
             <li><Link href="/" className="gem-nav-item">Home</Link></li>
@@ -31,18 +32,18 @@ export default function Navigation() {
             <li><Link href="/about" className="gem-nav-item">About</Link></li>
           </ul>
         </div>
-        
+
         {/* Mobile menu button */}
         <div className="md:hidden">
-          <button 
+          <button
             className="text-white p-2"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            <svg 
-              className="w-6 h-6" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24" 
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
             >
               {isMenuOpen ? (
@@ -53,7 +54,7 @@ export default function Navigation() {
             </svg>
           </button>
         </div>
-        
+
         <div className="hidden md:flex space-x-3">
           <Link href="/premium" className="gem-button bg-gradient-to-r from-purple-600 to-indigo-600">
             Premium
@@ -66,70 +67,70 @@ export default function Navigation() {
           </Link>
         </div>
       </div>
-      
+
       {/* Mobile menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-indigo-900/50 backdrop-blur-sm">
           <div className="px-4 py-3 space-y-2">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="block gem-nav-item"
               onClick={() => setIsMenuOpen(false)}
             >
               Home
             </Link>
-            <Link 
-              href="/themes" 
+            <Link
+              href="/themes"
               className="block gem-nav-item"
               onClick={() => setIsMenuOpen(false)}
             >
               Themes
             </Link>
-            <Link 
-              href="/languages" 
+            <Link
+              href="/languages"
               className="block gem-nav-item"
               onClick={() => setIsMenuOpen(false)}
             >
               Languages
             </Link>
-            <Link 
-              href="/exercises" 
+            <Link
+              href="/exercises"
               className="block gem-nav-item"
               onClick={() => setIsMenuOpen(false)}
             >
               Exercises
             </Link>
-            <Link 
-              href="/blog" 
+            <Link
+              href="/blog"
               className="block gem-nav-item"
               onClick={() => setIsMenuOpen(false)}
             >
               Blog
             </Link>
-            <Link 
-              href="/about" 
+            <Link
+              href="/about"
               className="block gem-nav-item"
               onClick={() => setIsMenuOpen(false)}
             >
               About
             </Link>
             <div className="pt-3 space-y-2">
-              <Link 
-                href="/premium" 
+              <Link
+                href="/premium"
                 className="block w-full text-center gem-button bg-gradient-to-r from-purple-600 to-indigo-600"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Premium
               </Link>
-              <Link 
-                href="/auth/login" 
+              <Link
+                href="/auth/login"
                 className="block w-full text-center gem-button"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Login
               </Link>
-              <Link 
-                href="/schools" 
+              <Link
+                href="/schools"
                 className="block w-full text-center gem-button pink-gem-button"
                 onClick={() => setIsMenuOpen(false)}
               >

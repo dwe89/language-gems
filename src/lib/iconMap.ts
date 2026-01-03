@@ -173,13 +173,9 @@ import {
   Banana,
   Cherry,
   Grape,
-  Lemon,
-  Orange,
-  Strawberry,
   Carrot,
   Leaf,
   Flower,
-  Tree,
   Sprout,
   Bug,
   Bird,
@@ -189,7 +185,6 @@ import {
   Rabbit,
   Turtle,
   Footprints,
-  Paw,
   Bone,
   Feather
 } from 'lucide-react';
@@ -227,14 +222,14 @@ export const iconMap: Record<string, any> = {
   Shield,
   Lock,
   Unlock,
-  
+
   // Communication
   Mail,
   Phone,
   MessageCircle,
   Send,
   Share,
-  
+
   // Navigation
   MapPin,
   Calendar,
@@ -243,7 +238,7 @@ export const iconMap: Record<string, any> = {
   Search,
   Filter,
   Settings,
-  
+
   // Actions
   Edit,
   Trash,
@@ -260,17 +255,17 @@ export const iconMap: Record<string, any> = {
   User,
   LogIn,
   LogOut,
-  
+
   // Visibility
   Eye,
   EyeOff,
-  
+
   // Alerts
   Info,
   AlertCircle,
   AlertTriangle,
   HelpCircle,
-  
+
   // Media
   Copy,
   ExternalLink,
@@ -281,7 +276,7 @@ export const iconMap: Record<string, any> = {
   Mic,
   Volume2,
   VolumeX,
-  
+
   // Devices
   Wifi,
   WifiOff,
@@ -296,7 +291,7 @@ export const iconMap: Record<string, any> = {
   Phone2,
   Watch,
   Camera,
-  
+
   // Files
   Folder,
   File,
@@ -308,7 +303,7 @@ export const iconMap: Record<string, any> = {
   BellOff,
   Inbox,
   Archive,
-  
+
   // Commerce
   Package,
   ShoppingCart,
@@ -317,7 +312,7 @@ export const iconMap: Record<string, any> = {
   Percent,
   Gift,
   Briefcase,
-  
+
   // Organization
   Clipboard,
   List,
@@ -325,7 +320,7 @@ export const iconMap: Record<string, any> = {
   Layers,
   Layout,
   Sidebar,
-  
+
   // View Controls
   Maximize,
   Minimize,
@@ -334,7 +329,7 @@ export const iconMap: Record<string, any> = {
   RefreshCw,
   RotateCw,
   RotateCcw,
-  
+
   // Media Controls
   Repeat,
   Shuffle,
@@ -345,7 +340,7 @@ export const iconMap: Record<string, any> = {
   Pause,
   PlayCircle,
   StopCircle,
-  
+
   // Shapes
   Square,
   Circle,
@@ -354,7 +349,7 @@ export const iconMap: Record<string, any> = {
   Octagon,
   Pentagon,
   StarIcon,
-  
+
   // Weather
   Sun,
   Moon,
@@ -368,14 +363,14 @@ export const iconMap: Record<string, any> = {
   Umbrella,
   Sunrise,
   Sunset,
-  
+
   // Location
   Compass,
   Navigation,
   Map,
   Pin,
   Anchor,
-  
+
   // Transport
   Plane,
   Car,
@@ -384,7 +379,7 @@ export const iconMap: Record<string, any> = {
   Train,
   Truck,
   Ship,
-  
+
   // Food & Drink
   Coffee,
   Pizza,
@@ -399,15 +394,11 @@ export const iconMap: Record<string, any> = {
   Banana,
   Cherry,
   Grape,
-  Lemon,
-  Orange,
-  Strawberry,
   Carrot,
-  
+
   // Nature
   Leaf,
   Flower,
-  Tree,
   Sprout,
   Bug,
   Bird,
@@ -417,7 +408,6 @@ export const iconMap: Record<string, any> = {
   Rabbit,
   Turtle,
   Footprints,
-  Paw,
   Bone,
   Feather
 };

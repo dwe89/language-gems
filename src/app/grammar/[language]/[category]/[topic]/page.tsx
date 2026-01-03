@@ -35,13 +35,13 @@ export async function generateStaticParams() {
   }));
 }
 
-// Generate metadata dynamically from database
+// Generate metadata dynamically from database with SEO optimization
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const supabase = await createClient();
 
   const { data: page } = await supabase
     .from('grammar_pages')
-    .select('title, description')
+    .select('title, description, seo_title, seo_description, seo_keywords')
     .eq('language', params.language)
     .eq('category', params.category)
     .eq('topic_slug', params.topic)
@@ -54,10 +54,39 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
+  // Use SEO-optimized fields if available, otherwise fallback to regular fields
+  const title = page.seo_title || `${page.title} - Language Gems`;
+  const description = page.seo_description || page.description;
+  const keywords = page.seo_keywords?.length > 0
+    ? page.seo_keywords
+    : [`${params.language} grammar`, params.category, params.topic, 'language learning'];
+
+  const canonicalUrl = `https://languagegems.com/grammar/${params.language}/${params.category}/${params.topic}`;
+
   return {
-    title: `${page.title} - Language Gems`,
-    description: page.description,
-    keywords: `${params.language} grammar, ${params.category}, ${params.topic}, language learning`,
+    title,
+    description,
+    keywords: keywords.join(', '),
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: 'Language Gems',
+      type: 'article',
+      locale: 'en_GB',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
   };
 }
 
@@ -93,11 +122,15 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
     .eq('content_type', 'lesson')
     .maybeSingle();
 
-  // Handle not found - show different message for admin vs regular users
+  // Handle not found - return proper 404 for regular users, show editor for admin
   if (error || !page) {
-    console.error('Error fetching grammar page:', error);
+    // For non-admin users, return a proper 404 (not a soft 404)
+    // This fixes Google Search Console soft 404 issues
+    if (!isAdmin) {
+      notFound();
+    }
 
-    // Import the client component for "no content" page
+    // Admin users can still see the page creation interface
     const { GrammarNoContentPage } = await import('@/components/grammar/GrammarNoContentPage');
     return <GrammarNoContentPage params={params} isAdmin={isAdmin} />;
   }
@@ -109,8 +142,113 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
     german: 'german',
   };
 
+  const languageDisplayNames: Record<string, string> = {
+    spanish: 'Spanish',
+    french: 'French',
+    german: 'German',
+  };
+
+  // Generate JSON-LD structured data for SEO
+  const canonicalUrl = `https://languagegems.com/grammar/${params.language}/${params.category}/${params.topic}`;
+
+  // Breadcrumb schema for better navigation in search results
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Grammar',
+        item: 'https://languagegems.com/grammar',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: `${languageDisplayNames[params.language] || params.language} Grammar`,
+        item: `https://languagegems.com/grammar/${params.language}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: params.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        item: `https://languagegems.com/grammar/${params.language}#${params.category}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: page.title,
+        item: canonicalUrl,
+      },
+    ],
+  };
+
+  // FAQ schema for rich snippets (if FAQ items exist)
+  const faqSchema = page.faq_items && page.faq_items.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: page.faq_items.map((faq: { question: string; answer: string }) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  } : null;
+
+  // Article schema for the educational content
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: page.seo_title || page.title,
+    description: page.seo_description || page.description,
+    author: {
+      '@type': 'Organization',
+      name: 'Language Gems',
+      url: 'https://languagegems.com',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Language Gems',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://languagegems.com/favicon.png',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+    dateModified: page.updated_at,
+    datePublished: page.created_at,
+    educationalLevel: page.difficulty === 'beginner' ? 'beginner' : page.difficulty === 'intermediate' ? 'intermediate' : 'advanced',
+    learningResourceType: 'lesson',
+    inLanguage: 'en',
+    about: {
+      '@type': 'Thing',
+      name: `${languageDisplayNames[params.language] || params.language} ${params.category.replace(/-/g, ' ')}`,
+    },
+  };
+
   return (
     <>
+      {/* JSON-LD Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
+
       {/* Assignment Tracker (invisible, only tracks when in assignment mode) */}
       {topicData && contentData && (
         <GrammarLessonTracker

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 /**
  * Cron job to automatically expire trials and send notifications
  * Runs daily to check for expired trials
@@ -38,8 +41,8 @@ export async function GET(request: NextRequest) {
 
     if (!expiredTrials || expiredTrials.length === 0) {
       console.log('✅ No expired trials found');
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         message: 'No expired trials found',
         checked_at: now.toISOString()
       });

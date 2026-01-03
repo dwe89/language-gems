@@ -1,6 +1,13 @@
 import { MetadataRoute } from 'next'
 import fs from 'fs'
 import path from 'path'
+import { createClient } from '@supabase/supabase-js'
+
+// Create Supabase client for fetching dynamic content
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 // Pages that should NEVER be indexed (consume crawl budget without SEO value)
 const EXCLUDED_PATHS = [
@@ -121,12 +128,41 @@ function getAllPages(): { url: string; priority: number; changeFrequency: 'weekl
   return allPages.sort((a, b) => b.priority - a.priority) // Sort by priority
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Fetch all grammar pages from database for sitemap
+async function getGrammarPages(): Promise<{ url: string; priority: number; changeFrequency: 'weekly' | 'monthly' }[]> {
+  try {
+    const { data: pages, error } = await supabase
+      .from('grammar_pages')
+      .select('language, category, topic_slug, updated_at')
+      .order('language')
+      .order('category')
+      .order('topic_slug');
+
+    if (error || !pages) {
+      console.warn('Could not fetch grammar pages for sitemap:', error);
+      return [];
+    }
+
+    return pages.map(page => ({
+      url: `/grammar/${page.language}/${page.category}/${page.topic_slug}`,
+      priority: 0.8, // High priority for content pages
+      changeFrequency: 'weekly' as const,
+    }));
+  } catch (error) {
+    console.warn('Error fetching grammar pages:', error);
+    return [];
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://languagegems.com'
   const currentDate = new Date().toISOString()
 
+  // Fetch dynamic grammar pages from database
+  const grammarTopicPages = await getGrammarPages();
+
   // Static routes with their priorities and change frequencies
-  const routes = [
+  const routes: MetadataRoute.Sitemap = [
     // Main Pages - Highest Priority
     {
       url: baseUrl,
@@ -599,6 +635,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: page.priority,
     })
   })
+
+  // Add ALL grammar topic pages from database (critical for SEO!)
+  // This adds ~291 high-value content pages to the sitemap
+  grammarTopicPages.forEach(page => {
+    routes.push({
+      url: `${baseUrl}${page.url}`,
+      lastModified: currentDate,
+      changeFrequency: page.changeFrequency,
+      priority: page.priority,
+    });
+  });
+
+  console.log(`Sitemap generated with ${routes.length} URLs (including ${grammarTopicPages.length} grammar pages)`);
 
   return routes
 }
