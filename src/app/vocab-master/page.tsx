@@ -4,11 +4,11 @@ import React from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../hooks/useUnifiedAuth';
 import UnifiedVocabMasterWrapper from './components/UnifiedVocabMasterWrapper';
-import VocabMasterMarketingLanding from './components/VocabMasterMarketingLanding';
+
 
 export default function VocabMasterPage() {
   const searchParams = useSearchParams();
-  const { user, isLoading } = useUnifiedAuth();
+  const { isLoading } = useUnifiedAuth();
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -22,10 +22,7 @@ export default function VocabMasterPage() {
     );
   }
 
-  // If user is NOT logged in, show marketing landing page
-  if (!user) {
-    return <VocabMasterMarketingLanding />;
-  }
+
 
   // If user IS logged in, show functional dashboard
   // Convert URLSearchParams to plain object for the wrapper
