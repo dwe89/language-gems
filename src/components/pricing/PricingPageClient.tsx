@@ -32,9 +32,9 @@ export default function PricingPageClient({ learnerPlans, schoolPlans }: Pricing
         <div className="flex justify-center mt-4">
           <Link
             href="/schools/pricing"
-            className="text-blue-600 hover:text-blue-800 font-semibold underline"
+            className="inline-flex items-center justify-center px-8 py-4 text-xl font-bold text-white transition-all bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 hover:scale-105 hover:shadow-xl"
           >
-            View detailed schools pricing & features →
+            View detailed schools pricing & features <ArrowRight className="ml-2 h-6 w-6" />
           </Link>
         </div>
       )}
@@ -125,7 +125,7 @@ export default function PricingPageClient({ learnerPlans, schoolPlans }: Pricing
             Need a Custom Solution?
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            We'd love to help you find the perfect plan for your needs. 
+            We'd love to help you find the perfect plan for your needs.
             Get in touch with our team for personalized recommendations.
           </p>
           <Link

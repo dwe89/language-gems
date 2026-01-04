@@ -659,11 +659,16 @@ const CurriculumSelection: React.FC<{
             className={`bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden cursor-pointer`}
           >
             <div className="relative z-10">
-              <Pencil className="h-8 w-8" />
+              <div className="flex justify-between items-start mb-2">
+                <Pencil className="h-8 w-8" />
+                <span className="bg-white/20 px-2 py-1 rounded text-xs font-bold border border-white/30 truncate max-w-[120px]">
+                  Free during BETA
+                </span>
+              </div>
             </div>
-            <h3 className="text-xl font-bold mb-2">Custom Content</h3>
-            <p className="text-white/90 text-sm mb-2">Create your own vocabulary and content</p>
-            <p className="text-white/70 text-xs">Perfect for personalized learning</p>
+            <h3 className="text-xl font-bold mb-2 text-left">Custom Content</h3>
+            <p className="text-white/90 text-sm mb-2 text-left">Create your own vocabulary and content</p>
+            <p className="text-white/70 text-xs text-left">Perfect for personalized learning</p>
             <div className="mt-4 flex items-center justify-center text-white/80 group-hover:text-white transition-colors">
               <span className="text-sm font-medium">Create Content</span>
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -1101,19 +1106,26 @@ Me gusta la pizza - I like pizza`;
           <div className="flex bg-white/10 rounded-lg p-1">
             {[
               { id: 'input', label: 'Quick Input', icon: Pencil },
-              { id: 'lists', label: 'My Collections', icon: BookOpen },
-              { id: 'upload', label: 'Upload File', icon: Folder }
+              { id: 'lists', label: 'My Collections', icon: BookOpen, beta: true },
+              { id: 'upload', label: 'Upload File', icon: Folder, beta: true }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${activeTab === tab.id
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all relative flex items-center justify-center ${activeTab === tab.id
                   ? 'bg-white text-purple-900'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
                   }`}
               >
                 <tab.icon className="h-4 w-4 mr-2" />
-                {tab.label}
+                <span className="flex flex-col items-center leading-none">
+                  {tab.label}
+                  {tab.beta && (
+                    <span className={`text-[9px] uppercase font-bold mt-0.5 ${activeTab === tab.id ? 'text-purple-600' : 'text-green-300'}`}>
+                      Free during BETA
+                    </span>
+                  )}
+                </span>
               </button>
             ))}
           </div>

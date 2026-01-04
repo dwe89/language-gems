@@ -14,6 +14,7 @@ export default function MainNavigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [showExternalModal, setShowExternalModal] = useState(false);
   const { user, signOut, userRole, hasSubscription, isLoading } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -81,7 +82,7 @@ export default function MainNavigation() {
   // Only log auth state changes when actually mounted and user state changes
   useEffect(() => {
     if (!isMounted || isLoading) return;
-    
+
     console.log('MainNavigation: Auth state updated', {
       isAuthenticated: !!user,
       userId: user?.id,
@@ -126,14 +127,12 @@ export default function MainNavigation() {
                     <div key={item.name} className="relative">
                       <button
                         onClick={(e) => handleDropdownToggle(item.name, e)}
-                        className={`flex items-center transition-colors text-white font-medium hover:text-yellow-200 relative ${
-                          item.dropdownOnly ? '' : isActive(item.path) ? 'text-yellow-300 font-bold' : ''
-                        }`}
+                        className={`flex items-center transition-colors text-white font-medium hover:text-yellow-200 relative ${item.dropdownOnly ? '' : isActive(item.path) ? 'text-yellow-300 font-bold' : ''
+                          }`}
                       >
                         {item.name}
-                        <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${
-                          activeDropdown === item.name ? 'rotate-180' : ''
-                        }`} />
+                        <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${activeDropdown === item.name ? 'rotate-180' : ''
+                          }`} />
                         {item.comingSoon && (
                           <span className="absolute -top-2 -right-2 text-xs bg-yellow-400 text-blue-900 px-1 py-0.5 rounded-full font-bold">
                             Soon
@@ -152,11 +151,11 @@ export default function MainNavigation() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                
+
                                 // Navigate using router.push
                                 const targetPath = dropdownItem.comingSoon ? '/coming-soon' : dropdownItem.path;
                                 router.push(targetPath);
-                                
+
                                 // Close dropdown
                                 setActiveDropdown(null);
                               }}
@@ -181,13 +180,17 @@ export default function MainNavigation() {
                   <Link
                     key={item.name}
                     href={href || item.path}
-                    className={`transition-colors font-medium hover:text-yellow-200 relative ${
-                      item.featured
-                        ? 'text-yellow-300 font-bold px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20'
-                        : 'text-white'
-                    } ${
-                      isActive(item.path) ? 'text-yellow-300 font-bold' : ''
-                    }`}
+                    onClick={(e) => {
+                      if (item.name === 'Resources') {
+                        e.preventDefault();
+                        setShowExternalModal(true);
+                      }
+                    }}
+                    className={`transition-colors font-medium hover:text-yellow-200 relative ${item.featured
+                      ? 'text-yellow-300 font-bold px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20'
+                      : 'text-white'
+                      } ${isActive(item.path) ? 'text-yellow-300 font-bold' : ''
+                      }`}
                     title={item.description}
                   >
                     {item.name}
@@ -281,6 +284,11 @@ export default function MainNavigation() {
                     className="block px-4 py-2 rounded-lg hover:bg-blue-800/50 text-white"
                     onClick={(e) => {
                       e.preventDefault();
+                      if (item.name === 'Resources') {
+                        setShowExternalModal(true);
+                        handleMobileMenuClose();
+                        return;
+                      }
                       router.push(href || item.path);
                       handleMobileMenuClose();
                     }}
@@ -313,6 +321,51 @@ export default function MainNavigation() {
       )}
 
       {/* Keep rest of header structure intact */}
+      {/* External Link Modal */}
+      <ExternalLinkModal
+        isOpen={showExternalModal}
+        onClose={() => setShowExternalModal(false)}
+        url="https://www.secondarymfl.com"
+      />
     </header>
+  );
+}
+
+function ExternalLinkModal({ isOpen, onClose, url }: { isOpen: boolean; onClose: () => void; url: string }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-100 relative overflow-hidden">
+
+        {/* Decorative background element */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+
+        <h3 className="text-xl font-bold text-gray-900 mb-2 mt-2">Leaving LanguageGems</h3>
+        <p className="text-gray-600 mb-6">
+          You are about to visit our sister site for teaching resources:
+          <br />
+          <span className="font-semibold text-blue-600 block mt-1">{url}</span>
+        </p>
+
+        <div className="flex space-x-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-center transition-colors shadow-lg hover:shadow-xl"
+          >
+            Visit Site →
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }

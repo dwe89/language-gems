@@ -105,8 +105,8 @@ export default function PricingPage() {
   const schoolPlans = {
     basic: {
       name: 'Basic Plan',
-      price: { monthly: 'N/A', yearly: 399 },
-      description: 'Perfect for smaller schools or departments focusing on core vocabulary acquisition. Students use shared classroom access - no individual accounts.',
+      price: { monthly: 'N/A', yearly: 0 },
+      description: 'Perfect to get started. Give your entire school access to our core language games today. No approval needed.',
       features: [
         'Access for all MFL teachers for classroom-wide, shared use',
         'Access for all students for whole-class game play',
@@ -125,7 +125,7 @@ export default function PricingPage() {
         'Assignment Creation: Not included'
       ],
       studentLimit: 'Whole-class access',
-      cta: 'Get Basic Plan',
+      cta: 'Get Started for Free',
       ctaLink: '/auth/signup?plan=basic'
     },
     standard: {
