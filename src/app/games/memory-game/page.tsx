@@ -14,6 +14,7 @@ import { useGameAudio } from '../../../hooks/useGlobalAudioContext';
 import AssignmentThemeSelector from '../../../components/games/AssignmentThemeSelector';
 import { getGameCompatibility } from '../../../components/games/gameCompatibility';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
+import { useSharedVocabulary, SharedVocabularyToast } from '../../../components/games/ShareVocabularyButton';
 import './styles.css';
 
 export default function UnifiedMemoryGamePage() {
@@ -26,6 +27,10 @@ export default function UnifiedMemoryGamePage() {
 
   // Early assignment mode detection
   const isAssignmentMode = assignmentId && mode === 'assignment';
+
+  // 🔗 Shared vocabulary detection
+  const { sharedVocabulary, isFromSharedLink, clearSharedVocabulary } = useSharedVocabulary();
+  const [showSharedToast, setShowSharedToast] = useState(false);
 
   // Always initialize assignment hook to keep hooks order stable
   const { assignment, vocabulary: assignmentVocabulary, loading: assignmentLoading, error: assignmentError } =
@@ -58,6 +63,56 @@ export default function UnifiedMemoryGamePage() {
     const service = new EnhancedGameService();
     setGameService(service);
   }, []);
+
+  // 🔗 Handle shared vocabulary auto-start
+  useEffect(() => {
+    if (isFromSharedLink && sharedVocabulary && sharedVocabulary.items.length > 0 && !gameStarted) {
+      console.log('📎 [Memory Match] Loading shared vocabulary:', sharedVocabulary.items.length, 'items');
+
+      // Transform shared vocabulary to WordPair format
+      const transformedWords: WordPair[] = sharedVocabulary.items.map((item, index) => ({
+        id: `shared-${index}`,
+        term: item.term,
+        translation: item.translation,
+        type: 'word' as const,
+        category: 'Shared',
+        subcategory: 'Custom'
+      }));
+
+      // Set up game config for shared vocabulary
+      const sharedConfig: UnifiedSelectionConfig = {
+        language: sharedVocabulary.language || 'es',
+        curriculumLevel: 'KS3',
+        categoryId: 'custom',
+        customMode: true,
+        customContentType: sharedVocabulary.contentType || 'vocabulary',
+        customVocabulary: sharedVocabulary.items.map((item, index) => ({
+          id: `shared-${index}`,
+          term: item.term,
+          translation: item.translation,
+        }))
+      };
+
+      setCustomWords(transformedWords);
+      setGameConfig({
+        config: sharedConfig,
+        vocabulary: transformedWords.map(w => ({
+          id: w.id || `shared-${Math.random()}`,
+          word: w.term,
+          translation: w.translation,
+          language: sharedVocabulary.language || 'spanish',
+          category: 'Shared',
+          subcategory: 'Custom',
+          difficulty: 'intermediate'
+        }))
+      });
+      setGameStarted(true);
+      setShowSharedToast(true);
+
+      // Clear the URL param without reloading
+      clearSharedVocabulary();
+    }
+  }, [isFromSharedLink, sharedVocabulary, gameStarted, clearSharedVocabulary]);
 
   // Create game session for assignment mode
   useEffect(() => {
@@ -158,7 +213,7 @@ export default function UnifiedMemoryGamePage() {
             userId={user.id}
             audioManager={audioManager}
             onThemeModalRequest={() => setShowThemeSelector(true)}
-            onGridSizeModalRequest={() => {}}
+            onGridSizeModalRequest={() => { }}
             assignmentTheme={assignmentTheme}
             onAssignmentThemeChange={(theme) => {
               setAssignmentTheme(theme);
@@ -187,14 +242,14 @@ export default function UnifiedMemoryGamePage() {
         sampleItems: transformedWordPairs.slice(0, 3)
       });
     }
-    
+
     setGameConfig({
       config,
       vocabulary
     });
-    
+
     setGameStarted(true);
-    
+
     console.log('Memory Game started with:', {
       config,
       vocabularyCount: vocabulary.length,
@@ -268,8 +323,8 @@ export default function UnifiedMemoryGamePage() {
   if (!isAssignmentMode && gameStarted && gameConfig) {
     // Convert unified config to legacy memory game format
     const legacyLanguage = gameConfig.config.language === 'es' ? 'spanish' :
-                          gameConfig.config.language === 'fr' ? 'french' :
-                          gameConfig.config.language === 'de' ? 'german' : 'spanish';
+      gameConfig.config.language === 'fr' ? 'french' :
+        gameConfig.config.language === 'de' ? 'german' : 'spanish';
 
     const legacyTopic = gameConfig.config.categoryId || 'general';
     const legacyDifficulty = gameConfig.config.curriculumLevel === 'KS4' ? 'hard' : 'medium';
@@ -283,28 +338,38 @@ export default function UnifiedMemoryGamePage() {
           <link rel="canonical" href="https://languagegems.com/games/memory-game" />
         </Head>
         <div className="memory-game-container">
-        <MemoryGameMain
-          language={legacyLanguage}
-          topic={legacyTopic}
-          difficulty={legacyDifficulty}
-          onBackToSettings={handleBackToSettings}
-          customWords={customWords.length > 0 ? customWords : undefined}
-          isAssignmentMode={false}
-          userId={user?.id}
-          onOpenSettings={handleOpenConfigPanel}
-          audioManager={audioManager}
-        />
+          <MemoryGameMain
+            language={legacyLanguage}
+            topic={legacyTopic}
+            difficulty={legacyDifficulty}
+            onBackToSettings={handleBackToSettings}
+            customWords={customWords.length > 0 ? customWords : undefined}
+            isAssignmentMode={false}
+            userId={user?.id}
+            onOpenSettings={handleOpenConfigPanel}
+            audioManager={audioManager}
+          />
 
-        {/* In-game configuration panel */}
-        <InGameConfigPanel
-          currentConfig={gameConfig.config}
-          onConfigChange={handleConfigChange}
-          supportedLanguages={['es', 'fr', 'de']}
-          supportsThemes={false}
-          isOpen={showConfigPanel}
-          onClose={handleCloseConfigPanel}
-        />
-      </div>
+          {/* In-game configuration panel */}
+          <InGameConfigPanel
+            currentConfig={gameConfig.config}
+            onConfigChange={handleConfigChange}
+            supportedLanguages={['es', 'fr', 'de']}
+            supportsThemes={false}
+            isOpen={showConfigPanel}
+            onClose={handleCloseConfigPanel}
+            currentVocabulary={gameConfig.vocabulary}
+            gameName="Memory Match"
+          />
+
+          {/* Show toast when vocabulary is loaded from shared link */}
+          {showSharedToast && (
+            <SharedVocabularyToast
+              vocabularyCount={customWords.length}
+              onDismiss={() => setShowSharedToast(false)}
+            />
+          )}
+        </div>
       </>
     );
   }

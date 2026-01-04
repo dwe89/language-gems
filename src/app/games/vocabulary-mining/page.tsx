@@ -10,6 +10,7 @@ import { UnifiedSelectionConfig, useUnifiedVocabulary, UnifiedVocabularyItem } f
 import SEOWrapper from '../../../components/seo/SEOWrapper';
 import { generateGameStructuredData } from '../../../components/seo/GamePageSEO';
 import Link from 'next/link';
+import { useSharedVocabulary, SharedVocabularyToast } from '../../../components/games/ShareVocabularyButton';
 
 // Convert UnifiedVocabularyItem to VocabularyWord format expected by the game
 const convertToVocabularyWord = (item: UnifiedVocabularyItem) => ({
@@ -42,6 +43,41 @@ export default function VocabularyMiningPage() {
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
   const [gameVocabulary, setGameVocabulary] = useState<any[]>([]);
+
+  // 🔗 Shared vocabulary detection
+  const { sharedVocabulary, isFromSharedLink, clearSharedVocabulary } = useSharedVocabulary();
+  const [showSharedToast, setShowSharedToast] = useState(false);
+
+  // 🔗 Handle shared vocabulary auto-start
+  useEffect(() => {
+    const isAssignmentMode = assignmentId && mode === 'assignment';
+    if (isFromSharedLink && sharedVocabulary && sharedVocabulary.items.length > 0 && !gameStarted && !isAssignmentMode) {
+      console.log('📎 [VOCABULARY MINING] Loading shared vocabulary:', sharedVocabulary.items.length, 'items');
+
+      const transformedVocabulary = sharedVocabulary.items.map((item, index) => convertToVocabularyWord({
+        id: `shared-${index}`,
+        word: item.term,
+        translation: item.translation,
+        language: sharedVocabulary.language || 'spanish',
+        category: 'Shared',
+        subcategory: 'Custom',
+      }));
+
+      const sharedConfig: UnifiedSelectionConfig = {
+        language: sharedVocabulary.language || 'es',
+        curriculumLevel: 'KS3',
+        categoryId: 'custom',
+        customMode: true,
+        customContentType: sharedVocabulary.contentType || 'vocabulary',
+      };
+
+      setSelectedConfig(sharedConfig);
+      setGameVocabulary(transformedVocabulary);
+      setGameStarted(true);
+      setShowSharedToast(true);
+      clearSharedVocabulary();
+    }
+  }, [isFromSharedLink, sharedVocabulary, gameStarted, assignmentId, mode, clearSharedVocabulary]);
 
   // Load vocabulary for the selected config when game starts
   const {

@@ -22,6 +22,7 @@ import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGa
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import { FSRSService } from '../../../services/fsrsService';
 import { assignmentExposureService } from '../../../services/assignments/AssignmentExposureService';
+import { useSharedVocabulary, SharedVocabularyToast } from '../../../components/games/ShareVocabularyButton';
 
 // Enhanced Types
 interface TowerBlock {
@@ -148,11 +149,11 @@ const ParticleSystem = ({ effects }: { effects: ParticleEffect[] }) => {
 };
 
 // Enhanced Crane Component
-const AnimatedCrane = ({ 
-  isLifting, 
-  liftedWord, 
+const AnimatedCrane = ({
+  isLifting,
+  liftedWord,
   onComplete,
-  towerHeight 
+  towerHeight
 }: {
   isLifting: boolean;
   liftedWord: string;
@@ -191,34 +192,34 @@ const AnimatedCrane = ({
         {/* Crane base and mast */}
         <div className="relative">
           <div className="w-6 h-32 bg-gradient-to-b from-yellow-500 to-yellow-600 rounded-t-lg shadow-2xl border-2 border-yellow-700"></div>
-          
+
           {/* Crane jib (horizontal arm) */}
           <div className="absolute top-4 left-6 w-32 h-3 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-r-lg shadow-lg border border-yellow-700"></div>
-          
+
           {/* Crane counterweight */}
           <div className="absolute top-4 right-0 w-4 h-6 bg-gradient-to-b from-gray-600 to-gray-800 rounded shadow-lg"></div>
-          
+
           {/* Operator cabin */}
           <div className="absolute top-8 left-2 w-8 h-4 bg-gradient-to-b from-blue-400 to-blue-600 rounded shadow-lg border border-blue-700"></div>
         </div>
-        
+
         {/* Crane cable */}
         <motion.div
           className="absolute top-6 left-32 w-1 bg-gray-800 shadow-sm"
           animate={{
-            height: phase === 'descending' ? 100 + (towerHeight * 17) : 
-                   phase === 'lifting' || phase === 'moving' ? 80 + (towerHeight * 17) : 
-                   50 + (towerHeight * 17)
+            height: phase === 'descending' ? 100 + (towerHeight * 17) :
+              phase === 'lifting' || phase === 'moving' ? 80 + (towerHeight * 17) :
+                50 + (towerHeight * 17)
           }}
           transition={{ duration: 0.6 }}
         />
-        
+
         {/* Crane hook with word */}
         <motion.div
           className="absolute left-31 bg-gray-700 w-3 h-3 rounded-full shadow-lg border border-gray-900"
           animate={{
-            top: phase === 'descending' ? 106 + (towerHeight * 17) : 
-                phase === 'lifting' || phase === 'moving' ? 86 + (towerHeight * 17) : 
+            top: phase === 'descending' ? 106 + (towerHeight * 17) :
+              phase === 'lifting' || phase === 'moving' ? 86 + (towerHeight * 17) :
                 56 + (towerHeight * 17)
           }}
           transition={{ duration: 0.6 }}
@@ -235,10 +236,10 @@ const AnimatedCrane = ({
 };
 
 // Enhanced Background Component
-const DynamicBackground = ({ 
-  level, 
-  timeOfDay, 
-  weather 
+const DynamicBackground = ({
+  level,
+  timeOfDay,
+  weather
 }: {
   level: number;
   timeOfDay: 'morning' | 'day' | 'evening' | 'night';
@@ -262,16 +263,16 @@ const DynamicBackground = ({
   return (
     <div className="absolute inset-0">
       {/* Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url(/games/sentence-towers/background.png)'
         }}
       />
-      
+
       {/* Dynamic time overlay */}
       <div className={`absolute inset-0 ${getOverlayColor()} transition-all duration-1000`} />
-      
+
       {/* Weather effects */}
       {weather === 'rain' && (
         <div className="absolute inset-0">
@@ -312,6 +313,46 @@ export default function SentenceTowersPage() {
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
   const [vocabulary, setVocabulary] = useState<UnifiedVocabularyItem[]>([]);
+
+  // 🔗 Shared vocabulary detection
+  const { sharedVocabulary, isFromSharedLink, clearSharedVocabulary } = useSharedVocabulary();
+  const [showSharedToast, setShowSharedToast] = useState(false);
+
+  // 🔗 Handle shared vocabulary auto-start
+  useEffect(() => {
+    const isAssignmentMode = assignmentId && mode === 'assignment';
+    if (isFromSharedLink && sharedVocabulary && sharedVocabulary.items.length > 0 && !gameStarted && !isAssignmentMode) {
+      console.log('📎 [WORD TOWERS] Loading shared vocabulary:', sharedVocabulary.items.length, 'items');
+
+      // Transform shared vocabulary to Word Towers format
+      const transformedVocabulary: UnifiedVocabularyItem[] = sharedVocabulary.items.map((item, index) => ({
+        id: `shared-${index}`,
+        word: item.term,
+        translation: item.translation,
+        language: sharedVocabulary.language || 'spanish',
+        category: 'Shared',
+        subcategory: 'Custom',
+        difficulty: 'intermediate'
+      }));
+
+      // Set up game config for shared vocabulary
+      const sharedConfig: UnifiedSelectionConfig = {
+        language: sharedVocabulary.language || 'es',
+        curriculumLevel: 'KS3',
+        categoryId: 'custom',
+        customMode: true,
+        customContentType: sharedVocabulary.contentType || 'vocabulary',
+      };
+
+      setSelectedConfig(sharedConfig);
+      setVocabulary(transformedVocabulary);
+      setGameStarted(true);
+      setShowSharedToast(true);
+
+      // Clear the URL param without reloading
+      clearSharedVocabulary();
+    }
+  }, [isFromSharedLink, sharedVocabulary, gameStarted, assignmentId, mode, clearSharedVocabulary]);
 
   // Assignment mode handlers
   const handleAssignmentComplete = () => {
@@ -426,7 +467,7 @@ export default function SentenceTowersPage() {
     setSelectedConfig(config);
     setVocabulary(vocabularyItems);
     setGameStarted(true);
-    
+
     console.log('Word Towers started with unified config:', {
       config,
       vocabularyCount: vocabularyItems.length
@@ -658,9 +699,9 @@ function ImprovedSentenceTowersGame({
       intensity,
       timestamp: Date.now()
     };
-    
+
     setParticleEffects(prev => [...prev, newEffect]);
-    
+
     // Auto-remove effect after animation
     setTimeout(() => {
       setParticleEffects(prev => prev.filter(e => e.id !== newEffect.id));
@@ -852,7 +893,7 @@ function ImprovedSentenceTowersGame({
     if (unusedWords.length >= 4) {
       const shuffled = [...unusedWords].sort(() => Math.random() - 0.5);
       const targetWord = shuffled[0];
-      
+
       setCurrentTargetWord({
         id: targetWord.id,
         word: targetWord.word,
@@ -860,14 +901,14 @@ function ImprovedSentenceTowersGame({
         isCorrect: true,
         difficulty: targetWord.difficulty
       });
-      
+
       // Record question start time for speed bonuses
       setQuestionStartTime(Date.now());
-      
+
       // Ensure we have at least 4 options
       const incorrectOptions = shuffled.slice(1, 4);
       const allOptions = [targetWord, ...incorrectOptions].sort(() => Math.random() - 0.5);
-      
+
       setWordOptions(allOptions.map(word => ({
         id: word.id,
         word: word.word,
@@ -877,16 +918,16 @@ function ImprovedSentenceTowersGame({
       })));
       return;
     }
-    
+
     // Dynamic difficulty: increase based on current level and accuracy
     const baseDifficulty = Math.min(5, Math.floor(gameState.currentLevel / 2) + 1);
     const accuracyBonus = gameState.accuracy > 0.8 ? 1 : 0;
     const levelDifficulty = baseDifficulty + accuracyBonus;
-    
-    const availableWords = unusedWords.filter(word => 
+
+    const availableWords = unusedWords.filter(word =>
       word.difficulty <= levelDifficulty + 1 && word.difficulty >= levelDifficulty - 1
     );
-    
+
     // Ensure we have enough words for options
     const targetWords = availableWords.length >= 4 ? availableWords : unusedWords;
     if (targetWords.length < 4) {
@@ -896,13 +937,13 @@ function ImprovedSentenceTowersGame({
         word: word.word,
         translation: word.translation,
         difficulty: word.difficulty_level === 'beginner' ? 1 :
-                   word.difficulty_level === 'intermediate' ? 3 :
-                   word.difficulty_level === 'advanced' ? 5 : 2,
+          word.difficulty_level === 'intermediate' ? 3 :
+            word.difficulty_level === 'advanced' ? 5 : 2,
         correct: false
       }));
       const shuffledFullVocab = [...fullVocab].sort(() => Math.random() - 0.5);
       const targetWord = shuffledFullVocab[0];
-      
+
       setCurrentTargetWord({
         id: targetWord.id,
         word: targetWord.word,
@@ -910,14 +951,14 @@ function ImprovedSentenceTowersGame({
         isCorrect: true,
         difficulty: targetWord.difficulty
       });
-      
+
       // Record question start time for speed bonuses
       setQuestionStartTime(Date.now());
-      
+
       // Improved distractor selection
       const incorrectOptions = selectBestDistractors(targetWord, shuffledFullVocab.slice(1), 3);
       const allOptions = [targetWord, ...incorrectOptions].sort(() => Math.random() - 0.5);
-      
+
       setWordOptions(allOptions.map(word => ({
         id: word.id,
         word: word.word,
@@ -927,10 +968,10 @@ function ImprovedSentenceTowersGame({
       })));
       return;
     }
-    
+
     const shuffledTargetWords = [...targetWords].sort(() => Math.random() - 0.5);
     const targetWord = shuffledTargetWords[0];
-    
+
     setCurrentTargetWord({
       id: targetWord.id,
       word: targetWord.word,
@@ -938,10 +979,10 @@ function ImprovedSentenceTowersGame({
       isCorrect: true,
       difficulty: targetWord.difficulty
     });
-    
+
     // Record question start time for speed bonuses
     setQuestionStartTime(Date.now());
-    
+
     // Always ensure 4 options by selecting 3 incorrect ones with improved logic
     const remainingWords = shuffledTargetWords.slice(1);
     const incorrectOptions = selectBestDistractors(targetWord, remainingWords, 3);
@@ -953,8 +994,8 @@ function ImprovedSentenceTowersGame({
         word: word.word,
         translation: word.translation,
         difficulty: word.difficulty_level === 'beginner' ? 1 :
-                   word.difficulty_level === 'intermediate' ? 3 :
-                   word.difficulty_level === 'advanced' ? 5 : 2,
+          word.difficulty_level === 'intermediate' ? 3 :
+            word.difficulty_level === 'advanced' ? 5 : 2,
         correct: false
       }));
       const additionalCandidates = fullVocab.filter(word =>
@@ -964,9 +1005,9 @@ function ImprovedSentenceTowersGame({
       const additionalDistractors = selectBestDistractors(targetWord, additionalCandidates, 3 - incorrectOptions.length);
       incorrectOptions.push(...additionalDistractors);
     }
-    
+
     const allOptions = [targetWord, ...incorrectOptions].sort(() => Math.random() - 0.5);
-    
+
     setWordOptions(allOptions.map(word => ({
       id: word.id,
       word: word.word,
@@ -1137,7 +1178,7 @@ function ImprovedSentenceTowersGame({
     setCraneLifting(true);
     setCraneWord(option.word);
     sounds.playCraneMovement();
-    
+
     // Show speed bonus effect if applicable
     if (speedBonus > 0) {
       addParticleEffect('timebonus', { x: window.innerWidth / 2, y: window.innerHeight / 3 }, speedBonus);
@@ -1147,17 +1188,17 @@ function ImprovedSentenceTowersGame({
     if (isTypingMode) {
       addParticleEffect('combo', { x: window.innerWidth / 2, y: window.innerHeight / 4 }, 2);
     }
-    
+
     setTimeout(() => {
       setTowerBlocks(prev => [...prev, newBlock]);
       sounds.playBlockPlacement();
       addParticleEffect('success', { x: window.innerWidth / 2, y: window.innerHeight / 2 }, gameState.multiplier);
-      
+
       // Enhanced combo celebrations
       if (gameState.streak > 0 && (gameState.streak + 1) % 5 === 0) {
         addParticleEffect('combo', { x: window.innerWidth / 2, y: window.innerHeight / 3 }, (gameState.streak + 1) / 5);
       }
-      
+
       // Lightning effect for high multipliers
       if (gameState.multiplier >= 2) {
         addParticleEffect('lightning', { x: window.innerWidth / 2, y: window.innerHeight / 4 }, gameState.multiplier);
@@ -1307,20 +1348,20 @@ function ImprovedSentenceTowersGame({
 
     // Trigger screen shake effect
     triggerScreenShake();
-    
+
     if (settings.towerFalling && towerBlocks.length > 0) {
       const fallCount = getDifficultySettings(settings.difficulty).fallCount;
       const blocksToFall = Math.min(fallCount, towerBlocks.length);
       const fallingIds = towerBlocks.slice(-blocksToFall).map(block => block.id);
-      
+
       setFallingBlocks(fallingIds);
       sounds.playBlockFalling();
       addParticleEffect('destruction', { x: window.innerWidth / 2, y: window.innerHeight / 2 + 100 });
-      
+
       setTimeout(() => {
         setTowerBlocks(prev => prev.filter(block => !fallingIds.includes(block.id)));
         setFallingBlocks([]);
-        
+
         setGameState(prev => ({
           ...prev,
           blocksFallen: prev.blocksFallen + blocksToFall,
@@ -1339,16 +1380,16 @@ function ImprovedSentenceTowersGame({
   // Enhanced option selection
   const handleSelectOption = useCallback((option: WordOption) => {
     if (gameState.status !== 'playing' || selectedOption) return;
-    
+
     setSelectedOption(option.id);
     setFeedbackVisible(option.isCorrect ? 'correct' : 'incorrect');
-    
+
     if (option.isCorrect) {
       handleCorrectAnswer(option);
     } else {
       handleIncorrectAnswer(option);
     }
-    
+
     setTimeout(() => {
       setSelectedOption(null);
       setFeedbackVisible(null);
@@ -1365,8 +1406,8 @@ function ImprovedSentenceTowersGame({
 
     // Check if the answer is correct (allow for minor variations)
     const isCorrect = userAnswer === correctAnswer ||
-                     correctAnswer.includes(userAnswer) ||
-                     userAnswer.includes(correctAnswer);
+      correctAnswer.includes(userAnswer) ||
+      userAnswer.includes(correctAnswer);
 
     setSelectedOption(currentTargetWord.id);
     setFeedbackVisible(isCorrect ? 'correct' : 'incorrect');
@@ -1462,8 +1503,8 @@ function ImprovedSentenceTowersGame({
       word: word.word,
       translation: word.translation,
       difficulty: word.difficulty_level === 'beginner' ? 1 :
-                 word.difficulty_level === 'intermediate' ? 3 :
-                 word.difficulty_level === 'advanced' ? 5 : 2,
+        word.difficulty_level === 'intermediate' ? 3 :
+          word.difficulty_level === 'advanced' ? 5 : 2,
       correct: false
     }));
     setVocabulary(resetVocabulary);
@@ -1495,11 +1536,11 @@ function ImprovedSentenceTowersGame({
 
   const pauseGame = () => {
     const newStatus = gameState.status === 'playing' ? 'paused' : 'playing';
-    setGameState(prev => ({ 
-      ...prev, 
+    setGameState(prev => ({
+      ...prev,
       status: newStatus
     }));
-    
+
     // Control background music based on pause state
     if (newStatus === 'paused') {
       sounds.stopBackgroundMusic();
@@ -1513,7 +1554,7 @@ function ImprovedSentenceTowersGame({
     setTowerBlocks([]);
     setFallingBlocks([]);
     setParticleEffects([]);
-    
+
     // Stop background music
     sounds.stopBackgroundMusic();
   };
@@ -1563,8 +1604,8 @@ function ImprovedSentenceTowersGame({
         word: word.word,
         translation: word.translation,
         difficulty: word.difficulty_level === 'beginner' ? 1 :
-                   word.difficulty_level === 'intermediate' ? 3 :
-                   word.difficulty_level === 'advanced' ? 5 : 2,
+          word.difficulty_level === 'intermediate' ? 3 :
+            word.difficulty_level === 'advanced' ? 5 : 2,
         correct: false
       }));
       setVocabulary(resetVocabulary);
@@ -1588,769 +1629,769 @@ function ImprovedSentenceTowersGame({
           x: [-10, 10],
           y: [-5, 5]
         } : { x: 0, y: 0 }}
-        transition={{ 
-          duration: 0.5, 
+        transition={{
+          duration: 0.5,
           type: "spring",
           repeat: screenShake ? 2 : 0,
           repeatType: "reverse"
         }}
         className="w-full h-full"
       >
-      {/* Enhanced Background */}
-      <DynamicBackground 
-        level={gameState.currentLevel}
-        timeOfDay={gameState.currentLevel <= 5 ? 'day' : gameState.currentLevel <= 10 ? 'evening' : 'night'}
-        weather={gameState.streak > 10 ? 'clear' : 'cloudy'}
-      />
+        {/* Enhanced Background */}
+        <DynamicBackground
+          level={gameState.currentLevel}
+          timeOfDay={gameState.currentLevel <= 5 ? 'day' : gameState.currentLevel <= 10 ? 'evening' : 'night'}
+          weather={gameState.streak > 10 ? 'clear' : 'cloudy'}
+        />
 
-      {/* Particle Effects */}
-      <ParticleSystem effects={particleEffects} />
+        {/* Particle Effects */}
+        <ParticleSystem effects={particleEffects} />
 
-      {/* Simplified Header with left-aligned title */}
-      <div className="relative z-20 flex items-center justify-between p-4 md:p-6">
-        <div className="flex items-center space-x-4">
-          <button 
-            onClick={() => window.history.back()}
-            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
-          >
-            <ArrowLeft className="h-5 w-5 md:h-6 md:w-6 text-white" />
-          </button>
-          
-          <div>
-            <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500">
-              Word Towers
-            </h1>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={toggleFullscreen}
-            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
-            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-          >
-            {isFullscreen ? (
-              <Minimize className="h-4 w-4 md:h-5 md:w-5 text-white" />
-            ) : (
-              <Maximize className="h-4 w-4 md:h-5 md:w-5 text-white" />
-            )}
-          </button>
-          
-          <button
-            onClick={() => {
-              const newSoundEnabled = !settings.soundEnabled;
-              setSettings(prev => ({ ...prev, soundEnabled: newSoundEnabled }));
-              sounds.mute(!newSoundEnabled);
-              if (!newSoundEnabled) {
-                sounds.stopBackgroundMusic();
-              } else if (gameState.status === 'playing') {
-                sounds.playBackgroundMusic();
-              }
-            }}
-            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
-          >
-            {settings.soundEnabled ? (
-              <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
-            ) : (
-              <VolumeX className="h-4 w-4 md:h-5 md:w-5 text-white" />
-            )}
-          </button>
-          
-          {gameState.status === 'playing' && (
+        {/* Simplified Header with left-aligned title */}
+        <div className="relative z-20 flex items-center justify-between p-4 md:p-6">
+          <div className="flex items-center space-x-4">
             <button
-              onClick={pauseGame}
+              onClick={() => window.history.back()}
               className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
             >
-              <Pause className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              <ArrowLeft className="h-5 w-5 md:h-6 md:w-6 text-white" />
             </button>
-          )}
-          
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
-            title="Game Settings"
-          >
-            <Settings className="h-4 w-4 md:h-5 md:w-5 text-white" />
-          </button>
 
-          <button
-            onClick={handleOpenConfigPanel}
-            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
-            title="Change Language, Level, Topic & Theme"
-          >
-            <span className="text-sm md:text-base">🎯</span>
-            <span className="hidden md:inline ml-2">Game Config</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Left Sidebar Stats - hidden on mobile, positioned to avoid tower overlap */}
-      <div className="hidden lg:block fixed left-4 top-1/2 transform -translate-y-1/2 z-20 space-y-4">
-        {/* Score */}
-        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-orange-500/30 min-w-[120px]">
-          <div className="text-orange-400 text-xs font-bold mb-1">SCORE</div>
-          <div className="text-lg font-bold text-white">{gameState.score.toLocaleString()}</div>
-          {gameState.multiplier > 1 && (
-            <div className="text-xs text-yellow-400">×{gameState.multiplier.toFixed(1)}</div>
-          )}
-        </div>
-
-        {/* Streak */}
-        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-red-500/30">
-          <div className="flex items-center space-x-2">
-            <Flame className="h-4 w-4 text-red-400" />
             <div>
-              <div className="text-red-400 text-xs font-bold">STREAK</div>
-              <div className="text-white font-bold text-lg">{gameState.streak}</div>
+              <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500">
+                Word Towers
+              </h1>
             </div>
           </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+              {isFullscreen ? (
+                <Minimize className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              ) : (
+                <Maximize className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                const newSoundEnabled = !settings.soundEnabled;
+                setSettings(prev => ({ ...prev, soundEnabled: newSoundEnabled }));
+                sounds.mute(!newSoundEnabled);
+                if (!newSoundEnabled) {
+                  sounds.stopBackgroundMusic();
+                } else if (gameState.status === 'playing') {
+                  sounds.playBackgroundMusic();
+                }
+              }}
+              className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+            >
+              {settings.soundEnabled ? (
+                <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              ) : (
+                <VolumeX className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              )}
+            </button>
+
+            {gameState.status === 'playing' && (
+              <button
+                onClick={pauseGame}
+                className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+              >
+                <Pause className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              </button>
+            )}
+
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+              title="Game Settings"
+            >
+              <Settings className="h-4 w-4 md:h-5 md:w-5 text-white" />
+            </button>
+
+            <button
+              onClick={handleOpenConfigPanel}
+              className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+              title="Change Language, Level, Topic & Theme"
+            >
+              <span className="text-sm md:text-base">🎯</span>
+              <span className="hidden md:inline ml-2">Game Config</span>
+            </button>
+          </div>
         </div>
 
-        {/* Level Progress */}
-        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-purple-500/30">
-          <div className="text-purple-400 text-xs font-bold mb-2">LEVEL</div>
-          <div className="text-center">
-            <div className="text-xl font-bold text-white">{gameState.currentLevel}</div>
-            <div className="text-xs text-white/60">current level</div>
+        {/* Left Sidebar Stats - hidden on mobile, positioned to avoid tower overlap */}
+        <div className="hidden lg:block fixed left-4 top-1/2 transform -translate-y-1/2 z-20 space-y-4">
+          {/* Score */}
+          <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-orange-500/30 min-w-[120px]">
+            <div className="text-orange-400 text-xs font-bold mb-1">SCORE</div>
+            <div className="text-lg font-bold text-white">{gameState.score.toLocaleString()}</div>
+            {gameState.multiplier > 1 && (
+              <div className="text-xs text-yellow-400">×{gameState.multiplier.toFixed(1)}</div>
+            )}
           </div>
-          <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden mt-2">
-            <div 
-              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-              style={{ width: `${((gameState.blocksPlaced % 5) / 5) * 100}%` }}
-            />
-          </div>
-          <div className="text-white text-xs mt-1">{gameState.blocksPlaced % 5}/5 to next</div>
-        </div>
-      </div>
 
-      {/* Right Sidebar Stats + Translation Box */}
-      <div className="hidden lg:block fixed right-4 top-1/2 transform -translate-y-1/2 z-20 space-y-4">
-        {/* Target Word Display - moved to right sidebar */}
-        {currentTargetWord && gameState.status === 'playing' && (
-          <motion.div
-            key={currentTargetWord.id}
-            initial={{ opacity: 0, x: 50, scale: 0.8 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
-            className="bg-gradient-to-r from-orange-500 to-yellow-600 rounded-2xl p-4 shadow-2xl border-4 border-orange-300 min-w-[200px]"
-          >
+          {/* Streak */}
+          <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-red-500/30">
+            <div className="flex items-center space-x-2">
+              <Flame className="h-4 w-4 text-red-400" />
+              <div>
+                <div className="text-red-400 text-xs font-bold">STREAK</div>
+                <div className="text-white font-bold text-lg">{gameState.streak}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Level Progress */}
+          <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-purple-500/30">
+            <div className="text-purple-400 text-xs font-bold mb-2">LEVEL</div>
             <div className="text-center">
-              <div className="text-sm font-semibold text-orange-100 mb-1">
-                Translate:
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {currentTargetWord.word}
-              </div>
-
+              <div className="text-xl font-bold text-white">{gameState.currentLevel}</div>
+              <div className="text-xs text-white/60">current level</div>
             </div>
-          </motion.div>
-        )}
-
-        {/* Progress */}
-        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-green-500/30">
-          <div className="text-green-400 text-xs font-bold mb-1 text-center">PROGRESS</div>
-          <div className="text-xl font-bold text-center text-green-400">
-            {gameState.wordsCompleted}/{gameState.totalWords}
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
-            <div
-              className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${gameState.totalWords > 0 ? (gameState.wordsCompleted / gameState.totalWords) * 100 : 0}%` }}
-            />
+            <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden mt-2">
+              <div
+                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                style={{ width: `${((gameState.blocksPlaced % 5) / 5) * 100}%` }}
+              />
+            </div>
+            <div className="text-white text-xs mt-1">{gameState.blocksPlaced % 5}/5 to next</div>
           </div>
         </div>
 
-        {/* Current Height */}
-        {towerBlocks.length > 0 && (
+        {/* Right Sidebar Stats + Translation Box */}
+        <div className="hidden lg:block fixed right-4 top-1/2 transform -translate-y-1/2 z-20 space-y-4">
+          {/* Target Word Display - moved to right sidebar */}
+          {currentTargetWord && gameState.status === 'playing' && (
+            <motion.div
+              key={currentTargetWord.id}
+              initial={{ opacity: 0, x: 50, scale: 0.8 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              className="bg-gradient-to-r from-orange-500 to-yellow-600 rounded-2xl p-4 shadow-2xl border-4 border-orange-300 min-w-[200px]"
+            >
+              <div className="text-center">
+                <div className="text-sm font-semibold text-orange-100 mb-1">
+                  Translate:
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  {currentTargetWord.word}
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+
+          {/* Progress */}
           <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-green-500/30">
-            <div className="text-green-400 text-xs font-bold mb-1 text-center">TOWER HEIGHT</div>
-            <div className="text-center">
-              <div className="text-xl font-bold text-white">{gameState.currentHeight}</div>
-              <div className="text-xs text-white/60">total blocks</div>
-              {towerBlocks.length > VISIBLE_BLOCKS && (
-                <div className="text-xs text-green-400 mt-1">
-                  Showing top {Math.min(VISIBLE_BLOCKS, towerBlocks.length)}
+            <div className="text-green-400 text-xs font-bold mb-1 text-center">PROGRESS</div>
+            <div className="text-xl font-bold text-center text-green-400">
+              {gameState.wordsCompleted}/{gameState.totalWords}
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+              <div
+                className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${gameState.totalWords > 0 ? (gameState.wordsCompleted / gameState.totalWords) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Current Height */}
+          {towerBlocks.length > 0 && (
+            <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-green-500/30">
+              <div className="text-green-400 text-xs font-bold mb-1 text-center">TOWER HEIGHT</div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-white">{gameState.currentHeight}</div>
+                <div className="text-xs text-white/60">total blocks</div>
+                {towerBlocks.length > VISIBLE_BLOCKS && (
+                  <div className="text-xs text-green-400 mt-1">
+                    Showing top {Math.min(VISIBLE_BLOCKS, towerBlocks.length)}
+                  </div>
+                )}
+              </div>
+              {gameState.maxHeight > gameState.currentHeight && (
+                <div className="text-xs text-green-400 mt-1 text-center">
+                  Best: {gameState.maxHeight}
                 </div>
               )}
             </div>
-            {gameState.maxHeight > gameState.currentHeight && (
-              <div className="text-xs text-green-400 mt-1 text-center">
-                Best: {gameState.maxHeight}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Mobile translation box and bottom stats bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-20 px-4 pb-2 space-y-2">
-        {/* Mobile Translation Box */}
-        {currentTargetWord && gameState.status === 'playing' && (
-          <motion.div
-            key={currentTargetWord.id}
-            initial={{ opacity: 0, y: 50, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
-            className="bg-gradient-to-r from-orange-500 to-yellow-600 rounded-2xl p-4 shadow-2xl border-4 border-orange-300"
-          >
-            <div className="text-center">
-              <div className="text-sm font-semibold text-orange-100 mb-1">
-                Translate:
-              </div>
-              <div className="text-xl font-bold text-white">
-                {currentTargetWord.word}
-              </div>
-              <div className="text-xs text-orange-200 mt-1">
-                Difficulty: {currentTargetWord.difficulty}/5
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Mobile Stats Bar */}
-        <div className="bg-black/70 backdrop-blur-md rounded-xl p-2 border border-white/30">
-          <div className="flex justify-between items-center text-xs">
-            <div className="text-center">
-              <div className="text-orange-400 text-[10px] font-bold">SCORE</div>
-              <div className="text-white font-bold text-sm">{gameState.score.toLocaleString()}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-green-400 text-[10px] font-bold">PROGRESS</div>
-              <div className="font-bold text-sm text-green-400">
-                {gameState.wordsCompleted}/{gameState.totalWords}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-purple-400 text-[10px] font-bold">LEVEL</div>
-              <div className="text-white font-bold text-sm">{gameState.currentLevel}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-red-400 text-[10px] font-bold">STREAK</div>
-              <div className="text-white font-bold text-sm">{gameState.streak}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-green-400 text-[10px] font-bold">HEIGHT</div>
-              <div className="text-white font-bold text-sm">{gameState.currentHeight}</div>
-            </div>
-          </div>
+          )}
         </div>
-      </div>
 
-      {/* Main Game Area */}
-      <div className="relative z-10 px-4 flex flex-col items-center pt-4">
-        {/* Tower container - optimized height for both fullscreen and windowed mode */}
-        <div className="flex justify-center items-end mb-4" style={{ minHeight: '450px' }}>
-          {/* Enhanced Tower with Crane */}
-          <div className="flex flex-col-reverse items-center space-y-reverse space-y-1 relative">
-            <AnimatedCrane
-              isLifting={craneLifting}
-              liftedWord={craneWord}
-              towerHeight={towerBlocks.length}
-              onComplete={() => {
-                setCraneLifting(false);
-                setCraneWord('');
-              }}
-            />
-            
-            {/* Tower Blocks - Only show last VISIBLE_BLOCKS for better fullscreen experience */}
-            {towerBlocks.slice(-VISIBLE_BLOCKS).map((block, index) => {
-              const relativeIndex = towerBlocks.length > VISIBLE_BLOCKS ? 
-                index : 
-                towerBlocks.length - towerBlocks.slice(-VISIBLE_BLOCKS).length + index;
-              
-              return (
-                <motion.div
-                  key={block.id}
-                  initial={{ y: -200, opacity: 0, scale: 0, rotate: -10 }}
-                  animate={{ 
-                    y: 0, 
-                    opacity: 1,
-                    scale: 1,
-                    rotate: fallingBlocks.includes(block.id) ? (Math.random() > 0.5 ? 45 : -45) : 0,
-                    x: fallingBlocks.includes(block.id) ? (Math.random() > 0.5 ? 300 : -300) : 0
-                  }}
-                  exit={{ 
-                    y: 500, 
-                    opacity: 0, 
-                    scale: 0.5,
-                    rotate: Math.random() * 360,
-                    transition: { duration: 1 }
-                  }}
-                  transition={{ 
-                    duration: 0.8,
-                    delay: index * 0.1,
-                    type: "spring", 
-                    stiffness: 100 
-                  }}
-                  className={`w-80 h-20 rounded-lg border-4 shadow-2xl backdrop-blur-md relative overflow-hidden ${getBlockStyle(block.type, block.isShaking)}`}
-                  style={{ zIndex: VISIBLE_BLOCKS - index }}
-                >
-                {/* Block content */}
-                <div className="absolute inset-0 flex items-center justify-between p-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-bold text-xl truncate">{block.word}</div>
-                    <div className="text-white/80 text-base truncate">{block.translation}</div>
-                  </div>
-                  <div className="text-right ml-4 flex-shrink-0">
-                    <div className="text-white/60 text-xs uppercase font-semibold">
-                      {block.type}
-                    </div>
-                    <div className="text-yellow-300 font-bold">+{block.points}</div>
-                  </div>
-                </div>
-                
-                {/* Block type indicator */}
-                <div className="absolute top-1 right-1">
-                  {block.type === 'bonus' && (
-                    <Star className="h-4 w-4 text-yellow-300" />
-                  )}
-                  {block.type === 'challenge' && (
-                    <Trophy className="h-4 w-4 text-red-300" />
-                  )}
-                  {block.type === 'fragile' && (
-                    <div className="h-3 w-3 bg-gray-400 rounded-full" />
-                  )}
-                </div>
-                
-                {/* Particle trails for falling blocks */}
-                {fallingBlocks.includes(block.id) && (
-                  <div className="absolute inset-0 bg-red-500/20 animate-pulse" />
-                )}
-              </motion.div>
-              );
-            })}
-            
-            {/* Tower base */}
-            <div className="w-60 h-8 bg-gradient-to-r from-stone-600 to-stone-800 rounded-lg border-4 border-stone-700 shadow-2xl relative">
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-900/50 to-transparent rounded-md" />
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-stone-200 font-bold text-sm">
-                FOUNDATION
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Word Options */}
-      {gameState.status === 'playing' && wordOptions.length > 0 && (
-        <div className="relative z-20 px-4 mb-4">
-          {!isTypingMode ? (
-            // Multiple Choice Mode
+        {/* Mobile translation box and bottom stats bar */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-20 px-4 pb-2 space-y-2">
+          {/* Mobile Translation Box */}
+          {currentTargetWord && gameState.status === 'playing' && (
             <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap justify-center gap-3"
+              key={currentTargetWord.id}
+              initial={{ opacity: 0, y: 50, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              className="bg-gradient-to-r from-orange-500 to-yellow-600 rounded-2xl p-4 shadow-2xl border-4 border-orange-300"
             >
-              {wordOptions.map((option, index) => (
-                <motion.button
-                  key={option.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                  onClick={() => handleSelectOption(option)}
-                  disabled={selectedOption !== null}
-                  className={`
-                    relative px-4 py-3 rounded-2xl border-4 backdrop-blur-md shadow-2xl transition-all duration-300 min-w-[120px] group
-                    ${selectedOption === option.id
-                      ? option.isCorrect
-                        ? 'bg-green-500/30 border-green-400 scale-110'
-                        : 'bg-red-500/30 border-red-400 scale-110'
-                      : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 hover:scale-105'
-                    }
-                    ${selectedOption && selectedOption !== option.id ? 'opacity-50' : ''}
-                  `}
-                >
-                  <div className="text-center">
-                    <div className="text-white font-bold text-base md:text-lg group-hover:scale-110 transition-transform">
-                      {option.translation}
-                    </div>
-                  </div>
-
-                  {/* Selection feedback */}
-                  {selectedOption === option.id && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute inset-0 rounded-2xl bg-white/20 border-4 border-white/50"
-                    />
-                  )}
-                </motion.button>
-              ))}
-            </motion.div>
-          ) : (
-            // Typing Mode
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="max-w-md mx-auto"
-            >
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl border-4 border-white/30 p-6">
-                <div className="text-center mb-4">
-                  <div className="text-yellow-400 text-sm font-bold mb-2">⚡ TYPING MODE - DOUBLE POINTS!</div>
-                  <div className="text-white/80 text-sm">Type the translation for:</div>
-                  <div className="text-white font-bold text-xl mt-2">{currentTargetWord?.word}</div>
+              <div className="text-center">
+                <div className="text-sm font-semibold text-orange-100 mb-1">
+                  Translate:
                 </div>
-
-                <input
-                  type="text"
-                  value={typedAnswer}
-                  onChange={(e) => setTypedAnswer(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && typedAnswer.trim()) {
-                      handleTypedAnswer();
-                    }
-                  }}
-                  placeholder="Type your answer..."
-                  className="w-full bg-white/20 text-white placeholder-white/50 rounded-xl p-4 border-2 border-white/30 focus:border-white/50 focus:outline-none text-lg text-center"
-                  disabled={selectedOption !== null}
-                  autoFocus
-                />
-
-                <button
-                  onClick={handleTypedAnswer}
-                  disabled={!typedAnswer.trim() || selectedOption !== null}
-                  className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all duration-300"
-                >
-                  Submit Answer
-                </button>
+                <div className="text-xl font-bold text-white">
+                  {currentTargetWord.word}
+                </div>
+                <div className="text-xs text-orange-200 mt-1">
+                  Difficulty: {currentTargetWord.difficulty}/5
+                </div>
               </div>
             </motion.div>
           )}
-          
-          {/* Feedback display */}
-          <AnimatePresence>
-            {feedbackVisible && (
+
+          {/* Mobile Stats Bar */}
+          <div className="bg-black/70 backdrop-blur-md rounded-xl p-2 border border-white/30">
+            <div className="flex justify-between items-center text-xs">
+              <div className="text-center">
+                <div className="text-orange-400 text-[10px] font-bold">SCORE</div>
+                <div className="text-white font-bold text-sm">{gameState.score.toLocaleString()}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-green-400 text-[10px] font-bold">PROGRESS</div>
+                <div className="font-bold text-sm text-green-400">
+                  {gameState.wordsCompleted}/{gameState.totalWords}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-purple-400 text-[10px] font-bold">LEVEL</div>
+                <div className="text-white font-bold text-sm">{gameState.currentLevel}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-red-400 text-[10px] font-bold">STREAK</div>
+                <div className="text-white font-bold text-sm">{gameState.streak}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-green-400 text-[10px] font-bold">HEIGHT</div>
+                <div className="text-white font-bold text-sm">{gameState.currentHeight}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Game Area */}
+        <div className="relative z-10 px-4 flex flex-col items-center pt-4">
+          {/* Tower container - optimized height for both fullscreen and windowed mode */}
+          <div className="flex justify-center items-end mb-4" style={{ minHeight: '450px' }}>
+            {/* Enhanced Tower with Crane */}
+            <div className="flex flex-col-reverse items-center space-y-reverse space-y-1 relative">
+              <AnimatedCrane
+                isLifting={craneLifting}
+                liftedWord={craneWord}
+                towerHeight={towerBlocks.length}
+                onComplete={() => {
+                  setCraneLifting(false);
+                  setCraneWord('');
+                }}
+              />
+
+              {/* Tower Blocks - Only show last VISIBLE_BLOCKS for better fullscreen experience */}
+              {towerBlocks.slice(-VISIBLE_BLOCKS).map((block, index) => {
+                const relativeIndex = towerBlocks.length > VISIBLE_BLOCKS ?
+                  index :
+                  towerBlocks.length - towerBlocks.slice(-VISIBLE_BLOCKS).length + index;
+
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={{ y: -200, opacity: 0, scale: 0, rotate: -10 }}
+                    animate={{
+                      y: 0,
+                      opacity: 1,
+                      scale: 1,
+                      rotate: fallingBlocks.includes(block.id) ? (Math.random() > 0.5 ? 45 : -45) : 0,
+                      x: fallingBlocks.includes(block.id) ? (Math.random() > 0.5 ? 300 : -300) : 0
+                    }}
+                    exit={{
+                      y: 500,
+                      opacity: 0,
+                      scale: 0.5,
+                      rotate: Math.random() * 360,
+                      transition: { duration: 1 }
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      delay: index * 0.1,
+                      type: "spring",
+                      stiffness: 100
+                    }}
+                    className={`w-80 h-20 rounded-lg border-4 shadow-2xl backdrop-blur-md relative overflow-hidden ${getBlockStyle(block.type, block.isShaking)}`}
+                    style={{ zIndex: VISIBLE_BLOCKS - index }}
+                  >
+                    {/* Block content */}
+                    <div className="absolute inset-0 flex items-center justify-between p-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-bold text-xl truncate">{block.word}</div>
+                        <div className="text-white/80 text-base truncate">{block.translation}</div>
+                      </div>
+                      <div className="text-right ml-4 flex-shrink-0">
+                        <div className="text-white/60 text-xs uppercase font-semibold">
+                          {block.type}
+                        </div>
+                        <div className="text-yellow-300 font-bold">+{block.points}</div>
+                      </div>
+                    </div>
+
+                    {/* Block type indicator */}
+                    <div className="absolute top-1 right-1">
+                      {block.type === 'bonus' && (
+                        <Star className="h-4 w-4 text-yellow-300" />
+                      )}
+                      {block.type === 'challenge' && (
+                        <Trophy className="h-4 w-4 text-red-300" />
+                      )}
+                      {block.type === 'fragile' && (
+                        <div className="h-3 w-3 bg-gray-400 rounded-full" />
+                      )}
+                    </div>
+
+                    {/* Particle trails for falling blocks */}
+                    {fallingBlocks.includes(block.id) && (
+                      <div className="absolute inset-0 bg-red-500/20 animate-pulse" />
+                    )}
+                  </motion.div>
+                );
+              })}
+
+              {/* Tower base */}
+              <div className="w-60 h-8 bg-gradient-to-r from-stone-600 to-stone-800 rounded-lg border-4 border-stone-700 shadow-2xl relative">
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/50 to-transparent rounded-md" />
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-stone-200 font-bold text-sm">
+                  FOUNDATION
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Word Options */}
+        {gameState.status === 'playing' && wordOptions.length > 0 && (
+          <div className="relative z-20 px-4 mb-4">
+            {!isTypingMode ? (
+              // Multiple Choice Mode
               <motion.div
-                initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.5, y: -20 }}
-                className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-wrap justify-center gap-3"
               >
-                <div className={`
-                  text-4xl md:text-6xl font-bold px-6 py-4 md:px-8 md:py-6 rounded-3xl backdrop-blur-md border-4 shadow-2xl
-                  ${feedbackVisible === 'correct' 
-                    ? 'text-green-400 bg-green-500/20 border-green-400' 
-                    : 'text-red-400 bg-red-500/20 border-red-400'
-                  }
-                `}>
-                  {feedbackVisible === 'correct' ? '✓ Correct!' : '✗ Wrong!'}
+                {wordOptions.map((option, index) => (
+                  <motion.button
+                    key={option.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => handleSelectOption(option)}
+                    disabled={selectedOption !== null}
+                    className={`
+                    relative px-4 py-3 rounded-2xl border-4 backdrop-blur-md shadow-2xl transition-all duration-300 min-w-[120px] group
+                    ${selectedOption === option.id
+                        ? option.isCorrect
+                          ? 'bg-green-500/30 border-green-400 scale-110'
+                          : 'bg-red-500/30 border-red-400 scale-110'
+                        : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 hover:scale-105'
+                      }
+                    ${selectedOption && selectedOption !== option.id ? 'opacity-50' : ''}
+                  `}
+                  >
+                    <div className="text-center">
+                      <div className="text-white font-bold text-base md:text-lg group-hover:scale-110 transition-transform">
+                        {option.translation}
+                      </div>
+                    </div>
+
+                    {/* Selection feedback */}
+                    {selectedOption === option.id && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute inset-0 rounded-2xl bg-white/20 border-4 border-white/50"
+                      />
+                    )}
+                  </motion.button>
+                ))}
+              </motion.div>
+            ) : (
+              // Typing Mode
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-md mx-auto"
+              >
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl border-4 border-white/30 p-6">
+                  <div className="text-center mb-4">
+                    <div className="text-yellow-400 text-sm font-bold mb-2">⚡ TYPING MODE - DOUBLE POINTS!</div>
+                    <div className="text-white/80 text-sm">Type the translation for:</div>
+                    <div className="text-white font-bold text-xl mt-2">{currentTargetWord?.word}</div>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={typedAnswer}
+                    onChange={(e) => setTypedAnswer(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && typedAnswer.trim()) {
+                        handleTypedAnswer();
+                      }
+                    }}
+                    placeholder="Type your answer..."
+                    className="w-full bg-white/20 text-white placeholder-white/50 rounded-xl p-4 border-2 border-white/30 focus:border-white/50 focus:outline-none text-lg text-center"
+                    disabled={selectedOption !== null}
+                    autoFocus
+                  />
+
+                  <button
+                    onClick={handleTypedAnswer}
+                    disabled={!typedAnswer.trim() || selectedOption !== null}
+                    className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all duration-300"
+                  >
+                    Submit Answer
+                  </button>
                 </div>
               </motion.div>
             )}
-          </AnimatePresence>
-        </div>
-      )}
 
-      {/* Game State Overlays */}
-      <AnimatePresence>
-        {/* Start Screen */}
-        {gameState.status === 'ready' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
+            {/* Feedback display */}
+            <AnimatePresence>
+              {feedbackVisible && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, y: -20 }}
+                  className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+                >
+                  <div className={`
+                  text-4xl md:text-6xl font-bold px-6 py-4 md:px-8 md:py-6 rounded-3xl backdrop-blur-md border-4 shadow-2xl
+                  ${feedbackVisible === 'correct'
+                      ? 'text-green-400 bg-green-500/20 border-green-400'
+                      : 'text-red-400 bg-red-500/20 border-red-400'
+                    }
+                `}>
+                    {feedbackVisible === 'correct' ? '✓ Correct!' : '✗ Wrong!'}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Game State Overlays */}
+        <AnimatePresence>
+          {/* Start Screen */}
+          {gameState.status === 'ready' && (
             <motion.div
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-gradient-to-br from-orange-500/20 to-yellow-500/20 backdrop-blur-md rounded-3xl p-12 border-4 border-orange-400/50 text-center max-w-lg mx-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
             >
-              <div className="mb-8">
-                <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500 mb-4">
-                  Word Towers
-                </h2>
-                <p className="text-white/80 text-lg leading-relaxed">
-                  Build the tallest tower possible! Answer translation questions correctly to add blocks. 
-                  Wrong answers make blocks fall. How high can you build before time runs out?
-                </p>
-              </div>
-              
-              <div className="space-y-4 mb-8">
-                <div className="flex items-center justify-between text-white/70">
-                  <span>Difficulty:</span>
-                  <span className="capitalize font-semibold">{settings.difficulty}</span>
-                </div>
-                <div className="flex items-center justify-between text-white/70">
-                  <span>Time Limit:</span>
-                  <span className="font-semibold">{formatTime(settings.timeLimit)}</span>
-                </div>
-                <div className="flex items-center justify-between text-white/70">
-                  <span>Challenge:</span>
-                  <span className="font-semibold">Build as high as possible!</span>
-                </div>
-              </div>
-
-              {/* Game Info */}
-              <div className="mb-6">
-                <div className="w-full p-4 rounded-xl border-2 border-white/30 bg-white/10 text-white">
-                  <div className="text-2xl mb-2">📚</div>
-                  <h3 className="text-lg font-bold mb-1">
-                    {config.subcategoryId ?
-                      `${config.categoryId} - ${config.subcategoryId}` :
-                      config.categoryId}
-                  </h3>
-                  <p className="text-white/70 text-sm">
-                    {gameVocabulary.length} words ready • Language: {config.language.toUpperCase()}
+              <motion.div
+                initial={{ scale: 0.8, y: 50 }}
+                animate={{ scale: 1, y: 0 }}
+                className="bg-gradient-to-br from-orange-500/20 to-yellow-500/20 backdrop-blur-md rounded-3xl p-12 border-4 border-orange-400/50 text-center max-w-lg mx-4"
+              >
+                <div className="mb-8">
+                  <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500 mb-4">
+                    Word Towers
+                  </h2>
+                  <p className="text-white/80 text-lg leading-relaxed">
+                    Build the tallest tower possible! Answer translation questions correctly to add blocks.
+                    Wrong answers make blocks fall. How high can you build before time runs out?
                   </p>
                 </div>
-              </div>
 
-              <button
-                onClick={startGame}
-                disabled={gameVocabulary.length === 0}
-                className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
-              >
-                Start Building! 🏗️
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* Pause Screen */}
-        {gameState.status === 'paused' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-md rounded-3xl p-8 border-4 border-blue-400/50 text-center"
-            >
-              <Pause className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-              <h2 className="text-4xl font-bold text-white mb-6">Game Paused</h2>
-              <div className="space-y-4">
-                <button
-                  onClick={pauseGame}
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105"
-                >
-                  Resume Game
-                </button>
-                <button
-                  onClick={resetGame}
-                  className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-400 hover:to-gray-500 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105"
-                >
-                  Restart Game
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* Failure Screen */}
-        {gameState.status === 'failed' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-gradient-to-br from-red-500/20 to-orange-500/20 backdrop-blur-md rounded-3xl p-12 border-4 border-red-400/50 text-center max-w-lg mx-4"
-            >
-              <Clock className="h-20 w-20 text-red-400 mx-auto mb-6" />
-              <h2 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500 mb-4">
-                Tower Complete!
-              </h2>
-              <p className="text-white/80 text-lg mb-8">
-                Amazing! Your tower reached {gameState.currentHeight} blocks high! 
-                {gameState.currentHeight >= 10 ? " That's incredible!" : 
-                 gameState.currentHeight >= 5 ? " Great building!" : " Keep practicing!"}
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-black/30 rounded-xl p-4">
-                  <div className="text-yellow-400 text-sm font-bold">FINAL SCORE</div>
-                  <div className="text-2xl font-bold text-white">{gameState.score.toLocaleString()}</div>
-                </div>
-                <div className="bg-black/30 rounded-xl p-4">
-                  <div className="text-green-400 text-sm font-bold">WORDS LEARNED</div>
-                  <div className="text-2xl font-bold text-white">{gameState.wordsCompleted}</div>
-                </div>
-                <div className="bg-black/30 rounded-xl p-4">
-                  <div className="text-blue-400 text-sm font-bold">ACCURACY</div>
-                  <div className="text-2xl font-bold text-white">{Math.round(gameState.accuracy * 100)}%</div>
-                </div>
-                <div className="bg-black/30 rounded-xl p-4">
-                  <div className="text-purple-400 text-sm font-bold">BEST STREAK</div>
-                  <div className="text-2xl font-bold text-white">{gameState.streak}</div>
-                </div>
-              </div>
-              
-              {/* Completion Buttons */}
-              <div className="flex flex-col gap-4">
-                {assignmentMode ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        // Return to assignments dashboard
-                        if (typeof window !== 'undefined') {
-                          window.location.href = '/student-dashboard/assignments';
-                        }
-                      }}
-                      className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
-                    >
-                      Return to Assignments 📚
-                    </button>
-                    <button
-                      onClick={resetGame}
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold py-3 px-6 rounded-2xl text-lg transition-all duration-300 hover:scale-105 shadow-xl"
-                    >
-                      Play Again 🔄
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={resetGame}
-                    className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
-                  >
-                    Try Again! 🔄
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* Settings Modal */}
-        {showSettings && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-md rounded-3xl p-8 border-4 border-gray-600/50 max-w-md mx-4"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-white">Settings</h2>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="h-5 w-5 text-white" />
-                </button>
-              </div>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-white/80 text-sm font-semibold mb-2">
-                    Difficulty Level
-                  </label>
-                  <select
-                    value={settings.difficulty}
-                    onChange={(e) => setSettings(prev => ({ 
-                      ...prev, 
-                      difficulty: e.target.value as GameSettings['difficulty'] 
-                    }))}
-                    className="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 focus:outline-none"
-                  >
-                    <option value="easy">Easy (1 block falls)</option>
-                    <option value="medium">Medium (2 blocks fall)</option>
-                    <option value="hard">Hard (3 blocks fall)</option>
-                    <option value="expert">Expert (4 blocks fall)</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-white/80 text-sm font-semibold mb-2">
-                    Time Limit (seconds)
-                  </label>
-                  <input
-                    type="range"
-                    min="60"
-                    max="300"
-                    step="30"
-                    value={settings.timeLimit}
-                    onChange={(e) => setSettings(prev => ({ 
-                      ...prev, 
-                      timeLimit: parseInt(e.target.value) 
-                    }))}
-                    className="w-full"
-                  />
-                  <div className="text-center text-white/60 text-sm mt-1">
-                    {formatTime(settings.timeLimit)}
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center justify-between text-white/70">
+                    <span>Difficulty:</span>
+                    <span className="capitalize font-semibold">{settings.difficulty}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-white/70">
+                    <span>Time Limit:</span>
+                    <span className="font-semibold">{formatTime(settings.timeLimit)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-white/70">
+                    <span>Challenge:</span>
+                    <span className="font-semibold">Build as high as possible!</span>
                   </div>
                 </div>
-                
+
+                {/* Game Info */}
+                <div className="mb-6">
+                  <div className="w-full p-4 rounded-xl border-2 border-white/30 bg-white/10 text-white">
+                    <div className="text-2xl mb-2">📚</div>
+                    <h3 className="text-lg font-bold mb-1">
+                      {config.subcategoryId ?
+                        `${config.categoryId} - ${config.subcategoryId}` :
+                        config.categoryId}
+                    </h3>
+                    <p className="text-white/70 text-sm">
+                      {gameVocabulary.length} words ready • Language: {config.language.toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={startGame}
+                  disabled={gameVocabulary.length === 0}
+                  className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                >
+                  Start Building! 🏗️
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Pause Screen */}
+          {gameState.status === 'paused' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
+            >
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-md rounded-3xl p-8 border-4 border-blue-400/50 text-center"
+              >
+                <Pause className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+                <h2 className="text-4xl font-bold text-white mb-6">Game Paused</h2>
                 <div className="space-y-4">
-                  <label className="flex items-center justify-between">
-                    <span className="text-white/80 text-sm font-semibold">Tower Falling</span>
-                    <input
-                      type="checkbox"
-                      checked={settings.towerFalling}
-                      onChange={(e) => setSettings(prev => ({ 
-                        ...prev, 
-                        towerFalling: e.target.checked 
-                      }))}
-                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
-                  
-                  <label className="flex items-center justify-between">
-                    <span className="text-white/80 text-sm font-semibold">Show Hints</span>
-                    <input
-                      type="checkbox"
-                      checked={settings.showHints}
-                      onChange={(e) => setSettings(prev => ({ 
-                        ...prev, 
-                        showHints: e.target.checked 
-                      }))}
-                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
-                  
-                  <label className="flex items-center justify-between">
-                    <span className="text-white/80 text-sm font-semibold">Sound Effects</span>
-                    <input
-                      type="checkbox"
-                      checked={settings.soundEnabled}
+                  <button
+                    onClick={pauseGame}
+                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105"
+                  >
+                    Resume Game
+                  </button>
+                  <button
+                    onClick={resetGame}
+                    className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-400 hover:to-gray-500 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105"
+                  >
+                    Restart Game
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Failure Screen */}
+          {gameState.status === 'failed' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
+            >
+              <motion.div
+                initial={{ scale: 0.8, y: 50 }}
+                animate={{ scale: 1, y: 0 }}
+                className="bg-gradient-to-br from-red-500/20 to-orange-500/20 backdrop-blur-md rounded-3xl p-12 border-4 border-red-400/50 text-center max-w-lg mx-4"
+              >
+                <Clock className="h-20 w-20 text-red-400 mx-auto mb-6" />
+                <h2 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500 mb-4">
+                  Tower Complete!
+                </h2>
+                <p className="text-white/80 text-lg mb-8">
+                  Amazing! Your tower reached {gameState.currentHeight} blocks high!
+                  {gameState.currentHeight >= 10 ? " That's incredible!" :
+                    gameState.currentHeight >= 5 ? " Great building!" : " Keep practicing!"}
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="bg-black/30 rounded-xl p-4">
+                    <div className="text-yellow-400 text-sm font-bold">FINAL SCORE</div>
+                    <div className="text-2xl font-bold text-white">{gameState.score.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-xl p-4">
+                    <div className="text-green-400 text-sm font-bold">WORDS LEARNED</div>
+                    <div className="text-2xl font-bold text-white">{gameState.wordsCompleted}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-xl p-4">
+                    <div className="text-blue-400 text-sm font-bold">ACCURACY</div>
+                    <div className="text-2xl font-bold text-white">{Math.round(gameState.accuracy * 100)}%</div>
+                  </div>
+                  <div className="bg-black/30 rounded-xl p-4">
+                    <div className="text-purple-400 text-sm font-bold">BEST STREAK</div>
+                    <div className="text-2xl font-bold text-white">{gameState.streak}</div>
+                  </div>
+                </div>
+
+                {/* Completion Buttons */}
+                <div className="flex flex-col gap-4">
+                  {assignmentMode ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          // Return to assignments dashboard
+                          if (typeof window !== 'undefined') {
+                            window.location.href = '/student-dashboard/assignments';
+                          }
+                        }}
+                        className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                      >
+                        Return to Assignments 📚
+                      </button>
+                      <button
+                        onClick={resetGame}
+                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold py-3 px-6 rounded-2xl text-lg transition-all duration-300 hover:scale-105 shadow-xl"
+                      >
+                        Play Again 🔄
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={resetGame}
+                      className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                    >
+                      Try Again! 🔄
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Settings Modal */}
+          {showSettings && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
+            >
+              <motion.div
+                initial={{ scale: 0.8, y: 50 }}
+                animate={{ scale: 1, y: 0 }}
+                className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-md rounded-3xl p-8 border-4 border-gray-600/50 max-w-md mx-4"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-3xl font-bold text-white">Settings</h2>
+                  <button
+                    onClick={() => setShowSettings(false)}
+                    className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  >
+                    <ArrowLeft className="h-5 w-5 text-white" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-white/80 text-sm font-semibold mb-2">
+                      Difficulty Level
+                    </label>
+                    <select
+                      value={settings.difficulty}
                       onChange={(e) => setSettings(prev => ({
                         ...prev,
-                        soundEnabled: e.target.checked
+                        difficulty: e.target.value as GameSettings['difficulty']
                       }))}
-                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
+                      className="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="easy">Easy (1 block falls)</option>
+                      <option value="medium">Medium (2 blocks fall)</option>
+                      <option value="hard">Hard (3 blocks fall)</option>
+                      <option value="expert">Expert (4 blocks fall)</option>
+                    </select>
+                  </div>
 
-                  <label className="flex items-center justify-between">
-                    <div>
-                      <span className="text-white/80 text-sm font-semibold">Typing Mode</span>
-                      <div className="text-white/60 text-xs">Double points for typing answers</div>
-                    </div>
+                  <div>
+                    <label className="block text-white/80 text-sm font-semibold mb-2">
+                      Time Limit (seconds)
+                    </label>
                     <input
-                      type="checkbox"
-                      checked={isTypingMode}
-                      onChange={(e) => setIsTypingMode(e.target.checked)}
-                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                      type="range"
+                      min="60"
+                      max="300"
+                      step="30"
+                      value={settings.timeLimit}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        timeLimit: parseInt(e.target.value)
+                      }))}
+                      className="w-full"
                     />
-                  </label>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    <div className="text-center text-white/60 text-sm mt-1">
+                      {formatTime(settings.timeLimit)}
+                    </div>
+                  </div>
 
-      {/* In-game configuration panel */}
-      {config && (
-        <InGameConfigPanel
-          currentConfig={config}
-          onConfigChange={handleConfigChange}
-          supportedLanguages={['es', 'fr', 'de']}
-          supportsThemes={false}
-          isOpen={showConfigPanel}
-          onClose={handleCloseConfigPanel}
-        />
-      )}
+                  <div className="space-y-4">
+                    <label className="flex items-center justify-between">
+                      <span className="text-white/80 text-sm font-semibold">Tower Falling</span>
+                      <input
+                        type="checkbox"
+                        checked={settings.towerFalling}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          towerFalling: e.target.checked
+                        }))}
+                        className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between">
+                      <span className="text-white/80 text-sm font-semibold">Show Hints</span>
+                      <input
+                        type="checkbox"
+                        checked={settings.showHints}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          showHints: e.target.checked
+                        }))}
+                        className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between">
+                      <span className="text-white/80 text-sm font-semibold">Sound Effects</span>
+                      <input
+                        type="checkbox"
+                        checked={settings.soundEnabled}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          soundEnabled: e.target.checked
+                        }))}
+                        className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between">
+                      <div>
+                        <span className="text-white/80 text-sm font-semibold">Typing Mode</span>
+                        <div className="text-white/60 text-xs">Double points for typing answers</div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={isTypingMode}
+                        onChange={(e) => setIsTypingMode(e.target.checked)}
+                        className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* In-game configuration panel */}
+        {config && (
+          <InGameConfigPanel
+            currentConfig={config}
+            onConfigChange={handleConfigChange}
+            supportedLanguages={['es', 'fr', 'de']}
+            supportsThemes={false}
+            isOpen={showConfigPanel}
+            onClose={handleCloseConfigPanel}
+          />
+        )}
 
       </motion.div>
     </div>

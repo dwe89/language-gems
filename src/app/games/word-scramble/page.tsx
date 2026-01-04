@@ -10,6 +10,7 @@ import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import AssignmentThemeSelector from '../../../components/games/AssignmentThemeSelector';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
+import { useSharedVocabulary, SharedVocabularyToast } from '../../../components/games/ShareVocabularyButton';
 
 interface GameConfig {
   config: UnifiedSelectionConfig;
@@ -49,6 +50,40 @@ export default function WordScramblePage() {
     setGameService(service);
     console.log('🎮 [WORD SCRAMBLE] Game service initialized');
   }, []);
+
+  // 🔗 Shared vocabulary detection
+  const { sharedVocabulary, isFromSharedLink, clearSharedVocabulary } = useSharedVocabulary();
+  const [showSharedToast, setShowSharedToast] = useState(false);
+
+  // 🔗 Handle shared vocabulary auto-start
+  useEffect(() => {
+    if (isFromSharedLink && sharedVocabulary && sharedVocabulary.items.length > 0 && !gameStarted && !isAssignmentMode) {
+      console.log('📎 [WORD SCRAMBLE] Loading shared vocabulary:', sharedVocabulary.items.length, 'items');
+
+      const transformedVocabulary: UnifiedVocabularyItem[] = sharedVocabulary.items.map((item, index) => ({
+        id: `shared-${index}`,
+        word: item.term,
+        translation: item.translation,
+        language: sharedVocabulary.language || 'spanish',
+        category: 'Shared',
+        subcategory: 'Custom',
+        difficulty: 'intermediate'
+      }));
+
+      const sharedConfig: UnifiedSelectionConfig = {
+        language: sharedVocabulary.language || 'es',
+        curriculumLevel: 'KS3',
+        categoryId: 'custom',
+        customMode: true,
+        customContentType: sharedVocabulary.contentType || 'vocabulary',
+      };
+
+      setGameConfig({ config: sharedConfig, vocabulary: transformedVocabulary, theme: 'classic' });
+      setGameStarted(true);
+      setShowSharedToast(true);
+      clearSharedVocabulary();
+    }
+  }, [isFromSharedLink, sharedVocabulary, gameStarted, isAssignmentMode, clearSharedVocabulary]);
 
   // Create game session for assignment mode
   useEffect(() => {
@@ -225,14 +260,15 @@ export default function WordScramblePage() {
 
         {/* In-game configuration panel */}
         <InGameConfigPanel
-          currentConfig={gameConfig?.config}
+          currentConfig={gameConfig?.config!}
           onConfigChange={handleConfigChange}
           supportedLanguages={['es', 'fr', 'de']}
           supportsThemes={true}
           currentTheme={gameConfig?.theme}
           isOpen={showConfigPanel}
           onClose={handleCloseConfigPanel}
-          showCustomMode={false}
+          currentVocabulary={gameConfig?.vocabulary}
+          gameName="Word Scramble"
         />
       </>
     );

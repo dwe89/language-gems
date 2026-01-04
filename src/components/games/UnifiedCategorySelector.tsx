@@ -37,8 +37,12 @@ import {
   Check,
   Type,
   MessageSquare,
-  Shuffle
+  Shuffle,
+  Share2,
+  Link
 } from 'lucide-react';
+import ShareVocabularyButton from './ShareVocabularyButton';
+import { parseVocabularyFromUrl, getGameSlug as getGameSlugFromName } from '../../utils/shareableVocabulary';
 import { useDemoAuth } from '../auth/DemoAuthProvider';
 import { useUserAccess } from '@/hooks/useUserAccess';
 import { supabaseBrowser } from '../auth/AuthProvider';
@@ -503,6 +507,7 @@ export default function UnifiedCategorySelector({
                 onComplete={handleCustomComplete}
                 gameCompatibility={gameCompatibility}
                 language={selectedLanguage}
+                gameName={gameName}
               />
             )}
           </AnimatePresence>
@@ -846,6 +851,7 @@ const CustomContentSelection: React.FC<{
     maxItems?: number;
   };
   language: string;
+  gameName: string;
 }> = ({
   contentType,
   onContentTypeChange,
@@ -855,9 +861,29 @@ const CustomContentSelection: React.FC<{
   onCustomListChange,
   onComplete,
   gameCompatibility,
-  language
+  language,
+  gameName
 }) => {
     const [activeTab, setActiveTab] = useState<'input' | 'lists' | 'upload'>('input');
+    const [showShareSuccess, setShowShareSuccess] = useState(false);
+
+    // Parse vocabulary from customInput for sharing
+    const parseVocabularyForShare = () => {
+      if (!customInput.trim()) return [];
+      const lines = customInput.trim().split('\n').filter(line => line.trim());
+      return lines.map((line, index) => {
+        const parts = line.split(/[-,\t]/).map(s => s.trim());
+        return {
+          term: parts[0] || line,
+          translation: parts[1] || ''
+        };
+      });
+    };
+
+    // Get game slug from gameName using the utility for correct URL mapping
+    const getGameSlug = () => {
+      return getGameSlugFromName(gameName);
+    };
 
     const getContentTypeIcon = (type: 'vocabulary' | 'sentences' | 'mixed') => {
       switch (type) {
@@ -1107,22 +1133,55 @@ Me gusta la pizza - I like pizza`;
           )}
         </div>
 
-        {/* Complete Button */}
-        <div className="text-center">
-          <button
-            onClick={onComplete}
-            disabled={!canComplete}
-            className={`px-8 py-3 rounded-xl font-bold text-lg transition-all ${canComplete
-              ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-              : 'bg-white/20 text-white/50 cursor-not-allowed'
-              }`}
-          >
-            Continue with Custom Content
-          </button>
+        {/* Action Buttons */}
+        <div className="text-center space-y-6">
+          {/* Main action buttons row */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <button
+              onClick={onComplete}
+              disabled={!canComplete}
+              className={`px-8 py-4 rounded-xl font-bold text-lg transition-all ${canComplete
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                : 'bg-white/20 text-white/50 cursor-not-allowed'
+                }`}
+            >
+              ▶️ Start Playing
+            </button>
+
+            {/* Prominent Share Button */}
+            {canComplete && activeTab === 'input' && customInput.trim() && (
+              <ShareVocabularyButton
+                gameSlug={getGameSlug()}
+                vocabulary={parseVocabularyForShare()}
+                language={language}
+                contentType={contentType}
+                variant="button"
+                className="px-6 py-4 text-lg"
+              />
+            )}
+          </div>
+
           {!canComplete && (
-            <p className="text-white/60 text-sm mt-2">
+            <p className="text-white/60 text-sm">
               Please enter some {contentType} to continue
             </p>
+          )}
+
+          {/* Share explanation card - only show when vocabulary is entered */}
+          {canComplete && activeTab === 'input' && customInput.trim() && (
+            <div className="max-w-md mx-auto bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/30 rounded-xl p-4 mt-4">
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <Link className="h-5 w-5 text-blue-300" />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-white font-semibold text-sm">Share with others!</h4>
+                  <p className="text-white/70 text-xs mt-1">
+                    Click "Share Vocabulary" to get a magic link. Anyone with this link will see your exact vocabulary list!
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </motion.div>

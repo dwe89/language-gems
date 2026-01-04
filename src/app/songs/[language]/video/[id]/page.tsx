@@ -18,7 +18,7 @@ import {
   Lock
 } from 'lucide-react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -57,6 +57,7 @@ interface VocabularyWord {
 export default function VideoPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const language = params.language as string;
   const videoId = params.id as string;
 
@@ -74,6 +75,27 @@ export default function VideoPage() {
   // Check if user has Learner+ tier for karaoke access
   const userTier = user?.user_metadata?.plan || 'free';
   const hasKaraokeAccess = isAdmin || ['learner', 'student', 'pro'].includes(userTier);
+
+  // Handle tab from URL parameter (for shareable links)
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab');
+    if (tabParam && ['watch', 'karaoke', 'questions', 'vocabulary', 'quiz', 'grammar', 'transcript'].includes(tabParam)) {
+      // For questions tab, only switch if questions are loaded and user has access
+      if (tabParam === 'questions') {
+        // Will be handled after questions load
+        return;
+      }
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  // Auto-switch to questions tab when questions load and URL tab param is 'questions'
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab');
+    if (tabParam === 'questions' && karaokeQuestions.length > 0 && hasKaraokeAccess) {
+      setActiveTab('questions');
+    }
+  }, [searchParams, karaokeQuestions, hasKaraokeAccess]);
 
   useEffect(() => {
     if (videoId) {
@@ -366,12 +388,12 @@ export default function VideoPage() {
               <button
                 onClick={() => hasKaraokeAccess && karaokeQuestions.length > 0 ? setActiveTab('questions') : null}
                 className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-semibold text-sm transition-all duration-200 relative ${karaokeQuestions.length === 0
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : !hasKaraokeAccess
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                    : !hasKaraokeAccess
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : activeTab === 'questions'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25 transform scale-[1.02]'
-                        : 'text-slate-600 hover:bg-indigo-50 hover:text-indigo-700'
+                    : activeTab === 'questions'
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25 transform scale-[1.02]'
+                      : 'text-slate-600 hover:bg-indigo-50 hover:text-indigo-700'
                   }`}
               >
                 <HelpCircle className="w-5 h-5" />

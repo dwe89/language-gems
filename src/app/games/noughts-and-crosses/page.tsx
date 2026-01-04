@@ -13,6 +13,7 @@ import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import AssignmentThemeSelector from '../../../components/games/AssignmentThemeSelector';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
 import ChunkLoadErrorBoundary from '../../../components/errors/ChunkLoadErrorBoundary';
+import { useSharedVocabulary, SharedVocabularyToast } from '../../../components/games/ShareVocabularyButton';
 
 function UnifiedNoughtsAndCrossesPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
@@ -61,6 +62,48 @@ function UnifiedNoughtsAndCrossesPage() {
     setGameService(service);
     console.log('🎮 [NOUGHTS] Game service initialized');
   }, []);
+
+  // 🔗 Shared vocabulary detection
+  const { sharedVocabulary, isFromSharedLink, clearSharedVocabulary } = useSharedVocabulary();
+  const [showSharedToast, setShowSharedToast] = useState(false);
+
+  // 🔗 Handle shared vocabulary auto-start
+  useEffect(() => {
+    if (isFromSharedLink && sharedVocabulary && sharedVocabulary.items.length > 0 && !gameStarted && !isAssignmentMode) {
+      console.log('📎 [NOUGHTS] Loading shared vocabulary:', sharedVocabulary.items.length, 'items');
+
+      // Transform shared vocabulary to Tic-Tac-Toe format
+      const transformedVocabulary: UnifiedVocabularyItem[] = sharedVocabulary.items.map((item, index) => ({
+        id: `shared-${index}`,
+        word: item.term,
+        translation: item.translation,
+        language: sharedVocabulary.language || 'spanish',
+        category: 'Shared',
+        subcategory: 'Custom',
+        difficulty: 'intermediate'
+      }));
+
+      // Set up game config for shared vocabulary
+      const sharedConfig: UnifiedSelectionConfig = {
+        language: sharedVocabulary.language || 'es',
+        curriculumLevel: 'KS3',
+        categoryId: 'custom',
+        customMode: true,
+        customContentType: sharedVocabulary.contentType || 'vocabulary',
+      };
+
+      setGameConfig({
+        config: sharedConfig,
+        vocabulary: transformedVocabulary,
+        theme: 'default'
+      });
+      setGameStarted(true);
+      setShowSharedToast(true);
+
+      // Clear the URL param without reloading
+      clearSharedVocabulary();
+    }
+  }, [isFromSharedLink, sharedVocabulary, gameStarted, isAssignmentMode, clearSharedVocabulary]);
 
   // Create game session for assignment mode
   useEffect(() => {
@@ -248,15 +291,15 @@ function UnifiedNoughtsAndCrossesPage() {
   // Handle game start from unified launcher
   const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
     const transformedVocabulary = transformVocabularyForTicTacToe(vocabulary);
-    
+
     setGameConfig({
       config,
       vocabulary: transformedVocabulary,
       theme: theme || 'default'
     });
-    
+
     setGameStarted(true);
-    
+
     console.log('Noughts and Crosses started with:', {
       config,
       vocabularyCount: vocabulary.length,
@@ -340,8 +383,8 @@ function UnifiedNoughtsAndCrossesPage() {
       category: gameConfig.config.categoryId,
       subcategory: gameConfig.config.subcategoryId,
       language: gameConfig.config.language === 'es' ? 'spanish' :
-                gameConfig.config.language === 'fr' ? 'french' :
-                gameConfig.config.language === 'de' ? 'german' : 'spanish',
+        gameConfig.config.language === 'fr' ? 'french' :
+          gameConfig.config.language === 'de' ? 'german' : 'spanish',
       theme: gameConfig.theme,
       playerMark: 'X',
       computerMark: 'O',
@@ -371,6 +414,8 @@ function UnifiedNoughtsAndCrossesPage() {
             currentTheme={gameConfig.theme}
             isOpen={showConfigPanel}
             onClose={handleCloseConfigPanel}
+            currentVocabulary={gameConfig.vocabulary}
+            gameName="Noughts and Crosses"
           />
         </div>
       </ThemeProvider>

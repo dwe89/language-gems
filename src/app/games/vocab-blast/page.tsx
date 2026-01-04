@@ -12,6 +12,7 @@ import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import { ThemeProvider } from '../noughts-and-crosses/components/ThemeProvider';
 import AssignmentThemeSelector from '../../../components/games/AssignmentThemeSelector';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
+import { useSharedVocabulary, SharedVocabularyToast } from '../../../components/games/ShareVocabularyButton';
 
 export type GameState = 'menu' | 'settings' | 'playing' | 'completed' | 'paused';
 
@@ -74,6 +75,48 @@ export default function VocabBlastPage() {
     setGameService(service);
     console.log('🎮 [VOCAB BLAST] Game service initialized');
   }, []);
+
+  // 🔗 Shared vocabulary detection
+  const { sharedVocabulary, isFromSharedLink, clearSharedVocabulary } = useSharedVocabulary();
+  const [showSharedToast, setShowSharedToast] = useState(false);
+
+  // 🔗 Handle shared vocabulary auto-start
+  useEffect(() => {
+    if (isFromSharedLink && sharedVocabulary && sharedVocabulary.items.length > 0 && !gameStarted && !isAssignmentMode) {
+      console.log('📎 [VOCAB BLAST] Loading shared vocabulary:', sharedVocabulary.items.length, 'items');
+
+      // Transform shared vocabulary to Vocab Blast format
+      const transformedVocabulary: UnifiedVocabularyItem[] = sharedVocabulary.items.map((item, index) => ({
+        id: `shared-${index}`,
+        word: item.term,
+        translation: item.translation,
+        language: sharedVocabulary.language || 'spanish',
+        category: 'Shared',
+        subcategory: 'Custom',
+        difficulty: 'intermediate'
+      }));
+
+      // Set up game config for shared vocabulary
+      const sharedConfig: UnifiedSelectionConfig = {
+        language: sharedVocabulary.language || 'es',
+        curriculumLevel: 'KS3',
+        categoryId: 'custom',
+        customMode: true,
+        customContentType: sharedVocabulary.contentType || 'vocabulary',
+      };
+
+      setGameConfig({
+        config: sharedConfig,
+        vocabulary: transformedVocabulary,
+        theme: 'default'
+      });
+      setGameStarted(true);
+      setShowSharedToast(true);
+
+      // Clear the URL param without reloading
+      clearSharedVocabulary();
+    }
+  }, [isFromSharedLink, sharedVocabulary, gameStarted, isAssignmentMode, clearSharedVocabulary]);
 
   // Create game session for assignment mode
   useEffect(() => {
@@ -422,8 +465,8 @@ export default function VocabBlastPage() {
       category: gameConfig.config.categoryId,
       subcategory: gameConfig.config.subcategoryId,
       language: gameConfig.config.language === 'es' ? 'spanish' :
-                gameConfig.config.language === 'fr' ? 'french' :
-                gameConfig.config.language === 'de' ? 'german' : 'spanish',
+        gameConfig.config.language === 'fr' ? 'french' :
+          gameConfig.config.language === 'de' ? 'german' : 'spanish',
       theme: gameConfig.theme,
       mode: 'categories' as const
     };
@@ -437,29 +480,31 @@ export default function VocabBlastPage() {
           <link rel="canonical" href="https://languagegems.com/games/vocab-blast" />
         </Head>
         <ThemeProvider themeId={gameConfig.theme}>
-        <div className="min-h-screen">
-          <VocabBlastGameWrapper
-            settings={legacySettings}
-            onBackToMenu={handleBackToMenu}
-            onGameEnd={handleGameEnd}
-            assignmentId={assignmentId}
-            userId={user?.id}
-            categoryVocabulary={gameConfig.vocabulary}
-            onOpenSettings={handleOpenConfigPanel}
-          />
+          <div className="min-h-screen">
+            <VocabBlastGameWrapper
+              settings={legacySettings}
+              onBackToMenu={handleBackToMenu}
+              onGameEnd={handleGameEnd}
+              assignmentId={assignmentId}
+              userId={user?.id}
+              categoryVocabulary={gameConfig.vocabulary}
+              onOpenSettings={handleOpenConfigPanel}
+            />
 
-          {/* In-game configuration panel */}
-          <InGameConfigPanel
-            currentConfig={gameConfig.config}
-            onConfigChange={handleConfigChange}
-            supportedLanguages={['es', 'fr', 'de']}
-            supportsThemes={true}
-            currentTheme={gameConfig.theme}
-            isOpen={showConfigPanel}
-            onClose={handleCloseConfigPanel}
-          />
-        </div>
-      </ThemeProvider>
+            {/* In-game configuration panel */}
+            <InGameConfigPanel
+              currentConfig={gameConfig.config}
+              onConfigChange={handleConfigChange}
+              supportedLanguages={['es', 'fr', 'de']}
+              supportsThemes={true}
+              currentTheme={gameConfig.theme}
+              isOpen={showConfigPanel}
+              onClose={handleCloseConfigPanel}
+              currentVocabulary={gameConfig.vocabulary}
+              gameName="Vocab Blast"
+            />
+          </div>
+        </ThemeProvider>
       </>
     );
   }
