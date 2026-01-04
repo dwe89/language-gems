@@ -138,7 +138,7 @@ export default function BattleArena({
 
     // Only update if options have actually changed
     if (!conjugationDuelOptionsRef.current ||
-        JSON.stringify(conjugationDuelOptionsRef.current) !== JSON.stringify(newOptions)) {
+      JSON.stringify(conjugationDuelOptionsRef.current) !== JSON.stringify(newOptions)) {
       conjugationDuelOptionsRef.current = newOptions;
     }
 
@@ -203,7 +203,7 @@ export default function BattleArena({
 
   // Get current league for theming
   const currentLeague = leagues.find(l => l.id === playerStats.currentLeague);
-  
+
   // Play battle music when battle starts
   useEffect(() => {
     if (battleState.isInBattle) {
@@ -253,7 +253,7 @@ export default function BattleArena({
 
       if (result) {
         const isCorrect = result.isCorrect;
-        
+
         playSound(isCorrect ? 'correct_answer' : 'wrong_answer');
 
         if (isCorrect) {
@@ -291,7 +291,7 @@ export default function BattleArena({
 
         // Add battle log entry
         addBattleLog(
-          isCorrect 
+          isCorrect
             ? `Correct! "${answer}" is the right conjugation!`
             : `Wrong! The correct answer was "${result.expectedAnswer}"`
         );
@@ -303,7 +303,7 @@ export default function BattleArena({
           } else {
             // End the duel when all challenges are complete
             console.log('🏆 All challenges complete, ending duel...');
-            setBattleState(prev => ({ ...prev, opponentHealth: 0, isInBattle: false })); // Force victory
+            setBattleState({ opponentHealth: 0, isInBattle: false }); // Force victory
             // Trigger battle end callback
             setTimeout(() => {
               onBattleEnd();
@@ -384,10 +384,10 @@ export default function BattleArena({
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen flex flex-col relative overflow-hidden"
       style={{
-        backgroundImage: currentLeague?.background 
+        backgroundImage: currentLeague?.background
           ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(/images/battle/${currentLeague.background})`
           : `linear-gradient(135deg, ${currentLeague ? currentLeague.theme.gradient : 'from-gray-800 to-gray-900'})`,
         backgroundSize: 'cover',
@@ -440,61 +440,83 @@ export default function BattleArena({
       </div>
 
       {/* Main Battle Area */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex items-end justify-center pb-20 px-4 relative">
+
+        {/* Battle Platform (Visual Grounding) */}
+        <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+
         {/* Left Side - Player */}
-        <div className="w-1/3 flex flex-col items-center justify-center p-4">
-          <div className="mb-4">
-            <CharacterSprite 
-              type="player" 
+        <div className="w-1/4 flex flex-col items-center justify-end z-10">
+          <div className="relative mb-8 transform scale-125 transition-transform">
+            {/* Player Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl animate-pulse-slow" />
+            <CharacterSprite
+              type="player"
               health={battleState.playerHealth}
               maxHealth={100}
               isAttacking={false}
             />
           </div>
-          <HealthBar
-            current={battleState.playerHealth}
-            max={100}
-            label="You"
-            color="green"
-          />
+          <div className="w-full max-w-[200px]">
+            <HealthBar
+              current={battleState.playerHealth}
+              max={100}
+              label="You"
+              color="green"
+            />
+          </div>
         </div>
 
         {/* Center - Question Area */}
-        <div className="w-1/3 flex flex-col justify-center p-6">
+        <div className="w-1/2 flex flex-col justify-end items-center px-8 z-20 mb-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${conjugationDuel.currentChallenge.infinitive}-${conjugationDuel.currentChallenge.person}`}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="bg-white/95 rounded-xl p-6 shadow-xl backdrop-blur-sm"
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -50, scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="w-full max-w-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden"
             >
+              {/* Magical Glow Effects */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-50" />
+              <div className="absolute -left-10 -top-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl" />
+              <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl" />
+
               {/* Question */}
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  Conjugate the verb:
+              <div className="text-center mb-8 relative">
+                <h3 className="text-sm font-bold text-cyan-300 tracking-wider uppercase mb-3">
+                  Conjugate the verb
                 </h3>
-                <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {conjugationDuel.currentChallenge.infinitive}
+
+                <div className="flex items-baseline justify-center gap-3 mb-2">
+                  <span className="text-4xl md:text-5xl font-black text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
+                    {conjugationDuel.currentChallenge.infinitive}
+                  </span>
+                  <span className="text-xl text-slate-400 font-serif italic">
+                    ({conjugationDuel.currentChallenge.translation})
+                  </span>
                 </div>
-                <div className="text-sm text-gray-600 mb-4">
-                  ({conjugationDuel.currentChallenge.translation})
-                </div>
-                <div className="text-xl text-gray-800">
-                  <span className="font-semibold">{conjugationDuel.currentChallenge.person}</span>
-                  <span className="mx-2">_______</span>
-                </div>
-                <div className="text-sm text-gray-500 mt-2">
-                  Tense: {conjugationDuel.currentChallenge.tense}
+
+                <div className="flex items-center justify-center gap-4 text-2xl text-slate-200 mt-6 bg-white/5 py-3 rounded-lg border border-white/5 mx-auto max-w-md">
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs text-slate-500 uppercase font-bold tracking-widest">Person</span>
+                    <span className="font-bold text-yellow-400">{conjugationDuel.currentChallenge.person}</span>
+                  </div>
+                  <div className="h-8 w-px bg-white/10"></div>
+                  <div className="flex flex-col items-start min-w-[100px]">
+                    <span className="text-xs text-slate-500 uppercase font-bold tracking-widest">Tense</span>
+                    <span className="font-bold text-purple-300">{conjugationDuel.currentChallenge.tense}</span>
+                  </div>
                 </div>
               </div>
 
               {/* Answer Input */}
-              <div className="space-y-4">
+              <div className="space-y-4 relative">
                 <input
                   type="text"
-                  placeholder="Type your conjugation here..."
-                  className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center"
+                  placeholder="Type answer..."
+                  className="w-full h-16 bg-black/30 border-2 border-white/10 rounded-xl text-center text-2xl font-bold text-white placeholder-white/20 focus:border-cyan-400/50 focus:bg-black/50 focus:outline-none focus:ring-[0_0_30px_rgba(34,211,238,0.2)] transition-all"
                   autoFocus
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
@@ -507,8 +529,9 @@ export default function BattleArena({
                   }}
                   disabled={isAnswering}
                 />
+
                 <div className="text-center">
-                  <p className="text-sm text-gray-600">Press Enter to submit your answer</p>
+                  <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">Press <span className="text-cyan-400">Enter</span> to strike</p>
                 </div>
               </div>
             </motion.div>
@@ -516,28 +539,32 @@ export default function BattleArena({
         </div>
 
         {/* Right Side - Opponent */}
-        <div className="w-1/3 flex flex-col items-center justify-center p-4">
-          <div className="mb-4">
-            <CharacterSprite 
-              type="opponent" 
+        <div className="w-1/4 flex flex-col items-center justify-end z-10">
+          <div className="relative mb-8 transform scale-125 transition-transform">
+            {/* Opponent Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-red-500/20 rounded-full blur-3xl animate-pulse-slow" />
+            <CharacterSprite
+              type="opponent"
               opponent={battleState.currentOpponent}
               health={battleState.opponentHealth}
               maxHealth={battleState.currentOpponent.health}
               isAttacking={false}
             />
           </div>
-          <HealthBar
-            current={battleState.opponentHealth}
-            max={battleState.currentOpponent.health}
-            label={battleState.currentOpponent.name}
-            color="red"
-          />
+          <div className="w-full max-w-[200px]">
+            <HealthBar
+              current={battleState.opponentHealth}
+              max={battleState.currentOpponent.health}
+              label={battleState.currentOpponent.name}
+              color="red"
+            />
+          </div>
         </div>
       </div>
 
       {/* Battle Log */}
       <div className="relative z-10 bg-black/40 backdrop-blur-sm p-4 max-h-32 overflow-hidden">
-        <div 
+        <div
           ref={battleLogRef}
           className="h-20 overflow-y-auto text-white text-sm space-y-1 scrollbar-thin scrollbar-thumb-white/30"
         >

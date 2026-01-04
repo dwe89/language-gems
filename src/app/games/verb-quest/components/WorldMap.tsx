@@ -61,9 +61,9 @@ export default function WorldMap({ stats, onStartBattle, onUpdateStats, soundEna
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="h-full relative overflow-hidden">
       {/* World Map Background */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: `url('/games/verb-quest/backgrounds/World_map.jpg')`,
@@ -71,13 +71,13 @@ export default function WorldMap({ stats, onStartBattle, onUpdateStats, soundEna
           backgroundPosition: 'center'
         }}
       />
-      
+
       {/* Dark overlay for better text readability */}
       <div className="absolute inset-0 bg-black/40" />
-      
+
       {/* Additional atmospheric effects */}
-      <div className="absolute inset-0">
-        {[...Array(30)].map((_, i) => (
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(20)].map((_, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-yellow-300 rounded-full animate-pulse opacity-70"
@@ -91,74 +91,63 @@ export default function WorldMap({ stats, onStartBattle, onUpdateStats, soundEna
         ))}
       </div>
 
-      <div className="relative z-10 p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">World Map</h1>
-          <p className="text-purple-200">Choose your destination, brave adventurer!</p>
+      <div className="relative z-10 p-4 h-full flex flex-col">
+        <div className="text-center mb-4">
+          <h1 className="text-3xl font-bold text-white mb-1">World Map</h1>
+          <p className="text-purple-200 text-sm">Choose your destination, brave adventurer!</p>
         </div>
 
-        {/* Regions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        {/* Regions Grid - Full Height */}
+        <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 max-w-7xl mx-auto w-full content-center auto-rows-fr pb-4">
           {Object.values(regions).map((region, index) => {
             const unlocked = isRegionUnlocked(region.id, stats);
-            const isCurrent = stats.currentRegion === region.id || 
-                             (!stats.currentRegion && region.id === 'forest_of_beginnings');
-            
-            // Debug logging
-            if (region.id === 'temple_of_chaos' || region.id === 'cave_of_memories') {
-              console.log(`Region ${region.id}:`, {
-                unlocked,
-                isCurrent,
-                currentRegion: stats.currentRegion,
-                level: stats.level,
-                defeatedEnemies: Array.from(stats.defeatedEnemies)
-              });
-            }
-            
+            const isCurrent = stats.currentRegion === region.id ||
+              (!stats.currentRegion && region.id === 'forest_of_beginnings');
+
             return (
               <motion.div
                 key={region.id}
-                initial={{ opacity: 0, y: 50 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.2 }}
-                className={`relative cursor-pointer ${unlocked ? 'hover:scale-105' : 'cursor-not-allowed'}`}
+                transition={{ delay: index * 0.05 }}
+                className={`relative cursor-pointer ${unlocked ? 'hover:scale-105' : 'cursor-not-allowed'} transition-transform`}
                 onClick={() => handleRegionClick(region.id)}
               >
                 <div className={`
-                  relative overflow-hidden rounded-xl border-2 transition-all duration-300 h-72
-                  ${unlocked 
-                    ? 'border-yellow-500 shadow-lg shadow-yellow-500/20' 
+                  relative overflow-hidden rounded-lg border-2 transition-all duration-300 h-36
+                  ${unlocked
+                    ? 'border-yellow-500/70 shadow-lg shadow-yellow-500/20'
                     : 'border-gray-600 opacity-50'
                   }
-                  ${isCurrent ? 'ring-4 ring-blue-400' : ''}
-                  ${selectedRegion === region.id ? 'ring-4 ring-green-400' : ''}
+                  ${isCurrent ? 'ring-2 ring-blue-400' : ''}
+                  ${selectedRegion === region.id ? 'ring-2 ring-green-400' : ''}
                 `}>
                   {/* Region Background Image */}
-                  <div 
+                  <div
                     className="absolute inset-0 bg-cover bg-center"
                     style={{
                       backgroundImage: `url('/games/verb-quest/backgrounds/${getRegionBackgroundImage(region.id)}')`,
                       filter: unlocked ? 'none' : 'grayscale(100%) brightness(0.3)'
                     }}
                   />
-                  
+
                   {/* Gradient overlay for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
                   {/* Region Header */}
-                  <div className="relative z-10 p-6 text-center h-full flex flex-col justify-end">
-                    <h3 className="text-xl font-bold text-white mb-2 drop-shadow-lg">{region.name}</h3>
-                    <p className="text-sm text-gray-200 leading-relaxed drop-shadow line-clamp-3">{region.description}</p>
+                  <div className="relative z-10 p-3 text-center h-full flex flex-col justify-end">
+                    <h3 className="text-sm font-bold text-white mb-1 drop-shadow-lg line-clamp-1">{region.name}</h3>
+                    <p className="text-xs text-gray-300 leading-tight drop-shadow line-clamp-2">{region.description}</p>
                   </div>
 
                   {/* Lock Overlay */}
                   {!unlocked && (
                     <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
                       <div className="text-center text-white">
-                        <div className="text-4xl mb-2">🔒</div>
-                        <div className="text-sm">
+                        <div className="text-2xl mb-1">🔒</div>
+                        <div className="text-xs">
                           {region.unlockRequirement && (
-                            <div>Level {region.unlockRequirement.level} required</div>
+                            <div>Level {region.unlockRequirement.level}</div>
                           )}
                         </div>
                       </div>
@@ -167,7 +156,7 @@ export default function WorldMap({ stats, onStartBattle, onUpdateStats, soundEna
 
                   {/* Current Region Indicator */}
                   {isCurrent && (
-                    <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold">
+                    <div className="absolute top-1 right-1 bg-blue-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">
                       CURRENT
                     </div>
                   )}
@@ -204,7 +193,7 @@ export default function WorldMap({ stats, onStartBattle, onUpdateStats, soundEna
                 <div className="grid gap-4">
                   {regions[selectedRegion as keyof typeof regions].enemies.map((enemy) => {
                     const isDefeated = stats.defeatedEnemies.has(enemy.id);
-                    
+
                     return (
                       <motion.div
                         key={enemy.id}
@@ -212,8 +201,8 @@ export default function WorldMap({ stats, onStartBattle, onUpdateStats, soundEna
                         whileTap={{ scale: 0.98 }}
                         className={`
                           p-4 rounded-lg border-2 cursor-pointer transition-all
-                          ${isDefeated 
-                            ? 'bg-green-900/30 border-green-500 opacity-75' 
+                          ${isDefeated
+                            ? 'bg-green-900/30 border-green-500 opacity-75'
                             : 'bg-red-900/30 border-red-500 hover:bg-red-900/50'
                           }
                         `}
@@ -222,7 +211,7 @@ export default function WorldMap({ stats, onStartBattle, onUpdateStats, soundEna
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div className="w-16 h-16 flex items-center justify-center">
-                              <img 
+                              <img
                                 src={`/games/verb-quest/enemies/${enemy.id}.png`}
                                 alt={enemy.name}
                                 className="w-12 h-12 object-contain"

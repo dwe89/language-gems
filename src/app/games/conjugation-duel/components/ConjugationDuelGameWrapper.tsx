@@ -74,15 +74,15 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
     }
   }, [gameService, props.userId, gameSessionId]);
 
-    // Initialize battle when data is ready - but only once or when key props change
+  // Initialize battle when data is ready - but only once or when key props change
   useEffect(() => {
     const leagueId = (props.league as string) || 'bronze_arena';
-    
+
     // In assignment mode, we don't need static leagues/verbs data since useConjugationDuel handles everything
     const isAssignmentMode = !!props.grammarConfig;
     const hasLeagues = isAssignmentMode || (Array.isArray(leagues) && leagues.length > 0);
     const hasVerbs = isAssignmentMode || (verbs && Object.keys(verbs).length > 0);
-    
+
     if (!props.opponent || !props.league || !hasLeagues || !hasVerbs) {
       console.log('Conjugation Duel: missing data', {
         opponent: props.opponent,
@@ -95,7 +95,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
       });
       return;
     }
-    
+
     console.log('🎯 [CONJUGATION DUEL] Battle initialization ready:', {
       isAssignmentMode,
       opponent: props.opponent.name,
@@ -104,7 +104,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
       currentLeague: playerStats.currentLeague,
       isInBattle: battleState.isInBattle
     });
-    
+
     // Only update if currentLeague is not already set to leagueId
     if (playerStats.currentLeague !== leagueId) {
       setPlayerStats({ currentLeague: leagueId });
@@ -121,7 +121,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
         description: 'Challenge opponent'
       } as any);
     }
-  // Only depend on props and state values, not functions that can change
+    // Only depend on props and state values, not functions that can change
   }, [props.opponent?.name, props.league, props.grammarConfig, playerStats.currentLeague, battleState.isInBattle, leagues, verbs]);
 
   // End session when component unmounts
@@ -216,7 +216,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
     const accuracy = sessionStats.totalConjugations > 0
       ? (sessionStats.correctConjugations / sessionStats.totalConjugations) * 100
       : 0;
-    
+
     // Calculate tense mastery scores
     const tenseMasteryScores = Object.entries(sessionStats.tenseMastery).reduce((acc, [tense, data]) => {
       acc[tense] = data.total > 0 ? (data.correct / data.total) * 100 : 0;
@@ -382,7 +382,8 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
     }
   };
 
-  if (!gameService) {
+  // Only block if user is logged in but service isn't ready
+  if (props.userId && !gameService) {
     return (
       <div className="h-screen bg-gradient-to-br from-red-900 via-orange-900 to-yellow-900 flex items-center justify-center">
         <div className="text-center">

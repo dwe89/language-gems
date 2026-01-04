@@ -62,6 +62,8 @@ function GCSEListeningStandalonePage() {
             selectedTier as 'foundation' | 'higher',
             selectedLanguage as 'es' | 'fr' | 'de'
           );
+          console.log('Fetching AQA assessments for:', selectedLanguage, selectedTier);
+          console.log('Found assessments:', assessments);
           setAvailableAQAAssessments(assessments);
           setAvailableEdexcelAssessments([]);
         } else if (selectedExamBoard === 'Edexcel') {
@@ -95,7 +97,7 @@ function GCSEListeningStandalonePage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Assessments
           </Link>
-          
+
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <div className="p-3 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white mr-4">
@@ -127,7 +129,7 @@ function GCSEListeningStandalonePage() {
         {/* Filter Section */}
         <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Select Your Exam</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Exam Board Selection */}
             <div>
@@ -188,7 +190,7 @@ function GCSEListeningStandalonePage() {
         {selectedExamBoard === 'AQA' && selectedLanguage && selectedTier && (
           <div className="bg-white rounded-xl shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Available AQA Papers</h2>
-            
+
             {isLoadingAssessments ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
@@ -206,7 +208,7 @@ function GCSEListeningStandalonePage() {
                       <h3 className="text-xl font-bold text-gray-900">{assessment.title}</h3>
                       <Headphones className="h-6 w-6 text-green-600" />
                     </div>
-                    
+
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-gray-600">
                         <Clock className="h-4 w-4 mr-2" />
@@ -248,7 +250,7 @@ function GCSEListeningStandalonePage() {
         {selectedExamBoard === 'Edexcel' && selectedLanguage && selectedTier && (
           <div className="bg-white rounded-xl shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Edexcel Papers</h2>
-            
+
             {isLoadingAssessments ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
@@ -266,7 +268,7 @@ function GCSEListeningStandalonePage() {
                       <h3 className="text-xl font-bold text-gray-900">{assessment.title}</h3>
                       <Headphones className="h-6 w-6 text-green-600" />
                     </div>
-                    
+
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-gray-600">
                         <Clock className="h-4 w-4 mr-2" />
@@ -318,7 +320,7 @@ function GCSEListeningStandalonePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
               About GCSE Listening Exams
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">What to Expect</h3>
@@ -477,7 +479,7 @@ function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string })
       // First, save assessment results to aqa_listening_results table
       if (listeningConfig && results.answers) {
         const aqaService = new AQAListeningAssessmentService();
-        
+
         // Get assessment ID
         const assessment = await aqaService.getAssessmentByLevel(
           listeningConfig.difficulty as 'foundation' | 'higher',
@@ -487,7 +489,7 @@ function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string })
 
         if (assessment) {
           console.log('📝 [LISTENING] Found assessment:', assessment.id);
-          
+
           // Start assessment record
           // For now, pass the generic assignment ID directly
           // The FK constraint allows NULL, so we can link to either generic or assessment-specific assignments
@@ -499,19 +501,19 @@ function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string })
 
           if (resultId) {
             console.log('📝 [LISTENING] Created result record:', resultId);
-            
+
             // Get the questions to score the answers
             const questions = await aqaService.getAssessmentQuestions(assessment.id);
             console.log('📝 [LISTENING] Loaded', questions.length, 'questions for scoring');
-            
+
             // Convert answers to scored responses - expand sub-questions
             // Loop through ALL questions (not just answered ones) to mark unanswered as incorrect
             const responses: any[] = [];
-            
+
             for (const question of questions) {
               const rawAnswer = results.answers[question.id]; // May be undefined if not answered
               const qData = question.question_data || {};
-              
+
               // Handle different question types
               if (question.question_type === 'letter-matching' && qData.questions) {
                 // Each sub-part is worth 1 mark
@@ -736,7 +738,7 @@ function GCSEListeningAssignmentMode({ assignmentId }: { assignmentId: string })
         difficulty={listeningConfig.difficulty}
         identifier={listeningConfig.identifier}
         onComplete={handleComplete}
-        onQuestionComplete={() => {}}
+        onQuestionComplete={() => { }}
       />
     );
   }

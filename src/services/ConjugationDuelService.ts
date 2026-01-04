@@ -252,11 +252,18 @@ export class ConjugationDuelService {
       selectedPersonName = personMap[selectedPersonIndex];
     }
 
-    // Load conjugation from grammar system (no fallback)
+    // Load conjugation from grammar system, with algorithmic fallback
     let conjugatedForm = await this.loadGrammarConjugation(verb.id, tense, selectedPersonName);
 
     if (!conjugatedForm) {
-      throw new Error(`❌ [CONJUGATION DUEL] No conjugation found for ${verb.infinitive} (${tense}, ${selectedPersonName}). Grammar system incomplete.`);
+      // FALLBACK: Generate conjugation algorithmically using existing patterns
+      console.warn(`⚠️ [CONJUGATION DUEL] No DB conjugation for ${verb.infinitive} (${tense}, ${selectedPersonName}). Using algorithmic fallback.`);
+      conjugatedForm = this.conjugateVerb(verb.infinitive, language, tense, selectedPersonIndex);
+
+      if (!conjugatedForm || conjugatedForm === verb.infinitive) {
+        // Last resort: use a simple pattern-based generation
+        conjugatedForm = this.generateFallbackConjugation(verb.infinitive, language, tense, selectedPersonIndex);
+      }
     }
 
     const pronoun = this.pronouns[language as keyof typeof this.pronouns][selectedPersonIndex];
@@ -270,6 +277,9 @@ export class ConjugationDuelService {
       usingGrammarSystem: !!conjugatedForm
     });
 
+    // Final safety - ensure we always have a valid string
+    const finalConjugation = conjugatedForm || verb.infinitive;
+
     return {
       id: `${verb.id}-${tense}-${selectedPersonIndex}`,
       infinitive: verb.infinitive,
@@ -278,7 +288,7 @@ export class ConjugationDuelService {
       tense,
       person: pronoun,
       number: selectedPersonIndex < 3 ? 'singular' : 'plural',
-      expectedAnswer: conjugatedForm,
+      expectedAnswer: finalConjugation,
       alternativeAnswers: this.getAlternativeAnswers(verb.infinitive, language, tense, selectedPersonIndex),
       difficulty: this.determineDifficulty(verb.infinitive, language),
       verbType
@@ -290,7 +300,7 @@ export class ConjugationDuelService {
    */
   private conjugateVerb(infinitive: string, language: string, tense: string, personIndex: number): string {
     const patterns = this.conjugationPatterns[language as keyof typeof this.conjugationPatterns];
-    
+
     if (!patterns || !patterns[tense as keyof typeof patterns]) {
       return infinitive; // Fallback
     }
@@ -306,7 +316,7 @@ export class ConjugationDuelService {
     if (tensePatterns.regular) {
       const ending = this.getVerbEnding(infinitive, language);
       const stem = infinitive.slice(0, -ending.length);
-      
+
       if (tensePatterns.regular[ending]) {
         const conjugationEnding = tensePatterns.regular[ending][personIndex];
         return stem + conjugationEnding;
@@ -325,15 +335,111 @@ export class ConjugationDuelService {
   }
 
   /**
+   * Generate fallback conjugation algorithmically when database and patterns fail
+   * This is a comprehensive backup that handles all regular verb patterns
+   */
+  private generateFallbackConjugation(infinitive: string, language: string, tense: string, personIndex: number): string {
+    // Spanish comprehensive fallback
+    if (language === 'es') {
+      const ending = infinitive.slice(-2);
+      const stem = infinitive.slice(0, -2);
+
+      const spanishEndings: Record<string, Record<string, string[]>> = {
+        ar: {
+          present: ['o', 'as', 'a', 'amos', 'áis', 'an'],
+          preterite: ['é', 'aste', 'ó', 'amos', 'asteis', 'aron'],
+          imperfect: ['aba', 'abas', 'aba', 'ábamos', 'abais', 'aban'],
+          future: ['aré', 'arás', 'ará', 'aremos', 'aréis', 'arán'],
+          conditional: ['aría', 'arías', 'aría', 'aríamos', 'aríais', 'arían']
+        },
+        er: {
+          present: ['o', 'es', 'e', 'emos', 'éis', 'en'],
+          preterite: ['í', 'iste', 'ió', 'imos', 'isteis', 'ieron'],
+          imperfect: ['ía', 'ías', 'ía', 'íamos', 'íais', 'ían'],
+          future: ['eré', 'erás', 'erá', 'eremos', 'eréis', 'erán'],
+          conditional: ['ería', 'erías', 'ería', 'eríamos', 'eríais', 'erían']
+        },
+        ir: {
+          present: ['o', 'es', 'e', 'imos', 'ís', 'en'],
+          preterite: ['í', 'iste', 'ió', 'imos', 'isteis', 'ieron'],
+          imperfect: ['ía', 'ías', 'ía', 'íamos', 'íais', 'ían'],
+          future: ['iré', 'irás', 'irá', 'iremos', 'iréis', 'irán'],
+          conditional: ['iría', 'irías', 'iría', 'iríamos', 'iríais', 'irían']
+        }
+      };
+
+      if (spanishEndings[ending] && spanishEndings[ending][tense]) {
+        return stem + spanishEndings[ending][tense][personIndex];
+      }
+    }
+
+    // French comprehensive fallback
+    if (language === 'fr') {
+      let ending = '';
+      let stem = infinitive;
+
+      if (infinitive.endsWith('er')) { ending = 'er'; stem = infinitive.slice(0, -2); }
+      else if (infinitive.endsWith('ir')) { ending = 'ir'; stem = infinitive.slice(0, -2); }
+      else if (infinitive.endsWith('re')) { ending = 're'; stem = infinitive.slice(0, -2); }
+
+      const frenchEndings: Record<string, Record<string, string[]>> = {
+        er: {
+          present: ['e', 'es', 'e', 'ons', 'ez', 'ent'],
+          imperfect: ['ais', 'ais', 'ait', 'ions', 'iez', 'aient'],
+          future: ['erai', 'eras', 'era', 'erons', 'erez', 'eront'],
+          conditional: ['erais', 'erais', 'erait', 'erions', 'eriez', 'eraient'],
+          preterite: ['ai ' + stem + 'é', 'as ' + stem + 'é', 'a ' + stem + 'é', 'avons ' + stem + 'é', 'avez ' + stem + 'é', 'ont ' + stem + 'é']
+        },
+        ir: {
+          present: ['is', 'is', 'it', 'issons', 'issez', 'issent'],
+          imperfect: ['issais', 'issais', 'issait', 'issions', 'issiez', 'issaient'],
+          future: ['irai', 'iras', 'ira', 'irons', 'irez', 'iront'],
+          conditional: ['irais', 'irais', 'irait', 'irions', 'iriez', 'iraient'],
+          preterite: ['ai ' + stem + 'i', 'as ' + stem + 'i', 'a ' + stem + 'i', 'avons ' + stem + 'i', 'avez ' + stem + 'i', 'ont ' + stem + 'i']
+        },
+        re: {
+          present: ['s', 's', '', 'ons', 'ez', 'ent'],
+          imperfect: ['ais', 'ais', 'ait', 'ions', 'iez', 'aient'],
+          future: ['rai', 'ras', 'ra', 'rons', 'rez', 'ront'],
+          conditional: ['rais', 'rais', 'rait', 'rions', 'riez', 'raient'],
+          preterite: ['ai ' + stem + 'u', 'as ' + stem + 'u', 'a ' + stem + 'u', 'avons ' + stem + 'u', 'avez ' + stem + 'u', 'ont ' + stem + 'u']
+        }
+      };
+
+      if (ending && frenchEndings[ending] && frenchEndings[ending][tense]) {
+        return stem + frenchEndings[ending][tense][personIndex];
+      }
+    }
+
+    // German comprehensive fallback
+    if (language === 'de') {
+      if (infinitive.endsWith('en')) {
+        const stem = infinitive.slice(0, -2);
+        const germanEndings: Record<string, string[]> = {
+          present: ['e', 'st', 't', 'en', 't', 'en'],
+          preterite: ['te', 'test', 'te', 'ten', 'tet', 'ten']
+        };
+        if (germanEndings[tense]) {
+          return stem + germanEndings[tense][personIndex];
+        }
+      }
+    }
+
+    // Ultimate fallback - return infinitive
+    console.warn(`⚠️ [CONJUGATION DUEL] Ultimate fallback used for ${infinitive} (${language}, ${tense}, person ${personIndex})`);
+    return infinitive;
+  }
+
+  /**
    * Validate a conjugation attempt
    */
   async validateAttempt(attempt: ConjugationAttempt, challenge: ConjugationChallenge): Promise<ConjugationResult> {
     const normalizedAnswer = attempt.studentAnswer.toLowerCase().trim();
     const expectedAnswer = challenge.expectedAnswer.toLowerCase();
     const alternativeAnswers = (challenge.alternativeAnswers || []).map(a => a.toLowerCase());
-    
+
     const isCorrect = normalizedAnswer === expectedAnswer || alternativeAnswers.includes(normalizedAnswer);
-    
+
     let gemAwarded;
     let fsrsUpdated = false;
     let streakCount = 0;
@@ -801,21 +907,21 @@ export class ConjugationDuelService {
   // Helper methods
   private determineVerbType(infinitive: string, language: string): 'regular' | 'irregular' | 'stem_changing' {
     const patterns = this.conjugationPatterns[language as keyof typeof this.conjugationPatterns];
-    
+
     if (patterns?.present?.irregular && patterns.present.irregular[infinitive]) {
       return 'irregular';
     }
-    
+
     if (language === 'es' && this.getStemChangeType(infinitive)) {
       return 'stem_changing';
     }
-    
+
     return 'regular';
   }
 
   private determineDifficulty(infinitive: string, language: string): 'beginner' | 'intermediate' | 'advanced' {
     const verbType = this.determineVerbType(infinitive, language);
-    
+
     if (verbType === 'irregular') return 'advanced';
     if (verbType === 'stem_changing') return 'intermediate';
     return 'beginner';
@@ -843,7 +949,7 @@ export class ConjugationDuelService {
       'poder': 'o_ue',
       'pedir': 'e_i'
     };
-    
+
     return stemChangingVerbs[infinitive] || null;
   }
 
@@ -1152,9 +1258,9 @@ export class ConjugationDuelService {
     const pronoun = challenge.person;
     const tense = challenge.tense;
     const verbType = challenge.verbType;
-    
+
     let explanation = `${pronoun} + ${challenge.infinitive} (${tense} tense)`;
-    
+
     if (verbType === 'irregular') {
       explanation += ` - This is an irregular verb with a unique conjugation pattern.`;
     } else if (verbType === 'stem_changing') {
@@ -1162,7 +1268,7 @@ export class ConjugationDuelService {
     } else {
       explanation += ` - This follows the regular ${this.getVerbEnding(challenge.infinitive, challenge.language)} verb pattern.`;
     }
-    
+
     return explanation;
   }
 

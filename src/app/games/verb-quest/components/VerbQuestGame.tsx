@@ -87,13 +87,13 @@ export default function VerbQuestGame({
   // Handle music toggle
   const toggleMusic = () => {
     if (!backgroundMusicRef.current) return;
-    
+
     if (musicEnabled) {
       backgroundMusicRef.current.pause();
     } else {
       backgroundMusicRef.current.play().catch(e => console.error("Error playing music:", e));
     }
-    
+
     setMusicEnabled(!musicEnabled);
   };
 
@@ -136,18 +136,18 @@ export default function VerbQuestGame({
   const updateCurrentRegionIfComplete = (completedRegion: string) => {
     const { regions } = require('./VerbData');
     const region = regions[completedRegion];
-    
+
     if (region && region.enemies) {
       // Check if all enemies in this region are defeated
-      const allEnemiesDefeated = region.enemies.every((enemy: any) => 
+      const allEnemiesDefeated = region.enemies.every((enemy: any) =>
         character?.stats?.defeatedEnemies?.has(enemy.id)
       );
-      
+
       if (allEnemiesDefeated) {
         // Find the next unlocked region to set as current
         const regionOrder = [
           'forest_of_beginnings',
-          'temple_of_chaos', 
+          'temple_of_chaos',
           'cave_of_memories',
           'lair_of_legends',
           'swamp_of_habits',
@@ -157,7 +157,7 @@ export default function VerbQuestGame({
           'shrine_of_perfection',
           'castle_of_conjugations'
         ];
-        
+
         const currentIndex = regionOrder.indexOf(completedRegion);
         if (currentIndex < regionOrder.length - 1) {
           const nextRegion = regionOrder[currentIndex + 1];
@@ -184,9 +184,9 @@ export default function VerbQuestGame({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
+    <div className="h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col overflow-hidden">
       {/* Header UI */}
-      <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-black/20 backdrop-blur-sm">
+      <div className="flex-shrink-0 z-50 flex items-center justify-between p-4 bg-black/20 backdrop-blur-sm h-16">
         <button
           onClick={onBackToMenu}
           className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg transition-colors"
@@ -210,8 +210,8 @@ export default function VerbQuestGame({
         </div>
       </div>
 
-      {/* Game Content */}
-      <div className="pt-20">
+      {/* Game Content - fills remaining space */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         <AnimatePresence mode="wait">
           {gameState === 'worldmap' && (
             <motion.div
@@ -220,6 +220,7 @@ export default function VerbQuestGame({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
+              className="h-full"
             >
               <WorldMap
                 stats={character?.stats}
@@ -241,6 +242,7 @@ export default function VerbQuestGame({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.5 }}
+              className="h-full"
             >
               <Battle
                 enemy={currentBattle.enemy}
@@ -261,7 +263,7 @@ export default function VerbQuestGame({
 // Intro Sequence Component
 function IntroSequence({ onComplete }: { onComplete: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
-  
+
   const introSteps = [
     {
       text: "Welcome to the mystical world of Conjugaria...",
@@ -310,9 +312,8 @@ function IntroSequence({ onComplete }: { onComplete: () => void }) {
           {introSteps.map((_, index) => (
             <div
               key={index}
-              className={`w-3 h-3 rounded-full ${
-                index === currentStep ? 'bg-white' : 'bg-white/30'
-              }`}
+              className={`w-3 h-3 rounded-full ${index === currentStep ? 'bg-white' : 'bg-white/30'
+                }`}
             />
           ))}
         </div>

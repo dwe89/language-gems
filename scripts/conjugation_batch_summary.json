@@ -1,0 +1,10 @@
+{
+  "total_verbs": 4228,
+  "by_language": {
+    "es": 1084,
+    "fr": 1692,
+    "de": 1452
+  },
+  "created_at": "2026-01-04T18:34:45.984Z",
+  "output_file": "/Users/home/Documents/Projects/language-gems-recovered/scripts/conjugation_batch_requests.jsonl"
+}

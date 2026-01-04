@@ -97,6 +97,8 @@ export class AQAListeningAssessmentService {
 
   // Get all assessments for a level and language (for listing multiple papers)
   async getAssessmentsByLevel(level: 'foundation' | 'higher', language: string = 'es'): Promise<AQAListeningAssessmentDefinition[]> {
+    console.log(`🔍 [AQA LISTENING SERVICE] Fetching assessments for Level: ${level}, Language: ${language}`);
+
     const { data, error } = await this.supabase
       .from('aqa_listening_assessments')
       .select('*')
@@ -106,10 +108,11 @@ export class AQAListeningAssessmentService {
       .order('identifier');
 
     if (error) {
-      console.error('Error fetching assessments:', error);
+      console.error('❌ [AQA LISTENING SERVICE] Error fetching assessments:', error);
       return [];
     }
 
+    console.log(`✅ [AQA LISTENING SERVICE] Found ${data?.length || 0} assessments:`, data);
     return data || [];
   }
 
@@ -192,8 +195,8 @@ export class AQAListeningAssessmentService {
       .order('attempt_number', { ascending: false })
       .limit(1);
 
-    const nextAttemptNumber = existingAttempts && existingAttempts.length > 0 
-      ? existingAttempts[0].attempt_number + 1 
+    const nextAttemptNumber = existingAttempts && existingAttempts.length > 0
+      ? existingAttempts[0].attempt_number + 1
       : 1;
 
     const result = {

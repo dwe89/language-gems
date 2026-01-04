@@ -326,7 +326,7 @@ export default function Home() {
       <div className="flex min-h-screen flex-col">
         <main className="flex-grow">
           {/* Hero Section */}
-            <div className="w-full relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+          <div className="w-full relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
             <div className="absolute inset-0 bg-[url('/images/homepage/subtle-pattern.svg')] opacity-5"></div>
 
             <div className="container mx-auto px-6 z-10 py-20">
@@ -449,8 +449,8 @@ export default function Home() {
                           key={index}
                           onClick={() => setCurrentSlideIndex(index)}
                           className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlideIndex
-                              ? 'bg-blue-600 w-6'
-                              : 'bg-white/60 hover:bg-white/80'
+                            ? 'bg-blue-600 w-6'
+                            : 'bg-white/60 hover:bg-white/80'
                             }`}
                           aria-label={`Go to slide ${index + 1}`}
                         />
@@ -504,7 +504,7 @@ export default function Home() {
                 />
                 <div className="text-center md:text-left">
                   <p className="text-slate-700 text-lg mb-2 italic">
-                    "After 8 years teaching Modern Foreign Languages in UK schools, I became increasingly frustrated with expensive platforms that cost £2000+ annually but failed to engage my students. The games were outdated, the progress tracking was clunky, and my students simply weren't motivated to use them. As a passionate MFL teacher, I knew there had to be a better way - a platform that actually understood how teenagers learn languages and what makes learning fun. So I built LanguageGems from the ground up with modern game design, and now it's being used by schools across the UK to transform language learning."
+                    "After 8 years teaching Modern Foreign Languages in UK schools, I became increasingly frustrated with expensive platforms that cost £2000+ annually but failed to engage my students. The games were outdated, the progress tracking was clunky, and my students simply weren't motivated to use them. As a passionate MFL teacher, I knew there had to be a better way - a platform that actually understood how teenagers learn languages and what makes learning fun. So I built LanguageGems from the ground up with modern game design."
                   </p>
                   <p className="text-slate-800 font-bold text-base">
                     - Daniel Etienne, Founder & MFL Teacher
@@ -547,8 +547,8 @@ export default function Home() {
                       className="flex items-start bg-white p-6 rounded-lg shadow-sm border border-slate-200"
                     >
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-1 mr-4 ${item.status === 'done' ? 'bg-green-500' :
-                          item.status === 'in-progress' ? 'bg-indigo-500 animate-pulse' :
-                            'bg-gray-400'
+                        item.status === 'in-progress' ? 'bg-indigo-500 animate-pulse' :
+                          'bg-gray-400'
                         }`}>
                         <item.icon className="w-6 h-6" />
                       </div>
