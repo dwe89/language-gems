@@ -353,14 +353,40 @@ export default function UnifiedCategorySelector({
     if (customInput.trim() && !selectedCustomList) {
       const lines = customInput.trim().split('\n').filter(line => line.trim());
       parsedVocabulary = lines.map((line, index) => {
-        const parts = line.split(/[-,\t]/).map(s => s.trim());
+        let term = line;
+        let translation = '';
+
+        // Robust parsing: Priority Order -> Tab, Spaced Hyphen, Comma (if no hyphen found?)
+        // We explicitly avoid splitting on simple '-' to support phrases like "Comment allez-vous"
+
+        if (line.includes('\t')) {
+          const parts = line.split('\t');
+          term = parts[0].trim();
+          if (parts.length > 1) translation = parts.slice(1).join(' ').trim();
+        } else if (line.includes(' - ')) {
+          const parts = line.split(' - ');
+          term = parts[0].trim();
+          if (parts.length > 1) translation = parts.slice(1).join(' - ').trim();
+        } else if (line.includes(',') && !line.includes(' - ')) {
+          // Support comma separation if it looks like a list "dog, perro"
+          // But be careful not to break sentences with commas if they have a ' - '
+          const parts = line.split(',');
+          term = parts[0].trim();
+          if (parts.length > 1) translation = parts.slice(1).join(',').trim();
+        }
+
+        // Fallback: If no translation found, use term as translation (prevent empty cards)
+        if (!translation) {
+          translation = term.trim();
+        }
+
         return {
           id: `custom-${index}`,
-          term: parts[0] || line,
-          translation: parts[1] || '',
-          part_of_speech: parts[2] || undefined,
-          context_sentence: parts[3] || undefined,
-          context_translation: parts[4] || undefined
+          term: term.trim(),
+          translation: translation,
+          part_of_speech: undefined,
+          context_sentence: undefined,
+          context_translation: undefined
         };
       });
     }
@@ -872,10 +898,28 @@ const CustomContentSelection: React.FC<{
       if (!customInput.trim()) return [];
       const lines = customInput.trim().split('\n').filter(line => line.trim());
       return lines.map((line, index) => {
-        const parts = line.split(/[-,\t]/).map(s => s.trim());
+        let term = line;
+        let translation = '';
+
+        if (line.includes('\t')) {
+          const parts = line.split('\t');
+          term = parts[0].trim();
+          if (parts.length > 1) translation = parts.slice(1).join(' ').trim();
+        } else if (line.includes(' - ')) {
+          const parts = line.split(' - ');
+          term = parts[0].trim();
+          if (parts.length > 1) translation = parts.slice(1).join(' - ').trim();
+        } else if (line.includes(',') && !line.includes(' - ')) {
+          const parts = line.split(',');
+          term = parts[0].trim();
+          if (parts.length > 1) translation = parts.slice(1).join(',').trim();
+        }
+
+        if (!translation) translation = term.trim();
+
         return {
-          term: parts[0] || line,
-          translation: parts[1] || ''
+          term: term.trim(),
+          translation: translation
         };
       });
     };

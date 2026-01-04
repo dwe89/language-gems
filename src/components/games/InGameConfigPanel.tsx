@@ -147,17 +147,39 @@ export default function InGameConfigPanel({
       setLoading(true);
       try {
         // Parse custom words and create vocabulary items
-        const words = customWords.split('\n').filter(word => word.trim());
-        const customVocabulary = words.map((word, index) => ({
-          id: `custom-${index}`,
-          word: word.trim(),
-          translation: word.trim(), // For hangman, we just need the word
-          language: tempConfig.language,
-          category: 'custom',
-          subcategory: 'custom',
-          part_of_speech: 'unknown',
-          difficulty_level: 'beginner'
-        }));
+        const lines = customWords.split('\n').filter(line => line.trim());
+        const customVocabulary = lines.map((line, index) => {
+          let word = line;
+          let translation = '';
+
+          // Smart parsing logic matching UnifiedGameLauncher
+          if (line.includes('\t')) {
+            const parts = line.split('\t');
+            word = parts[0].trim();
+            if (parts.length > 1) translation = parts.slice(1).join(' ').trim();
+          } else if (line.includes(' - ')) {
+            const parts = line.split(' - ');
+            word = parts[0].trim();
+            if (parts.length > 1) translation = parts.slice(1).join(' - ').trim();
+          }
+
+          // Fallback: If no translation found, use word as translation (legacy behavior for Hangman/simple modes)
+          // preventing empty cards in Memory Match
+          if (!translation) {
+            translation = word.trim();
+          }
+
+          return {
+            id: `custom-${index}`,
+            word: word.trim(),
+            translation: translation,
+            language: tempConfig.language,
+            category: 'custom',
+            subcategory: 'custom',
+            part_of_speech: 'unknown',
+            difficulty_level: 'beginner'
+          };
+        });
 
         // Update config to indicate custom mode
         const customConfig = {

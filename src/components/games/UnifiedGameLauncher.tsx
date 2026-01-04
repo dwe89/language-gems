@@ -117,13 +117,13 @@ export default function UnifiedGameLauncher({
       const examBoard = searchParams?.get('examBoard') as 'AQA' | 'edexcel';
       const tier = searchParams?.get('tier') as 'foundation' | 'higher';
 
-      console.log(`📋 [UnifiedGameLauncher - ${gameName}] URL Parameters:`, { 
-        lang, level, cat, subcat, theme, examBoard, tier 
+      console.log(`📋 [UnifiedGameLauncher - ${gameName}] URL Parameters:`, {
+        lang, level, cat, subcat, theme, examBoard, tier
       });
 
       if (lang && level && cat && subcat) {
         console.log(`✅ [UnifiedGameLauncher - ${gameName}] Found URL parameters, auto-starting game...`);
-        
+
         const config: UnifiedSelectionConfig = {
           language: lang,
           curriculumLevel: level,
@@ -136,7 +136,7 @@ export default function UnifiedGameLauncher({
         };
 
         console.log(`🚀 [UnifiedGameLauncher - ${gameName}] Auto-completing selection:`, config);
-        
+
         setSelectedConfig(config);
         setSelectedTheme(theme);
         setShowSelector(false);
@@ -151,18 +151,18 @@ export default function UnifiedGameLauncher({
   }, [searchParams, urlParamsChecked, selectedConfig, gameName, defaultTheme, isClient, isLoading, user, isDemo, disableUrlParams]);
 
   // Load vocabulary based on selected configuration
-  const { 
-    vocabulary, 
-    loading, 
-    error, 
+  const {
+    vocabulary,
+    loading,
+    error,
     refetch,
-    isEmpty 
+    isEmpty
   } = useUnifiedVocabulary({
     config: selectedConfig || undefined,
     limit: 100, // Get plenty of vocabulary for variety
     randomize: true,
     hasAudio: requiresAudio,
-    customVocabulary: selectedConfig?.customMode ? 
+    customVocabulary: selectedConfig?.customMode ?
       (selectedConfig.customVocabulary?.map(item => ({
         id: item.id,
         word: item.term,
@@ -194,7 +194,7 @@ export default function UnifiedGameLauncher({
       // Validate vocabulary
       const validation = validateVocabularyForGame(vocabulary, minVocabularyRequired);
       console.log(`🎯 [UnifiedGameLauncher - ${gameName}] Vocabulary validation:`, validation);
-      
+
       if (validation.isValid) {
         console.log(`🚀 [UnifiedGameLauncher - ${gameName}] Auto-starting game with ${vocabulary.length} vocabulary items!`);
         // Auto-start the game
@@ -290,7 +290,7 @@ export default function UnifiedGameLauncher({
               <div>
                 <h1 className="text-2xl font-bold text-white">{gameName}</h1>
                 <p className="text-white/80 text-sm">
-                  {selectedConfig?.customMode 
+                  {selectedConfig?.customMode
                     ? 'Custom vocabulary mode'
                     : `${selectedConfig?.language?.toUpperCase()} • ${selectedConfig?.curriculumLevel} • ${selectedConfig?.categoryId}`
                   }
@@ -397,7 +397,7 @@ export default function UnifiedGameLauncher({
                   <textarea
                     value={customVocabInput}
                     onChange={(e) => setCustomVocabInput(e.target.value)}
-                    placeholder="Example:&#10;casa - house&#10;perro - dog&#10;gato - cat"
+                    placeholder="Example:&#10;casa - house&#10;perro - dog&#10;gato - cat&#10;(Supports Tab-separated values)"
                     className="w-full h-48 p-3 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 resize-none focus:outline-none focus:ring-2 focus:ring-white/50 text-sm"
                   />
                 </div>
@@ -407,11 +407,35 @@ export default function UnifiedGameLauncher({
                     onClick={() => {
                       const lines = customVocabInput.trim().split('\n').filter(line => line.trim());
                       const customVocab: UnifiedVocabularyItem[] = lines.map((line, index) => {
-                        const [word, translation] = line.split('-').map(s => s.trim());
+                        let word = line;
+                        let translation = '';
+
+                        // Smart parsing logic:
+                        // 1. Check for Tab (common in Excel/Sheets copy-paste)
+                        if (line.includes('\t')) {
+                          const parts = line.split('\t');
+                          word = parts[0].trim();
+                          if (parts.length > 1) translation = parts.slice(1).join(' ').trim();
+                        }
+                        // 2. Check for " - " (hyphen with spaces) - Best practice for manual typing
+                        else if (line.includes(' - ')) {
+                          const parts = line.split(' - ');
+                          word = parts[0].trim();
+                          if (parts.length > 1) translation = parts.slice(1).join(' - ').trim();
+                        }
+
+                        // Fallback constraint: We do NOT split on single hyphens anymore 
+                        // to prevent breaking words like "allez-vous".
+
+                        // If no translation found, use word as translation to prevent empty cards
+                        if (!translation) {
+                          translation = word;
+                        }
+
                         return {
                           id: `custom-${index}`,
-                          word: word || line,
-                          translation: translation || '',
+                          word: word,
+                          translation: translation,
                           language: selectedConfig?.language || 'es',
                           category: 'custom',
                           subcategory: undefined,
@@ -464,7 +488,7 @@ export default function UnifiedGameLauncher({
                   Loaded <span className="font-bold text-white">{vocabulary.length}</span> vocabulary items
                   {selectedConfig?.customMode ? ' from your custom list' : ''}
                 </p>
-                
+
                 {/* Vocabulary Preview */}
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4 max-w-2xl mx-auto">
                   <h3 className="text-base font-semibold text-white mb-3">Vocabulary Preview</h3>
@@ -492,11 +516,10 @@ export default function UnifiedGameLauncher({
                         <button
                           key={theme.id}
                           onClick={() => setSelectedTheme(theme.id)}
-                          className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all transform hover:scale-105 border-2 ${
-                            selectedTheme === theme.id
-                              ? 'bg-white/20 border-white/60 text-white shadow-xl backdrop-blur-md ring-2 ring-white/50'
-                              : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/40 text-white/80'
-                          }`}
+                          className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all transform hover:scale-105 border-2 ${selectedTheme === theme.id
+                            ? 'bg-white/20 border-white/60 text-white shadow-xl backdrop-blur-md ring-2 ring-white/50'
+                            : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/40 text-white/80'
+                            }`}
                         >
                           <div className="text-2xl">{theme.icon}</div>
                           <span className="text-xs font-medium">{theme.name}</span>
@@ -517,7 +540,7 @@ export default function UnifiedGameLauncher({
                   >
                     Start {gameName}
                   </button>
-                  
+
                   <button
                     onClick={handleBackToSelector}
                     className="text-white/80 hover:text-white transition-colors text-sm underline"

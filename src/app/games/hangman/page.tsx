@@ -14,6 +14,7 @@ import { useAudio } from './hooks/useAudio';
 import { useGameAudio } from '../../../hooks/useGlobalAudioContext';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
 import { useSharedVocabulary, SharedVocabularyToast } from '../../../components/games/ShareVocabularyButton';
+import { GameProgressData } from '../../../interfaces/UnifiedAssignmentInterface';
 
 export default function HangmanPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
@@ -318,7 +319,7 @@ export default function HangmanPage() {
     return subcategoryMap[subcategory] || subcategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const handleAssignmentComplete = (progress: GameProgress) => {
+  const handleAssignmentComplete = (progress: GameProgressData) => {
     console.log('Hangman assignment completed:', progress);
     // Show completion message and redirect to assignment detail page
     setTimeout(() => {
@@ -439,15 +440,12 @@ export default function HangmanPage() {
   // Transform vocabulary for hangman game
   const transformVocabularyForHangman = (vocabulary: UnifiedVocabularyItem[]) => {
     return vocabulary.map(item => {
-      // For Hangman, we only need the Spanish word (first part before dash/comma)
-      // Handle cases where user entered "casa house" or "casa - house"
+      // For Hangman, we only need the Spanish word.
+      // We check for " - " to handle legacy data where translation might be in the word field.
+      // We DO NOT split by space anymore, to allow phrases like "Buenos dias" or "Comment allez-vous".
       let spanishWord = item.word;
-      if (spanishWord.includes(' - ') || spanishWord.includes(' ')) {
-        // Split by dash first, then by space if no dash
-        const parts = spanishWord.includes(' - ')
-          ? spanishWord.split(' - ')
-          : spanishWord.split(' ');
-        spanishWord = parts[0].trim();
+      if (spanishWord.includes(' - ')) {
+        spanishWord = spanishWord.split(' - ')[0].trim();
       }
 
       return {
