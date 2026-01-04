@@ -235,6 +235,7 @@ export default function WordBlastPage() {
           vocabulary: gameConfig.vocabulary
         } : undefined}
         selectedTheme={gameConfig?.theme}
+        onThemeChange={(theme) => setGameConfig(prev => prev ? { ...prev, theme } : null)}
       />
 
       {/* In-game configuration panel */}

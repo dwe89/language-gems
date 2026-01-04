@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, RotateCcw, Volume2, CheckCircle, XCircle, FileText, VolumeX, Settings } from 'lucide-react';
+import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
 import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
 import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { useAudioManager } from '../hooks/useAudioManager';
@@ -31,6 +32,8 @@ interface DetectiveRoomProps {
   gameService?: EnhancedGameService | null;
   vocabularyWords?: any[];
   onOpenSettings?: () => void;
+  onThemeChange?: (theme: string) => void;
+  currentTheme?: string;
 }
 
 export default function DetectiveRoom({
@@ -43,7 +46,9 @@ export default function DetectiveRoom({
   gameSessionId,
   gameService,
   vocabularyWords,
-  onOpenSettings
+  onOpenSettings,
+  onThemeChange,
+  currentTheme
 }: DetectiveRoomProps) {
 
 
@@ -200,7 +205,7 @@ export default function DetectiveRoom({
   // Initialize audio effects
   useEffect(() => {
     console.log('Initializing audio effects...');
-    
+
     // Initialize background music
     const bgMusic = new Audio('/audio/detective-listening/background-music.mp3');
     bgMusic.loop = true;
@@ -222,9 +227,9 @@ export default function DetectiveRoom({
       if (audio) {
         audio.addEventListener('error', (e) => console.error(`${name} load error:`, e));
         audio.addEventListener('canplaythrough', () => console.log(`${name} loaded successfully`));
-        
+
         // Set volumes
-        switch(name) {
+        switch (name) {
           case 'radioStatic':
             audio.volume = 0.3;
             break;
@@ -610,7 +615,7 @@ export default function DetectiveRoom({
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen relative overflow-hidden"
       style={{
         backgroundImage: "url('/images/games/detective-listening/detective-office-bg.jpg')",
@@ -627,13 +632,12 @@ export default function DetectiveRoom({
             {[...Array(10)].map((_, i) => (
               <div
                 key={i}
-                className={`w-6 h-6 rounded-full border ${
-                  i < gameProgress.correctAnswers
-                    ? 'bg-green-500/80 border-green-400'
-                    : i === currentEvidenceIndex
+                className={`w-6 h-6 rounded-full border ${i < gameProgress.correctAnswers
+                  ? 'bg-green-500/80 border-green-400'
+                  : i === currentEvidenceIndex
                     ? 'bg-yellow-500/80 border-yellow-400 animate-pulse'
                     : 'bg-white/20 border-white/40'
-                }`}
+                  }`}
               />
             ))}
           </div>
@@ -663,6 +667,17 @@ export default function DetectiveRoom({
         >
           {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </motion.button>
+
+        {/* Theme Selector - Integrated alongside other controls */}
+        {onThemeChange && (
+          <QuickThemeSelector
+            currentTheme={currentTheme || 'detective'}
+            onThemeChange={onThemeChange}
+            variant="button"
+            className="relative z-50 transition-colors"
+            customButtonClass="relative p-3 rounded-lg bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl border border-white/20 transition-all duration-300"
+          />
+        )}
 
         {/* Settings Button */}
         <motion.button
@@ -737,8 +752,8 @@ export default function DetectiveRoom({
                     isPlaying
                       ? 'Audio playing...'
                       : replayCount >= 2
-                      ? 'Maximum replays reached'
-                      : `Play evidence audio (${2 - replayCount} replays remaining)`
+                        ? 'Maximum replays reached'
+                        : `Play evidence audio (${2 - replayCount} replays remaining)`
                   }
                   className={`
                     w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl
@@ -746,8 +761,8 @@ export default function DetectiveRoom({
                     ${isPlaying
                       ? 'bg-red-600 animate-pulse'
                       : replayCount >= 2
-                      ? 'bg-gray-600 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
+                        ? 'bg-gray-600 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700'
                     }
                   `}
                 >
@@ -758,7 +773,7 @@ export default function DetectiveRoom({
                   )}
                 </motion.button>
               </div>
-              
+
               <div className="text-center">
                 <div className="text-green-400 font-mono text-sm mb-2">
                   {isPlaying ? 'TRANSMITTING...' : 'READY TO RECEIVE'}
@@ -767,9 +782,8 @@ export default function DetectiveRoom({
                   {[...Array(5)].map((_, i) => (
                     <div
                       key={i}
-                      className={`w-1 h-4 rounded-full ${
-                        isPlaying && i < 4 ? 'bg-green-400' : 'bg-gray-600'
-                      }`}
+                      className={`w-1 h-4 rounded-full ${isPlaying && i < 4 ? 'bg-green-400' : 'bg-gray-600'
+                        }`}
                     />
                   ))}
                 </div>
@@ -819,8 +833,8 @@ export default function DetectiveRoom({
                       ? option === currentEvidence.correct
                         ? 'bg-green-600/20 border-green-400 text-green-100'
                         : option === selectedAnswer
-                        ? 'bg-red-600/20 border-red-400 text-red-100'
-                        : 'bg-gray-600/20 border-gray-500 text-gray-300'
+                          ? 'bg-red-600/20 border-red-400 text-red-100'
+                          : 'bg-gray-600/20 border-gray-500 text-gray-300'
                       : 'bg-amber-100/10 border-amber-300/50 text-amber-100 hover:bg-amber-100/20 hover:border-amber-300'
                     }
                   `}

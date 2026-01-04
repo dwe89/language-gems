@@ -6,6 +6,7 @@ import { ArrowLeft, RotateCcw, Lightbulb, Volume2, VolumeX, Settings, PartyPoppe
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
+import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
 
 // Simple sound manager for audio feedback
 class SoundManager {
@@ -21,7 +22,7 @@ class SoundManager {
       try {
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         let frequency = 261.63; // Default C4
-        
+
         switch (type) {
           case 'correct':
             frequency = 523.25; // C5
@@ -33,19 +34,19 @@ class SoundManager {
             frequency = 293.66; // D4
             break;
         }
-        
+
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        
+
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
+
         oscillator.frequency.value = frequency;
         oscillator.type = 'sine';
-        
+
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
+
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
       } catch (error) {
@@ -99,6 +100,8 @@ interface WordScrambleGameProps {
   difficulty?: 'easy' | 'medium' | 'hard';
   onProgressUpdate?: (progress: any) => void;
   onOpenSettings?: () => void;
+  currentTheme?: string;
+  onThemeChange?: (theme: string) => void;
 }
 
 
@@ -198,7 +201,9 @@ export default function WordScrambleGame({
   language = 'es',
   difficulty = 'medium',
   onProgressUpdate,
-  onOpenSettings
+  onOpenSettings,
+  currentTheme,
+  onThemeChange
 }: WordScrambleGameProps) {
 
   const [currentWordData, setCurrentWordData] = useState<GameVocabularyWord | null>(null);
@@ -219,7 +224,7 @@ export default function WordScrambleGame({
   const [wordStartTime, setWordStartTime] = useState(Date.now());
   const [solveHistory, setSolveHistory] = useState<number[]>([]);
   const [showIncorrectModal, setShowIncorrectModal] = useState(false);
-  const [incorrectAnswerData, setIncorrectAnswerData] = useState<{word: string, translation: string} | null>(null);
+  const [incorrectAnswerData, setIncorrectAnswerData] = useState<{ word: string, translation: string } | null>(null);
 
   // Track completed words and current word index for proper completion logic
   const [completedWordIds, setCompletedWordIds] = useState<Set<string>>(new Set());
@@ -246,28 +251,28 @@ export default function WordScrambleGame({
     if (!word || word.trim().length === 0) {
       return [];
     }
-    
+
     // Convert to array and ensure we preserve all original letters, including spaces
     const letters = word.trim().split('');
-    
+
     // Separate letters and spaces - spaces should stay in their original positions
     const nonSpaceIndices: number[] = [];
-    
+
     letters.forEach((letter, index) => {
       if (letter !== ' ') {
         nonSpaceIndices.push(index);
       }
     });
-    
+
     // For words with spaces, only shuffle non-space characters
     const nonSpaceLetters = nonSpaceIndices.map(i => letters[i]);
-    
+
     // Fisher-Yates shuffle algorithm to properly randomize
     for (let i = nonSpaceLetters.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [nonSpaceLetters[i], nonSpaceLetters[j]] = [nonSpaceLetters[j], nonSpaceLetters[i]];
     }
-    
+
     // Reconstruct with spaces in original positions
     const result = [...letters];
     let letterIndex = 0;
@@ -276,7 +281,7 @@ export default function WordScrambleGame({
         result[i] = nonSpaceLetters[letterIndex++];
       }
     }
-    
+
     // Ensure the scrambled word is not the same as the original, unless it's a single letter word
     if (result.join('') === word.trim() && word.trim().length > 1) {
       // If identical, perform one more swap to ensure it's different
@@ -284,7 +289,7 @@ export default function WordScrambleGame({
       const idx2 = 1;
       [result[idx1], result[idx2]] = [result[idx2], result[idx1]];
     }
-    
+
     return result;
   }, []);
 
@@ -381,14 +386,14 @@ export default function WordScrambleGame({
 
     // Get the next word in sequence
     const nextWord = remainingWords[currentWordIndex];
-    
+
     // Validate the word before proceeding
     if (!nextWord || !nextWord.word || nextWord.word.trim().length === 0) {
       // Skip this word and try the next one
       setCurrentWordIndex(prev => prev + 1);
       return;
     }
-    
+
     const cleanWord = nextWord.word.trim();
 
     setCurrentWordData(nextWord);
@@ -439,9 +444,9 @@ export default function WordScrambleGame({
   // Undo last letter
   const undoLastSelection = useCallback(() => {
     if (gameState !== 'playing' || !userAnswer) return;
-    
+
     soundManager.current.play('select');
-    
+
     setUserAnswer(prev => prev.slice(0, -1));
     setUsedLetterIndices(prev => prev.slice(0, -1));
   }, [gameState, userAnswer]);
@@ -451,10 +456,10 @@ export default function WordScrambleGame({
     if (!currentWordData || !currentWordData.word || !userAnswer) {
       return false;
     }
-    
+
     const correctWord = currentWordData.word.trim().toLowerCase();
     const submittedAnswer = userAnswer.trim().toLowerCase();
-    
+
     return correctWord === submittedAnswer;
   }, [currentWordData, userAnswer]);
 
@@ -467,7 +472,7 @@ export default function WordScrambleGame({
 
     console.log('🎯 [SUBMIT] Starting submission for word:', currentWordData?.word, 'answer:', userAnswer.trim());
     setIsSubmitting(true);
-    
+
     const solveTime = (Date.now() - wordStartTime) / 1000;
     const isCorrect = checkAnswer();
 
@@ -488,7 +493,7 @@ export default function WordScrambleGame({
       if (currentWordData) {
         setCompletedWordIds(prev => new Set([...prev, currentWordData.id]));
         setCurrentWordIndex(prev => prev + 1);
-      }      setTimeout(() => {
+      } setTimeout(() => {
         initializeNewWord();
       }, 1500);
     } else {
@@ -497,14 +502,14 @@ export default function WordScrambleGame({
         ...prev,
         streak: 0,
       }));
-      
+
       if (currentWordData) {
         setIncorrectAnswerData({
           word: currentWordData.word,
           translation: currentWordData.translation
         });
         setShowIncorrectModal(true);
-        
+
         setTimeout(() => {
           setShowIncorrectModal(false);
           setIncorrectAnswerData(null);
@@ -571,21 +576,21 @@ export default function WordScrambleGame({
     if (userAnswer && currentWordData && gameState === 'playing' && !isSubmitting) {
       const correctWord = currentWordData.word.trim().toLowerCase();
       const submittedAnswer = userAnswer.trim().toLowerCase();
-      
-      console.log('🔍 [AUTO-SUBMIT] Checking:', { 
-        userAnswer, 
-        correctWord, 
+
+      console.log('🔍 [AUTO-SUBMIT] Checking:', {
+        userAnswer,
+        correctWord,
         isMatch: correctWord === submittedAnswer,
         hasSubmitted: hasSubmittedRef.current,
         alreadySubmittedThis: hasSubmittedRef.current === correctWord
       });
-      
+
       // Check if this is a correct answer and we haven't already submitted this exact word
       if (correctWord === submittedAnswer && hasSubmittedRef.current !== correctWord) {
         console.log('✅ [AUTO-SUBMIT] Scheduling submission for:', correctWord);
         // Mark this word as submitted to prevent duplicates
         hasSubmittedRef.current = correctWord;
-        
+
         // Small delay to let user see the completed word before auto-submitting
         const timeoutId = setTimeout(() => {
           if (!isSubmitting && hasSubmittedRef.current === correctWord) {
@@ -595,7 +600,7 @@ export default function WordScrambleGame({
             console.log('🚫 [AUTO-SUBMIT] Canceled submission:', { isSubmitting, hasSubmittedRef: hasSubmittedRef.current, correctWord });
           }
         }, 500);
-        
+
         return () => {
           console.log('🧹 [AUTO-SUBMIT] Cleaning up timeout for:', correctWord);
           clearTimeout(timeoutId);
@@ -798,10 +803,10 @@ export default function WordScrambleGame({
       {/* Background Effects */}
       <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-10"></div>
       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-blue-500/5 to-purple-500/10"></div>
-      
+
       {/* Container with proper spacing */}
       <div className="relative z-10 container mx-auto px-4 py-6 max-w-6xl">
-        
+
         {/* Header - Compact and responsive */}
         <div className="flex justify-between items-center mb-6">
           {!isAssignmentMode && (
@@ -814,7 +819,7 @@ export default function WordScrambleGame({
               ← Back
             </motion.button>
           )}
-          
+
           <div className="text-center flex-1">
             <h1 className="text-2xl lg:text-3xl font-bold text-white bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
               Word Scramble
@@ -834,6 +839,17 @@ export default function WordScrambleGame({
                 {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
                 <span className="hidden sm:inline">{soundEnabled ? "Mute" : "Unmute"}</span>
               </motion.button>
+            )}
+
+            {/* Quick Theme Selector */}
+            {!isAssignmentMode && onThemeChange && (
+              <QuickThemeSelector
+                currentTheme={currentTheme || 'classic'}
+                onThemeChange={(theme) => onThemeChange(theme)}
+                variant="button"
+                className="relative z-50"
+                customButtonClass="px-3 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-semibold flex items-center gap-2 transition-all shadow-lg border-2 border-white/20"
+              />
             )}
 
             {onOpenSettings && (
@@ -872,7 +888,7 @@ export default function WordScrambleGame({
 
         {/* Game Content - Centered and responsive */}
         <div className="max-w-4xl mx-auto space-y-6">
-          
+
           {/* Current Word to Translate */}
           <div className="text-center">
             <motion.div
@@ -919,7 +935,7 @@ export default function WordScrambleGame({
               {userAnswer.toUpperCase() || 'Click letters above...'}
             </div>
             <div className="text-center text-xs text-white/60 mt-3">
-              {userAnswer.length > 0 ? 
+              {userAnswer.length > 0 ?
                 '💡 Use "Undo" to remove letters or "Clear" to start over' :
                 '💡 Tip: Click letters above or type on your keyboard'
               }
@@ -937,7 +953,7 @@ export default function WordScrambleGame({
             >
               <Sparkles size={16} className="inline mr-1" /> {isSubmitting ? 'Submitting...' : 'Submit'}
             </motion.button>
-            
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -947,7 +963,7 @@ export default function WordScrambleGame({
             >
               <Undo2 size={16} className="inline mr-1" /> Undo
             </motion.button>
-            
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -960,7 +976,7 @@ export default function WordScrambleGame({
             >
               <RotateCcw size={16} className="inline mr-1" /> Clear
             </motion.button>
-            
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -971,7 +987,7 @@ export default function WordScrambleGame({
             </motion.button>
           </div>
         </div>
-        
+
         {/* Hidden input for keyboard focus */}
         <input
           ref={inputRef}

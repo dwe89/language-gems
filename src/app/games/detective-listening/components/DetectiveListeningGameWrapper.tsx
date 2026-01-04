@@ -15,6 +15,7 @@ interface DetectiveListeningGameWrapperProps {
     curriculumLevel?: string;
     examBoard?: 'AQA' | 'edexcel';
     tier?: 'foundation' | 'higher';
+    theme?: string;
   };
   config?: {
     language: string;
@@ -42,6 +43,7 @@ interface DetectiveListeningGameWrapperProps {
   userId?: string;
   isAssignmentMode?: boolean;
   onOpenSettings?: () => void;
+  onThemeChange?: (theme: string) => void;
 }
 
 export default function DetectiveListeningGameWrapper(props: DetectiveListeningGameWrapperProps) {
@@ -127,7 +129,7 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
       const startTime = new Date();
       const sessionId = await sessionService.startGameSession({
         student_id: props.userId,
-        assignment_id: props.isAssignmentMode ? props.assignmentId : undefined,
+        assignment_id: props.isAssignmentMode ? (props.assignmentId || undefined) : undefined,
         game_type: 'detective-listening',
         session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
         max_score_possible: 100,
@@ -162,7 +164,7 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
 
         await sessionService.endGameSession(gameSessionId, {
           student_id: props.userId,
-          assignment_id: props.isAssignmentMode ? props.assignmentId : undefined,
+          assignment_id: props.isAssignmentMode ? (props.assignmentId || undefined) : undefined,
           game_type: 'detective-listening',
           session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
           final_score: Math.round(accuracy),
@@ -230,7 +232,7 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
       <div className="flex items-center justify-center h-screen">
         <div className="text-center text-red-400">
           <p>Error loading case files: {error}</p>
-          <button 
+          <button
             onClick={props.onBackToMenu}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >

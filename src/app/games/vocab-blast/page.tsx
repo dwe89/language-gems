@@ -489,6 +489,7 @@ export default function VocabBlastPage() {
               userId={user?.id}
               categoryVocabulary={gameConfig.vocabulary}
               onOpenSettings={handleOpenConfigPanel}
+              onThemeChange={(theme) => setGameConfig(prev => prev ? { ...prev, theme } : null)}
             />
 
             {/* In-game configuration panel */}

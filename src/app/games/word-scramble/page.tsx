@@ -255,6 +255,7 @@ export default function WordScramblePage() {
               handleBackToMenu();
             }}
             onOpenSettings={handleOpenConfigPanel}
+            onThemeChange={(theme) => setGameConfig(prev => prev ? { ...prev, theme } : null)}
           />
         </div>
 

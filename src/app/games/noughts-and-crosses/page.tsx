@@ -393,16 +393,19 @@ function UnifiedNoughtsAndCrossesPage() {
 
     return (
       <ThemeProvider themeId={gameConfig.theme}>
-        <div className="w-full h-screen">
+        <div className="w-full h-screen relative">
           <TicTacToeGameWrapper
             settings={legacySettings}
-            vocabulary={gameConfig.vocabulary} // Pass the custom vocabulary
+            vocabulary={gameConfig.vocabulary}
             onBackToMenu={handleBackToMenu}
             onGameEnd={handleGameEnd}
             assignmentId={assignmentId}
             userId={user?.id}
             onOpenSettings={handleOpenConfigPanel}
             onGameModeChange={setGameMode}
+            onThemeChange={(newTheme) => {
+              setGameConfig(prev => prev ? { ...prev, theme: newTheme } : null);
+            }}
           />
 
           {/* In-game configuration panel */}

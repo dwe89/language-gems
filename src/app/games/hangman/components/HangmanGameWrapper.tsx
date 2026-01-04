@@ -33,6 +33,7 @@ interface HangmanGameWrapperProps {
   onOpenSettings?: () => void;
   toggleMusic?: () => void;
   isMusicEnabled?: boolean;
+  onThemeChange?: (theme: string) => void;
 }
 
 interface GameVocabularyWord {
@@ -170,7 +171,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
   const mapDifficulty = (difficulty: string): string => {
     const difficultyMap: Record<string, string> = {
       'beginner': 'beginner',
-      'intermediate': 'intermediate', 
+      'intermediate': 'intermediate',
       'advanced': 'advanced'
     };
     return difficultyMap[difficulty] || 'beginner';
@@ -391,7 +392,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-pink-900 to-purple-900">
         <div className="text-center">
           <p className="text-white text-xl mb-4">⚠️ {error}</p>
-          <button 
+          <button
             onClick={() => loadVocabulary()}
             className="bg-white text-black px-6 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-colors mr-4"
           >
@@ -503,13 +504,14 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
       vocabulary={gameVocabulary}
       onGameEnd={handleEnhancedGameEnd}
       isAssignmentMode={props.isAssignmentMode}
-      playSFX={props.playSFX || (() => {})}
+      playSFX={props.playSFX || (() => { })}
       gameSessionId={effectiveGameSessionId || undefined}
       userId={props.userId}
       assignmentId={props.assignmentId} // Pass assignmentId for exposure tracking
       onOpenSettings={props.onOpenSettings}
       toggleMusic={props.toggleMusic}
       isMusicEnabled={props.isMusicEnabled}
+      onThemeChange={props.onThemeChange}
     />
   );
 }

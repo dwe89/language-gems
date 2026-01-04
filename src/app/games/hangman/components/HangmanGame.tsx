@@ -11,6 +11,7 @@ import SpaceExplorerAnimation from './themes/SpaceExplorerAnimation';
 import PirateAdventureAnimation from './themes/PirateAdventureAnimation';
 import ClassicHangmanAnimation from './themes/ClassicHangmanAnimation';
 import TempleGuardianModal from './TempleGuardianModal';
+import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
 import TokyoNightsModal from './TokyoNightsModal';
 import SpaceExplorerModal from './SpaceExplorerModal';
 import PirateAdventureModal from './PirateAdventureModal';
@@ -84,6 +85,7 @@ interface HangmanGameProps {
   assignmentId?: string | null; // For exposure tracking
   toggleMusic?: () => void;
   isMusicEnabled?: boolean;
+  onThemeChange?: (theme: string) => void;
 }
 
 const MAX_ATTEMPTS = 6;
@@ -102,7 +104,7 @@ type ExtendedThemeContextType = {
   };
 };
 
-export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX, onOpenSettings, gameSessionId, userId, assignmentId, toggleMusic, isMusicEnabled }: HangmanGameProps) {
+export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX, onOpenSettings, gameSessionId, userId, assignmentId, toggleMusic, isMusicEnabled, onThemeChange }: HangmanGameProps) {
 
 
   const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
@@ -961,85 +963,99 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
 
         {/* Control buttons */}
         <div className="flex items-center space-x-1 md:space-x-2">
-        {/* Settings button - Enhanced visibility */}
-        {onOpenSettings && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => {
-              playSFX('button-click');
-              onOpenSettings();
-            }}
-            className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
-            title={isAssignmentMode ? "Choose your theme" : "Customize your game: Change Language, Level, Topic & Theme"}
-          >
-            {isAssignmentMode ? (
-              <Palette className="h-5 w-5 md:h-6 md:w-6" />
-            ) : (
-              <Settings className="h-5 w-5 md:h-6 md:w-6" />
-            )}
-            <span className="hidden md:inline">Game Settings</span>
-            <span className="md:hidden">Settings</span>
-            
-            {/* Optional: Add a small indicator if settings are default */}
-            {settings.language === 'english' && settings.theme === 'default' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border border-white"
-                title="Try customizing your game settings!"
-              />
-            )}
-          </motion.button>
-        )}
+          {/* Settings button - Enhanced visibility */}
+          {onOpenSettings && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                playSFX('button-click');
+                onOpenSettings();
+              }}
+              className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+              title={isAssignmentMode ? "Choose your theme" : "Customize your game: Change Language, Level, Topic & Theme"}
+            >
+              {isAssignmentMode ? (
+                <Palette className="h-5 w-5 md:h-6 md:w-6" />
+              ) : (
+                <Settings className="h-5 w-5 md:h-6 md:w-6" />
+              )}
+              <span className="hidden md:inline">Game Settings</span>
+              <span className="md:hidden">Settings</span>
 
-        {/* Music toggle button - show in all modes */}
-        <button
-          onClick={() => {
-            playSFX('button-click'); // SFX for the button click itself
-            if (toggleMusic) {
-              toggleMusic();
-            } else {
-              setMusicEnabled(prev => !prev); // Fallback to local state
-            }
-          }}
-          className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
-          title={(isMusicEnabled ?? musicEnabled) ? "Mute music" : "Play music"}
-        >
-          {(isMusicEnabled ?? musicEnabled) ? <Volume2 size={14} className="md:w-4 md:h-4" /> : <VolumeX size={14} className="md:w-4 md:h-4" />}
-        </button>
+              {/* Optional: Add a small indicator if settings are default */}
+              {settings.language === 'english' && settings.theme === 'default' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border border-white"
+                  title="Try customizing your game settings!"
+                />
+              )}
+            </motion.button>
+          )}
 
-        {/* Hint button */}
-        <button
-          onClick={() => {
-            playSFX('button-click'); // Use passed-in playSFX
-            handleHint();
-          }}
-          disabled={hints <= 0 || gameStatus !== 'playing'}
-          className={`
-            relative flex items-center gap-1 px-2 md:px-3 py-1 rounded-lg
-            ${hints > 0 && gameStatus === 'playing'
-              ? `${themeClassesState.button}`
-              : 'bg-gray-400 opacity-50'
-            }
-            text-white text-xs md:text-sm font-medium
-          `}
-        >
-          <Zap size={14} className="md:w-4 md:h-4" />
-          <span className="hidden md:inline">Hint</span>
-          <span className="md:ml-1">({hints})</span>
-
-          {showPowerupEffect && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: [0, 1.5, 2], opacity: [0, 1, 0] }}
-              transition={{ duration: 0.8 }}
-              className="absolute inset-0 rounded-lg bg-white bg-opacity-30 pointer-events-none"
+          {/* Quick Theme Selector */}
+          {!isAssignmentMode && onThemeChange && (
+            <QuickThemeSelector
+              currentTheme={settings.theme}
+              onThemeChange={(theme) => {
+                playSFX('button-click');
+                onThemeChange(theme);
+              }}
+              variant="button"
+              className="relative z-50"
+              customButtonClass="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
             />
           )}
-        </button>
+
+          {/* Music toggle button - show in all modes */}
+          <button
+            onClick={() => {
+              playSFX('button-click'); // SFX for the button click itself
+              if (toggleMusic) {
+                toggleMusic();
+              } else {
+                setMusicEnabled(prev => !prev); // Fallback to local state
+              }
+            }}
+            className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+            title={(isMusicEnabled ?? musicEnabled) ? "Mute music" : "Play music"}
+          >
+            {(isMusicEnabled ?? musicEnabled) ? <Volume2 size={14} className="md:w-4 md:h-4" /> : <VolumeX size={14} className="md:w-4 md:h-4" />}
+          </button>
+
+          {/* Hint button */}
+          <button
+            onClick={() => {
+              playSFX('button-click'); // Use passed-in playSFX
+              handleHint();
+            }}
+            disabled={hints <= 0 || gameStatus !== 'playing'}
+            className={`
+            relative flex items-center gap-1 px-2 md:px-3 py-1 rounded-lg
+            ${hints > 0 && gameStatus === 'playing'
+                ? `${themeClassesState.button}`
+                : 'bg-gray-400 opacity-50'
+              }
+            text-white text-xs md:text-sm font-medium
+          `}
+          >
+            <Zap size={14} className="md:w-4 md:h-4" />
+            <span className="hidden md:inline">Hint</span>
+            <span className="md:ml-1">({hints})</span>
+
+            {showPowerupEffect && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 1.5, 2], opacity: [0, 1, 0] }}
+                transition={{ duration: 0.8 }}
+                className="absolute inset-0 rounded-lg bg-white bg-opacity-30 pointer-events-none"
+              />
+            )}
+          </button>
+        </div>
       </div>
-    </div>
 
       {/* Progress bar - on top of the header */}
       <div className="relative z-60 px-3 md:px-4 pb-3 md:pb-4">

@@ -592,9 +592,12 @@ export default function InGameConfigPanel({
             <div className="flex bg-gray-50 border-b border-gray-100 p-2">
               {tabs.map((tab) => {
                 const TabIcon = tab.icon;
+                // Theme should always be accessible if we already have vocabulary (custom mode)
+                // or if the full selection is complete
+                const hasVocabularyLoaded = currentVocabulary && currentVocabulary.length > 0;
                 const isDisabled = (tab.id === 'curriculum' && !tempConfig.language) ||
                   (tab.id === 'category' && (!tempConfig.language || !tempConfig.curriculumLevel)) ||
-                  (tab.id === 'theme' && (!tempConfig.language || !tempConfig.curriculumLevel || !tempConfig.categoryId));
+                  (tab.id === 'theme' && !hasVocabularyLoaded && (!tempConfig.language || !tempConfig.curriculumLevel || !tempConfig.categoryId));
                 return (
                   <button
                     key={tab.id}

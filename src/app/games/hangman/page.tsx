@@ -713,6 +713,9 @@ export default function HangmanPage() {
             onOpenSettings={handleOpenConfigPanel}
             toggleMusic={toggleMusic}
             isMusicEnabled={isMusicEnabled}
+            onThemeChange={(newTheme) => {
+              setGameConfig(prev => prev ? { ...prev, theme: newTheme } : null);
+            }}
           />
 
           <InGameConfigPanel

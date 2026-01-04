@@ -10,6 +10,7 @@ import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import AssignmentThemeSelector from '../../../../components/games/AssignmentThemeSelector';
+import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
 
 // Dynamic imports for theme animations - only load the theme being used
 // This prevents loading all 5 themes (~2000 lines) when only 1 is needed
@@ -64,6 +65,7 @@ interface TicTacToeGameProps {
   showAssignmentThemeSelector?: boolean;
   onCloseAssignmentThemeSelector?: () => void;
   onToggleAssignmentThemeSelector?: () => void;
+  onThemeChange?: (theme: string) => void;
 }
 
 const generateWrongOptions = (correctTranslation: string, vocabulary: any[]) => {
@@ -112,7 +114,8 @@ export default function TicTacToeGame({
   onAssignmentThemeChange,
   showAssignmentThemeSelector,
   onCloseAssignmentThemeSelector,
-  onToggleAssignmentThemeSelector
+  onToggleAssignmentThemeSelector,
+  onThemeChange
 }: TicTacToeGameProps) {
 
 
@@ -122,7 +125,7 @@ export default function TicTacToeGame({
   const [localSoundEnabled, setLocalSoundEnabled] = useState(true);
   const effectiveSoundEnabled = isMusicEnabled !== undefined ? isMusicEnabled : localSoundEnabled;
   const { playSFX, playThemeSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(effectiveSoundEnabled);
-  
+
   const [board, setBoard] = useState<CellContent[]>(Array(9).fill(null));
   const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X');
   const [gameState, setGameState] = useState<GameState>('playing');
@@ -160,7 +163,7 @@ export default function TicTacToeGame({
     if (storyDismissed) {
       startBackgroundMusic(themeId);
     }
-    
+
     // Cleanup - stop music when component unmounts
     return () => {
       stopBackgroundMusic();
@@ -212,11 +215,11 @@ export default function TicTacToeGame({
     const randomWord = wordsToUse[Math.floor(Math.random() * wordsToUse.length)];
 
     const wrongOptions = generateWrongOptions(randomWord.translation, vocabulary);
-    
+
     // Create 4 options: 1 correct + 3 wrong, then shuffle
     const options = [randomWord.translation, ...wrongOptions].sort(() => 0.5 - Math.random());
     const correctIndex = options.indexOf(randomWord.translation);
-    
+
     // Ensure vocabulary ID is properly preserved
     const vocabularyId = (randomWord as any).id || randomWord.id;
 
@@ -251,19 +254,19 @@ export default function TicTacToeGame({
       [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
       [0, 4, 8], [2, 4, 6] // diagonals
     ];
-    
+
     for (let line of lines) {
       const [a, b, c] = line;
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
         return { winner: squares[a] as 'X' | 'O', line };
       }
     }
-    
+
     // Check for tie
     if (squares.every(cell => cell !== null)) {
       return { winner: 'tie' as const, line: [] };
     }
-    
+
     return { winner: null, line: [] };
   };
 
@@ -274,10 +277,10 @@ export default function TicTacToeGame({
     } else {
       if (board[index] || gameState !== 'playing' || currentPlayer !== 'X') return;
     }
-    
+
     // Play square select sound
     playSFX('square-select');
-    
+
     // Generate and show vocabulary question
     const question = generateVocabularyQuestion();
     if (!question) {
@@ -285,7 +288,7 @@ export default function TicTacToeGame({
       makeMove(index);
       return;
     }
-    
+
     setCurrentQuestion(question);
     setPendingMove(index);
     setTotalQuestions(prev => prev + 1);
@@ -328,9 +331,9 @@ export default function TicTacToeGame({
       try {
         // Ensure vocabulary ID is properly preserved - use multiple fallbacks
         const vocabularyId = currentQuestion.id ||
-                           (currentQuestion as any).vocabularyId ||
-                           (currentQuestion.vocabularyWord as any)?.id ||
-                           null;
+          (currentQuestion as any).vocabularyId ||
+          (currentQuestion.vocabularyWord as any)?.id ||
+          null;
 
         if (!vocabularyId) {
           console.error('🚨 [FSRS ERROR] No vocabulary ID found for word:', {
@@ -402,34 +405,34 @@ export default function TicTacToeGame({
     if (gameService && gameSessionId && !(currentQuestion as any).isRetryQuestion && !isAssignmentMode) {
       // Only do essential word performance logging - skip complex analytics (non-blocking)
       gameService.logWordPerformance({
-          session_id: gameSessionId,
-          vocabulary_id: currentQuestion.id ? currentQuestion.id : undefined,
-          word_text: currentQuestion.word,
-          translation_text: currentQuestion.translation,
-          language_pair: `${settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'}_english`,
-          attempt_number: 1,
-          response_time_ms: Math.round(responseTime * 1000),
-          was_correct: isCorrect,
-          confidence_level: 3,
-          difficulty_level: 'beginner',
-          hint_used: false,
-          streak_count: correctAnswers + (isCorrect ? 1 : 0),
-          previous_attempts: 0,
-          mastery_level: 1,
-          error_type: isCorrect ? undefined : 'incorrect_selection',
-          grammar_concept: 'vocabulary_exposure',
-          context_data: {
-            gameType: 'noughts-and-crosses',
-            isLuckBased: true,
-            gameState: board.join(''),
-            totalQuestions: totalQuestions + 1,
-            correctAnswers: correctAnswers + (isCorrect ? 1 : 0)
-          },
-          timestamp: new Date()
-        }).then(() => {
-        }).catch(error => {
-          console.error('🚀 [FAST] Vocabulary tracking failed:', error);
-        });
+        session_id: gameSessionId,
+        vocabulary_id: currentQuestion.id ? currentQuestion.id : undefined,
+        word_text: currentQuestion.word,
+        translation_text: currentQuestion.translation,
+        language_pair: `${settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'}_english`,
+        attempt_number: 1,
+        response_time_ms: Math.round(responseTime * 1000),
+        was_correct: isCorrect,
+        confidence_level: 3,
+        difficulty_level: 'beginner',
+        hint_used: false,
+        streak_count: correctAnswers + (isCorrect ? 1 : 0),
+        previous_attempts: 0,
+        mastery_level: 1,
+        error_type: isCorrect ? undefined : 'incorrect_selection',
+        grammar_concept: 'vocabulary_exposure',
+        context_data: {
+          gameType: 'noughts-and-crosses',
+          isLuckBased: true,
+          gameState: board.join(''),
+          totalQuestions: totalQuestions + 1,
+          correctAnswers: correctAnswers + (isCorrect ? 1 : 0)
+        },
+        timestamp: new Date()
+      }).then(() => {
+      }).catch(error => {
+        console.error('🚀 [FAST] Vocabulary tracking failed:', error);
+      });
     }
 
     // FSRS and Gem Recording are separate systems - both should run independently
@@ -443,7 +446,7 @@ export default function TicTacToeGame({
       // Track cumulative stats
       setCumulativeCorrectAnswers(prev => prev + 1);
       setCumulativeWordsLearned(prev => prev + 1);
-      
+
       // Play audio for the vocabulary word
       if (currentQuestion.playAudio) {
         setTimeout(() => {
@@ -457,14 +460,14 @@ export default function TicTacToeGame({
           });
         }, 300);
       }
-      
+
       makeMove(pendingMove);
     } else {
       // Play wrong answer sound
       playSFX('wrong-answer');
-      
+
       // Wrong answer - handle based on game mode
-      
+
       // Record the wrong answer attempt
       if (gameSessionId && currentQuestion) {
         console.log('🎮 [NOUGHTS] Recording wrong answer:', {
@@ -497,7 +500,7 @@ export default function TicTacToeGame({
           hasCurrentQuestion: !!currentQuestion
         });
       }
-      
+
       // In 2-player mode, just switch turns. In computer mode, computer gets the move
       if (settings.gameMode === '2-player') {
         // Just switch to the other player (already handled by the makeMove logic)
@@ -506,7 +509,7 @@ export default function TicTacToeGame({
         makeComputerMove();
       }
     }
-    
+
     setPendingMove(null);
     setCurrentQuestion(null);
   };
@@ -515,7 +518,7 @@ export default function TicTacToeGame({
     const newBoard = [...board];
     newBoard[index] = currentPlayer;
     setBoard(newBoard);
-    
+
     const result = checkWinner(newBoard);
     if (result.winner) {
       handleGameEnd(result.winner, result.line);
@@ -523,7 +526,7 @@ export default function TicTacToeGame({
       // Check if we need to make computer move BEFORE switching currentPlayer
       const wasPlayerX = currentPlayer === 'X';
       setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
-      
+
       if (wasPlayerX && settings.gameMode !== '2-player') {
         // After player's move, computer moves (only in computer mode)
         setTimeout(() => {
@@ -537,65 +540,65 @@ export default function TicTacToeGame({
 
   // Minimax algorithm with alpha-beta pruning for intelligent AI
   const minimax = (
-    board: CellContent[], 
-    depth: number, 
-    isMaximizing: boolean, 
-    alpha: number = -Infinity, 
+    board: CellContent[],
+    depth: number,
+    isMaximizing: boolean,
+    alpha: number = -Infinity,
     beta: number = Infinity
   ): { score: number; move?: number } => {
     const computerMark = settings.computerMark as 'X' | 'O';
     const playerMark = settings.playerMark as 'X' | 'O';
-    
+
     const result = checkWinner(board);
-    
+
     // Terminal states
     if (result.winner === computerMark) return { score: 10 - depth };
     if (result.winner === playerMark) return { score: depth - 10 };
     if (board.every(cell => cell !== null)) return { score: 0 };
-    
+
     const availableMoves = board
       .map((cell, index) => cell === null ? index : null)
       .filter(val => val !== null) as number[];
-    
+
     if (isMaximizing) {
       let maxScore = -Infinity;
       let bestMove = availableMoves[0];
-      
+
       for (const move of availableMoves) {
         const newBoard = [...board];
         newBoard[move] = computerMark;
-        
+
         const { score } = minimax(newBoard, depth + 1, false, alpha, beta);
-        
+
         if (score > maxScore) {
           maxScore = score;
           bestMove = move;
         }
-        
+
         alpha = Math.max(alpha, score);
         if (beta <= alpha) break; // Alpha-beta pruning
       }
-      
+
       return { score: maxScore, move: bestMove };
     } else {
       let minScore = Infinity;
       let bestMove = availableMoves[0];
-      
+
       for (const move of availableMoves) {
         const newBoard = [...board];
         newBoard[move] = playerMark;
-        
+
         const { score } = minimax(newBoard, depth + 1, true, alpha, beta);
-        
+
         if (score < minScore) {
           minScore = score;
           bestMove = move;
         }
-        
+
         beta = Math.min(beta, score);
         if (beta <= alpha) break; // Alpha-beta pruning
       }
-      
+
       return { score: minScore, move: bestMove };
     }
   };
@@ -604,16 +607,16 @@ export default function TicTacToeGame({
   const getStrategicMove = (board: CellContent[]): number | null => {
     const computerMark = settings.computerMark as 'X' | 'O';
     const playerMark = settings.playerMark as 'X' | 'O';
-    
+
     const availableCells = board
       .map((cell, index) => cell === null ? index : null)
       .filter(val => val !== null) as number[];
-    
+
     // Helper to check if a move creates a fork (two ways to win)
     const createsFork = (testBoard: CellContent[], mark: 'X' | 'O', position: number): boolean => {
       const newBoard = [...testBoard];
       newBoard[position] = mark;
-      
+
       let winningMoves = 0;
       for (const pos of availableCells) {
         if (pos === position) continue;
@@ -625,7 +628,7 @@ export default function TicTacToeGame({
       }
       return winningMoves >= 2;
     };
-    
+
     // 1. Win immediately if possible
     for (const pos of availableCells) {
       const testBoard = [...board];
@@ -634,7 +637,7 @@ export default function TicTacToeGame({
         return pos;
       }
     }
-    
+
     // 2. Block opponent's winning move
     for (const pos of availableCells) {
       const testBoard = [...board];
@@ -643,30 +646,30 @@ export default function TicTacToeGame({
         return pos;
       }
     }
-    
+
     // 3. Create a fork
     for (const pos of availableCells) {
       if (createsFork(board, computerMark, pos)) {
         return pos;
       }
     }
-    
+
     // 4. Block opponent's fork
     for (const pos of availableCells) {
       if (createsFork(board, playerMark, pos)) {
         return pos;
       }
     }
-    
+
     // 5. Take center if available
     if (availableCells.includes(4)) {
       return 4;
     }
-    
+
     // 6. Take opposite corner if opponent is in corner
     const corners = [0, 2, 6, 8];
     const oppositeCorners = { 0: 8, 2: 6, 6: 2, 8: 0 };
-    
+
     for (const corner of corners) {
       if (board[corner] === playerMark) {
         const opposite = oppositeCorners[corner as keyof typeof oppositeCorners];
@@ -675,20 +678,20 @@ export default function TicTacToeGame({
         }
       }
     }
-    
+
     // 7. Take any corner
     const availableCorners = corners.filter(pos => availableCells.includes(pos));
     if (availableCorners.length > 0) {
       return availableCorners[Math.floor(Math.random() * availableCorners.length)];
     }
-    
+
     // 8. Take any side
     const sides = [1, 3, 5, 7];
     const availableSides = sides.filter(pos => availableCells.includes(pos));
     if (availableSides.length > 0) {
       return availableSides[Math.floor(Math.random() * availableSides.length)];
     }
-    
+
     return null;
   };
 
@@ -696,14 +699,14 @@ export default function TicTacToeGame({
     const availableCells = currentBoard
       .map((cell, index) => cell === null ? index : null)
       .filter(val => val !== null) as number[];
-    
+
     if (availableCells.length === 0) {
       return;
     }
-    
+
     const computerMark = settings.computerMark as 'X' | 'O';
     let bestMove: number;
-    
+
     // Difficulty-based AI with much smarter logic
     if (settings.difficulty === 'advanced') {
       // Use minimax for perfect play
@@ -726,11 +729,11 @@ export default function TicTacToeGame({
         bestMove = availableCells[Math.floor(Math.random() * availableCells.length)];
       }
     }
-    
+
     const newBoard = [...currentBoard];
     newBoard[bestMove] = computerMark;
     setBoard(newBoard);
-    
+
     const result = checkWinner(newBoard);
     if (result.winner) {
       handleGameEnd(result.winner, result.line);
@@ -747,7 +750,7 @@ export default function TicTacToeGame({
     } else {
       setWinner(gameWinner);
       setWinningLine(line);
-      
+
       if (gameWinner === 'X') {
         setGameState('won');
         playSFX('victory');
@@ -762,7 +765,7 @@ export default function TicTacToeGame({
         playSFX('defeat');
       }
     }
-    
+
     // LAYER 2: Record word exposures for assignment progress
     // This must happen BEFORE calling onGameEnd so progress is updated
     if (isAssignmentMode && assignmentId && userId) {
@@ -805,13 +808,13 @@ export default function TicTacToeGame({
   };
 
   const renderThemeAnimation = () => {
-    const animationProps = { 
-      board, 
-      gameState, 
+    const animationProps = {
+      board,
+      gameState,
       storyDismissed,
       onStoryDismiss: () => setStoryDismissed(true)
     };
-    
+
     // Loading fallback for theme animations
     const ThemeLoadingFallback = () => (
       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
@@ -821,7 +824,7 @@ export default function TicTacToeGame({
         </div>
       </div>
     );
-    
+
     // Wrap each theme component in Suspense for lazy loading
     switch (themeId) {
       case 'tokyo':
@@ -874,7 +877,7 @@ export default function TicTacToeGame({
 
   return (
     <div className="w-full h-screen relative overflow-hidden">
-      
+
       {/* Full-Screen Immersive Theme Background */}
       <div className="absolute inset-0">
         {renderThemeAnimation()}
@@ -895,7 +898,7 @@ export default function TicTacToeGame({
             <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
             <span className="font-medium text-sm md:text-base">Back</span>
           </motion.button>
-          
+
           {/* Themed Title */}
           <motion.div
             className="flex-1 text-center px-2"
@@ -903,7 +906,7 @@ export default function TicTacToeGame({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <h1 
+            <h1
               className="text-lg md:text-2xl lg:text-3xl font-bold text-white"
               style={{
                 textShadow: '3px 3px 0px rgba(0, 0, 0, 0.8), -1px -1px 0px rgba(0, 0, 0, 0.8), 1px -1px 0px rgba(0, 0, 0, 0.8), -1px 1px 0px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5)',
@@ -915,7 +918,7 @@ export default function TicTacToeGame({
               </span>
             </h1>
           </motion.div>
-          
+
           <div className="flex items-center gap-1 md:gap-3">
             {/* Settings button for free-play mode, AssignmentThemeSelector for assignment mode */}
             {isAssignmentMode ? (
@@ -951,6 +954,21 @@ export default function TicTacToeGame({
                 </motion.button>
               )
             )}
+
+            {/* Quick Theme Selector for Free Play */}
+            {!isAssignmentMode && onThemeChange && (
+              <QuickThemeSelector
+                currentTheme={settings.theme}
+                onThemeChange={(theme) => {
+                  playSFX('button-click');
+                  onThemeChange(theme);
+                }}
+                variant="button"
+                className="relative z-50"
+                customButtonClass="relative p-2 md:px-4 md:py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-semibold flex items-center gap-1 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+              />
+            )}
+
             <motion.button
               onClick={() => {
                 playSFX('button-click');
@@ -966,7 +984,7 @@ export default function TicTacToeGame({
               </svg>
               <span className="hidden md:inline text-sm md:text-base">Reset</span>
             </motion.button>
-            
+
             {/* Game Mode Toggle Button - Hide on mobile for space */}
             {onGameModeChange && (
               <motion.button
@@ -975,11 +993,10 @@ export default function TicTacToeGame({
                   const newMode = settings.gameMode === 'computer' ? '2-player' : 'computer';
                   onGameModeChange(newMode);
                 }}
-                className={`hidden sm:flex relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl ${
-                  settings.gameMode === '2-player' 
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700' 
-                    : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700'
-                } text-white text-sm md:text-base font-semibold items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20`}
+                className={`hidden sm:flex relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl ${settings.gameMode === '2-player'
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
+                  : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700'
+                  } text-white text-sm md:text-base font-semibold items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 title={settings.gameMode === 'computer' ? 'Switch to 2-Player Mode' : 'Switch to Computer Mode'}
@@ -1024,10 +1041,10 @@ export default function TicTacToeGame({
             <>
               {/* Desktop Layout */}
               <div className="hidden lg:flex w-full max-w-7xl mx-auto px-8 items-start gap-8 mt-2">
-                
+
                 {/* Left Side - Game Board */}
                 <div className="flex-shrink-0">
-                  <motion.div 
+                  <motion.div
                     className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-4 shadow-2xl"
                     initial={{ scale: 0.8, opacity: 0, x: -50 }}
                     animate={{ scale: 1, opacity: 1, x: 0 }}
@@ -1042,20 +1059,20 @@ export default function TicTacToeGame({
                           className={`
                             aspect-square rounded-2xl border-3 flex flex-col items-center justify-center text-6xl font-bold transition-all duration-300 relative
                             backdrop-blur-md bg-white/15 border-white/40 shadow-lg
-                            ${winningLine.includes(index) 
+                            ${winningLine.includes(index)
                               ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
-                              : cell 
-                                ? cell === 'X' 
-                                  ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50' 
+                              : cell
+                                ? cell === 'X'
+                                  ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50'
                                   : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
                                 : 'hover:bg-white/25 hover:border-white/60 cursor-pointer'
                             }
                             ${!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? 'transform hover:scale-110' : ''}
                           `}
-                          whileHover={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { 
-                            scale: 1.1, 
+                          whileHover={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? {
+                            scale: 1.1,
                             y: -4,
-                            boxShadow: "0 10px 25px rgba(255, 255, 255, 0.3)" 
+                            boxShadow: "0 10px 25px rgba(255, 255, 255, 0.3)"
                           } : {}}
                           whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.95 } : {}}
                         >
@@ -1063,7 +1080,7 @@ export default function TicTacToeGame({
                           <div className="absolute top-1 left-1 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-5 h-5 flex items-center justify-center">
                             {index + 1}
                           </div>
-                          
+
                           <AnimatePresence>
                             {cell && (
                               <motion.span
@@ -1083,8 +1100,8 @@ export default function TicTacToeGame({
                     {/* Game Status - Simplified */}
                     <div className="text-center min-h-[60px] flex items-center justify-center">
                       <AnimatePresence mode="wait">
-                        
-                        
+
+
                         {gameState === 'tie' && (
                           <motion.div
                             key="tie"
@@ -1125,7 +1142,7 @@ export default function TicTacToeGame({
                             </div>
                           </motion.div>
                         )}
-                        
+
                         {/* Playing State - Show current player in 2-player mode */}
                         {gameState === 'playing' && settings.gameMode === '2-player' && (
                           <motion.div
@@ -1140,7 +1157,7 @@ export default function TicTacToeGame({
                             </div>
                           </motion.div>
                         )}
-                        
+
                         {/* Removed computer thinking message to save space */}
                       </AnimatePresence>
                     </div>
@@ -1243,7 +1260,7 @@ export default function TicTacToeGame({
                               </span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-orange-400 h-2 rounded-full transition-all duration-300"
                                 style={{ width: gameState === 'won' ? '100%' : '0%' }}
                               ></div>
@@ -1257,7 +1274,7 @@ export default function TicTacToeGame({
                               </span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-green-400 h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${Math.min((cumulativeWordsLearned / 10) * 100, 100)}%` }}
                               ></div>
@@ -1272,9 +1289,9 @@ export default function TicTacToeGame({
 
               {/* Mobile Layout */}
               <div className="lg:hidden w-full px-4 space-y-4">
-                
+
                 {/* Mobile Game Board */}
-                <motion.div 
+                <motion.div
                   className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-3 shadow-2xl mx-auto max-w-sm"
                   initial={{ scale: 0.8, opacity: 0, y: 50 }}
                   animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -1289,11 +1306,11 @@ export default function TicTacToeGame({
                         className={`
                           aspect-square rounded-xl border-2 flex flex-col items-center justify-center text-4xl font-bold transition-all duration-300 relative
                           backdrop-blur-md bg-white/15 border-white/40 shadow-lg
-                          ${winningLine.includes(index) 
+                          ${winningLine.includes(index)
                             ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
-                            : cell 
-                              ? cell === 'X' 
-                                ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50' 
+                            : cell
+                              ? cell === 'X'
+                                ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50'
                                 : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
                               : 'hover:bg-white/25 hover:border-white/60 cursor-pointer active:scale-95'
                           }
@@ -1304,7 +1321,7 @@ export default function TicTacToeGame({
                         <div className="absolute top-0.5 left-0.5 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-4 h-4 flex items-center justify-center">
                           {index + 1}
                         </div>
-                        
+
                         <AnimatePresence>
                           {cell && (
                             <motion.span
@@ -1337,7 +1354,7 @@ export default function TicTacToeGame({
                           </div>
                         </motion.div>
                       )}
-                      
+
                       {gameState === 'playing' && settings.gameMode === '2-player' && (
                         <motion.div
                           key="playing-mobile"
@@ -1433,46 +1450,173 @@ export default function TicTacToeGame({
             <>
               {/* Desktop Layout */}
               <div className="hidden lg:flex w-full max-w-7xl mx-auto px-8 items-start gap-8 mt-2">
-            
+
                 {/* Left Side - Game Board */}
                 <div className="flex-shrink-0">
-                  <motion.div 
+                  <motion.div
                     className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-4 shadow-2xl"
                     initial={{ scale: 0.8, opacity: 0, x: -50 }}
                     animate={{ scale: 1, opacity: 1, x: 0 }}
                     transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
                   >
                     <div className="grid grid-cols-3 gap-6 aspect-square w-[28rem] mx-auto mb-2">
+                      {board.map((cell, index) => (
+                        <motion.button
+                          key={index}
+                          onClick={() => handleCellClick(index)}
+                          disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
+                          className={`
+                          aspect-square rounded-2xl border-3 flex flex-col items-center justify-center text-6xl font-bold transition-all duration-300 relative
+                          backdrop-blur-md bg-white/15 border-white/40 shadow-lg
+                          ${winningLine.includes(index)
+                              ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
+                              : cell
+                                ? cell === 'X'
+                                  ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50'
+                                  : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
+                                : 'hover:bg-white/25 hover:border-white/60 cursor-pointer'
+                            }
+                          ${!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? 'transform hover:scale-110' : ''}
+                        `}
+                          whileHover={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? {
+                            scale: 1.1,
+                            y: -4,
+                            boxShadow: "0 10px 25px rgba(255, 255, 255, 0.3)"
+                          } : {}}
+                          whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.95 } : {}}
+                        >
+                          {/* Fixed glyph for each square */}
+                          <div className="absolute top-1 left-1 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-5 h-5 flex items-center justify-center">
+                            {index + 1}
+                          </div>
+
+                          <AnimatePresence>
+                            {cell && (
+                              <motion.span
+                                initial={{ scale: 0, rotate: 180 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                className={`drop-shadow-2xl ${cell === 'X' ? 'text-blue-300' : 'text-red-300'}`}
+                              >
+                                {cell}
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                        </motion.button>
+                      ))}
+                    </div>
+
+                    {/* Game Status - Simplified */}
+                    <div className="text-center min-h-[60px] flex items-center justify-center">
+                      <AnimatePresence mode="wait">
+
+
+                        {gameState === 'tie' && (
+                          <motion.div
+                            key="tie"
+                            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -20, scale: 0.8 }}
+                            className="space-y-4"
+                          >
+                            <div className="text-2xl font-bold text-yellow-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-2xl px-4 py-3 border border-yellow-400/50">
+                              <Handshake className="inline w-6 h-6 mr-2" />Stalemate
+                            </div>
+                            <div className="text-sm text-white bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
+                              Words learned: {wordsLearned}
+                            </div>
+                            <div className="flex gap-3 justify-center mt-3">
+                              <motion.button
+                                onClick={() => {
+                                  playSFX('button-click');
+                                  resetGame();
+                                }}
+                                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-full transition-all shadow-lg text-sm"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                <Target className="inline w-4 h-4 mr-2" />Rematch
+                              </motion.button>
+                              <motion.button
+                                onClick={() => {
+                                  playSFX('button-click');
+                                  onBackToMenu();
+                                }}
+                                className="px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold rounded-full transition-all shadow-lg border border-white/20 text-sm"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                <Home className="inline w-4 h-4 mr-2" />Menu
+                              </motion.button>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {/* Playing State - Show current player in 2-player mode */}
+                        {gameState === 'playing' && settings.gameMode === '2-player' && (
+                          <motion.div
+                            key="playing"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="text-center"
+                          >
+                            <div className="text-xl font-bold text-white drop-shadow-lg bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+                              {currentPlayer === 'X' ? <X className="inline w-6 h-6 mr-2" /> : <Circle className="inline w-6 h-6 mr-2" />} Player {currentPlayer}'s Turn
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {/* Removed computer thinking message to save space */}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Right Side - Theme Area (ship, treasure, etc.) */}
+                <div className="flex-1 h-full relative">
+                  {/* Other themes: Reserved for theme-specific elements */}
+                  {themeId && ['tokyo', 'pirate', 'space', 'temple'].includes(themeId) && (
+                    <div>
+                      {/* This area is reserved for theme-specific elements like ships and treasures */}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile Layout for Other Themes */}
+              <div className="lg:hidden w-full px-4">
+                <motion.div
+                  className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-3 shadow-2xl mx-auto max-w-sm"
+                  initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
+                >
+                  <div className="grid grid-cols-3 gap-3 aspect-square w-full mb-2">
                     {board.map((cell, index) => (
                       <motion.button
                         key={index}
                         onClick={() => handleCellClick(index)}
                         disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
                         className={`
-                          aspect-square rounded-2xl border-3 flex flex-col items-center justify-center text-6xl font-bold transition-all duration-300 relative
-                          backdrop-blur-md bg-white/15 border-white/40 shadow-lg
-                          ${winningLine.includes(index) 
+                        aspect-square rounded-xl border-2 flex flex-col items-center justify-center text-4xl font-bold transition-all duration-300 relative
+                        backdrop-blur-md bg-white/15 border-white/40 shadow-lg
+                        ${winningLine.includes(index)
                             ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
-                            : cell 
-                              ? cell === 'X' 
-                                ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50' 
+                            : cell
+                              ? cell === 'X'
+                                ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50'
                                 : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
-                              : 'hover:bg-white/25 hover:border-white/60 cursor-pointer'
+                              : 'hover:bg-white/25 hover:border-white/60 cursor-pointer active:scale-95'
                           }
-                          ${!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? 'transform hover:scale-110' : ''}
-                        `}
-                        whileHover={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { 
-                          scale: 1.1, 
-                          y: -4,
-                          boxShadow: "0 10px 25px rgba(255, 255, 255, 0.3)" 
-                        } : {}}
-                        whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.95 } : {}}
+                      `}
+                        whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.9 } : {}}
                       >
-                        {/* Fixed glyph for each square */}
-                        <div className="absolute top-1 left-1 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-5 h-5 flex items-center justify-center">
+                        {/* Mobile number indicators - smaller */}
+                        <div className="absolute top-0.5 left-0.5 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-4 h-4 flex items-center justify-center">
                           {index + 1}
                         </div>
-                        
+
                         <AnimatePresence>
                           {cell && (
                             <motion.span
@@ -1489,184 +1633,57 @@ export default function TicTacToeGame({
                     ))}
                   </div>
 
-                  {/* Game Status - Simplified */}
-                  <div className="text-center min-h-[60px] flex items-center justify-center">
+                  {/* Mobile Game Status */}
+                  <div className="text-center min-h-[40px] flex items-center justify-center">
                     <AnimatePresence mode="wait">
-                      
-                      
                       {gameState === 'tie' && (
                         <motion.div
-                          key="tie"
-                          initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -20, scale: 0.8 }}
-                          className="space-y-4"
-                        >
-                          <div className="text-2xl font-bold text-yellow-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-2xl px-4 py-3 border border-yellow-400/50">
-                            <Handshake className="inline w-6 h-6 mr-2" />Stalemate
-                          </div>
-                          <div className="text-sm text-white bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
-                            Words learned: {wordsLearned}
-                          </div>
-                          <div className="flex gap-3 justify-center mt-3">
-                            <motion.button
-                              onClick={() => {
-                                playSFX('button-click');
-                                resetGame();
-                              }}
-                              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-full transition-all shadow-lg text-sm"
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <Target className="inline w-4 h-4 mr-2" />Rematch
-                            </motion.button>
-                            <motion.button
-                              onClick={() => {
-                                playSFX('button-click');
-                                onBackToMenu();
-                              }}
-                              className="px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold rounded-full transition-all shadow-lg border border-white/20 text-sm"
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <Home className="inline w-4 h-4 mr-2" />Menu
-                            </motion.button>
-                          </div>
-                        </motion.div>
-                      )}
-                      
-                      {/* Playing State - Show current player in 2-player mode */}
-                      {gameState === 'playing' && settings.gameMode === '2-player' && (
-                        <motion.div
-                          key="playing"
+                          key="tie-mobile-other"
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -20 }}
                           className="text-center"
                         >
-                          <div className="text-xl font-bold text-white drop-shadow-lg bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
-                            {currentPlayer === 'X' ? <X className="inline w-6 h-6 mr-2" /> : <Circle className="inline w-6 h-6 mr-2" />} Player {currentPlayer}'s Turn
+                          <div className="text-lg font-bold text-yellow-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-xl px-3 py-2 border border-yellow-400/50">
+                            <Handshake className="inline w-5 h-5 mr-2" />Stalemate
                           </div>
                         </motion.div>
                       )}
-                      
-                      {/* Removed computer thinking message to save space */}
+
+                      {gameState === 'playing' && settings.gameMode === '2-player' && (
+                        <motion.div
+                          key="turn-mobile-other"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          className="text-center"
+                        >
+                          <div className="text-sm font-bold text-white drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                            <span className={currentPlayer === 'X' ? 'text-blue-300' : 'text-red-300'}>
+                              Player {currentPlayer}
+                            </span>
+                            <span className="text-white">'s Turn</span>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {gameState === 'playing' && settings.gameMode === 'computer' && (
+                        <motion.div
+                          key="vs-computer-mobile-other"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          className="text-center"
+                        >
+                          <div className="text-sm font-bold drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                            <span className="text-blue-300">Your Turn</span>
+                          </div>
+                        </motion.div>
+                      )}
                     </AnimatePresence>
                   </div>
                 </motion.div>
               </div>
-
-              {/* Right Side - Theme Area (ship, treasure, etc.) */}
-              <div className="flex-1 h-full relative">
-                {/* Other themes: Reserved for theme-specific elements */}
-                {themeId && ['tokyo', 'pirate', 'space', 'temple'].includes(themeId) && (
-                  <div>
-                    {/* This area is reserved for theme-specific elements like ships and treasures */}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Mobile Layout for Other Themes */}
-            <div className="lg:hidden w-full px-4">
-              <motion.div 
-                className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-3 shadow-2xl mx-auto max-w-sm"
-                initial={{ scale: 0.8, opacity: 0, y: 50 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
-              >
-                <div className="grid grid-cols-3 gap-3 aspect-square w-full mb-2">
-                  {board.map((cell, index) => (
-                    <motion.button
-                      key={index}
-                      onClick={() => handleCellClick(index)}
-                      disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
-                      className={`
-                        aspect-square rounded-xl border-2 flex flex-col items-center justify-center text-4xl font-bold transition-all duration-300 relative
-                        backdrop-blur-md bg-white/15 border-white/40 shadow-lg
-                        ${winningLine.includes(index) 
-                          ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
-                          : cell 
-                            ? cell === 'X' 
-                              ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50' 
-                              : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
-                            : 'hover:bg-white/25 hover:border-white/60 cursor-pointer active:scale-95'
-                        }
-                      `}
-                      whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.9 } : {}}
-                    >
-                      {/* Mobile number indicators - smaller */}
-                      <div className="absolute top-0.5 left-0.5 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-4 h-4 flex items-center justify-center">
-                        {index + 1}
-                      </div>
-                      
-                      <AnimatePresence>
-                        {cell && (
-                          <motion.span
-                            initial={{ scale: 0, rotate: 180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                            className={`drop-shadow-2xl ${cell === 'X' ? 'text-blue-300' : 'text-red-300'}`}
-                          >
-                            {cell}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-                  ))}
-                </div>
-
-                {/* Mobile Game Status */}
-                <div className="text-center min-h-[40px] flex items-center justify-center">
-                  <AnimatePresence mode="wait">
-                    {gameState === 'tie' && (
-                      <motion.div
-                        key="tie-mobile-other"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="text-center"
-                      >
-                        <div className="text-lg font-bold text-yellow-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-xl px-3 py-2 border border-yellow-400/50">
-                          <Handshake className="inline w-5 h-5 mr-2" />Stalemate
-                        </div>
-                      </motion.div>
-                    )}
-                    
-                    {gameState === 'playing' && settings.gameMode === '2-player' && (
-                      <motion.div
-                        key="turn-mobile-other"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="text-center"
-                      >
-                        <div className="text-sm font-bold text-white drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
-                          <span className={currentPlayer === 'X' ? 'text-blue-300' : 'text-red-300'}>
-                            Player {currentPlayer}
-                          </span>
-                          <span className="text-white">'s Turn</span>
-                        </div>
-                      </motion.div>
-                    )}
-                    
-                    {gameState === 'playing' && settings.gameMode === 'computer' && (
-                      <motion.div
-                        key="vs-computer-mobile-other"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="text-center"
-                      >
-                        <div className="text-sm font-bold drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
-                          <span className="text-blue-300">Your Turn</span>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-            </div>
             </>
           )}
         </div>
@@ -1701,11 +1718,10 @@ export default function TicTacToeGame({
                       setTypingMode(false);
                       setTypedAnswer('');
                     }}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                      !typingMode
-                        ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${!typingMode
+                      ? 'bg-purple-600 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
                   >
                     Multiple Choice
                   </button>
@@ -1714,11 +1730,10 @@ export default function TicTacToeGame({
                       setTypingMode(true);
                       setTypedAnswer('');
                     }}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                      typingMode
-                        ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${typingMode
+                      ? 'bg-purple-600 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
                   >
                     Type Answer
                   </button>
@@ -1800,11 +1815,10 @@ export default function TicTacToeGame({
                   <motion.button
                     onClick={handleTypedAnswer}
                     disabled={!typedAnswer.trim()}
-                    className={`w-full p-4 rounded-xl font-bold text-white transition-all ${
-                      typedAnswer.trim()
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg'
-                        : 'bg-gray-300 cursor-not-allowed'
-                    }`}
+                    className={`w-full p-4 rounded-xl font-bold text-white transition-all ${typedAnswer.trim()
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg'
+                      : 'bg-gray-300 cursor-not-allowed'
+                      }`}
                     whileHover={typedAnswer.trim() ? { scale: 1.02, y: -2 } : {}}
                     whileTap={typedAnswer.trim() ? { scale: 0.98 } : {}}
                   >

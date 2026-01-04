@@ -19,6 +19,7 @@ import { EnhancedGameSessionService } from '../../../../services/rewards/Enhance
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../../components/games/UnifiedSentenceCategorySelector';
 import WordBlastEngine from './WordBlastEngine';
 import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
+import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
 import { useAudio, AudioFiles } from '../hooks/useAudio';
 import {
   SentenceChallenge,
@@ -177,6 +178,7 @@ interface WordBlastGameProps {
     vocabulary: any[];
   };
   selectedTheme?: string;
+  onThemeChange?: (theme: string) => void;
 }
 
 export default function WordBlastGame({
@@ -192,7 +194,8 @@ export default function WordBlastGame({
   onBlastCombo,
   onOpenSettings,
   preselectedConfig,
-  selectedTheme: initialTheme
+  selectedTheme: initialTheme,
+  onThemeChange
 }: WordBlastGameProps) {
   // Initialize FSRS spaced repetition system
 
@@ -201,13 +204,11 @@ export default function WordBlastGame({
   const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(
     preselectedConfig ? {
       language: preselectedConfig.language,
-      category: preselectedConfig.category,
-      subcategory: preselectedConfig.subcategory,
-      curriculumLevel: preselectedConfig.curriculumLevel,
-      examBoard: preselectedConfig.examBoard,
-      tier: preselectedConfig.tier,
+      categoryId: preselectedConfig.category,
+      subcategoryId: preselectedConfig.subcategory,
+      curriculumLevel: preselectedConfig.curriculumLevel as any,
       vocabulary: preselectedConfig.vocabulary
-    } : null
+    } as any : null
   );
 
   // Game state
@@ -274,30 +275,30 @@ export default function WordBlastGame({
     try {
       const params = new URLSearchParams({
         language: selectedConfig.language,
-        category: selectedConfig.categoryId || selectedConfig.category,
+        category: selectedConfig.categoryId,
         difficulty: 'beginner',
         curriculumLevel: selectedConfig.curriculumLevel,
         count: '10'
       });
 
-      if (selectedConfig.subcategoryId || selectedConfig.subcategory) {
-        params.append('subcategory', selectedConfig.subcategoryId || selectedConfig.subcategory);
+      if (selectedConfig.subcategoryId) {
+        params.append('subcategory', selectedConfig.subcategoryId);
       }
-      
+
       if (assignmentConfig?.assignmentId) {
         params.append('assignmentId', assignmentConfig.assignmentId);
       }
-      
+
       const response = await fetch(`/api/games/word-blast/sentences?${params}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch challenges');
       }
-      
+
       const data = await response.json();
       setChallenges(data.challenges || []);
       setCurrentChallengeIndex(0);
-      
+
     } catch (error) {
       console.error('Error fetching challenges:', error);
       setError('Failed to load challenges. Please try again.');
@@ -341,7 +342,7 @@ export default function WordBlastGame({
   const handleCorrectAnswer = async (points: number) => {
     const responseTime = wordStartTime > 0 ? Date.now() - wordStartTime : 0;
     const currentChallenge = challenges[currentChallengeIndex];
-    
+
     // Update game stats first
     let newCombo = 0;
     setGameStats(prev => {
@@ -363,7 +364,7 @@ export default function WordBlastGame({
         console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for challenge:', {
           challengeId: currentChallenge.id,
           challengeIdType: typeof currentChallenge.id,
-          spanish: currentChallenge.spanish,
+          spanish: currentChallenge.targetSentence,
           english: currentChallenge.english,
           isCorrect: true,
           gameSessionId,
@@ -373,7 +374,7 @@ export default function WordBlastGame({
         const sessionService = new EnhancedGameSessionService();
         const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'word-blast', {
           sentenceId: currentChallenge.id, // ✅ FIXED: Use challenge ID for sentence-based tracking
-          sourceText: currentChallenge.spanish,
+          sourceText: currentChallenge.targetSentence,
           targetText: currentChallenge.english,
           responseTimeMs: responseTime,
           wasCorrect: true,
@@ -382,13 +383,12 @@ export default function WordBlastGame({
           masteryLevel: 1, // Default mastery for action games
           maxGemRarity: 'rare', // Cap at rare for fast-paced games
           gameMode: 'word_matching',
-          difficultyLevel: selectedConfig?.difficulty || 'medium',
-          skipSpacedRepetition: true // Skip SRS - FSRS is handling spaced repetition
+          difficultyLevel: 'medium', // Default difficulty
         });
 
         // Show gem feedback if gem was awarded
         if (gemEvent) {
-          console.log(`🔮 Word Blast earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentChallenge.spanish}"`);
+          console.log(`🔮 Word Blast earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentChallenge.targetSentence}"`);
         }
       } catch (error) {
         console.error('Failed to record vocabulary interaction:', error);
@@ -400,7 +400,7 @@ export default function WordBlastGame({
       try {
         const wordData = {
           id: `word-blast-${currentChallenge.english}`,
-          word: currentChallenge.spanish,
+          word: currentChallenge.targetSentence,
           translation: currentChallenge.english,
           language: selectedConfig?.language === 'spanish' ? 'es' : selectedConfig?.language === 'french' ? 'fr' : 'en'
         };
@@ -421,8 +421,8 @@ export default function WordBlastGame({
     if (onWordMatch && currentChallenge) {
       onWordMatch(
         currentChallenge.english,
-        currentChallenge.spanish,
-        currentChallenge.spanish, // Assuming correct answer
+        currentChallenge.targetSentence,
+        currentChallenge.targetSentence, // Assuming correct answer
         true,
         responseTime,
         newCombo
@@ -433,7 +433,7 @@ export default function WordBlastGame({
     if (newCombo > 1) {
       setCurrentChainLength(prev => prev + 1);
       setWordsInCurrentChain(prev => [...prev, currentChallenge?.english || '']);
-      
+
       if (newCombo >= 3 && onChainReaction) {
         onChainReaction(newCombo, wordsInCurrentChain, points * newCombo);
       }
@@ -455,9 +455,9 @@ export default function WordBlastGame({
   const handleIncorrectAnswer = async () => {
     const responseTime = wordStartTime > 0 ? Date.now() - wordStartTime : 0;
     const currentChallenge = challenges[currentChallengeIndex];
-    
+
     setLives(prev => Math.max(0, prev - 1));
-    
+
     // Record incorrect vocabulary interaction using gems-first system
     if (gameSessionId && currentChallenge) {
       try {
@@ -465,7 +465,7 @@ export default function WordBlastGame({
         console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for incorrect challenge:', {
           challengeId: currentChallenge.id,
           challengeIdType: typeof currentChallenge.id,
-          spanish: currentChallenge.spanish,
+          spanish: currentChallenge.targetSentence,
           english: currentChallenge.english,
           isCorrect: false,
           gameSessionId,
@@ -475,7 +475,7 @@ export default function WordBlastGame({
         const sessionService = new EnhancedGameSessionService();
         const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'word-blast', {
           sentenceId: currentChallenge.id, // ✅ FIXED: Use challenge ID for sentence-based tracking
-          sourceText: currentChallenge.spanish,
+          sourceText: currentChallenge.targetSentence,
           targetText: currentChallenge.english,
           responseTimeMs: responseTime,
           wasCorrect: false,
@@ -484,8 +484,7 @@ export default function WordBlastGame({
           masteryLevel: 0, // Low mastery for incorrect answers
           maxGemRarity: 'common', // Cap at common for incorrect answers
           gameMode: 'word_matching',
-          difficultyLevel: selectedConfig?.difficulty || 'medium',
-          skipSpacedRepetition: true // Skip SRS - FSRS is handling spaced repetition
+          difficultyLevel: 'medium', // Default difficulty
         });
 
         // 🔍 INSTRUMENTATION: Log gem event result for incorrect answer
@@ -515,7 +514,7 @@ export default function WordBlastGame({
       try {
         const wordData = {
           id: `word-blast-${currentChallenge.english}`,
-          word: currentChallenge.spanish,
+          word: currentChallenge.targetSentence,
           translation: currentChallenge.english,
           language: selectedConfig?.language === 'spanish' ? 'es' : selectedConfig?.language === 'french' ? 'fr' : 'en'
         };
@@ -531,7 +530,7 @@ export default function WordBlastGame({
       if (onWordMatch && currentChallenge) {
         onWordMatch(
           currentChallenge.english,
-          currentChallenge.spanish,
+          currentChallenge.targetSentence,
           'incorrect', // User's incorrect answer
           false,
           responseTime,
@@ -562,7 +561,7 @@ export default function WordBlastGame({
       setGameState('completed');
       playSFX('defeat');
       stopBackgroundMusic();
-      
+
       // Call game completion handler
       if (onGameComplete) {
         onGameComplete({
@@ -577,7 +576,7 @@ export default function WordBlastGame({
           timeSpent: Math.floor((Date.now() - (wordStartTime || Date.now())) / 1000)
         });
       }
-      
+
       confetti({
         particleCount: 100,
         spread: 70,
@@ -594,7 +593,7 @@ export default function WordBlastGame({
       // All challenges completed
       setGameState('completed');
       stopBackgroundMusic();
-      
+
       // Call game completion handler
       if (onGameComplete) {
         onGameComplete({
@@ -609,7 +608,7 @@ export default function WordBlastGame({
           timeSpent: Math.floor((Date.now() - (wordStartTime || Date.now())) / 1000)
         });
       }
-      
+
       confetti({
         particleCount: 200,
         spread: 100,
@@ -660,9 +659,8 @@ export default function WordBlastGame({
                 {/* Audio Toggle */}
                 <button
                   onClick={() => setAudioEnabled(!audioEnabled)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    audioEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'
-                  }`}
+                  className={`p-2 rounded-lg transition-colors ${audioEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'
+                    }`}
                 >
                   {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                 </button>
@@ -683,6 +681,20 @@ export default function WordBlastGame({
                     <span className="md:hidden">Settings</span>
                   </motion.button>
                 )}
+
+                {/* Quick Theme Selector */}
+                {(!assignmentMode || onThemeChange) && (
+                  <QuickThemeSelector
+                    currentTheme={selectedTheme}
+                    onThemeChange={(theme) => {
+                      setSelectedTheme(theme);
+                      if (onThemeChange) onThemeChange(theme);
+                    }}
+                    variant="button"
+                    className="relative z-50"
+                    customButtonClass="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -691,25 +703,9 @@ export default function WordBlastGame({
         {/* Theme Selection and Start */}
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="max-w-4xl w-full">
-            {/* Theme Selection */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 text-center">Choose Your Theme</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {AVAILABLE_THEMES.map((theme) => (
-                  <button
-                    key={theme.id}
-                    onClick={() => setSelectedTheme(theme.name)}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      selectedTheme === theme.name
-                        ? 'border-blue-400 bg-blue-400/20'
-                        : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-                    }`}
-                  >
-                    <div className="text-lg font-bold mb-2">{theme.displayName}</div>
-                    <div className="text-sm text-gray-300">{theme.description}</div>
-                  </button>
-                ))}
-              </div>
+            {/* Theme Selection - Replaced by QuickThemeSelector */}
+            <div className="mb-8 text-center text-gray-300">
+              <p>Select your preferred theme from the menu above, then start the game!</p>
             </div>
 
             {/* Start Button */}
@@ -760,12 +756,25 @@ export default function WordBlastGame({
                 {/* Audio Toggle */}
                 <button
                   onClick={() => setAudioEnabled(!audioEnabled)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    audioEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'
-                  }`}
+                  className={`p-2 rounded-lg transition-colors ${audioEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'
+                    }`}
                 >
                   {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                 </button>
+
+                {/* Quick Theme Selector */}
+                {(!assignmentMode || onThemeChange) && (
+                  <QuickThemeSelector
+                    currentTheme={selectedTheme}
+                    onThemeChange={(theme) => {
+                      setSelectedTheme(theme);
+                      if (onThemeChange) onThemeChange(theme);
+                    }}
+                    variant="button"
+                    className="relative z-50"
+                    customButtonClass="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                  />
+                )}
 
                 {/* Game Stats */}
                 <div className="flex items-center gap-4 text-sm">
@@ -801,7 +810,7 @@ export default function WordBlastGame({
           lives={lives}
           score={gameStats.score}
           combo={gameStats.combo}
-          playSFX={(sound: string) => playSFX(sound as 'gem' | 'wrong-answer' | 'defeat')}
+          playSFX={(sound: string) => playSFX(sound as any)}
         />
       </div>
     );
@@ -817,7 +826,7 @@ export default function WordBlastGame({
           <div className="space-y-2 mb-6">
             <div className="flex justify-between">
               <span>Final Score:</span>
-              <span className="font-bold">{score}</span>
+              <span className="font-bold">{gameStats.score}</span>
             </div>
             <div className="flex justify-between">
               <span>Max Combo:</span>

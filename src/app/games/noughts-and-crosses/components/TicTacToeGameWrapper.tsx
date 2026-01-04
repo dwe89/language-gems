@@ -46,6 +46,7 @@ interface TicTacToeGameWrapperProps {
   onAssignmentThemeChange?: (theme: string) => void;
   showAssignmentThemeSelector?: boolean;
   onToggleAssignmentThemeSelector?: () => void;
+  onThemeChange?: (theme: string) => void;
 }
 
 export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
@@ -340,6 +341,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
       showAssignmentThemeSelector={props.showAssignmentThemeSelector}
       onCloseAssignmentThemeSelector={props.onToggleAssignmentThemeSelector}
       onToggleAssignmentThemeSelector={props.onToggleAssignmentThemeSelector}
+      onThemeChange={props.onThemeChange}
     />
   );
 }

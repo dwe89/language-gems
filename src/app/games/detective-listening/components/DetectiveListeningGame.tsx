@@ -23,6 +23,7 @@ interface DetectiveListeningGameProps {
     caseType: string;
     language: string;
     difficulty: string;
+    theme?: string;
   };
   onBackToMenu: () => void;
   assignmentMode?: AssignmentMode;
@@ -37,6 +38,7 @@ interface DetectiveListeningGameProps {
   gameService?: EnhancedGameService | null;
   vocabularyWords?: any[];
   onOpenSettings?: () => void;
+  onThemeChange?: (theme: string) => void;
 }
 
 export default function DetectiveListeningGame({
@@ -47,7 +49,8 @@ export default function DetectiveListeningGame({
   gameSessionId,
   gameService,
   vocabularyWords,
-  onOpenSettings
+  onOpenSettings,
+  onThemeChange
 }: DetectiveListeningGameProps) {
   // If assignment mode or settings are provided (from unified launcher), skip case selection and go straight to detective room
   const hasPreselectedSettings = assignmentMode || (settings.caseType && settings.language);
@@ -183,7 +186,7 @@ export default function DetectiveListeningGame({
             exit={{ opacity: 0, x: 100 }}
             className="w-full h-full"
           >
-            <RadioFrequencySelection 
+            <RadioFrequencySelection
               selectedCase={selectedCase}
               onFrequencySelect={handleFrequencySelection}
               onBack={() => setCurrentScreen('case-selection')}
@@ -210,6 +213,8 @@ export default function DetectiveListeningGame({
               gameService={gameService}
               vocabularyWords={vocabularyWords}
               onOpenSettings={onOpenSettings}
+              onThemeChange={onThemeChange}
+              currentTheme={settings.theme}
             />
           </motion.div>
         )}
@@ -222,7 +227,7 @@ export default function DetectiveListeningGame({
             exit={{ opacity: 0, y: -100 }}
             className="w-full h-full"
           >
-            <CaseSolved 
+            <CaseSolved
               caseType={selectedCase}
               gameProgress={gameProgress}
               onNewCase={handleNewCase}

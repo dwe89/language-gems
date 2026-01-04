@@ -24,6 +24,7 @@ interface WordBlastGameWrapperProps {
     vocabulary: any[];
   };
   selectedTheme?: string;
+  onThemeChange?: (theme: string) => void;
 }
 
 export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
@@ -187,12 +188,17 @@ export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
       try {
         await gameService.logWordPerformance({
           session_id: gameSessionId,
-          word_id: word,
-          word: word,
-          translation: translation,
-          is_correct: isCorrect,
+          word_text: word,
+          translation_text: translation,
+          was_correct: isCorrect,
           response_time_ms: responseTime,
-          attempts: 1,
+          attempt_number: 1,
+          language_pair: `${props.preselectedConfig?.language || 'spanish'}_english`,
+          difficulty_level: 'beginner',
+          hint_used: false,
+          streak_count: comboLevel,
+          mastery_level: isCorrect ? 1 : 0,
+          previous_attempts: 0,
           error_type: isCorrect ? undefined : 'word_matching_error',
           grammar_concept: 'vocabulary_matching',
           error_details: isCorrect ? undefined : {
@@ -202,7 +208,12 @@ export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
             responseTime: responseTime,
             comboLevel: comboLevel,
             chainPosition: chainPosition
-          }
+          },
+          context_data: {
+            gameType: 'word-blast',
+            comboLevel: comboLevel
+          },
+          timestamp: new Date()
         });
 
         // Update session stats
@@ -212,8 +223,8 @@ export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
           correctMatches: prev.correctMatches + (isCorrect ? 1 : 0),
           incorrectMatches: prev.incorrectMatches + (isCorrect ? 0 : 1),
           totalResponseTime: prev.totalResponseTime + responseTime,
-          wordMatchingAccuracy: prev.explosiveWordMatches > 0 
-            ? ((prev.correctMatches + (isCorrect ? 1 : 0)) / (prev.explosiveWordMatches + 1)) * 100 
+          wordMatchingAccuracy: prev.explosiveWordMatches > 0
+            ? ((prev.correctMatches + (isCorrect ? 1 : 0)) / (prev.explosiveWordMatches + 1)) * 100
             : 0,
           wordAttempts: [...prev.wordAttempts, {
             word,
@@ -257,7 +268,7 @@ export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
         totalCombos: prev.blastComboTracking.totalCombos + (comboBroken ? 0 : 1),
         maxComboReached: Math.max(prev.blastComboTracking.maxComboReached, comboLevel),
         comboBreaks: prev.blastComboTracking.comboBreaks + (comboBroken ? 1 : 0),
-        averageComboLength: comboBroken ? prev.blastComboTracking.averageComboLength : 
+        averageComboLength: comboBroken ? prev.blastComboTracking.averageComboLength :
           ((prev.blastComboTracking.averageComboLength * prev.blastComboTracking.totalCombos) + comboLevel) / (prev.blastComboTracking.totalCombos + 1)
       }
     }));
@@ -285,6 +296,7 @@ export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
       onBlastCombo={logBlastCombo}
       preselectedConfig={props.preselectedConfig}
       selectedTheme={props.selectedTheme}
+      onThemeChange={props.onThemeChange}
     />
   );
 }

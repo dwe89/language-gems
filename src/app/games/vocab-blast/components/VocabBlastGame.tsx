@@ -11,6 +11,7 @@ import VocabBlastEngine from './VocabBlastEngine';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import UniversalThemeSelector from '../../../../components/games/UniversalThemeSelector';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
+import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
 
 interface VocabBlastGameProps {
   settings: VocabBlastGameSettings;
@@ -44,6 +45,7 @@ interface VocabBlastGameProps {
   onAssignmentThemeChange?: (theme: string) => void;
   showAssignmentThemeSelector?: boolean;
   onToggleAssignmentThemeSelector?: () => void;
+  onThemeChange?: (theme: string) => void;
 }
 
 export interface VocabItem {
@@ -95,7 +97,8 @@ export default function VocabBlastGame({
   assignmentTheme,
   onAssignmentThemeChange,
   showAssignmentThemeSelector,
-  onToggleAssignmentThemeSelector
+  onToggleAssignmentThemeSelector,
+  onThemeChange
 }: VocabBlastGameProps) {
   const { themeClasses } = useTheme();
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -708,6 +711,17 @@ export default function VocabBlastGame({
                 <span className="hidden md:inline">Game Settings</span>
                 <span className="md:hidden">Settings</span>
               </motion.button>
+            )}
+
+            {/* Quick Theme Selector */}
+            {!isAssignmentMode && onThemeChange && (
+              <QuickThemeSelector
+                currentTheme={settings.theme}
+                onThemeChange={(theme) => onThemeChange(theme)}
+                variant="button"
+                className="relative z-50"
+                customButtonClass="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+              />
             )}
           </div>
 

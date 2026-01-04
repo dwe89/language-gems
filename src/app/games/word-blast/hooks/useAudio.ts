@@ -17,6 +17,7 @@ export interface AudioFiles {
     'gem': string;
     'defeat': string;
     'wrong-answer': string;
+    'button-click': string;
   };
 }
 
@@ -31,7 +32,8 @@ const AUDIO_FILES: AudioFiles = {
   sfx: {
     'gem': '/audio/sfx/gem.mp3',
     'defeat': '/audio/sfx/defeat.mp3',
-    'wrong-answer': '/audio/sfx/wrong-answer.mp3'
+    'wrong-answer': '/audio/sfx/wrong-answer.mp3',
+    'button-click': '/audio/sfx/button-click.mp3'
   }
 };
 
@@ -62,7 +64,7 @@ export const useAudio = (soundEnabled: boolean = true) => {
   // Play sound effect
   const playSFX = useCallback((soundName: keyof AudioFiles['sfx']) => {
     if (!soundEnabled) return;
-    
+
     const audio = audioRefs.current[soundName];
     if (audio) {
       audio.currentTime = 0;

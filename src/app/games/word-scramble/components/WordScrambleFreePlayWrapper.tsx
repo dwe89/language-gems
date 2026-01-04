@@ -24,6 +24,7 @@ interface WordScrambleFreePlayWrapperProps {
   onAssignmentThemeChange?: (theme: string) => void;
   showAssignmentThemeSelector?: boolean;
   onToggleAssignmentThemeSelector?: () => void;
+  onThemeChange?: (theme: string) => void;
 }
 
 export default function WordScrambleFreePlayWrapper({
@@ -42,7 +43,8 @@ export default function WordScrambleFreePlayWrapper({
   assignmentTheme,
   onAssignmentThemeChange,
   showAssignmentThemeSelector,
-  onToggleAssignmentThemeSelector
+  onToggleAssignmentThemeSelector,
+  onThemeChange
 }: WordScrambleFreePlayWrapperProps) {
   const { user } = useAuth();
   const [localGameSessionId, setLocalGameSessionId] = useState<string | null>(null);
@@ -134,7 +136,7 @@ export default function WordScrambleFreePlayWrapper({
     <ImprovedWordScrambleGame
       key={gameKey}
       vocabulary={gameVocabulary}
-      isAssignmentMode={false}
+      isAssignmentMode={isAssignmentMode}
       userId={userId || user?.id}
       gameSessionId={gameSessionId || undefined}
       language={language}
@@ -142,6 +144,8 @@ export default function WordScrambleFreePlayWrapper({
       onBackToMenu={onBackToMenu}
       onGameComplete={handleGameComplete}
       onOpenSettings={onOpenSettings}
+      currentTheme={theme}
+      onThemeChange={onThemeChange}
     />
   );
 }
