@@ -122,17 +122,19 @@ export async function POST(request: NextRequest) {
           .update({
             ended_at: new Date().toISOString(),
             status: 'completed',
-            final_score: stats.score,
-            total_time: stats.timeSpent,
-            sentences_completed: stats.sentencesCompleted,
-            total_words_placed: stats.totalWordsPlaced,
-            accuracy_percentage: stats.accuracy * 100,
-            highest_streak: stats.highestStreak,
-            metadata: {
+            // Store all stats in the existing JSONB columns
+            final_stats: {
+              score: stats.score,
+              accuracy: stats.accuracy,
+              timeSpent: stats.timeSpent,
+              sentencesCompleted: stats.sentencesCompleted,
+              streak: stats.streak,
+              highestStreak: stats.highestStreak,
+              totalWordsPlaced: stats.totalWordsPlaced,
               grammarErrors: stats.grammarErrors,
-              powerUpsUsed: stats.powerUpsUsed,
-              sentences: sentences
-            }
+              powerUpsUsed: stats.powerUpsUsed
+            },
+            sentences_data: sentences
           })
           .eq('id', sessionId)
           .eq('user_id', user!.id);

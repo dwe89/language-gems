@@ -11,7 +11,13 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Use service role client to bypass RLS
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
     const body = await request.json();
     const { searchParams } = new URL(request.url);
     const paperId = searchParams.get('id');
@@ -41,7 +47,9 @@ export async function POST(request: NextRequest) {
 
     // Update paper (if provided)
     if (paper) {
-      const updateData: any = {};
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
       if (paper.title) updateData.title = paper.title;
       if (paper.description !== undefined) updateData.description = paper.description;
       if (paper.level) updateData.level = paper.level;
@@ -68,7 +76,39 @@ export async function POST(request: NextRequest) {
 
     // Update questions (if provided)
     if (questions) {
-      // Delete existing questions
+      // First, get the IDs of existing questions for this assessment
+      const { data: existingQuestions, error: fetchQuestionsError } = await supabase
+        .from('aqa_listening_questions')
+        .select('id')
+        .eq('assessment_id', paperId);
+
+      if (fetchQuestionsError) {
+        console.error('Error fetching existing questions:', fetchQuestionsError);
+        return NextResponse.json(
+          { error: 'Failed to fetch existing questions', details: fetchQuestionsError.message },
+          { status: 500 }
+        );
+      }
+
+      // Delete responses linked to these questions (to avoid FK constraint violation)
+      if (existingQuestions && existingQuestions.length > 0) {
+        const questionIds = existingQuestions.map(q => q.id);
+
+        const { error: deleteResponsesError } = await supabase
+          .from('aqa_listening_question_responses')
+          .delete()
+          .in('question_id', questionIds);
+
+        if (deleteResponsesError) {
+          console.error('Error deleting old responses:', deleteResponsesError);
+          return NextResponse.json(
+            { error: 'Failed to delete old question responses', details: deleteResponsesError.message },
+            { status: 500 }
+          );
+        }
+      }
+
+      // Now delete existing questions
       const { error: deleteError } = await supabase
         .from('aqa_listening_questions')
         .delete()

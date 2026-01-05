@@ -33,8 +33,8 @@ export default function LeagueSelection({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full px-4 py-3">
         {/* Back Button */}
         {onBackToLanguages && (
           <motion.button
@@ -50,97 +50,79 @@ export default function LeagueSelection({
 
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -30 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="text-center mb-4"
         >
-          <h1 className="text-5xl font-bold text-white mb-4">
+          <h1 className="text-3xl font-bold text-white mb-2">
             ⚔️ Conjugation Duel ⚔️
           </h1>
-          <div className="flex items-center justify-center mb-4">
-            <Globe className="text-blue-400 mr-2" size={24} />
-            <span className="text-xl text-blue-400 font-semibold capitalize">
+          <div className="flex items-center justify-center mb-1">
+            <Globe className="text-blue-400 mr-2" size={18} />
+            <span className="text-lg text-blue-400 font-semibold capitalize">
               {selectedLanguage} Conjugations
             </span>
           </div>
-          <p className="text-xl text-gray-300 mb-2">
+          <p className="text-lg text-gray-300">
             Choose Your Battle Arena
           </p>
-          <div className="text-lg text-gray-400">
-            Level {playerStats.level} • {playerStats.totalWins} Wins • {playerStats.accuracy.toFixed(1)}% Accuracy
-          </div>
         </motion.div>
 
         {/* Leagues Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="flex-1 grid grid-cols-4 gap-4 min-h-0">
           {leagues.map((league: any, index: number) => {
             const unlocked = isLeagueUnlocked(league);
             const isCurrent = league.id === playerStats.currentLeague;
-            
+
             return (
               <motion.div
                 key={league.id}
-                initial={{ opacity: 0, y: 50 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={unlocked ? { scale: 1.05, y: -5 } : {}}
-                className={`relative overflow-hidden rounded-xl ${
-                  unlocked
-                    ? 'cursor-pointer shadow-2xl hover:shadow-3xl'
+                transition={{ delay: index * 0.08 }}
+                whileHover={unlocked ? { scale: 1.02 } : {}}
+                className={`relative overflow-hidden rounded-xl ${unlocked
+                    ? 'cursor-pointer shadow-xl hover:shadow-2xl'
                     : 'cursor-not-allowed opacity-60'
-                }`}
+                  }`}
                 onClick={() => unlocked && onLeagueSelect(league.id)}
               >
                 {/* League Card Background */}
-                <div 
-                  className="h-80 relative"
+                <div
+                  className="h-full relative flex flex-col"
                   style={{
                     background: `linear-gradient(135deg, ${league.theme.gradient})`
                   }}
                 >
                   {/* League Badge */}
-                  <div className="absolute top-4 left-4 w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-3xl backdrop-blur-sm">
+                  <div className="absolute top-2 left-2 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl backdrop-blur-sm">
                     {getLeagueEmoji(league.id)}
                   </div>
 
                   {/* Current League Indicator */}
                   {isCurrent && (
-                    <div className="absolute top-4 right-4">
-                      <div className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold">
+                    <div className="absolute top-2 right-2">
+                      <div className="bg-yellow-500 text-black px-2 py-0.5 rounded-full text-[10px] font-bold">
                         CURRENT
                       </div>
                     </div>
                   )}
 
                   {/* League Content */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6 bg-black/30 backdrop-blur-sm">
-                    <h3 className="text-2xl font-bold text-white mb-2">
+                  <div className="mt-auto p-4 bg-black/30 backdrop-blur-sm">
+                    <h3 className="text-lg font-bold text-white mb-1">
                       {league.name}
                     </h3>
-                    <p className="text-gray-200 text-sm mb-3 line-clamp-2">
+                    <p className="text-gray-200 text-xs mb-2 line-clamp-2">
                       {league.description}
                     </p>
-                    
-                    {/* League Stats */}
-                    <div className="flex justify-between items-center text-xs text-gray-300">
-                      <span>Level {league.minLevel}-{league.maxLevel}</span>
-                      <span className={`font-medium ${
-                        unlocked 
-                          ? isCurrent 
-                            ? 'text-yellow-400' 
-                            : 'text-green-400'
-                          : 'text-red-400'
-                      }`}>
-                        {getLeagueStatusText(league)}
-                      </span>
-                    </div>
 
                     {/* Verb Types */}
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {league.verbTypes.map((type: string) => (
-                        <span 
+                    <div className="flex flex-wrap gap-1">
+                      {league.verbTypes.slice(0, 2).map((type: string) => (
+                        <span
                           key={type}
-                          className="px-2 py-1 bg-white/20 rounded text-xs text-white"
+                          className="px-1.5 py-0.5 bg-white/20 rounded text-[10px] text-white"
                         >
                           {type}
                         </span>
@@ -152,57 +134,20 @@ export default function LeagueSelection({
                   {!unlocked && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <div className="text-center text-white">
-                        <div className="text-4xl mb-2">🔒</div>
-                        <div className="text-sm font-medium">
-                          Reach Level {league.minLevel}
+                        <div className="text-2xl mb-1">🔒</div>
+                        <div className="text-xs font-medium">
+                          Level {league.minLevel}
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-
-                {/* Hover Glow Effect */}
-                {unlocked && (
-                  <div 
-                    className="absolute inset-0 opacity-0 hover:opacity-20 transition-opacity duration-300"
-                    style={{
-                      background: `linear-gradient(135deg, ${league.theme.gradient})`,
-                      filter: 'blur(8px)'
-                    }}
-                  />
-                )}
               </motion.div>
             );
           })}
         </div>
 
-        {/* Player Stats Panel */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-12 bg-white/10 backdrop-blur-sm rounded-xl p-6"
-        >
-          <h3 className="text-xl font-bold text-white mb-4">Battle Statistics</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-green-400">{playerStats.totalWins}</div>
-              <div className="text-sm text-gray-300">Victories</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-400">{playerStats.totalLosses}</div>
-              <div className="text-sm text-gray-300">Defeats</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-400">{playerStats.currentWinStreak}</div>
-              <div className="text-sm text-gray-300">Win Streak</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-yellow-400">{playerStats.experience}</div>
-              <div className="text-sm text-gray-300">Experience</div>
-            </div>
-          </div>
-        </motion.div>
+
       </div>
     </div>
   );

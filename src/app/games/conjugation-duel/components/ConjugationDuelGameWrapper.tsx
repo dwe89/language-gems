@@ -67,7 +67,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
     }
   }, [props.userId]);
 
-  // Start game session when service is ready
+  // Start game session when service is ready (only if logged in)
   useEffect(() => {
     if (gameService && props.userId && !gameSessionId) {
       startGameSession();
@@ -132,7 +132,11 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
   }, []);
 
   const startGameSession = async () => {
-    if (!gameService || !props.userId) return;
+    // Only start session if user is logged in
+    if (!gameService || !props.userId) {
+      console.log('Conjugation Duel: Skipping session tracking (no user logged in)');
+      return;
+    }
 
     try {
       const startTime = new Date();
@@ -252,7 +256,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
     });
   };
 
-  // Log conjugation performance
+  // Log conjugation performance (only if game session exists)
   const logConjugationPerformance = async (
     verb: string,
     tense: string,
@@ -262,123 +266,119 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
     isCorrect: boolean,
     responseTime: number
   ) => {
-    if (gameService && gameSessionId) {
-      try {
-        // Record vocabulary interaction using gems-first system
-        const sessionService = new EnhancedGameSessionService();
-        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'conjugation-duel', {
-          vocabularyId: undefined, // Conjugation-duel uses dynamic verbs
-          wordText: verb,
-          translationText: correctAnswer,
-          responseTimeMs: responseTime,
-          wasCorrect: isCorrect,
-          hintUsed: false, // No hints in conjugation-duel
-          streakCount: sessionStats.correctConjugations,
-          masteryLevel: isCorrect ? 2 : 0, // Higher mastery for correct conjugations
-          maxGemRarity: 'epic', // Allow epic gems for verb mastery
-          gameMode: 'verb_conjugation',
-          difficultyLevel: 'intermediate'
-        });
+    // Skip tracking if no session (guest play)
+    if (!gameService || !gameSessionId) {
+      console.log('Conjugation Duel: Performance not tracked (guest mode)');
+      return;
+    }
 
-        // Show gem feedback if gem was awarded
-        if (gemEvent && isCorrect) {
-          console.log(`🔮 Conjugation Duel earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${verb}" (${tense})`);
-        }
+    try {
+      // Record vocabulary interaction using gems-first system
+      const sessionService = new EnhancedGameSessionService();
+      const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'conjugation-duel', {
+        vocabularyId: undefined, // Conjugation-duel uses dynamic verbs
+        wordText: verb,
+        translationText: correctAnswer,
+        responseTimeMs: responseTime,
+        wasCorrect: isCorrect,
+        hintUsed: false, // No hints in conjugation-duel
+        streakCount: sessionStats.correctConjugations,
+        masteryLevel: isCorrect ? 2 : 0, // Higher mastery for correct conjugations
+        maxGemRarity: 'epic', // Allow epic gems for verb mastery
+        gameMode: 'verb_conjugation',
+        difficultyLevel: 'intermediate'
+      });
 
-        // Record grammar practice attempt if this is a grammar assignment
-        if (props.grammarConfig) {
-          try {
-            // Create a separate ConjugationDuelService instance for grammar recording
-            const grammarService = new ConjugationDuelService(supabaseBrowser);
+      // Show gem feedback if gem was awarded
+      if (gemEvent && isCorrect) {
+        console.log(`\uD83D\uDD2E Conjugation Duel earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${verb}" (${tense})`);
+      }
 
-            // Get student ID from session (use enhanced_game_sessions table)
-            const { data: session } = await supabaseBrowser.from('enhanced_game_sessions')
-              .select('student_id')
-              .eq('id', gameSessionId)
-              .single();
+      // Record grammar practice attempt if this is a grammar assignment
+      if (props.grammarConfig && props.userId) {
+        try {
+          // Create a separate ConjugationDuelService instance for grammar recording
+          const grammarService = new ConjugationDuelService(supabaseBrowser);
 
-            if (session?.student_id) {
-              await grammarService.recordGrammarPracticeAttempt(
-                session.student_id,
-                gameSessionId,  // Add session ID
-                props.assignmentId || null,
-                verb,
-                tense,
-                person,
-                answer,
-                correctAnswer,
-                isCorrect,
-                responseTime,
-                props.grammarConfig.language || 'spanish'
-              );
-            }
-          } catch (error) {
-            console.error('❌ [GRAMMAR] Error recording grammar practice:', error);
-          }
-        }
-
-        await gameService.logWordPerformance({
-          session_id: gameSessionId,
-          // leave vocabulary ids undefined for dynamic verbs
-          word_text: verb,
-          translation_text: correctAnswer,
-          language_pair: props.language === 'french' ? 'english_french' : props.language === 'german' ? 'english_german' : 'english_spanish',
-          attempt_number: 1,
-          response_time_ms: responseTime,
-          was_correct: isCorrect,
-          difficulty_level: 'intermediate',
-          hint_used: false,
-          streak_count: sessionStats.correctConjugations,
-          previous_attempts: 0,
-          mastery_level: isCorrect ? 2 : 0,
-          error_type: isCorrect ? undefined : 'conjugation_error',
-          grammar_concept: `${tense}_conjugation`,
-          error_details: isCorrect ? undefined : {
-            answer: answer,
-            correctAnswer: correctAnswer,
-            tense: tense,
-            person: person,
-            verb: verb,
-            responseTime: responseTime
-          },
-          context_data: {
+          await grammarService.recordGrammarPracticeAttempt(
+            props.userId,
+            gameSessionId,  // Add session ID
+            props.assignmentId || null,
             verb,
             tense,
             person,
-            userAnswer: answer,
-            correctAnswer,
-            conjugationType: `${tense}_${person}`,
-            gameType: 'conjugation-duel'
-          },
-          timestamp: new Date()
-        });
-
-        // Update session stats
-        setSessionStats(prev => ({
-          ...prev,
-          totalConjugations: prev.totalConjugations + 1,
-          correctConjugations: prev.correctConjugations + (isCorrect ? 1 : 0),
-          totalResponseTime: prev.totalResponseTime + responseTime,
-          tenseMastery: {
-            ...prev.tenseMastery,
-            [tense]: {
-              correct: (prev.tenseMastery[tense]?.correct || 0) + (isCorrect ? 1 : 0),
-              total: (prev.tenseMastery[tense]?.total || 0) + 1
-            }
-          },
-          conjugationAttempts: [...prev.conjugationAttempts, {
-            verb,
-            tense,
-            person,
-            userAnswer: answer,
+            answer,
             correctAnswer,
             isCorrect,
-            responseTime
-          }]
-        }));
-      } catch (error) {
-        console.error('Failed to log conjugation performance:', error);
+            responseTime,
+            props.grammarConfig.language || 'spanish'
+          );
+        } catch (error) {
+          console.error('\u274C [GRAMMAR] Error recording grammar practice:', error);
+        }
       }
+
+      await gameService.logWordPerformance({
+        session_id: gameSessionId,
+        // leave vocabulary ids undefined for dynamic verbs
+        word_text: verb,
+        translation_text: correctAnswer,
+        language_pair: props.language === 'french' ? 'english_french' : props.language === 'german' ? 'english_german' : 'english_spanish',
+        attempt_number: 1,
+        response_time_ms: responseTime,
+        was_correct: isCorrect,
+        difficulty_level: 'intermediate',
+        hint_used: false,
+        streak_count: sessionStats.correctConjugations,
+        previous_attempts: 0,
+        mastery_level: isCorrect ? 2 : 0,
+        error_type: isCorrect ? undefined : 'conjugation_error',
+        grammar_concept: `${tense}_conjugation`,
+        error_details: isCorrect ? undefined : {
+          answer: answer,
+          correctAnswer: correctAnswer,
+          tense: tense,
+          person: person,
+          verb: verb,
+          responseTime: responseTime
+        },
+        context_data: {
+          verb,
+          tense,
+          person,
+          userAnswer: answer,
+          correctAnswer,
+          conjugationType: `${tense}_${person}`,
+          gameType: 'conjugation-duel'
+        },
+        timestamp: new Date()
+      });
+
+      // Update session stats
+      setSessionStats(prev => ({
+        ...prev,
+        totalConjugations: prev.totalConjugations + 1,
+        correctConjugations: prev.correctConjugations + (isCorrect ? 1 : 0),
+        totalResponseTime: prev.totalResponseTime + responseTime,
+        tenseMastery: {
+          ...prev.tenseMastery,
+          [tense]: {
+            correct: (prev.tenseMastery[tense]?.correct || 0) + (isCorrect ? 1 : 0),
+            total: (prev.tenseMastery[tense]?.total || 0) + 1
+          }
+        },
+        conjugationAttempts: [...prev.conjugationAttempts, {
+          verb,
+          tense,
+          person,
+          userAnswer: answer,
+          correctAnswer,
+          isCorrect,
+          responseTime
+        }]
+      }));
+    } catch (error) {
+      console.error('Failed to log conjugation performance:', error);
     }
   };
 

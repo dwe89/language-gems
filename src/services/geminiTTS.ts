@@ -39,6 +39,7 @@ export interface GeminiTTSConfig {
   style?: string;
   pace?: 'very_slow' | 'slow' | 'normal' | 'fast';
   tone?: 'neutral' | 'cheerful' | 'serious' | 'excited' | 'calm' | 'formal' | 'friendly';
+  speechRate?: string | number;
 }
 
 export interface MultiSpeakerConfig {
@@ -47,6 +48,7 @@ export interface MultiSpeakerConfig {
     voiceName: string;
     style?: string;
   }>;
+  style?: string;
 }
 
 // Available voice options from Gemini 2.5 Pro Preview TTS
@@ -365,7 +367,7 @@ export class GeminiTTSService {
 
       // Validate audio buffer size
       // Keep minimum buffer size low for very short phrases, adjust if needed
-      if (audioBuffer.length < 100) { 
+      if (audioBuffer.length < 100) {
         const errorMessage = `Audio buffer too small (${audioBuffer.length} bytes) - generation may have failed for single speaker audio.`;
         console.error('❌', errorMessage);
         throw new Error(errorMessage);
@@ -673,7 +675,7 @@ export class GeminiTTSService {
     const samplesPerSecond = sampleRate * numChannels;
     const totalSamples = Math.floor(samplesPerSecond * durationSeconds);
     const bufferSize = totalSamples * (bitsPerSample / 8);
-    
+
     // Create buffer filled with zeros (silence)
     return Buffer.alloc(bufferSize, 0);
   }
@@ -732,7 +734,7 @@ export class GeminiTTSService {
         { voiceName: 'Puck' },
         `test_${Date.now()}.wav`
       );
-      
+
       console.log(`✅ TTS test successful: ${audioUrl}`);
       return true;
     } catch (error) {
@@ -753,7 +755,7 @@ export class GeminiTTSService {
 
     // Add SSML for very slow speech rate if pace is slow or very_slow, or if speechRate is specified
     if (config.pace === 'slow' || config.pace === 'very_slow' || config.speechRate) {
-      let speechRate = '0.7'; // Default slow rate
+      let speechRate = '0.6'; // Default slow rate
 
       if (config.speechRate) {
         speechRate = config.speechRate.toString();
@@ -844,8 +846,11 @@ export class GeminiTTSService {
       console.log(`🎯 Using dictation speech rate: ${speechRate} with word pauses for multi-speaker`);
     } else {
       // Wrap the entire content in slow speech SSML
-      processedText = `<speak><prosody rate="${speechRate}">${text}</prosody></speak>`;
-      console.log(`🐌 Using VERY slow speech rate: ${speechRate} for multi-speaker language learning content`);
+      // NOTE: Wrapping in global SSML <speak> tags seems to break multi-speaker detection.
+      // We are temporarily disabling speed control for multi-speaker to ensure voices work.
+      // processedText = `<speak><prosody rate="${speechRate}">${text}</prosody></speak>`;
+      processedText = text;
+      console.log(`🐌 Used raw text for multi-speaker to ensure speaker detection (Speed control disabled)`);
     }
 
     const requestConfig = {

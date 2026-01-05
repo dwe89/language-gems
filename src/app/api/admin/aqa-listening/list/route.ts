@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { searchParams } = new URL(request.url);
-    
+
     const language = searchParams.get('language');
     const tier = searchParams.get('tier');
 
@@ -47,6 +47,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       papers: data || [],
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      }
     });
   } catch (error: any) {
     console.error('Error in list endpoint:', error);

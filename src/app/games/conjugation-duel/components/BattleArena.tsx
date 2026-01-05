@@ -131,7 +131,7 @@ export default function BattleArena({
       persons: gameConfig.gamePersons,
       verbTypes: gameConfig.gameVerbTypes,
       challengeCount: gameConfig.gameVerbCount,
-      timeLimit: assignmentId ? 0 : 15, // Disable timer for assignments to prevent infinite loop
+      timeLimit: 0, // Timer disabled for better UX
       assignmentVocabulary: assignmentVocabulary,
       assignmentId: assignmentId
     };
@@ -190,12 +190,8 @@ export default function BattleArena({
     addBattleLog
   } = useGameStore();
 
-  // Pass timeLimit=0 for assignments to disable timer
-  const timeLimit = assignmentId ? 0 : 15;
-  const { timeLeft, isAnswering, submitAnswer } = useBattle(language, timeLimit);
-
-  // Show timer only if timeLimit > 0 (not in assignment mode)
-  const showTimer = timeLimit > 0;
+  // Timer disabled for better UX
+  const { timeLeft, isAnswering, submitAnswer } = useBattle(language, 0);
   const { playSound, playMusic, stopMusic } = useBattleAudio();
 
   const battleLogRef = useRef<HTMLDivElement>(null);
@@ -385,7 +381,7 @@ export default function BattleArena({
 
   return (
     <div
-      className="min-h-screen flex flex-col relative overflow-hidden"
+      className="h-screen flex flex-col relative overflow-hidden"
       style={{
         backgroundImage: currentLeague?.background
           ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(/images/battle/${currentLeague.background})`
@@ -400,56 +396,46 @@ export default function BattleArena({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.3)_1px,transparent_0)] bg-[length:20px_20px]" />
       </div>
 
-      {/* Header with Timer and Level */}
-      <div className="relative z-10 flex justify-between items-center p-4 bg-black/20">
+      {/* Header with Progress and Stats */}
+      <div className="relative z-10 flex justify-between items-center px-4 py-2 bg-black/30 backdrop-blur-sm">
         <div className="text-white">
-          <h2 className="text-2xl font-bold">{currentLeague?.name}</h2>
-          <p className="text-sm opacity-80">Level {playerStats.level}</p>
+          <h2 className="text-lg font-bold">{currentLeague?.name || 'Conjugation Duel'}</h2>
+          <p className="text-xs opacity-80">Question {conjugationDuel.currentChallengeIndex + 1} of {conjugationDuel.challenges.length || '?'}</p>
         </div>
-        {showTimer && (
-          <div className="text-center">
-            <div className={`text-3xl font-bold ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
-              {timeLeft}
-            </div>
-            <p className="text-xs text-white/80">seconds</p>
-          </div>
-        )}
-        <div className="flex items-center gap-4">
-          {/* Mute Button - Only show in assignment mode */}
-          {assignmentId && (
-            <button
-              onClick={() => {
-                const newSoundEnabled = !settings.soundEnabled;
-                setSettings({ soundEnabled: newSoundEnabled, musicEnabled: newSoundEnabled });
-                if (!newSoundEnabled) {
-                  stopMusic();
-                }
-              }}
-              className="p-2 rounded-lg bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-white/20"
-              title={settings.soundEnabled ? "Mute audio" : "Unmute audio"}
-            >
-              {settings.soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-            </button>
-          )}
+        <div className="flex items-center gap-3">
+          {/* Mute Button */}
+          <button
+            onClick={() => {
+              const newSoundEnabled = !settings.soundEnabled;
+              setSettings({ soundEnabled: newSoundEnabled, musicEnabled: newSoundEnabled });
+              if (!newSoundEnabled) {
+                stopMusic();
+              }
+            }}
+            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all"
+            title={settings.soundEnabled ? "Mute audio" : "Unmute audio"}
+          >
+            {settings.soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </button>
 
           <div className="text-white text-right">
-            <p className="text-sm">XP: {playerStats.experience}</p>
-            <p className="text-xs opacity-80">Accuracy: {playerStats.accuracy.toFixed(1)}%</p>
+            <p className="text-sm font-bold text-yellow-400">{conjugationDuel.correctAnswers} correct</p>
+            <p className="text-xs opacity-80">🔥 {conjugationDuel.streakCount} streak</p>
           </div>
         </div>
       </div>
 
       {/* Main Battle Area */}
-      <div className="flex-1 flex items-end justify-center pb-20 px-4 relative">
+      <div className="flex-1 flex items-center justify-center px-4 relative">
 
         {/* Battle Platform (Visual Grounding) */}
-        <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 w-full h-1/4 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
 
         {/* Left Side - Player */}
-        <div className="w-1/4 flex flex-col items-center justify-end z-10">
-          <div className="relative mb-8 transform scale-125 transition-transform">
+        <div className="w-1/5 flex flex-col items-center justify-center z-10">
+          <div className="relative mb-4 transform scale-100 transition-transform">
             {/* Player Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl animate-pulse-slow" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl animate-pulse-slow" />
             <CharacterSprite
               type="player"
               health={battleState.playerHealth}
@@ -468,7 +454,7 @@ export default function BattleArena({
         </div>
 
         {/* Center - Question Area */}
-        <div className="w-1/2 flex flex-col justify-end items-center px-8 z-20 mb-8">
+        <div className="w-3/5 flex flex-col justify-center items-center px-4 z-20">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${conjugationDuel.currentChallenge.infinitive}-${conjugationDuel.currentChallenge.person}`}
@@ -476,7 +462,7 @@ export default function BattleArena({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -50, scale: 0.9 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="w-full max-w-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden"
+              className="w-full max-w-xl bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden"
             >
               {/* Magical Glow Effects */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-50" />
@@ -484,39 +470,39 @@ export default function BattleArena({
               <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl" />
 
               {/* Question */}
-              <div className="text-center mb-8 relative">
-                <h3 className="text-sm font-bold text-cyan-300 tracking-wider uppercase mb-3">
+              <div className="text-center mb-4 relative">
+                <h3 className="text-xs font-bold text-cyan-300 tracking-wider uppercase mb-2">
                   Conjugate the verb
                 </h3>
 
-                <div className="flex items-baseline justify-center gap-3 mb-2">
-                  <span className="text-4xl md:text-5xl font-black text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
+                <div className="flex items-baseline justify-center gap-2 mb-1">
+                  <span className="text-3xl md:text-4xl font-black text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
                     {conjugationDuel.currentChallenge.infinitive}
                   </span>
-                  <span className="text-xl text-slate-400 font-serif italic">
+                  <span className="text-lg text-slate-400 font-serif italic">
                     ({conjugationDuel.currentChallenge.translation})
                   </span>
                 </div>
 
-                <div className="flex items-center justify-center gap-4 text-2xl text-slate-200 mt-6 bg-white/5 py-3 rounded-lg border border-white/5 mx-auto max-w-md">
-                  <div className="flex flex-col items-end">
-                    <span className="text-xs text-slate-500 uppercase font-bold tracking-widest">Person</span>
-                    <span className="font-bold text-yellow-400">{conjugationDuel.currentChallenge.person}</span>
+                <div className="flex items-center justify-center gap-6 text-xl text-slate-200 mt-4 bg-white/5 py-2 px-4 rounded-lg border border-white/5 mx-auto">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Person</span>
+                    <span className="font-bold text-yellow-400 text-lg">{conjugationDuel.currentChallenge.person}</span>
                   </div>
-                  <div className="h-8 w-px bg-white/10"></div>
-                  <div className="flex flex-col items-start min-w-[100px]">
-                    <span className="text-xs text-slate-500 uppercase font-bold tracking-widest">Tense</span>
-                    <span className="font-bold text-purple-300">{conjugationDuel.currentChallenge.tense}</span>
+                  <div className="h-6 w-px bg-white/20"></div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Tense</span>
+                    <span className="font-bold text-purple-300 text-lg">{conjugationDuel.currentChallenge.tense}</span>
                   </div>
                 </div>
               </div>
 
               {/* Answer Input */}
-              <div className="space-y-4 relative">
+              <div className="space-y-2 relative">
                 <input
                   type="text"
-                  placeholder="Type answer..."
-                  className="w-full h-16 bg-black/30 border-2 border-white/10 rounded-xl text-center text-2xl font-bold text-white placeholder-white/20 focus:border-cyan-400/50 focus:bg-black/50 focus:outline-none focus:ring-[0_0_30px_rgba(34,211,238,0.2)] transition-all"
+                  placeholder="Type your answer..."
+                  className="w-full h-12 bg-black/30 border-2 border-white/10 rounded-xl text-center text-xl font-bold text-white placeholder-white/20 focus:border-cyan-400/50 focus:bg-black/50 focus:outline-none transition-all"
                   autoFocus
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
@@ -530,19 +516,17 @@ export default function BattleArena({
                   disabled={isAnswering}
                 />
 
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">Press <span className="text-cyan-400">Enter</span> to strike</p>
-                </div>
+                <p className="text-center text-[10px] text-slate-500 font-medium tracking-wide uppercase">Press <span className="text-cyan-400">Enter</span> to answer</p>
               </div>
             </motion.div>
           </AnimatePresence>
         </div>
 
         {/* Right Side - Opponent */}
-        <div className="w-1/4 flex flex-col items-center justify-end z-10">
-          <div className="relative mb-8 transform scale-125 transition-transform">
+        <div className="w-1/5 flex flex-col items-center justify-center z-10">
+          <div className="relative mb-4 transform scale-100 transition-transform">
             {/* Opponent Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-red-500/20 rounded-full blur-3xl animate-pulse-slow" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-red-500/20 rounded-full blur-2xl animate-pulse-slow" />
             <CharacterSprite
               type="opponent"
               opponent={battleState.currentOpponent}
@@ -562,20 +546,20 @@ export default function BattleArena({
         </div>
       </div>
 
-      {/* Battle Log */}
-      <div className="relative z-10 bg-black/40 backdrop-blur-sm p-4 max-h-32 overflow-hidden">
+      {/* Battle Log - Minimal */}
+      <div className="relative z-10 bg-black/50 backdrop-blur-sm px-4 py-2">
         <div
           ref={battleLogRef}
-          className="h-20 overflow-y-auto text-white text-sm space-y-1 scrollbar-thin scrollbar-thumb-white/30"
+          className="max-h-12 overflow-y-auto text-white text-xs space-y-0.5 scrollbar-thin scrollbar-thumb-white/30"
         >
-          {battleState.battleLog.map((log, index) => (
+          {battleState.battleLog.slice(-2).map((log, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center"
+              className="flex items-center opacity-80"
             >
-              <span className="text-blue-300 mr-2">›</span>
+              <span className="text-cyan-400 mr-2">›</span>
               {log}
             </motion.div>
           ))}

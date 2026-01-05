@@ -145,11 +145,12 @@ export async function POST(request: NextRequest) {
       );
 
       // Prepare profile update data
-      const profileUpdate: any = {
+      const profileUpdate: Record<string, unknown> = {
         subscription_type: 'free',
         subscription_status: 'trialing',
         trial_ends_at: '2026-02-20', // Beta trial end date (Feb Half Term)
-        school_initials: schoolCode  // Store the actual selected school code in school_initials
+        // school_initials is varchar(10), so we use the actual initials, not the full code
+        school_initials: schoolInitials || (schoolCode ? schoolCode.substring(0, 10) : null)
       };
 
       // If joining existing school, set school_code and school_owner_id

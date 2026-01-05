@@ -75,10 +75,9 @@ export async function POST(request: NextRequest) {
           subscription_status: 'trialing',
           trial_ends_at: '2026-02-20', // Beta trial end date (Feb Half Term)
           role: 'learner',
-          user_type: 'b2c',
-          // No school-related fields for B2C users
+          // No school-related fields for B2C learners
           school_initials: null,
-          school_name: null
+          school_code: null
         })
         .eq('user_id', data.user.id);
 

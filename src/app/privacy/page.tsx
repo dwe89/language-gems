@@ -245,7 +245,8 @@ export default function PrivacyPolicyPage() {
               <div className="text-blue-700 text-sm">
                 <p><strong>Email:</strong> <a href="mailto:privacy@languagegems.com" className="underline hover:text-blue-900">privacy@languagegems.com</a></p> {/* Prioritize privacy email */}
                 <p><strong>General Inquiries:</strong> <a href="mailto:support@languagegems.com" className="underline hover:text-blue-900">support@languagegems.com</a></p> {/* Added general inquiry email */}
-                <p><strong>Company:</strong> LanguageGems Ltd</p>
+                <p><strong>Company:</strong> Etienne Education Ltd (Trading as LanguageGems)</p>
+                <p><strong>Company Number:</strong> 16909378</p>
                 <p><strong>Website:</strong> <a href="https://www.languagegems.com" className="underline hover:text-blue-900" target="_blank" rel="noopener noreferrer">www.languagegems.com</a></p>
               </div>
             </div>

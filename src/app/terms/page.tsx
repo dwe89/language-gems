@@ -18,7 +18,7 @@ export default function TermsOfServicePage() {
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center">
-            <Link 
+            <Link
               href="/"
               className="flex items-center text-gray-600 hover:text-gray-900 mr-6"
             >
@@ -184,14 +184,15 @@ export default function TermsOfServicePage() {
               </p>
               <div className="text-blue-700 text-sm">
                 <p><strong>Email:</strong> support@languagegems.com</p>
-                <p><strong>Company:</strong> LanguageGems Ltd</p>
+                <p><strong>Company:</strong> Etienne Education Ltd (Trading as LanguageGems)</p>
+                <p><strong>Company Number:</strong> 16909378</p>
                 <p><strong>Website:</strong> www.languagegems.com</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

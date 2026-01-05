@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit, Trash2, FileJson, Save, AlertCircle, CheckCircle, Loader, Play, Volume2 } from 'lucide-react';
+import { X, Plus, Edit, Trash2, FileJson, Save, AlertCircle, CheckCircle, Loader, Play, Volume2, Copy, Clipboard } from 'lucide-react';
 
 interface AQAListeningAdminModalProps {
   isOpen: boolean;
@@ -102,13 +102,123 @@ export default function AQAListeningAdminModal({ isOpen, onClose, onRefresh }: A
   });
 
   const [questions, setQuestions] = useState<AQAListeningQuestion[]>([]);
-  
+
   // Audio generation state
   const [audioGenerationStatus, setAudioGenerationStatus] = useState<{
     [key: number]: 'not-generated' | 'generating' | 'generated' | 'error'
   }>({});
-  
+
   const [audioUrls, setAudioUrls] = useState<{ [key: number]: string }>({});
+
+  // Process imported JSON string
+  const processImportJson = (jsonString: string) => {
+    try {
+      const json = JSON.parse(jsonString);
+
+      if (!json.paper || !Array.isArray(json.questions)) {
+        throw new Error('Invalid JSON format: missing paper or questions');
+      }
+
+      if (confirm(`Importing "${json.paper.title}". This will replace current form data. Continue?`)) {
+        setFormData({
+          ...json.paper,
+          id: undefined, // Don't import ID
+          is_active: true
+        });
+
+        // Reset audio generation status but preserve check for existing URLS
+        const urls: { [key: number]: string } = {};
+        const status: { [key: number]: 'not-generated' | 'generating' | 'generated' | 'error' } = {};
+
+        // Map questions and preserve audio_url if available internally but missing in import
+        const processedQuestions = json.questions.map((q: any, idx: number) => {
+          // Smart mapping for Themes (Old Spec -> New Spec)
+          if (!THEMES.includes(q.theme)) {
+            const t = (q.theme || '').toLowerCase();
+            if (t.includes('identity')) q.theme = 'Theme 1: People and lifestyle';
+            else if (t.includes('popular') || t.includes('celebrity') || t.includes('culture')) q.theme = 'Theme 2: Popular culture';
+            else if (t.includes('study') || t.includes('employment') || t.includes('work')) q.theme = 'Theme 1: People and lifestyle';
+            else if (t.includes('global') || t.includes('current') || t.includes('communication') || t.includes('world')) q.theme = 'Theme 3: Communication and the world around us';
+            else q.theme = THEMES[0];
+          }
+
+          // Smart mapping for Topics (Old Spec -> New Spec)
+          if (!TOPICS.includes(q.topic)) {
+            const t = (q.topic || '').toLowerCase();
+            if (t.includes('family') || t.includes('friend') || t.includes('relationship')) q.topic = 'Identity and relationships with others';
+            else if (t.includes('health') || t.includes('lifestyle')) q.topic = 'Healthy living and lifestyle';
+            else if (t.includes('jobs') || t.includes('career') || t.includes('work') || t.includes('school') || t.includes('studies') || t.includes('education')) q.topic = 'Education and work';
+            else if (t.includes('free-time') || t.includes('hobbies') || t.includes('sport') || t.includes('leisure')) q.topic = 'Free-time activities';
+            else if (t.includes('customs') || t.includes('festivals') || t.includes('celebration')) q.topic = 'Customs, festivals and celebrations';
+            else if (t.includes('celebrity') || t.includes('famous')) q.topic = 'Celebrity culture';
+            else if (t.includes('travel') || t.includes('tourism') || t.includes('holiday') || t.includes('places')) q.topic = 'Travel and tourism, including places of interest';
+            else if (t.includes('technology') || t.includes('media') || t.includes('mobile') || t.includes('internet') || t.includes('social')) q.topic = 'Media and technology';
+            else if (t.includes('environment') || t.includes('town') || t.includes('neighbourhood') || t.includes('global') || t.includes('live')) q.topic = 'The environment and where people live';
+            else q.topic = TOPICS[0];
+          }
+
+          // Check if we have an existing URL for this index
+          const existingUrl = audioUrls[idx] || (questions[idx] && questions[idx].audio_url);
+
+          if (q.audio_url) {
+            urls[idx] = q.audio_url;
+            status[idx] = 'generated';
+            return q;
+          } else if (existingUrl) {
+            console.log(`Preserving existing audio for question ${idx + 1}`);
+            urls[idx] = existingUrl;
+            status[idx] = 'generated';
+            return { ...q, audio_url: existingUrl };
+          } else {
+            status[idx] = 'not-generated';
+            return q;
+          }
+        });
+
+        setQuestions(processedQuestions);
+        setAudioUrls(urls);
+        setAudioGenerationStatus(status);
+
+        setSuccess('Paper imported successfully');
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err: any) {
+      setError(`Failed to import JSON: ${err.message}`);
+    }
+  };
+
+  // Handle JSON Export (Copy to Clipboard)
+  const handleExport = async () => {
+    const exportData = {
+      paper: formData,
+      questions: questions
+    };
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+      setSuccess('JSON copied to clipboard!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError('Failed to copy to clipboard');
+      console.error(err);
+    }
+  };
+
+  // Handle JSON Import (Paste from Clipboard)
+  const handleImport = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        processImportJson(text);
+      } else {
+        const manualText = prompt("Clipboard access failed or empty. Paste JSON here:");
+        if (manualText) processImportJson(manualText);
+      }
+    } catch (err) {
+      const manualText = prompt("Paste your JSON here for import:");
+      if (manualText) processImportJson(manualText);
+    }
+  };
 
   // Load papers on mount
   useEffect(() => {
@@ -124,6 +234,57 @@ export default function AQAListeningAdminModal({ isOpen, onClose, onRefresh }: A
       time_limit_minutes: prev.level === 'foundation' ? 35 : 45
     }));
   }, [formData.level]);
+
+  // Auto-generate identifier and title in create mode
+  useEffect(() => {
+    if (viewMode === 'create') {
+      const determineNextPaper = async () => {
+        try {
+          const params = new URLSearchParams();
+          params.append('language', formData.language);
+          params.append('tier', formData.level);
+
+          const response = await fetch(`/api/admin/aqa-listening/list?${params.toString()}`);
+          const result = await response.json();
+
+          if (result.success && result.papers) {
+            const existingPapers = result.papers;
+            let maxNum = 0;
+            existingPapers.forEach((p: any) => {
+              const match = p.identifier.match(/paper-(\d+)/);
+              if (match) {
+                const num = parseInt(match[1]);
+                if (num > maxNum) maxNum = num;
+              }
+            });
+
+            const nextNum = maxNum + 1;
+            const nextIdentifier = `paper-${nextNum}`;
+
+            const langLabel = {
+              'es': 'Spanish',
+              'fr': 'French',
+              'de': 'German'
+            }[formData.language] || 'Spanish';
+
+            const tierLabel = formData.level.charAt(0).toUpperCase() + formData.level.slice(1);
+
+            const nextTitle = `AQA GCSE ${langLabel} Listening - ${tierLabel} Tier - Paper ${nextNum}`;
+
+            setFormData(prev => ({
+              ...prev,
+              identifier: nextIdentifier,
+              title: nextTitle
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to auto-generate paper details", error);
+        }
+      };
+
+      determineNextPaper();
+    }
+  }, [viewMode, formData.language, formData.level]);
 
   // Load papers from API
   const loadPapers = async () => {
@@ -216,7 +377,7 @@ export default function AQAListeningAdminModal({ isOpen, onClose, onRefresh }: A
   // Generate audio for a single question
   const handleGenerateAudio = async (questionIndex: number) => {
     const question = questions[questionIndex];
-    
+
     if (!question.audio_text || question.audio_text.trim() === '') {
       setError('Please enter audio text before generating audio');
       return;
@@ -260,7 +421,7 @@ export default function AQAListeningAdminModal({ isOpen, onClose, onRefresh }: A
           ...prev,
           [questionIndex]: result.audioUrl
         }));
-        
+
         setAudioGenerationStatus(prev => ({
           ...prev,
           [questionIndex]: 'generated'
@@ -306,19 +467,51 @@ export default function AQAListeningAdminModal({ isOpen, onClose, onRefresh }: A
         return;
       }
 
-      // Validate all questions have audio generated
-      const missingAudio = questions.filter((_, idx) => !audioUrls[idx]);
+      // Validate all questions have audio generated (either new or existing)
+      const missingAudio = questions.filter((q, idx) => !audioUrls[idx] && !q.audio_url);
       if (missingAudio.length > 0) {
-        setError(`Please generate audio for all ${missingAudio.length} questions before saving`);
+        setError(`Please generate audio for all ${questions.length} questions before saving (Missing: ${missingAudio.length})`);
         setIsLoading(false);
         return;
       }
 
-      // Build questions with audio URLs
-      const questionsWithAudio = questions.map((q, idx) => ({
-        ...q,
-        audio_url: audioUrls[idx]
-      }));
+      // Build questions with audio URLs and sanitise data
+      const questionsWithAudio = questions.map((q, idx) => {
+        let theme = q.theme;
+        let topic = q.topic;
+
+        // Validate and map Theme
+        if (!THEMES.includes(theme)) {
+          const t = (theme || '').toLowerCase();
+          if (t.includes('identity')) theme = 'Theme 1: People and lifestyle';
+          else if (t.includes('popular') || t.includes('celebrity') || t.includes('culture')) theme = 'Theme 2: Popular culture';
+          else if (t.includes('study') || t.includes('employment') || t.includes('work')) theme = 'Theme 1: People and lifestyle';
+          else if (t.includes('global') || t.includes('current') || t.includes('communication') || t.includes('world')) theme = 'Theme 3: Communication and the world around us';
+          else theme = THEMES[0];
+        }
+
+        // Validate and map Topic
+        if (!TOPICS.includes(topic)) {
+          const t = (topic || '').toLowerCase();
+          if (t.includes('family') || t.includes('friend') || t.includes('relationship')) topic = 'Identity and relationships with others';
+          else if (t.includes('health') || t.includes('lifestyle')) topic = 'Healthy living and lifestyle';
+          else if (t.includes('jobs') || t.includes('career') || t.includes('work') || t.includes('school') || t.includes('studies') || t.includes('education')) topic = 'Education and work';
+          else if (t.includes('free-time') || t.includes('hobbies') || t.includes('sport') || t.includes('leisure')) topic = 'Free-time activities';
+          else if (t.includes('customs') || t.includes('festivals') || t.includes('celebration')) topic = 'Customs, festivals and celebrations';
+          else if (t.includes('celebrity') || t.includes('famous')) topic = 'Celebrity culture';
+          else if (t.includes('travel') || t.includes('tourism') || t.includes('holiday') || t.includes('places')) topic = 'Travel and tourism, including places of interest';
+          else if (t.includes('technology') || t.includes('media') || t.includes('mobile') || t.includes('internet') || t.includes('social')) topic = 'Media and technology';
+          else if (t.includes('environment') || t.includes('town') || t.includes('neighbourhood') || t.includes('global') || t.includes('live')) topic = 'The environment and where people live';
+          else topic = TOPICS[0];
+        }
+
+        return {
+          ...q,
+          theme,
+          topic,
+          audio_url: audioUrls[idx] || q.audio_url
+        };
+      });
 
       const payload = {
         paper: {
@@ -351,7 +544,7 @@ export default function AQAListeningAdminModal({ isOpen, onClose, onRefresh }: A
           if (onRefresh) onRefresh();
         }, 1500);
       } else {
-        throw new Error(result.error || 'Failed to save paper');
+        throw new Error(result.error + (result.details ? `: ${result.details}` : '') || 'Failed to save paper');
       }
     } catch (error: any) {
       console.error('Error saving paper:', error);
@@ -568,7 +761,27 @@ export default function AQAListeningAdminModal({ isOpen, onClose, onRefresh }: A
             <div>
               {/* Paper Metadata */}
               <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Paper Details</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">Paper Details</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleImport}
+                      className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center text-sm border border-gray-300 transition-colors"
+                      title="Paste JSON from Clipboard"
+                    >
+                      <Clipboard className="h-4 w-4 mr-2" />
+                      Paste JSON
+                    </button>
+                    <button
+                      onClick={handleExport}
+                      className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center text-sm border border-gray-300 transition-colors"
+                      title="Copy JSON to Clipboard"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy JSON
+                    </button>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -608,8 +821,9 @@ export default function AQAListeningAdminModal({ isOpen, onClose, onRefresh }: A
                       type="text"
                       value={formData.identifier}
                       onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                       placeholder="paper-1"
+                      disabled={viewMode === 'create'}
                     />
                   </div>
 
@@ -853,16 +1067,68 @@ export default function AQAListeningAdminModal({ isOpen, onClose, onRefresh }: A
                                 <input
                                   type="checkbox"
                                   checked={question.tts_config?.multiSpeaker || false}
-                                  onChange={(e) => updateQuestion(index, 'tts_config', {
-                                    ...question.tts_config,
-                                    multiSpeaker: e.target.checked
-                                  })}
+                                  onChange={(e) => {
+                                    const isChecked = e.target.checked;
+                                    const currentConfig = question.tts_config || {};
+                                    const newConfig = { ...currentConfig, multiSpeaker: isChecked };
+
+                                    // Initialize default speakers if enabling and none exist
+                                    if (isChecked && (!newConfig.speakers || newConfig.speakers.length === 0)) {
+                                      newConfig.speakers = [
+                                        { name: 'Speaker 1', voiceName: 'Puck' },
+                                        { name: 'Speaker 2', voiceName: 'Aoede' }
+                                      ];
+                                    }
+
+                                    updateQuestion(index, 'tts_config', newConfig);
+                                  }}
                                   className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                 />
                                 <span className="text-sm font-medium text-gray-700">Multi-Speaker</span>
                               </label>
                             </div>
                           </div>
+
+                          {/* Multi-Speaker Configuration */}
+                          {question.tts_config?.multiSpeaker && (
+                            <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="flex justify-between items-center mb-2">
+                                <h6 className="text-sm font-semibold text-gray-900">Speakers (Max 2)</h6>
+                                <span className="text-xs text-gray-500">Match names to script usage!</span>
+                              </div>
+
+                              {(question.tts_config.speakers || []).map((speaker, sIdx) => (
+                                <div key={sIdx} className="flex gap-2 mb-2">
+                                  <input
+                                    placeholder="Speaker Name (e.g. Carlos)"
+                                    value={speaker.name}
+                                    onChange={e => {
+                                      const newSpeakers = [...(question.tts_config?.speakers || [])];
+                                      newSpeakers[sIdx] = { ...newSpeakers[sIdx], name: e.target.value };
+                                      updateQuestion(index, 'tts_config', { ...question.tts_config, speakers: newSpeakers });
+                                    }}
+                                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                  />
+                                  <select
+                                    value={speaker.voiceName}
+                                    onChange={e => {
+                                      const newSpeakers = [...(question.tts_config?.speakers || [])];
+                                      newSpeakers[sIdx] = { ...newSpeakers[sIdx], voiceName: e.target.value };
+                                      updateQuestion(index, 'tts_config', { ...question.tts_config, speakers: newSpeakers });
+                                    }}
+                                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                  >
+                                    <option value="Puck">Puck (Male)</option>
+                                    <option value="Charon">Charon (Male)</option>
+                                    <option value="Aoede">Aoede (Female)</option>
+                                    <option value="Kore">Kore (Female)</option>
+                                    <option value="Fenrir">Fenrir (Male)</option>
+                                    <option value="Leda">Leda (Female)</option>
+                                  </select>
+                                </div>
+                              ))}
+                            </div>
+                          )}
 
                           {/* Generate Audio Button */}
                           <div className="flex items-center gap-4">
