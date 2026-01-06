@@ -111,7 +111,7 @@ function SignupForm() {
             Click the link to activate your account and start learning!
           </p>
           <Link
-            href="/learn"
+            href="/learners"
             className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl px-6 py-3 hover:shadow-lg transition-all"
           >
             Back to Home

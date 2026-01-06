@@ -77,7 +77,7 @@ export default function LearnerNavigation() {
   const handleLogout = async () => {
     try {
       await signOut();
-      router.push('/learn');
+      router.push('/learners');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -113,11 +113,10 @@ export default function LearnerNavigation() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive(item.href)
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive(item.href)
                     ? 'bg-white/20 text-white'
                     : 'text-purple-100 hover:text-white hover:bg-white/10'
-                }`}
+                  }`}
               >
                 <div className="flex items-center space-x-2">
                   <item.icon className="h-4 w-4" />
@@ -151,7 +150,7 @@ export default function LearnerNavigation() {
                       {user.user_metadata?.name || user.email?.split('@')[0] || 'Learner'}
                     </span>
                   </button>
-                  
+
                   {/* Dropdown Menu */}
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                     <div className="py-2">
@@ -203,11 +202,10 @@ export default function LearnerNavigation() {
                   key={item.name}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive(item.href)
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.href)
                       ? 'bg-white/20 text-white'
                       : 'text-purple-100 hover:text-white hover:bg-white/10'
-                  }`}
+                    }`}
                 >
                   <item.icon className="h-5 w-5" />
                   <div>
@@ -216,7 +214,7 @@ export default function LearnerNavigation() {
                   </div>
                 </Link>
               ))}
-              
+
               {/* Mobile User Stats */}
               {user && (
                 <div className="px-4 py-3 border-t border-purple-500/30 mt-4">

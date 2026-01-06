@@ -32,7 +32,7 @@ export const isAdminUser = (userEmail?: string | null): boolean => {
 // Feature flags based on environment and user role
 export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
   const isAdmin = isAdminUser(userEmail);
-  
+
   // Admin can access all features regardless of environment
   if (isAdmin) {
     return {
@@ -49,7 +49,7 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
       forLearners: true,
     };
   }
-  
+
   // Non-admin users follow environment-based flags
   return {
     // Always enabled features
@@ -85,7 +85,7 @@ export const getFeatureStatus = (feature: keyof FeatureFlags, userEmail?: string
 // Navigation items with feature flag support
 export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?: string | null) => {
   const flags = getFeatureFlags(userEmail);
-  
+
   const baseItems = [
     {
       name: 'For Schools',
@@ -96,7 +96,7 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
     },
     {
       name: 'For Learners',
-      path: '/learn',
+      path: '/learners',
       enabled: flags.forLearners,
       comingSoon: !flags.forLearners,
       comingSoonPath: null
@@ -164,7 +164,7 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       enabled: true,
       comingSoon: false,
       comingSoonPath: null,
-      hasDropdown: true, 
+      hasDropdown: true,
       dropdownOnly: true,
       dropdownItems: [
         {

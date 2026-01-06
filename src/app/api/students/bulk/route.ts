@@ -7,13 +7,13 @@ function generateScopedUsername(firstName: string, lastName: string, schoolIniti
   const baseUsername = `${firstName.toLowerCase()}${lastName.charAt(0).toLowerCase()}`;
   let finalUsername = baseUsername;
   let suffix = 0;
-  
+
   // Check if username exists and add suffix if needed
   while (existingUsernames.has(finalUsername)) {
     suffix++;
     finalUsername = baseUsername + suffix;
   }
-  
+
   // Add to existing usernames to prevent duplicates in this batch
   existingUsernames.add(finalUsername);
   return finalUsername;
@@ -21,39 +21,39 @@ function generateScopedUsername(firstName: string, lastName: string, schoolIniti
 
 function generatePassword() {
   // Arrays for gem-based password generation
-const adjectives = [
-  'Good', 'New', 'Old', 'Pure', 'Dark', 'Cool', 'Full', 'Soft', 'Warm',
-  'Cold', 'Hot', 'Long', 'Deep', 'Sweet', 'Dry', 'Wet', 'Fine', 'Grey',
-  'True', 'Rich', 'High', 'Low', 'Nice', 'Bold', 'Wise',
-  'Flat', 'Dull', 'Open', 'Live', 'Real', 'Last', 'Safe', 'Fresh', 'Hard',
-  'Pure', 'Pink', 'Blue', 'Red', 'Gold', 'Silver', 'Red', 'Green', 'Yellow', 'Orange', 
-  'Purple', 'Indigo', 'Violet', 'Black', 'White', 'Gray', 'Brown', 'Tan', 'Beige', 
-  'Cyan', 'Magenta', 'Lime', 'Olive', 'Maroon', 'Navy', 'Teal', 'Aqua', 'Fuchsia', 
-  'Rose', 'Lavender',
-];
-  
-const gems = [
-  'Stone', 'Rock', 'Jewel', 'Sparkle', 'Crystal', 'Bead', 'Charm', 'Glow',
-  'Amber', 'Garnet', 'Quartz', 'Onyx', 'Turquoise', 'Amethyst', 'Glass',
-  'Coral', 'Pearl', 'Diamond', 'Ruby', 'Topaz', 'Opal', 'Jade', 'Sapphire',
-  'Emerald', 'Treasure', 'Fossil', 'Pebble', 'Chip', 'Shard', 'Glitter', 'Glimmer',
-  'Gemstone', 'Mineral', 'Ore', 'Vein', 'Nugget', 'Dust', 'Deposit', 'Mine',
-  'Cave', 'Fragment', 'Element', 'Piece', 'Bit', 'Speck', 'Spot', 'Mark',
-  'Dot', 'Ring', 'Orb', 'Sphere', 'Drop', 'Teardrop', 'Amulet', 'Talisman',
-  'Pendant', 'Necklace', 'Bracelet', 'Earring', 'Crown', 'Scepter', 'Coin',
-  'Token', 'Medal', 'Award', 'Prize', 'Trophy', 'Ribbon', 'Badge', 'Emblem',
-  'Seal', 'Symbol', 'Light', 'Fire', 'Ember', 'Glimmer', 'Flash',
-  'Shine', 'Luster', 'Facet', 'Cut', 'Carat', 'Clarity', 'Colour', 
-  'Platinum', 'Metal', 'Ore', 'Deposit', 'Mine', 'Fragment'
-];
-  
+  const adjectives = [
+    'Good', 'New', 'Old', 'Pure', 'Dark', 'Cool', 'Full', 'Soft', 'Warm',
+    'Cold', 'Hot', 'Long', 'Deep', 'Sweet', 'Dry', 'Wet', 'Fine', 'Grey',
+    'True', 'Rich', 'High', 'Low', 'Nice', 'Bold', 'Wise',
+    'Flat', 'Dull', 'Open', 'Live', 'Real', 'Last', 'Safe', 'Fresh', 'Hard',
+    'Pure', 'Pink', 'Blue', 'Red', 'Gold', 'Silver', 'Red', 'Green', 'Yellow', 'Orange',
+    'Purple', 'Indigo', 'Violet', 'Black', 'White', 'Gray', 'Brown', 'Tan', 'Beige',
+    'Cyan', 'Magenta', 'Lime', 'Olive', 'Maroon', 'Navy', 'Teal', 'Aqua', 'Fuchsia',
+    'Rose', 'Lavender',
+  ];
+
+  const gems = [
+    'Stone', 'Rock', 'Jewel', 'Sparkle', 'Crystal', 'Bead', 'Charm', 'Glow',
+    'Amber', 'Garnet', 'Quartz', 'Onyx', 'Turquoise', 'Amethyst', 'Glass',
+    'Coral', 'Pearl', 'Diamond', 'Ruby', 'Topaz', 'Opal', 'Jade', 'Sapphire',
+    'Emerald', 'Treasure', 'Fossil', 'Pebble', 'Chip', 'Shard', 'Glitter', 'Glimmer',
+    'Gemstone', 'Mineral', 'Ore', 'Vein', 'Nugget', 'Dust', 'Deposit', 'Mine',
+    'Cave', 'Fragment', 'Element', 'Piece', 'Bit', 'Speck', 'Spot', 'Mark',
+    'Dot', 'Ring', 'Orb', 'Sphere', 'Drop', 'Teardrop', 'Amulet', 'Talisman',
+    'Pendant', 'Necklace', 'Bracelet', 'Earring', 'Crown', 'Scepter', 'Coin',
+    'Token', 'Medal', 'Award', 'Prize', 'Trophy', 'Ribbon', 'Badge', 'Emblem',
+    'Seal', 'Symbol', 'Light', 'Fire', 'Ember', 'Glimmer', 'Flash',
+    'Shine', 'Luster', 'Facet', 'Cut', 'Carat', 'Clarity', 'Colour',
+    'Platinum', 'Metal', 'Ore', 'Deposit', 'Mine', 'Fragment'
+  ];
+
   // Pick random adjective and gem
   const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
   const gem = gems[Math.floor(Math.random() * gems.length)];
-  
+
   // Generate random number between 10 and 99
   const number = Math.floor(Math.random() * 90) + 10;
-  
+
   return `${adjective}${gem}${number}`.toLowerCase();
 }
 
@@ -93,7 +93,7 @@ interface BatchResult {
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    
+
     // Create admin client for user creation
     const adminClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
         }
       }
     );
-    
+
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -139,6 +139,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Class not found or unauthorized' }, { status: 403 });
     }
 
+    // Check user profile for subscription type and student limits
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('subscription_type')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profile?.subscription_type === 'individual_teacher') {
+      const { count } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('teacher_id', user.id);
+
+      const currentCount = count || 0;
+      const MAX_STUDENTS = 150;
+
+      if (currentCount + students.length > MAX_STUDENTS) {
+        return NextResponse.json({
+          error: `Individual Teacher plan is limited to ${MAX_STUDENTS} students. You currently have ${currentCount} students and are trying to add ${students.length} more.`
+        }, { status: 403 });
+      }
+    }
+
     // Get existing usernames to avoid conflicts
     const { data: existingProfiles, error: profilesError } = await adminClient
       .from('user_profiles')
@@ -158,35 +181,35 @@ export async function POST(request: Request) {
     for (const studentInput of students) {
       try {
         const name = typeof studentInput === 'string' ? studentInput.trim() : studentInput.name?.trim();
-        
+
         if (!name) {
           errors.push({ name: 'Unknown', error: 'Student name is required' });
           continue;
         }
-        
+
         // Replace tabs with spaces and normalize whitespace
         const normalizedName = name.replace(/\t/g, ' ').replace(/\s+/g, ' ').trim();
-        
+
         // Parse first and last name from full name
         const nameParts = normalizedName.split(' ').filter((part: string) => part.length > 0);
         if (nameParts.length < 2) {
           errors.push({ name: normalizedName, error: 'Please use "First Last" format' });
           continue;
         }
-        
+
         const firstName = nameParts[0];
         const lastName = nameParts.slice(1).join(' ');
         const displayName = `${firstName} ${lastName}`;
-        
+
         // Generate username and password client-side
         const username = generateScopedUsername(firstName, lastName, schoolInitials, existingUsernames);
         const password = generatePassword();
-        
+
         // Create unique email with timestamp to avoid duplicates
         const baseEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s+/g, '')}`;
         const uniqueId = Date.now() + Math.floor(Math.random() * 1000);
         const email = `${baseEmail}.${uniqueId}@student.languagegems.com`;
-        
+
         validStudents.push({
           name: normalizedName,
           firstName,
@@ -199,9 +222,9 @@ export async function POST(request: Request) {
       } catch (error: any) {
         const originalName = typeof studentInput === 'string' ? studentInput : studentInput.name || 'Unknown';
         const normalizedErrorName = originalName.replace(/\t/g, ' ').replace(/\s+/g, ' ').trim();
-        errors.push({ 
-          name: normalizedErrorName, 
-          error: error.message 
+        errors.push({
+          name: normalizedErrorName,
+          error: error.message
         });
       }
     }
@@ -209,9 +232,9 @@ export async function POST(request: Request) {
     // Process students in batches to avoid timeouts
     for (let i = 0; i < validStudents.length; i += BATCH_SIZE) {
       const batch = validStudents.slice(i, i + BATCH_SIZE);
-      
+
       console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(validStudents.length / BATCH_SIZE)}: ${batch.length} students`);
-      
+
       // Process batch in parallel where possible
       const batchPromises = batch.map(async (student): Promise<BatchResult> => {
         try {
@@ -226,11 +249,11 @@ export async function POST(request: Request) {
               username: student.username
             }
           });
-          
+
           if (authError) {
             throw new Error(authError.message);
           }
-          
+
           return {
             student,
             authUser: authUser.user,
@@ -246,24 +269,24 @@ export async function POST(request: Request) {
       });
 
       const batchResults = await Promise.all(batchPromises);
-      
+
       // Collect successful auth users for batch profile updates
       const successfulUsers = batchResults.filter(result => result.success);
       const failedUsers = batchResults.filter(result => !result.success);
-      
+
       console.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1} results: ${successfulUsers.length} successful, ${failedUsers.length} failed`);
-      
+
       // Add failed users to errors
       failedUsers.forEach(result => {
-        errors.push({ 
-          name: result.student.name, 
+        errors.push({
+          name: result.student.name,
           error: result.error || 'Unknown error occurred'
         });
       });
 
       if (successfulUsers.length > 0) {
         // Update profiles in batch - use update instead of upsert since handle_new_user trigger already created profiles
-        const profilePromises = successfulUsers.map(result => 
+        const profilePromises = successfulUsers.map(result =>
           adminClient
             .from('user_profiles')
             .update({
@@ -276,7 +299,7 @@ export async function POST(request: Request) {
         );
 
         const profileResults = await Promise.all(profilePromises);
-        
+
         // Check if any profile updates failed
         const failedProfileUpdates = profileResults.filter(result => result.error);
         if (failedProfileUpdates.length > 0) {
@@ -285,9 +308,9 @@ export async function POST(request: Request) {
           failedProfileUpdates.forEach((result, index) => {
             const correspondingUser = successfulUsers[profileResults.indexOf(result)];
             if (correspondingUser) {
-              errors.push({ 
-                name: correspondingUser.student.name, 
-                error: `Profile update failed: ${result.error?.message || 'Unknown error'}` 
+              errors.push({
+                name: correspondingUser.student.name,
+                error: `Profile update failed: ${result.error?.message || 'Unknown error'}`
               });
             }
           });
@@ -315,9 +338,9 @@ export async function POST(request: Request) {
           if (enrollError) {
             console.error('Batch enrollment error:', enrollError);
             successfulProfileUsers.forEach(result => {
-              errors.push({ 
-                name: result.student.name, 
-                error: `Enrollment failed: ${enrollError.message}` 
+              errors.push({
+                name: result.student.name,
+                error: `Enrollment failed: ${enrollError.message}`
               });
             });
           } else {
@@ -341,7 +364,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       results,
       errors,
       message: `Successfully created ${results.length} student accounts`,
@@ -349,9 +372,9 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Error in bulk student creation:', error);
-    return NextResponse.json({ 
-      error: 'Failed to create students', 
-      details: error.message 
+    return NextResponse.json({
+      error: 'Failed to create students',
+      details: error.message
     }, { status: 500 });
   }
 } 

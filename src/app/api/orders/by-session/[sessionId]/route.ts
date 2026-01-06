@@ -36,7 +36,9 @@ export async function GET(
             name,
             description,
             file_path,
-            thumbnail_url
+            thumbnail_url,
+            resource_type,
+            slug
           )
         )
       `)
@@ -45,14 +47,14 @@ export async function GET(
 
     if (orderError) {
       console.error('Error fetching order:', orderError);
-      
+
       if (orderError.code === 'PGRST116') {
         return NextResponse.json(
           { error: 'Order not found' },
           { status: 404 }
         );
       }
-      
+
       return NextResponse.json(
         { error: 'Failed to fetch order details' },
         { status: 500 }

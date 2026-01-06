@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name, schoolName, schoolCode: providedSchoolCode, role = 'teacher' } = await request.json();
+    const { email, password, name, schoolName, schoolCode: providedSchoolCode, role = 'teacher', plan } = await request.json();
 
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -125,7 +125,9 @@ export async function POST(request: NextRequest) {
         data: {
           name,
           role: userRole,
-          school_name: schoolName
+          school_name: schoolName,
+          plan: plan,
+          user_type: (plan === 'teacher' || plan === 'individual' || !schoolName) ? 'b2c' : 'b2b'
         },
         emailRedirectTo: `${origin}/api/auth/callback`
       }
@@ -145,11 +147,14 @@ export async function POST(request: NextRequest) {
       );
 
       // Prepare profile update data
+      const isPremiumTeacher = plan === 'teacher' || plan === 'individual';
+
       const profileUpdate: Record<string, unknown> = {
-        subscription_type: 'free',
+        subscription_type: isPremiumTeacher ? 'individual_teacher' : 'free',
         subscription_status: 'trialing',
         trial_ends_at: '2026-02-20', // Beta trial end date (Feb Half Term)
-        // school_initials is varchar(10), so we use the actual initials, not the full code
+        email: email.toLowerCase(), // Ensure email is in profile
+        role: 'teacher',
         school_initials: schoolInitials || (schoolCode ? schoolCode.substring(0, 10) : null)
       };
 

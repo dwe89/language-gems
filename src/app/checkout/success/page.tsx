@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle, Download, ArrowRight, Home, ShoppingBag } from 'lucide-react';
+import { CheckCircle, Download, Home, Sparkles, Crown, ArrowRight } from 'lucide-react';
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
@@ -11,6 +11,7 @@ export default function CheckoutSuccessPage() {
   const orderId = searchParams?.get('order_id');
   const [loading, setLoading] = useState(true);
   const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [isSubscription, setIsSubscription] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
 
   const handleDownload = async (orderId: string, productId: string, productName: string) => {
@@ -20,16 +21,12 @@ export default function CheckoutSuccessPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.downloadUrl) {
-          // Create a temporary link to trigger download
           const link = document.createElement('a');
           link.href = data.downloadUrl;
           link.download = productName;
           link.style.display = 'none';
-
           document.body.appendChild(link);
           link.click();
-
-          // Safe cleanup with timeout
           setTimeout(() => {
             try {
               if (link.parentNode === document.body) {
@@ -75,6 +72,14 @@ export default function CheckoutSuccessPage() {
       if (response.ok) {
         const data = await response.json();
         setOrderDetails(data);
+
+        // Check if any order item is a subscription
+        const hasSubscription = data?.order?.order_items?.some((item: any) =>
+          item.product?.resource_type === 'Subscription' ||
+          item.product?.name?.toLowerCase().includes('subscription') ||
+          item.product?.slug?.includes('subscription')
+        );
+        setIsSubscription(hasSubscription);
       } else {
         const errorText = await response.text();
         console.error('Failed to fetch order details:', response.status, errorText);
@@ -91,7 +96,7 @@ export default function CheckoutSuccessPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your order details...</p>
+          <p className="text-slate-600">Loading your details...</p>
         </div>
       </div>
     );
@@ -105,16 +110,113 @@ export default function CheckoutSuccessPage() {
           <h2 className="text-2xl font-semibold text-slate-800 mb-4">Invalid Session</h2>
           <p className="text-slate-600 mb-8">We couldn't find the checkout session. Please contact support if you believe this is an error.</p>
           <Link
-            href="/shop"
+            href="/"
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
-            Return to Shop
+            Return Home
           </Link>
         </div>
       </div>
     );
   }
 
+  // SUBSCRIPTION SUCCESS PAGE
+  if (isSubscription) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-pink-50">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Success Header */}
+          <div className="text-center mb-12">
+            <div className="mx-auto flex items-center justify-center h-24 w-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-6 shadow-lg">
+              <Crown className="h-12 w-12 text-white" />
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+              Welcome to Premium! 🎉
+            </h1>
+
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Your subscription is now active. You have full access to all premium features.
+            </p>
+          </div>
+
+          {/* Subscription Details */}
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
+            <div className="px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500">
+              <h2 className="text-lg font-semibold text-white flex items-center">
+                <Sparkles className="h-5 w-5 mr-2" />
+                Subscription Activated
+              </h2>
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-200">
+                <div>
+                  <h3 className="font-semibold text-slate-800 text-lg">
+                    {orderDetails?.order?.order_items?.[0]?.product?.name || 'Premium Subscription'}
+                  </h3>
+                  <p className="text-slate-600 text-sm mt-1">Your 7-day free trial has started</p>
+                </div>
+                <div className="text-right">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Active
+                  </span>
+                </div>
+              </div>
+
+              <h4 className="font-medium text-slate-800 mb-4">What you can do now:</h4>
+              <ul className="space-y-3 text-slate-600">
+                <li className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>Access <strong>unlimited</strong> vocabulary games and exercises</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>Use <strong>AI-powered</strong> writing and reading assessments</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>Track your progress with <strong>detailed analytics</strong></span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>Earn achievements and complete <strong>daily challenges</strong></span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <Link
+              href="/learner-dashboard"
+              className="flex items-center justify-center px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg font-semibold"
+            >
+              Go to My Dashboard
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Link>
+            <Link
+              href="/games"
+              className="flex items-center justify-center px-6 py-4 border-2 border-purple-300 text-purple-700 rounded-xl hover:bg-purple-50 transition-colors font-semibold"
+            >
+              <Sparkles className="h-5 w-5 mr-2" />
+              Start Learning
+            </Link>
+          </div>
+
+          {/* Confirmation Notice */}
+          <div className="text-center">
+            <p className="text-slate-500 text-sm">
+              A confirmation email has been sent to your email address.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // REGULAR ORDER SUCCESS PAGE (for downloadable products)
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -137,16 +239,6 @@ export default function CheckoutSuccessPage() {
         <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
           <div className="px-6 py-4 bg-green-50 border-b border-green-200">
             <h2 className="text-lg font-semibold text-green-800">Order Confirmation</h2>
-            {sessionId && (
-              <p className="text-sm text-green-600 mt-1">
-                Session ID: {sessionId}
-              </p>
-            )}
-            {orderId && (
-              <p className="text-sm text-green-600 mt-1">
-                Order ID: {orderId.slice(0, 8).toUpperCase()}
-              </p>
-            )}
             {orderDetails?.order && (
               <p className="text-sm text-green-600 mt-1">
                 Order #{orderDetails.order.id.slice(0, 8).toUpperCase()}
@@ -164,10 +256,6 @@ export default function CheckoutSuccessPage() {
                     <span className="font-medium text-green-600">
                       {orderDetails?.order?.status || 'Completed'}
                     </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Payment Method:</span>
-                    <span className="font-medium">Card</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Order Date:</span>
@@ -200,10 +288,6 @@ export default function CheckoutSuccessPage() {
                     <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
                     Resources are available in your account
                   </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                    Lifetime access to purchased materials
-                  </li>
                 </ul>
               </div>
             </div>
@@ -215,7 +299,6 @@ export default function CheckoutSuccessPage() {
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
             <div className="px-6 py-4 border-b border-slate-200">
               <h2 className="text-lg font-semibold text-slate-800">Your Purchases</h2>
-              <p className="text-sm text-slate-600 mt-1">Click download to access your educational resources</p>
             </div>
 
             <div className="divide-y divide-slate-200">
@@ -234,11 +317,6 @@ export default function CheckoutSuccessPage() {
                         <p className="text-sm text-slate-600 mb-2">
                           {item.product?.description || 'Premium educational content'}
                         </p>
-                        <div className="flex items-center text-sm text-slate-500">
-                          <span>Quantity: {item.quantity}</span>
-                          <span className="mx-2">•</span>
-                          <span>£{(item.price_cents / 100).toFixed(2)}</span>
-                        </div>
                       </div>
                     </div>
 
@@ -266,7 +344,7 @@ export default function CheckoutSuccessPage() {
         )}
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Link
             href="/account/orders"
             className="flex items-center justify-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -274,7 +352,6 @@ export default function CheckoutSuccessPage() {
             <Download className="h-5 w-5 mr-2" />
             View My Orders
           </Link>
-          {/* Removed 'Continue Shopping' button to /shop */}
           <Link
             href="/"
             className="flex items-center justify-center px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
@@ -284,37 +361,13 @@ export default function CheckoutSuccessPage() {
           </Link>
         </div>
 
-        {/* Help Section */}
-        <div className="bg-blue-50 rounded-lg p-6 text-center">
-          <h3 className="font-semibold text-blue-900 mb-2">Need Help?</h3>
-          <p className="text-blue-700 mb-4">
-            If you have any questions about your purchase or need assistance downloading your resources, we're here to help.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/support"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Contact Support
-            </Link>
-            <Link
-              href="/faq"
-              className="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              View FAQ
-            </Link>
-          </div>
-        </div>
-
-        {/* Email Confirmation Notice */}
-        <div className="mt-8 text-center">
+        {/* Email Notice */}
+        <div className="text-center">
           <p className="text-slate-500 text-sm">
             A confirmation email with download links has been sent to your email address.
-            <br />
-            Please check your spam folder if you don't see it in your inbox.
           </p>
         </div>
       </div>
     </div>
   );
-} 
+}

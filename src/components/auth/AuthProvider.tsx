@@ -19,6 +19,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isTeacher: boolean;
   isStudent: boolean;
+  isLearner: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = userRole === 'admin';
   const isTeacher = userRole === 'teacher' || isAdmin;
   const isStudent = userRole === 'student';
+  const isLearner = userRole === 'learner';
 
   // Helper function to fetch user profile with caching (includes school subscription check)
   const fetchUserProfile = useCallback(async (userId: string) => {
@@ -584,7 +586,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signIn, signOut, refreshSession, userRole, hasSubscription, isAdmin, isTeacher, isStudent }}>
+    <AuthContext.Provider value={{ user, session, isLoading, signIn, signOut, refreshSession, userRole, hasSubscription, isAdmin, isTeacher, isStudent, isLearner }}>
       <DemoAuthProvider realUser={user} isLoading={isLoading}>
         {children}
       </DemoAuthProvider>

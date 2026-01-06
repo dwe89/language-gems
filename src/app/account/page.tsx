@@ -12,12 +12,13 @@ import {
 } from 'lucide-react';
 
 export default function AccountPage() {
-  const { user, isLoading, userRole, hasSubscription, isAdmin, isTeacher, isStudent } = useAuth();
+  const { user, isLoading, userRole, hasSubscription, isAdmin, isTeacher, isStudent, isLearner } = useAuth();
   const [schoolInfo, setSchoolInfo] = useState<{
     schoolCode: string;
     schoolInitials: string;
     isOwner: boolean;
     memberCount: number;
+    subscriptionType?: string;
   } | null>(null);
   const [teacherStats, setTeacherStats] = useState<{
     totalClasses: number;
@@ -30,14 +31,20 @@ export default function AccountPage() {
   });
   const router = useRouter();
 
-  // Redirect students to their dashboard - they shouldn't access the account page
+  // Redirect students and learners to their dashboard - they shouldn't access the account page
   useEffect(() => {
-    if (!isLoading && isStudent) {
-      setTimeout(() => {
-        router.replace('/student-dashboard');
-      }, 150);
+    if (!isLoading) {
+      if (isStudent) {
+        setTimeout(() => {
+          router.replace('/student-dashboard');
+        }, 150);
+      } else if (isLearner) {
+        setTimeout(() => {
+          router.replace('/learner-dashboard');
+        }, 150);
+      }
     }
-  }, [isLoading, isStudent, router]);
+  }, [isLoading, isStudent, isLearner, router]);
 
   // Load school information and teacher specific stats for teachers
   useEffect(() => {
@@ -48,7 +55,7 @@ export default function AccountPage() {
         // Get teacher's school information from their profile
         const { data: profile, error: profileError } = await supabaseBrowser
           .from('user_profiles')
-          .select('school_code, school_initials, is_school_owner')
+          .select('school_code, school_initials, is_school_owner, subscription_type')
           .eq('user_id', user.id)
           .single();
 
@@ -84,7 +91,8 @@ export default function AccountPage() {
             schoolCode: schoolData.code,
             schoolInitials: schoolData.school_initials || schoolData.code,
             isOwner: profile.is_school_owner || false,
-            memberCount
+            memberCount,
+            subscriptionType: profile.subscription_type
           });
         } else if (profile?.school_initials) {
           // Legacy users with only school_initials (no school_code yet)
@@ -164,8 +172,7 @@ export default function AccountPage() {
     );
   }
 
-  // Redirect students - they shouldn't access this page
-  if (isStudent) {
+  if (isStudent || isLearner) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -194,8 +201,8 @@ export default function AccountPage() {
 
   // Define account sections, conditionally showing Teacher Dashboard based on subscription
   const accountSections = [
-    // Conditionally add School Management as a regular account card for school owners
-    ...(isTeacher && hasSubscription && schoolInfo && schoolInfo.isOwner ? [{
+    // Conditionally add School Management for school owners (excluding individual teachers)
+    ...(isTeacher && hasSubscription && schoolInfo && schoolInfo.isOwner && schoolInfo.subscriptionType !== 'individual_teacher' ? [{
       title: 'School Management',
       description: 'Add teachers to your school and manage memberships',
       icon: School,
@@ -206,6 +213,18 @@ export default function AccountPage() {
         { icon: School, text: schoolInfo.schoolCode },
         { icon: Users, text: `${schoolInfo.memberCount} ${schoolInfo.memberCount === 1 ? 'Teacher' : 'Teachers'}` },
         { text: schoolInfo.isOwner ? 'Owner' : 'Member', badge: true }
+      ]
+    }] : []),
+    // Add "Student Enrollment" card for Individual Teachers
+    ...(isTeacher && hasSubscription && schoolInfo && schoolInfo.subscriptionType === 'individual_teacher' ? [{
+      title: 'Student Enrollment',
+      description: 'Your unique code for students to join your classes',
+      icon: Users,
+      href: '/dashboard/classes',
+      color: 'from-green-500 to-emerald-500',
+      meta: [
+        { icon: School, text: `Code: ${schoolInfo.schoolCode}`, badge: true },
+        { text: '150 Student Limit' }
       ]
     }] : []),
     {
@@ -296,7 +315,7 @@ export default function AccountPage() {
         )}
 
 
-        
+
 
         {/* Teacher Dashboard - Prominent Feature for Subscribed Teachers */}
         {isTeacher && hasSubscription && (
@@ -474,21 +493,20 @@ export default function AccountPage() {
           {accountSections.map((section) => {
             const IconComponent = section.icon;
             const isUpgrade = section.title === 'Upgrade to Premium';
-            
+
             return (
               <Link
                 key={section.title}
                 href={section.href}
-                className={`group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-slate-200 hover:border-slate-300 ${
-                  isUpgrade ? 'ring-2 ring-purple-200 hover:ring-purple-300' : ''
-                }`}
+                className={`group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-slate-200 hover:border-slate-300 ${isUpgrade ? 'ring-2 ring-purple-200 hover:ring-purple-300' : ''
+                  }`}
               >
                 {isUpgrade && (
                   <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-500 to-pink-500 text-white text-xs px-3 py-1 rounded-bl-lg font-medium">
                     Popular
                   </div>
                 )}
-                
+
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-12 h-12 bg-gradient-to-r ${section.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
                     <IconComponent className="h-6 w-6 text-white" />
@@ -532,7 +550,7 @@ export default function AccountPage() {
 
 
 
-        
+
 
 
       </div>

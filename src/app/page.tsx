@@ -227,7 +227,7 @@ export default function Home() {
                       </Link>
 
                       <Link
-                        href="/learn"
+                        href="/learners"
                         className="group bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 border-2 border-transparent hover:border-purple-200"
                       >
                         <div className="text-center">
@@ -261,7 +261,7 @@ export default function Home() {
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
 
-                  <button 
+                  <button
                     onClick={() => setShowSignupModal(true)}
                     className="inline-flex items-center justify-center bg-white text-slate-700 font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105 border border-slate-200"
                   >
@@ -372,7 +372,7 @@ export default function Home() {
                       <School className="mr-2 h-5 w-5" />
                       For Schools
                     </Link>
-                    <Link href="/learn" className="inline-flex items-center justify-center bg-purple-700 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                    <Link href="/learners" className="inline-flex items-center justify-center bg-purple-700 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
                       <GraduationCap className="mr-2 h-5 w-5" />
                       For Learners
                     </Link>

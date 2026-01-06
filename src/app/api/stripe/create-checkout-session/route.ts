@@ -135,6 +135,12 @@ export async function POST(request: NextRequest) {
 
     console.log('Using base URL:', baseUrl);
 
+    // Check if any product is a student subscription which gets a 7-day trial
+    const hasStudentSubscription = products.some(p =>
+      p.slug === 'student-subscription-monthly' ||
+      p.slug === 'student-subscription-yearly'
+    );
+
     // Create Stripe checkout session
     const sessionConfig: any = {
       line_items: lineItems,
@@ -145,6 +151,7 @@ export async function POST(request: NextRequest) {
         customer_email: customer_email || 'guest',
         product_ids: JSON.stringify(productIds),
         total_cents: totalCents.toString(),
+        source: 'language-gems',
       },
       payment_intent_data: hasSubscription ? undefined : {
         metadata: {
@@ -157,6 +164,7 @@ export async function POST(request: NextRequest) {
           customer_email: customer_email || 'guest',
           product_ids: JSON.stringify(productIds),
         },
+        trial_period_days: hasStudentSubscription ? 7 : undefined,
       } : undefined,
       billing_address_collection: 'auto',
       allow_promotion_codes: true,

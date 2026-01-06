@@ -111,15 +111,19 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     let userId = null;
 
     // Try to find user by email (for registered users)
+    // NOTE: We query user_profiles because auth.users is not directly queryable
     if (actualEmail && actualEmail !== 'guest') {
-      const { data: user, error: userError } = await supabase
-        .from('auth.users')
-        .select('id')
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('user_id')
         .eq('email', actualEmail)
         .single();
 
-      if (!userError && user) {
-        userId = user.id;
+      if (!profileError && profile) {
+        userId = profile.user_id;
+        console.log('Found user by email in user_profiles:', userId);
+      } else {
+        console.log('Could not find user by email in user_profiles:', actualEmail, profileError?.message);
       }
     }
 
@@ -162,7 +166,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     // Get product details from Supabase
     const { data: products, error: productsError } = await supabase
       .from('products')
-      .select('id, name, price_cents')
+      .select('id, name, price_cents, resource_type, slug')
       .in('id', productIds);
 
     if (productsError) {
@@ -200,17 +204,31 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
         .delete()
         .eq('user_id', userId);
 
-      // Check if this is a Pro Plan purchase
+      // Check if this is a Subscription purchase (Pro or Student)
       const isProPlan = productIds.includes('prod_TZhA4ZGf1OfnX9');
+      // We need to fetch the products to check their slugs/types if not hardcoded IDs
+      // But we already fetched products above for order items. 
+      // Let's refine the logic to check if ANY product is a subscription type from the DB result 'products'
 
-      if (isProPlan) {
-        console.log(`Upgrading user ${userId} to premium`);
+      const subscriptionProduct = products?.find((p: any) =>
+        p.resource_type === 'Subscription' ||
+        productIds.includes('prod_TZhA4ZGf1OfnX9') || // Legacy check
+        p.slug === 'student-subscription-monthly' ||
+        p.slug === 'student-subscription-yearly'
+      );
+
+      if (subscriptionProduct) {
+        console.log(`Upgrading user ${userId} to subscription: ${subscriptionProduct.name}`);
+
+        const isTrial = session.subscription && session.amount_total === 0; // Simple check for trial start
 
         // Update user profile
         const { error: profileError } = await supabase
           .from('user_profiles')
           .update({
+            // If it's a student plan, use 'premium' (or 'student' if you prefer specific types)
             subscription_type: 'premium',
+            subscription_status: isTrial ? 'trialing' : 'active',
             updated_at: new Date().toISOString()
           })
           .eq('user_id', userId);
@@ -220,21 +238,21 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
         }
 
         // Create subscription record
-        // Note: For one-time payments that act as subscriptions (like this MVP), 
-        // we'll set a manual period (e.g., 1 month)
         const startDate = new Date();
         const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + 1); // 1 month duration
+        // Default to 1 month if no period in session (though webhooks usually have this)
+        // For real subs, listen to customer.subscription.created/updated, but for checkout.session.completed:
+        endDate.setMonth(endDate.getMonth() + 1);
 
         const { error: subError } = await supabase
           .from('subscriptions')
           .insert({
             user_id: userId,
-            stripe_subscription_id: session.subscription as string || session.id, // Use session ID if not a real sub yet
+            stripe_subscription_id: session.subscription as string || session.id,
             stripe_customer_id: session.customer as string,
-            status: 'active',
-            plan_name: 'Pro',
-            plan_price_cents: 999,
+            status: isTrial ? 'trialing' : 'active',
+            plan_name: subscriptionProduct.name,
+            plan_price_cents: subscriptionProduct.price_cents,
             current_period_start: startDate.toISOString(),
             current_period_end: endDate.toISOString(),
             created_at: new Date().toISOString(),
@@ -251,9 +269,17 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
 
     console.log(`Order ${order.id} created successfully for ${customerEmail}`);
 
-    // Send order confirmation email with download links
+    // Send appropriate email
+    const subscriptionProduct = products?.find((p: any) => p.resource_type === 'Subscription');
+
     if (actualEmail) {
-      await sendOrderConfirmationEmail(order, orderItems, actualEmail);
+      if (subscriptionProduct) {
+        // Send Welcome Email for Subscriptions
+        await sendWelcomeEmail(actualEmail, subscriptionProduct.name);
+      } else {
+        // Send Standard Order Confirmation for One-time Buys
+        await sendOrderConfirmationEmail(order, orderItems, actualEmail);
+      }
     }
 
   } catch (error) {
@@ -343,6 +369,45 @@ async function sendOrderConfirmationEmail(order: any, orderItems: any[], custome
   } catch (error) {
     console.error('❌ Error sending order confirmation email:', error);
     // Don't throw - email failure shouldn't break the order process
+  }
+}
+
+async function sendWelcomeEmail(customerEmail: string, planName: string) {
+  try {
+    const BREVO_API_KEY = process.env.BREVO_API_KEY;
+    if (!BREVO_API_KEY) return;
+
+    // Use a Welcome Template (Create one in Brevo or use a generic one)
+    // For now, sending a simple transactional email
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': BREVO_API_KEY,
+      },
+      body: JSON.stringify({
+        sender: { name: "LanguageGems Team", email: "support@languagegems.com" },
+        to: [{ email: customerEmail }],
+        subject: "Welcome to LanguageGems Premium! 💎",
+        htmlContent: `
+          <h1>Welcome aboard!</h1>
+          <p>You have successfully subscribed to the <strong>${planName}</strong>.</p>
+          <p>Your subscription is now active. You can access all premium features immediately by logging into your dashboard.</p>
+          <p><a href="https://www.languagegems.com/dashboard">Go to Dashboard</a></p>
+          <br/>
+          <p>Happy Learning,<br/>The LanguageGems Team</p>
+        `
+      }),
+    });
+
+    if (response.ok) {
+      console.log(`✅ Welcome email sent to ${customerEmail}`);
+    } else {
+      console.error(`❌ Failed to send welcome email`);
+    }
+  } catch (e) {
+    console.error('Error sending welcome email', e);
   }
 }
 

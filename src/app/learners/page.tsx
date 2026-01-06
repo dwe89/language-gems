@@ -112,9 +112,10 @@ export default function LearnPage() {
       period: "forever",
       description: "Perfect for trying out LanguageGems",
       features: [
-        "Access to 3 vocabulary games",
+        "Access to 3 vocabulary games daily",
         "Basic progress tracking",
-        "100 vocabulary words",
+        "French, Spanish & German",
+        "Professional audio",
         "Community support"
       ],
       cta: "Start Free",
@@ -122,31 +123,24 @@ export default function LearnPage() {
       popular: false
     },
     {
-      name: "Pro",
-      price: "£9.99",
+      name: "Student Subscription",
+      price: "£7.99",
       period: "per month",
-      description: "Everything you need to excel in GCSE languages",
+      description: "Everything you need for success in your GCSEs",
       features: [
-        "All 15+ interactive games",
-        "All original learning songs and tracks",
-        "Complete GCSE vocabulary (2000+ words)",
-        "Practise exams and quizzes",
-        "Grammar guides and tips",
-        "Advanced progress analytics",
-        "Spaced repetition system",
-        "Audio pronunciation",
-        "Offline practice mode",
-        "AI-powered worksheet generation",
-        "Real-time performance insights",
-        "Custom vocabulary lists",
-        "Listening comprehension exercises",
-        "Speaking practice with feedback",
-        "Achievement badges and rewards",
-        "Study streak tracking",
-        "Mobile app access"
+        "🤖 AI-marked Writing tasks",
+        "🤖 AI Reading & Listening tests",
+        "🎮 UNLIMITED access to 15+ games",
+        "📝 AI-generated worksheets",
+        "📊 Detailed personal analytics",
+        "🔄 Spaced repetition system",
+        "✨ Professional native audio",
+        "🏆 Achievements & Daily challenges",
+        "🎯 AQA & Edexcel alignment",
+        "📱 Mobile & tablet access"
       ],
-      cta: "Start Free Trial",
-      ctaLink: "/auth/signup-learner?plan=pro",
+      cta: "Start 7-Day Free Trial",
+      ctaLink: "/auth/signup-learner?plan=student",
       popular: true
     }
   ];
@@ -190,8 +184,8 @@ export default function LearnPage() {
                   transition={{ duration: 0.6, delay: 0.2 }}
                   className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-3xl mx-auto"
                 >
-                  Transform your GCSE language learning with 15+ interactive games, 
-                  spaced repetition technology, and curriculum-aligned content. 
+                  Transform your GCSE language learning with 15+ interactive games,
+                  spaced repetition technology, and curriculum-aligned content.
                   Make studying Spanish, French, and German actually fun!
                 </motion.p>
 
@@ -291,11 +285,10 @@ export default function LearnPage() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: index * 0.1 }}
-                    className={`bg-white rounded-2xl p-8 shadow-lg border-2 transition-all hover:shadow-xl ${
-                      tier.popular 
-                        ? 'border-purple-500 relative' 
+                    className={`bg-white rounded-2xl p-8 shadow-lg border-2 transition-all hover:shadow-xl ${tier.popular
+                        ? 'border-purple-500 relative'
                         : 'border-slate-100'
-                    }`}
+                      }`}
                   >
                     {tier.popular && (
                       <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -304,7 +297,7 @@ export default function LearnPage() {
                         </span>
                       </div>
                     )}
-                    
+
                     <div className="text-center mb-8">
                       <h3 className="text-2xl font-bold text-slate-800 mb-2">{tier.name}</h3>
                       <div className="mb-4">
@@ -325,11 +318,10 @@ export default function LearnPage() {
 
                     <Link
                       href={tier.ctaLink}
-                      className={`w-full inline-flex items-center justify-center font-semibold rounded-xl px-6 py-3 text-lg transition-all ${
-                        tier.popular
+                      className={`w-full inline-flex items-center justify-center font-semibold rounded-xl px-6 py-3 text-lg transition-all ${tier.popular
                           ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg transform hover:scale-105'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                      }`}
+                        }`}
                     >
                       {tier.cta}
                     </Link>

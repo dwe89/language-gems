@@ -96,7 +96,8 @@ const config = {
       { source: '/grammar/german/adjectives/comparative-superlative', destination: '/grammar/german/adjectives/comparative', permanent: true },
 
       // === OLD SITE STRUCTURE REDIRECTS ===
-      { source: '/learn/:path*', destination: '/grammar', permanent: true },
+      { source: '/learn', destination: '/learners', permanent: true },
+      { source: '/learn/:path*', destination: '/learners', permanent: true },
       { source: '/vocabmaster', destination: '/games', permanent: true },
       { source: '/vocabulary', destination: '/games', permanent: true },
       { source: '/coming-soon/:path*', destination: '/', permanent: true },

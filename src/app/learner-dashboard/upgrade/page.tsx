@@ -14,6 +14,8 @@ import {
   Gamepad2,
   BarChart3,
   ArrowLeft,
+  ArrowRight,
+  Target,
   CreditCard,
   Loader2
 } from 'lucide-react';
@@ -22,88 +24,57 @@ import Link from 'next/link';
 export default function UpgradePage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
-  interface Plan {
-    name: string;
-    price: number;
-    description: string;
-    features: string[];
-    limitations?: string[];
-    popular?: boolean;
-    tier: 'free' | 'learner' | 'student' | 'pro';
-  }
-
-  const plans: Record<string, Plan> = {
-    free: {
-      name: 'Free',
-      price: 0,
-      tier: 'free',
-      description: 'Try before you commit',
-      features: [
-        '3 song lessons per day',
-        '5 vocabulary games per day',
-        'Basic progress tracking',
-        'All 3 languages'
-      ],
-      limitations: [
-        'Limited daily usage',
-        'No karaoke mode',
-        'No offline access'
-      ]
-    },
-    learner: {
-      name: 'Learner',
-      price: 4.99,
-      tier: 'learner',
-      description: 'Perfect for casual learners',
-      features: [
-        'Unlimited song lessons',
-        '🎤 Karaoke mode',
-        'Unlimited vocabulary games',
-        'All 3 languages',
-        'Song quizzes',
-        'Flashcard export'
-      ],
-      limitations: [
-        'No worksheets',
-        'No offline mode'
-      ]
-    },
+  const plans = {
     student: {
-      name: 'Student',
-      price: 7.99,
-      tier: 'student',
-      description: 'Ideal for GCSE/KS3 prep',
-      features: [
-        'Everything in Learner, plus:',
-        '📝 AI worksheets',
-        '🎧 Listening tests',
-        '📖 Reading exercises',
-        'Exam alignment (AQA/Edexcel)',
-        'Grammar practice',
-        'Progress reports'
+      name: 'STUDENT SUBSCRIPTION',
+      price: { monthly: 7.99, yearly: 69 },
+      description: 'Everything you need for success',
+      sections: [
+        {
+          title: '🤖 AI-POWERED FEATURES',
+          features: [
+            'AI-marked Writing tasks (instant feedback)',
+            'AI-marked Reading comprehension',
+            'AI-marked Listening comprehension',
+            'AI-generated practice worksheets'
+          ]
+        },
+        {
+          title: '🎮 ENGAGING LEARNING',
+          features: [
+            '15+ interactive games',
+            'Spaced repetition (optimizes retention)',
+            'Gem collection & achievement system',
+            'Daily challenges & streaks'
+          ]
+        },
+        {
+          title: '📚 EXAM-ALIGNED CONTENT',
+          features: [
+            'AQA & Edexcel specifications',
+            'Foundation & Higher tier support',
+            'Reading, Writing, Listening practice',
+            'Grammar & conjugation exercises'
+          ]
+        },
+        {
+          title: '📊 TRACK YOUR PROGRESS',
+          features: [
+            'Personal dashboard',
+            'Detailed analytics',
+            'Progress reports you can share',
+            'Identify weak areas automatically'
+          ]
+        }
       ],
-      popular: true
-    },
-    pro: {
-      name: 'Pro',
-      price: 9.99,
-      tier: 'pro',
-      description: 'Ultimate learning experience',
-      features: [
-        'Everything in Student, plus:',
-        '🏆 Sing-Along Challenge',
-        '📱 Offline mode',
-        '🎨 Custom vocab lists',
-        '🏅 Achievements',
-        '⚡ Daily challenges',
-        '🎯 Personalized paths',
-        '👥 Priority support'
-      ]
+      monthlyProductId: '6dc6f925-8ebe-45ec-858d-6d0c6279903a',
+      yearlyProductId: '0e6c444a-b3d0-4cf2-8d19-d545976f0d40'
     }
   };
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (productId: string) => {
     setLoading(true);
     try {
       const response = await fetch('/api/stripe/create-checkout-session', {
@@ -113,7 +84,7 @@ export default function UpgradePage() {
         },
         body: JSON.stringify({
           items: [{
-            product_id: '1f1ec20a-2c35-454e-8a2c-dedd700f37bb', // Pro Plan Product ID (from DB)
+            product_id: productId,
             quantity: 1
           }],
           customer_email: user?.email
@@ -139,148 +110,190 @@ export default function UpgradePage() {
   const currentPlan = user?.user_metadata?.plan || 'free';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-slate-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center mb-8">
+        <div className="flex flex-col items-center mb-12 text-center">
           <Link
             href="/learner-dashboard"
-            className="p-2 hover:bg-white/50 rounded-lg transition-colors mr-4"
+            className="mb-6 flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Upgrade Your Learning</h1>
-            <p className="text-gray-600">Unlock unlimited access to all LanguageGems features</p>
-          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
+            Level Up Your Learning
+          </h1>
+          <p className="text-xl text-slate-600 max-w-2xl">
+            Join thousands of students mastering German, Spanish, and French with our AI-powered platform.
+          </p>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {Object.entries(plans).map(([planKey, plan]) => (
-            <motion.div
-              key={planKey}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: Object.keys(plans).indexOf(planKey) * 0.1 }}
-              className={`bg-white rounded-2xl p-8 shadow-xl relative flex flex-col ${plan.popular ? 'ring-2 ring-purple-500 scale-105 z-10' : ''
-                } ${currentPlan === planKey ? 'ring-2 ring-green-500' : ''}`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center">
-                    <Star className="w-4 h-4 mr-1" />
-                    Most Popular
-                  </div>
-                </div>
-              )}
-
-              {currentPlan === planKey && (
-                <div className="absolute -top-4 right-4">
-                  <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                    Current Plan
-                  </div>
-                </div>
-              )}
-
-              <div className="text-center mb-8">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${planKey === 'free' ? 'bg-gray-100' :
-                  'bg-gradient-to-r from-purple-600 to-pink-600'
-                  }`}>
-                  {planKey === 'free' ? <BookOpen className="w-8 h-8 text-gray-600" /> :
-                    <Crown className="w-8 h-8 text-white" />}
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                <p className="text-gray-600 mb-4">{plan.description}</p>
-                <div className="text-4xl font-bold text-gray-900 mb-2">
-                  £{plan.price}
-                  {planKey !== 'free' && (
-                    <span className="text-lg text-gray-600 font-normal">
-                      /month
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-8 flex-grow">
-                {plan.features.map((feature, index) => (
-                  <div key={index} className="flex items-center">
-                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
-                  </div>
-                ))}
-
-                {plan.limitations && plan.limitations.map((limitation, index) => (
-                  <div key={index} className="flex items-center">
-                    <X className="w-5 h-5 text-red-400 mr-3 flex-shrink-0" />
-                    <span className="text-gray-500">{limitation}</span>
-                  </div>
-                ))}
-              </div>
-
+        {/* Pricing Card Section */}
+        <div className="max-w-4xl mx-auto">
+          {/* Billing Toggle */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-white p-1 rounded-2xl shadow-sm border border-slate-200 flex items-center">
               <button
-                onClick={() => planKey !== 'free' && handleUpgrade()}
-                disabled={currentPlan === planKey || loading}
-                className={`w-full py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center ${currentPlan === planKey
-                  ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                  : planKey === 'free'
-                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg transform hover:scale-105'
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${billingCycle === 'monthly'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-500 hover:text-slate-700'
                   }`}
               >
-                {loading && planKey !== 'free' ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : currentPlan === planKey ? (
-                  'Current Plan'
-                ) : planKey === 'free' ? (
-                  'Free Forever'
-                ) : (
-                  <>
-                    <CreditCard className="w-5 h-5 inline mr-2" />
-                    Upgrade to {plan.name}
-                  </>
-                )}
+                Monthly
               </button>
-            </motion.div>
-          ))}
+              <button
+                onClick={() => setBillingCycle('yearly')}
+                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center ${billingCycle === 'yearly'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-500 hover:text-slate-700'
+                  }`}
+              >
+                Yearly
+                <span className="ml-2 bg-emerald-100 text-emerald-600 text-[10px] px-2 py-0.5 rounded-full">
+                  Save 28%
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-5 h-full">
+              {/* Left Side: Features */}
+              <div className="md:col-span-3 p-8 lg:p-12 border-b md:border-b-0 md:border-r border-slate-100">
+                <div className="flex items-center mb-6">
+                  <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                    <Crown className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800">Everything in One Simple Plan</h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                  {plans.student.sections.map((section, idx) => (
+                    <div key={idx}>
+                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                        {section.title}
+                      </h3>
+                      <ul className="space-y-2">
+                        {section.features.map((feature, fIdx) => (
+                          <li key={fIdx} className="flex items-start text-sm">
+                            <Check className="w-4 h-4 text-emerald-500 mr-2 flex-shrink-0 mt-0.5" />
+                            <span className="text-slate-600">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-slate-50">
+                  <div className="flex items-center mb-4">
+                    <Target className="w-5 h-5 text-blue-600 mr-2" />
+                    <span className="font-bold text-slate-800">Choose your language:</span>
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    Your subscription grants full access to French, Spanish, OR German.
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Side: CTA */}
+              <div className="md:col-span-2 bg-slate-50 p-8 lg:p-12 flex flex-col justify-center items-center">
+                <div className="text-center mb-8">
+                  <h3 className="text-lg font-bold text-slate-500 uppercase tracking-wide mb-2">
+                    Student Subscription
+                  </h3>
+                  <div className="flex items-baseline justify-center">
+                    <span className="text-5xl font-black text-slate-900">
+                      £{billingCycle === 'monthly' ? plans.student.price.monthly : plans.student.price.yearly}
+                    </span>
+                    <span className="text-slate-400 ml-2 font-medium">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                  </div>
+                  {billingCycle === 'yearly' && (
+                    <p className="text-emerald-600 font-bold text-sm mt-2">
+                      Equivalent to just £5.75/month
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => handleUpgrade(billingCycle === 'monthly' ? plans.student.monthlyProductId : plans.student.yearlyProductId)}
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center text-lg disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <>
+                      {billingCycle === 'monthly' ? 'Start 7-Day Free Trial' : 'Get Yearly Access'}
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </>
+                  )}
+                </button>
+
+                <p className="text-xs text-slate-400 mt-6 text-center leading-relaxed">
+                  {billingCycle === 'monthly'
+                    ? '£7.99/month after 7 days. Cancel anytime.'
+                    : 'Billed annually. No commitment, cancel anytime.'
+                  }
+                </p>
+
+                <div className="mt-8 flex items-center justify-center grayscale opacity-50">
+                  <CreditCard className="w-5 h-5 mr-4" />
+                  <div className="flex gap-2">
+                    <span className="text-[10px] font-bold border border-slate-300 px-1 rounded">VISA</span>
+                    <span className="text-[10px] font-bold border border-slate-300 px-1 rounded">MASTERCARD</span>
+                    <span className="text-[10px] font-bold border border-slate-300 px-1 rounded">AMEX</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* School Referral */}
+          <div className="mt-12 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between text-center md:text-left gap-6">
+            <div>
+              <h3 className="text-xl font-bold text-slate-800 mb-1">Taking GCSE at school?</h3>
+              <p className="text-slate-600">Ask your teacher about our School license (unlimited students, all 3 languages, £599-799/year)</p>
+            </div>
+            <Link
+              href="/schools/pricing"
+              className="whitespace-nowrap bg-white border-2 border-slate-200 hover:border-blue-600 hover:text-blue-600 text-slate-700 font-bold py-3 px-6 rounded-xl transition-all"
+            >
+              School Pricing Info
+            </Link>
+          </div>
         </div>
 
         {/* FAQ Section */}
-        <div className="max-w-4xl mx-auto mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">Frequently Asked Questions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="font-bold text-gray-900 mb-2">Can I cancel anytime?</h3>
-              <p className="text-gray-600">Yes! You can cancel your subscription at any time. You'll continue to have access until the end of your billing period.</p>
+        <div className="max-w-4xl mx-auto mt-20">
+          <h2 className="text-3xl font-bold text-slate-900 text-center mb-10">Common Questions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h3 className="font-bold text-slate-800 mb-2">Can I cancel anytime?</h3>
+              <p className="text-slate-600 text-sm">Absolutely! You can cancel your subscription from your account settings with just two clicks. You'll keep access until the end of your current period.</p>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="font-bold text-gray-900 mb-2">What payment methods do you accept?</h3>
-              <p className="text-gray-600">We accept all major credit cards, PayPal, and bank transfers for yearly subscriptions.</p>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h3 className="font-bold text-slate-800 mb-2">How does the 7-day trial work?</h3>
+              <p className="text-slate-600 text-sm">You'll get full access to all features immediately. We'll only charge your card if you decide to continue after the 7 days are up.</p>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="font-bold text-gray-900 mb-2">Is there a free trial?</h3>
-              <p className="text-gray-600">Yes! All paid plans come with a 7-day free trial. No credit card required to start.</p>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h3 className="font-bold text-slate-800 mb-2">Is this only for GCSE?</h3>
+              <p className="text-slate-600 text-sm">No! While we are perfectly aligned with AQA/Edexcel GCSE, our activities and AI tools are excellent for anyone learning these languages at a beginner to intermediate level.</p>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="font-bold text-gray-900 mb-2">Can I switch between plans?</h3>
-              <p className="text-gray-600">Absolutely! You can upgrade or downgrade your plan at any time. Changes take effect immediately.</p>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h3 className="font-bold text-slate-800 mb-2">Which languages are included?</h3>
+              <p className="text-slate-600 text-sm">Your subscription gives you full access to French, Spanish, OR German. You can switch your primary language at any time.</p>
             </div>
-          </div>
-        </div>
-
-        {/* Money Back Guarantee */}
-        <div className="text-center mt-12">
-          <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl p-8 max-w-2xl mx-auto">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">30-Day Money Back Guarantee</h3>
-            <p className="text-gray-600">
-              Not satisfied? Get a full refund within 30 days, no questions asked.
-            </p>
           </div>
         </div>
       </div>
     </div>
   );
 }
+

@@ -68,12 +68,16 @@ export async function POST(request: NextRequest) {
         }
       );
 
+      const isPremium = plan === 'pro' || plan === 'student' || plan === 'premium' || plan === 'learner';
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 7);
+
       const { error: profileError } = await supabaseAdmin
         .from('user_profiles')
         .update({
-          subscription_type: plan === 'pro' ? 'premium' : 'free',
-          subscription_status: 'trialing',
-          trial_ends_at: '2026-02-20', // Beta trial end date (Feb Half Term)
+          subscription_type: 'free', // Default to free until payment
+          subscription_status: 'active', // Active free user
+          // trial_ends_at: trialEndDate.toISOString(), // Don't set trial until subscription starts
           role: 'learner',
           // No school-related fields for B2C learners
           school_initials: null,
