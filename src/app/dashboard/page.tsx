@@ -28,7 +28,7 @@ import FeedbackWidget from '../../components/beta/FeedbackWidget';
 // The main page component that handles authentication and renders the dashboard
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
-  
+
   // Display a loading spinner while authentication is in progress
   if (authLoading) {
     return (
@@ -115,7 +115,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
         const { data: profileData, error: profileError } = await supabaseBrowser
           .from('user_profiles')
           .select('school_code, school_initials, display_name, is_school_owner, school_owner_id')
-          .eq('user_id', user.id)
+          .eq('user_id', user?.id)
           .single();
 
         if (!profileError && profileData) {
@@ -168,7 +168,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
               class_enrollments(student_id),
               assignments(id)
             `)
-            .eq('teacher_id', user.id);
+            .eq('teacher_id', user?.id);
 
           classesData = { data, error };
         }
@@ -180,10 +180,10 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
           setStats(prev => ({ ...prev, loading: false }));
           return;
         }
-        
+
         // Flatten the data for easier processing
-        const allEnrollments = data.flatMap(cls => cls.class_enrollments);
-        const allAssignments = data.flatMap(cls => cls.assignments);
+        const allEnrollments = data?.flatMap(cls => cls.class_enrollments) || [];
+        const allAssignments = data?.flatMap(cls => cls.assignments) || [];
 
         // Get unique student count
         const uniqueStudents = new Set(allEnrollments.map(e => e.student_id));
@@ -193,7 +193,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
         const activeAssignments = allAssignments.length;
 
         // Get total classes count
-        const totalClasses = data.length;
+        const totalClasses = data?.length || 0;
 
         // Calculate actual completion rate from assignment submissions
         const { data: submissionData } = await supabaseBrowser
@@ -251,7 +251,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
         setScopeLoading(false);
 
         // Show welcome widget if the user has no classes
-        setHelpWidgetVisible(data.length === 0);
+        setHelpWidgetVisible(data?.length === 0);
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -262,7 +262,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
 
     fetchDashboardData();
   }, [user, viewScope]);
-  
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header Section with a simpler, cleaner design */}
@@ -293,22 +293,20 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
                 <button
                   onClick={() => setViewScope('my')}
                   disabled={scopeLoading}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    viewScope === 'my'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-800'
-                  } ${scopeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${viewScope === 'my'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                    } ${scopeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   My Classes
                 </button>
                 <button
                   onClick={() => setViewScope('school')}
                   disabled={scopeLoading}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    viewScope === 'school'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-800'
-                  } ${scopeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${viewScope === 'school'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800'
+                    } ${scopeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   School
                 </button>
@@ -334,106 +332,106 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
           </div>
         </div>
       )}
-      
+
       {/* Main Dashboard Grid with Enhanced Design */}
       {!scopeLoading && (
-      <section className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
-          <StatCard
-            label="Total Classes"
-            value={stats.loading ? "..." : stats.totalClasses.toString()}
-            icon={<BookOpen className="h-7 w-7" />}
-            gradient="from-indigo-500 to-blue-600"
-            bgGradient="from-indigo-50 to-blue-50"
-          />
-          <StatCard
-            label="Total Students"
-            value={stats.loading ? "..." : stats.activeStudents.toString()}
-            icon={<Users className="h-7 w-7" />}
-            gradient="from-emerald-500 to-teal-600"
-            bgGradient="from-emerald-50 to-teal-50"
-          />
-          <StatCard
-            label="Active (7 days)"
-            value={stats.loading ? "..." : stats.activeStudents7d.toString()}
-            icon={<CheckCircle className="h-7 w-7" />}
-            gradient="from-green-500 to-emerald-600"
-            bgGradient="from-green-50 to-emerald-50"
-          />
-          <StatCard
-            label="Words Practiced"
-            value={stats.loading ? "..." : stats.totalWords.toString()}
-            icon={<Award className="h-7 w-7" />}
-            gradient="from-purple-500 to-pink-600"
-            bgGradient="from-purple-50 to-pink-50"
-          />
-          <StatCard
-            label="Game Sessions"
-            value={stats.loading ? "..." : stats.totalGameSessions.toLocaleString()}
-            icon={<Gamepad2 className="h-7 w-7" />}
-            gradient="from-orange-500 to-red-500"
-            bgGradient="from-orange-50 to-red-50"
-          />
-        </div>
+        <section className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+            <StatCard
+              label="Total Classes"
+              value={stats.loading ? "..." : stats.totalClasses.toString()}
+              icon={<BookOpen className="h-7 w-7" />}
+              gradient="from-indigo-500 to-blue-600"
+              bgGradient="from-indigo-50 to-blue-50"
+            />
+            <StatCard
+              label="Total Students"
+              value={stats.loading ? "..." : stats.activeStudents.toString()}
+              icon={<Users className="h-7 w-7" />}
+              gradient="from-emerald-500 to-teal-600"
+              bgGradient="from-emerald-50 to-teal-50"
+            />
+            <StatCard
+              label="Active (7 days)"
+              value={stats.loading ? "..." : stats.activeStudents7d.toString()}
+              icon={<CheckCircle className="h-7 w-7" />}
+              gradient="from-green-500 to-emerald-600"
+              bgGradient="from-green-50 to-emerald-50"
+            />
+            <StatCard
+              label="Words Practiced"
+              value={stats.loading ? "..." : stats.totalWords.toString()}
+              icon={<Award className="h-7 w-7" />}
+              gradient="from-purple-500 to-pink-600"
+              bgGradient="from-purple-50 to-pink-50"
+            />
+            <StatCard
+              label="Game Sessions"
+              value={stats.loading ? "..." : stats.totalGameSessions.toLocaleString()}
+              icon={<Gamepad2 className="h-7 w-7" />}
+              gradient="from-orange-500 to-red-500"
+              bgGradient="from-orange-50 to-red-50"
+            />
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <DashboardCard
-            title="Manage Classes & Students"
-            description="Organize your classroom, add students, generate secure logins, and manage comprehensive rosters."
-            icon={<BookOpen className="h-8 w-8" />}
-            gradient="from-indigo-500 to-blue-600"
-            href="/dashboard/classes"
-          />
-          <DashboardCard
-            title="Create & Track Assignments"
-            description="Design custom assignments with AI assistance, set learning objectives, and monitor real-time student progress."
-            icon={<PenTool className="h-8 w-8" />}
-            gradient="from-orange-500 to-red-500"
-            href="/dashboard/assignments"
-          />
-          <DashboardCard
-            title="Advanced Analytics"
-            description="Get deep insights with detailed reports on scores, engagement time, skill mastery, and learning patterns."
-            icon={<BarChart2 className="h-8 w-8" />}
-            gradient="from-purple-500 to-pink-500"
-            href="/dashboard/progress"
-          />
-          <DashboardCard
-            title="Vocabulary Management"
-            description="Build comprehensive vocabulary libraries, import custom content, and create themed word collections."
-            icon={<Upload className="h-8 w-8" />}
-            gradient="from-emerald-500 to-teal-600"
-            href="/dashboard/vocabulary"
-          />
-          <DashboardCard
-            title="Vocabulary Tests"
-            description="Create comprehensive vocabulary assessments with detailed analytics and automatic grading for student evaluation."
-            icon={<ClipboardCheck className="h-8 w-8" />}
-            gradient="from-rose-500 to-pink-600"
-            href="/dashboard/vocabulary-tests"
-          />
-          <DashboardCard
-            title="Competitions & Rankings"
-            description="Motivate students with class challenges, achievement badges, and dynamic leaderboards that celebrate progress."
-            icon={<Trophy className="h-8 w-8" />}
-            gradient="from-amber-500 to-yellow-500"
-            href="/dashboard/leaderboards"
-          />
-        </div>
-      </section>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <DashboardCard
+              title="Manage Classes & Students"
+              description="Organize your classroom, add students, generate secure logins, and manage comprehensive rosters."
+              icon={<BookOpen className="h-8 w-8" />}
+              gradient="from-indigo-500 to-blue-600"
+              href="/dashboard/classes"
+            />
+            <DashboardCard
+              title="Create & Track Assignments"
+              description="Design custom assignments with AI assistance, set learning objectives, and monitor real-time student progress."
+              icon={<PenTool className="h-8 w-8" />}
+              gradient="from-orange-500 to-red-500"
+              href="/dashboard/assignments"
+            />
+            <DashboardCard
+              title="Advanced Analytics"
+              description="Get deep insights with detailed reports on scores, engagement time, skill mastery, and learning patterns."
+              icon={<BarChart2 className="h-8 w-8" />}
+              gradient="from-purple-500 to-pink-500"
+              href="/dashboard/analytics?tab=overview"
+            />
+            <DashboardCard
+              title="Vocabulary Management"
+              description="Build comprehensive vocabulary libraries, import custom content, and create themed word collections."
+              icon={<Upload className="h-8 w-8" />}
+              gradient="from-emerald-500 to-teal-600"
+              href="/dashboard/vocabulary"
+            />
+            <DashboardCard
+              title="Vocabulary Tests"
+              description="Create comprehensive vocabulary assessments with detailed analytics and automatic grading for student evaluation."
+              icon={<ClipboardCheck className="h-8 w-8" />}
+              gradient="from-rose-500 to-pink-600"
+              href="/dashboard/vocabulary-tests"
+            />
+            <DashboardCard
+              title="Competitions & Rankings"
+              description="Motivate students with class challenges, achievement badges, and dynamic leaderboards that celebrate progress."
+              icon={<Trophy className="h-8 w-8" />}
+              gradient="from-amber-500 to-yellow-500"
+              href="/dashboard/leaderboards"
+            />
+          </div>
+        </section>
       )}
 
       {/* Help Widget */}
       {helpWidgetVisible && (
         <div className="fixed bottom-8 right-8 z-50">
           <div className="relative bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 max-w-sm animate-in slide-in-from-right duration-500">
-            <button 
+            <button
               onClick={() => setHelpWidgetVisible(false)}
               className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200"
             >
               <MinusCircle className="h-5 w-5" />
             </button>
-            
+
             <div className="mb-6">
               <div className="flex items-start mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
@@ -441,7 +439,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-lg mb-2 flex items-center">
-                    Welcome to LanguageGems! 
+                    Welcome to LanguageGems!
                     <Sparkles className="h-4 w-4 ml-2 text-yellow-500" />
                   </h3>
                   <p className="text-slate-600 text-sm leading-relaxed">
@@ -450,7 +448,7 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
                 </div>
               </div>
             </div>
-            
+
             <Link href="/dashboard/classes" className="w-full group relative px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 overflow-hidden text-center inline-block">
               <div className="relative flex items-center justify-center">
                 <Plus className="h-4 w-4 mr-2" />
@@ -469,13 +467,13 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
 }
 
 // Reusable component for the dashboard stat cards
-function StatCard({ 
-  label, 
-  value, 
-  icon, 
+function StatCard({
+  label,
+  value,
+  icon,
   gradient,
   bgGradient,
-}: { 
+}: {
   label: string;
   value: string;
   icon: React.ReactNode;
@@ -485,7 +483,7 @@ function StatCard({
   return (
     <div className={`relative p-6 rounded-2xl bg-gradient-to-br ${bgGradient} shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300 group overflow-hidden`}>
       <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      
+
       <div className="relative flex items-start justify-between mb-4">
         <div className={`p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
           <div className="text-white">
@@ -493,7 +491,7 @@ function StatCard({
           </div>
         </div>
       </div>
-      
+
       <div className="relative">
         <div className="text-3xl font-bold text-slate-900 mb-1">{value}</div>
         <div className="text-slate-600 font-medium text-sm">{label}</div>
@@ -503,13 +501,13 @@ function StatCard({
 }
 
 // Reusable component for the main dashboard action cards
-function DashboardCard({ 
-  title, 
-  description, 
-  icon, 
+function DashboardCard({
+  title,
+  description,
+  icon,
   gradient,
   href,
-}: { 
+}: {
   title: string;
   description: string;
   icon: React.ReactNode;
@@ -523,7 +521,7 @@ function DashboardCard({
     >
       {/* Background gradient overlay */}
       <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
-      
+
       <div className="relative p-8">
         <div className="flex flex-col h-full">
           {/* Icon */}
@@ -532,7 +530,7 @@ function DashboardCard({
               {icon}
             </div>
           </div>
-          
+
           {/* Content */}
           <h3 className="font-bold text-slate-900 text-xl leading-tight mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-slate-900 group-hover:to-indigo-600 transition-all duration-300">
             {title}
@@ -540,7 +538,7 @@ function DashboardCard({
           <p className="text-slate-600 leading-relaxed mb-6 flex-grow">
             {description}
           </p>
-          
+
           {/* Action area */}
           <div className="flex items-center justify-end pt-4 border-t border-slate-100 group-hover:border-indigo-100 transition-colors duration-300">
             <div className={`p-2 rounded-xl bg-gradient-to-br ${gradient} opacity-20 group-hover:opacity-100 transition-all duration-300 group-hover:scale-110`}>

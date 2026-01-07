@@ -58,6 +58,16 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+
+        // Filter by source - only process LanguageGems events
+        // Both LanguageGems and SecondaryMFL share the same Stripe account
+        const source = session.metadata?.source;
+        if (source !== 'language-gems') {
+          console.log(`⏭️ Ignoring event from source: ${source || 'unknown'} (not language-gems)`);
+          return NextResponse.json({ received: true, skipped: true });
+        }
+
+        console.log('✅ Processing LanguageGems checkout.session.completed');
         await handleSuccessfulPayment(session);
         break;
       }
@@ -222,19 +232,25 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
 
         const isTrial = session.subscription && session.amount_total === 0; // Simple check for trial start
 
+        // Calculate trial end date (7 days from now)
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 7);
+
         // Update user profile
         const { error: profileError } = await supabase
           .from('user_profiles')
           .update({
-            // If it's a student plan, use 'premium' (or 'student' if you prefer specific types)
             subscription_type: 'premium',
             subscription_status: isTrial ? 'trialing' : 'active',
+            trial_ends_at: isTrial ? trialEndDate.toISOString() : null,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', userId);
 
         if (profileError) {
           console.error('Error updating user profile:', profileError);
+        } else {
+          console.log(`✅ User ${userId} upgraded to premium (status: ${isTrial ? 'trialing' : 'active'})`);
         }
 
         // Create subscription record

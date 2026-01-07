@@ -32,6 +32,15 @@ function getDateFilter(timeRange: TimeRange): Date {
   }
 }
 
+// Helper to chunk array
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+}
+
 // Helper to calculate top class weakness
 async function calculateTopClassWeakness(
   supabaseClient: any,
@@ -41,14 +50,25 @@ async function calculateTopClassWeakness(
   if (studentIds.length === 0) return null;
 
   // Get all game sessions with category/subcategory data
-  const { data: sessions, error } = await supabaseClient
-    .from('enhanced_game_sessions')
-    .select('category, subcategory, game_type, accuracy_percentage, created_at, student_id')
-    .in('student_id', studentIds)
-    .gte('created_at', dateFilter.toISOString())
-    .not('category', 'is', null);
+  // 🔧 FIXED: Include words_correct and words_attempted for proper accuracy calculation
+  const sessions: any[] = [];
+  const batches = chunkArray(studentIds, 20);
 
-  if (error || !sessions || sessions.length === 0) {
+  for (const batch of batches) {
+    const { data: batchData, error } = await supabaseClient
+      .from('enhanced_game_sessions')
+      .select('category, subcategory, game_type, words_attempted, words_correct, created_at, student_id')
+      .in('student_id', batch)
+      .gte('created_at', dateFilter.toISOString())
+      .not('category', 'is', null)
+      .limit(50000);
+
+    if (!error && batchData) {
+      sessions.push(...batchData);
+    }
+  }
+
+  if (sessions.length === 0) {
     return null;
   }
 
@@ -84,7 +104,10 @@ async function calculateTopClassWeakness(
     weakness.totalAttempts++;
     weakness.affectedStudents.add(session.student_id);
 
-    const accuracy = parseFloat(session.accuracy_percentage) || 0;
+    // 🔧 FIXED: Calculate accuracy from words_correct/words_attempted instead of using accuracy_percentage
+    const wordsAttempted = session.words_attempted || 0;
+    const wordsCorrect = session.words_correct || 0;
+    const accuracy = wordsAttempted > 0 ? (wordsCorrect / wordsAttempted) * 100 : 0;
     if (accuracy < 60) {
       weakness.failedAttempts++;
     }
@@ -132,9 +155,9 @@ async function calculateTopClassWeakness(
 
   const subcategoryName = topWeakness.subcategory
     ? topWeakness.subcategory
-        .split('_')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
     : null;
 
   return {
@@ -147,7 +170,7 @@ async function calculateTopClassWeakness(
 
 export async function GET(request: NextRequest) {
   try {
-    console.time('⏱️ [API] class-summary');
+
 
     const searchParams = request.nextUrl.searchParams;
     const teacherId = searchParams.get('teacherId');
@@ -156,7 +179,7 @@ export async function GET(request: NextRequest) {
     const viewScope = searchParams.get('viewScope') || 'my';
     const schoolCode = searchParams.get('schoolCode') || undefined;
 
-    console.log(`📊 [DEBUG] API called with teacherId: ${teacherId}, classId: ${classId || 'all'}, timeRange: ${timeRange}, viewScope: ${viewScope}, schoolCode: ${schoolCode}`);
+
 
     if (!teacherId) {
       return NextResponse.json(
@@ -166,6 +189,7 @@ export async function GET(request: NextRequest) {
     }
 
     const dateFilter = getDateFilter(timeRange);
+
 
     // STEP 1: Get all students for this teacher or school
     let classesQuery;
@@ -205,7 +229,7 @@ export async function GET(request: NextRequest) {
     }
 
     const classIds = classes?.map((c: any) => c.id) || [];
-    console.log(`📊 [DEBUG] Found ${classIds.length} classes for teacher ${teacherId}:`, classIds);
+
 
     if (classIds.length === 0) {
       // No classes found, return empty data
@@ -218,11 +242,12 @@ export async function GET(request: NextRequest) {
           trendDirection: 'stable',
         },
         urgentInterventions: [],
+        studentsNeverLoggedIn: [],
         topClassWeakness: null,
         recentAssignments: [],
       };
 
-      console.timeEnd('⏱️ [API] class-summary');
+
       return NextResponse.json({
         success: true,
         data: emptyData,
@@ -245,8 +270,7 @@ export async function GET(request: NextRequest) {
 
     const studentIds = enrollments?.map((e: any) => e.student_id) || [];
     const totalStudents = studentIds.length;
-    console.log(`📊 [DEBUG] Found ${totalStudents} students enrolled in these classes`);
-    console.log(`📊 [DEBUG] Is Asher in studentIds?`, studentIds.includes('ac794722-1818-4cd1-8c19-2abbe0b16d88'));
+
 
     // STEP 1.5: Get student profiles (names + created_at)
     const { data: studentProfiles, error: profilesError } = await supabase
@@ -266,31 +290,39 @@ export async function GET(request: NextRequest) {
     // STEP 2: Get game sessions for these students
     // NOTE: Supabase has a default limit of 1000 rows. We need to increase this for large classes.
     // FILTER OUT abandoned sessions (0% accuracy AND 0 words attempted) - these are sessions where student quit immediately
-    const { data: gameSessions, error: sessionsError } = await supabase
-      .from('enhanced_game_sessions')
-      .select('student_id, final_score, accuracy_percentage, created_at, duration_seconds, words_attempted, game_type')
-      .in('student_id', studentIds)
-      .gte('created_at', dateFilter.toISOString())
-      .order('created_at', { ascending: false })
-      .limit(50000); // Increase limit to handle large classes (165 students * ~300 sessions each)
+    // FILTER OUT abandoned sessions (0% accuracy AND 0 words attempted) - these are sessions where student quit immediately
+    const gameSessions: any[] = [];
+    const studentBatches = chunkArray(studentIds, 20);
+
+    for (const batch of studentBatches) {
+      // 🔧 FIXED: Added words_correct to SELECT for proper accuracy calculation
+      const { data: batchSessions, error: sessionsError } = await supabase
+        .from('enhanced_game_sessions')
+        .select('student_id, final_score, words_attempted, words_correct, created_at, duration_seconds, game_type')
+        .in('student_id', batch)
+        .gte('created_at', dateFilter.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(50000);
+
+      if (sessionsError) {
+        console.error('Error fetching game sessions batch:', sessionsError);
+      } else if (batchSessions) {
+        gameSessions.push(...batchSessions);
+      }
+    }
 
     // Filter out:
     // 1. Abandoned sessions (student quit immediately without playing)
     // 2. Memory game sessions (luck-based, not skill-based)
+    // 🔧 FIXED: Use words_attempted > 0 instead of accuracy_percentage (which is never set)
     const activeSessions = gameSessions?.filter((s: any) =>
-      (s.accuracy_percentage > 0 || s.words_attempted > 0) &&
+      (s.words_attempted > 0) &&
       s.game_type !== 'memory-game'
     ) || [];
 
-    if (sessionsError) {
-      console.error('Error fetching game sessions:', sessionsError);
-    }
 
-    console.log(`📊 [DEBUG] Fetched ${gameSessions?.length || 0} total sessions, ${activeSessions.length} active sessions (filtered out abandoned) for ${studentIds.length} students`);
 
-    // Check specifically for Asher
-    const asherSessions = activeSessions.filter(s => s.student_id === 'ac794722-1818-4cd1-8c19-2abbe0b16d88');
-    console.log(`📊 [DEBUG] Asher Bannatyne active sessions:`, asherSessions.length, asherSessions.map(s => ({ created_at: s.created_at, accuracy: s.accuracy_percentage })));
+
 
     // STEP 3: Get assignments
     let assignmentsQuery = supabase
@@ -354,17 +386,109 @@ export async function GET(request: NextRequest) {
     }
 
     // STEP 5: Calculate risk scores for each student
+    // First, batch-fetch assignment_vocabulary_progress for all students (efficient single query)
+    // First, batch-fetch assignment_vocabulary_progress for all students (efficient single query)
+    const allVocabProgress: any[] = [];
+    // Reuse batches from above (studentBatches)
+    for (const batch of studentBatches) {
+      const { data: batchData, error } = await supabase
+        .from('assignment_vocabulary_progress')
+        .select('student_id, assignment_id, seen_count, correct_count, last_seen_at, created_at')
+        .in('student_id', batch)
+        .gte('created_at', dateFilter.toISOString())
+        .limit(10000);
+
+      if (!error && batchData) allVocabProgress.push(...batchData);
+    }
+
+    // Batch-fetch enhanced_assignment_progress (assignments students have worked on)
+    // Batch-fetch enhanced_assignment_progress (assignments students have worked on)
+    const allAssignmentProgress: any[] = [];
+    for (const batch of studentBatches) {
+      const { data: batchData, error } = await supabase
+        .from('enhanced_assignment_progress')
+        .select('student_id, assignment_id, status, completed_at, created_at, best_score, best_accuracy')
+        .in('student_id', batch)
+        .gte('created_at', dateFilter.toISOString())
+        .limit(10000);
+
+      if (!error && batchData) allAssignmentProgress.push(...batchData);
+    }
+
+    // Build a map of vocab progress by student
+    const vocabProgressByStudent = new Map<string, typeof allVocabProgress>();
+    (allVocabProgress || []).forEach((v: any) => {
+      if (!vocabProgressByStudent.has(v.student_id)) {
+        vocabProgressByStudent.set(v.student_id, []);
+      }
+      vocabProgressByStudent.get(v.student_id)!.push(v);
+    });
+
+    // Build a map of assignment progress by student
+    const assignmentProgressByStudent = new Map<string, typeof allAssignmentProgress>();
+    (allAssignmentProgress || []).forEach((a: any) => {
+      if (!assignmentProgressByStudent.has(a.student_id)) {
+        assignmentProgressByStudent.set(a.student_id, []);
+      }
+      assignmentProgressByStudent.get(a.student_id)!.push(a);
+    });
+
+    const studentsWithRawSessions = new Set((gameSessions || []).map((s: any) => s.student_id));
+
+    // Build map of last raw session date to ensure we catch activity even if filtered out
+    const lastRawSessionDateMap = new Map<string, Date>();
+    (gameSessions || []).forEach((s: any) => {
+      const d = new Date(s.created_at);
+      const existing = lastRawSessionDateMap.get(s.student_id);
+      if (!existing || d > existing) {
+        lastRawSessionDateMap.set(s.student_id, d);
+      }
+    });
+
     const studentRiskScores = await Promise.all(studentIds.map(async (studentId: string) => {
       const studentSessions = sessions.filter((s: any) => s.student_id === studentId);
       const profile = studentProfileMap.get(studentId);
+      const studentVocabProgress = vocabProgressByStudent.get(studentId) || [];
+      const studentAssignmentProgress = assignmentProgressByStudent.get(studentId) || [];
 
-      const isAsher = studentId === 'ac794722-1818-4cd1-8c19-2abbe0b16d88';
-      if (isAsher) {
-        console.log(`🔍 [ASHER DEBUG] Found ${studentSessions.length} sessions for Asher`);
-        console.log(`🔍 [ASHER DEBUG] Sessions:`, studentSessions.map(s => ({ created_at: s.created_at, accuracy: s.accuracy_percentage })));
-      }
 
-      if (studentSessions.length === 0) {
+
+      // Debug for Edward (a311...) AND Oscar (c854...)
+
+
+      // Calculate vocab progress stats
+      const totalVocabExposures = studentVocabProgress.reduce((sum, v: any) => sum + (v.seen_count || 0), 0);
+      const totalVocabCorrect = studentVocabProgress.reduce((sum, v: any) => sum + (v.correct_count || 0), 0);
+      const lastVocabActivity = studentVocabProgress.length > 0
+        ? new Date(Math.max(...studentVocabProgress.map((v: any) => new Date(v.last_seen_at || v.created_at).getTime())))
+        : null;
+
+      // Calculate assignment progress stats
+      // Calculate assignment progress stats
+      // FIX: Don't use created_at as it's just when assignment was assigned, not student activity
+      const lastAssignmentActivity = studentAssignmentProgress.length > 0
+        ? new Date(Math.max(...studentAssignmentProgress
+          .filter((a: any) => a.last_attempt_at || a.completed_at || a.status !== 'not_started')
+          .map((a: any) => new Date(a.last_attempt_at || a.completed_at || a.updated_at || 0).getTime())))
+        : null;
+
+      // Filter out invalid dates (e.g. from 0)
+      const validLastAssignmentActivity = lastAssignmentActivity && lastAssignmentActivity.getTime() > 0
+        ? lastAssignmentActivity
+        : null;
+
+      // Debug raw sessions before we lose them
+
+
+      // Check if student has ANY activity (game sessions OR vocab progress OR assignment progress)
+      // 🔥 CRITICAL FIX: Include ALL activity types, not just game sessions!
+      // Check if student has ANY activity (game sessions OR vocab progress OR assignment progress)
+      // 🔥 CRITICAL FIX: Include ALL activity types, not just game sessions!
+      // FIX: Use validLastAssignmentActivity (excludes 'not_started')
+      // FIX: Use raw sessions to catch students who logged in but quit immediately (abandoned sessions)
+      const hasAnyActivity = studentsWithRawSessions.has(studentId) || totalVocabExposures > 0 || validLastAssignmentActivity !== null;
+
+      if (!hasAnyActivity) {
         // Check if student was created recently (within last 7 days)
         const studentCreatedAt = profile?.created_at ? new Date(profile.created_at) : null;
         const daysSinceCreation = studentCreatedAt
@@ -396,66 +520,98 @@ export async function GET(request: NextRequest) {
         };
       }
 
-      // Calculate metrics from sessions
-      let avgStudentAccuracy = studentSessions.reduce((sum: number, s: any) =>
-        sum + (parseFloat(s.accuracy_percentage) || 0), 0) / studentSessions.length;
+      // Student has some activity - calculate accuracy
+      let avgStudentAccuracy = 0;
+      let lastActiveDate: Date | null = null;
+      let sessionCount = studentSessions.length;
 
-      if (isAsher) {
-        console.log(`🔍 [ASHER DEBUG] Initial avgStudentAccuracy from sessions: ${avgStudentAccuracy}%`);
+      if (studentSessions.length > 0) {
+        // 🔧 FIXED: Calculate accuracy from words_correct / words_attempted
+        // This matches how the student dashboard calculates accuracy correctly
+        const totalWordsAttempted = studentSessions.reduce((sum: number, s: any) => sum + (s.words_attempted || 0), 0);
+        const totalWordsCorrect = studentSessions.reduce((sum: number, s: any) => sum + (s.words_correct || 0), 0);
+        avgStudentAccuracy = totalWordsAttempted > 0
+          ? (totalWordsCorrect / totalWordsAttempted) * 100
+          : 0;
+
+        const lastSession = studentSessions.sort((a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0];
+        lastActiveDate = new Date(lastSession.created_at);
       }
 
-      // FALLBACK: If all sessions have 0% accuracy (broken sessions), use vocabulary_gem_collection data
-      if (avgStudentAccuracy === 0) {
-        const { data: vocabData } = await supabase
-          .from('vocabulary_gem_collection')
-          .select('total_encounters, correct_encounters')
-          .eq('student_id', studentId)
-          .gte('last_encountered_at', dateFilter);
+      // Use vocab progress as supplement/fallback
+      if (avgStudentAccuracy === 0 && totalVocabExposures > 0) {
+        avgStudentAccuracy = (totalVocabCorrect / totalVocabExposures) * 100;
+        sessionCount = new Set(studentVocabProgress.map((v: any) => v.assignment_id)).size;
+      }
 
-        if (isAsher) {
-          console.log(`🔍 [ASHER DEBUG] Vocab fallback data:`, vocabData);
-        }
+      // Use assignment progress as final fallback
+      if (avgStudentAccuracy === 0 && studentAssignmentProgress.length > 0) {
+        const completedAssignments = studentAssignmentProgress.filter((a: any) =>
+          (a.status === 'completed' || parseFloat(a.best_accuracy) > 0)
+        );
 
-        if (vocabData && vocabData.length > 0) {
-          const totalEncounters = vocabData.reduce((sum, v) => sum + (v.total_encounters || 0), 0);
-          const correctEncounters = vocabData.reduce((sum, v) => sum + (v.correct_encounters || 0), 0);
-          if (totalEncounters > 0) {
-            avgStudentAccuracy = (correctEncounters / totalEncounters) * 100;
-            if (isAsher) {
-              console.log(`🔍 [ASHER DEBUG] Calculated accuracy from vocab: ${avgStudentAccuracy}% (${correctEncounters}/${totalEncounters})`);
-            }
-          }
+        if (completedAssignments.length > 0) {
+          avgStudentAccuracy = completedAssignments.reduce((sum: number, a: any) =>
+            sum + (parseFloat(a.best_accuracy) || parseFloat(a.best_score) || 0), 0) / completedAssignments.length;
         }
       }
 
-      const lastSession = studentSessions.sort((a: any, b: any) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )[0];
+      // Determine last active from ALL sources (games, vocab, assignments)
+      // 🔥 CRITICAL FIX: Check ALL activity types to get accurate last active date
+      if (!lastActiveDate && lastVocabActivity) {
+        lastActiveDate = lastVocabActivity;
+      } else if (lastActiveDate && lastVocabActivity && lastVocabActivity > lastActiveDate) {
+        lastActiveDate = lastVocabActivity;
+      }
 
-      const lastActiveDate = new Date(lastSession.created_at);
-      const daysSinceActive = (Date.now() - lastActiveDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (!lastActiveDate && validLastAssignmentActivity) {
+        lastActiveDate = validLastAssignmentActivity;
+      } else if (lastActiveDate && validLastAssignmentActivity && validLastAssignmentActivity > lastActiveDate) {
+        lastActiveDate = validLastAssignmentActivity;
+      }
+
+      // Final fallback: Use raw session date if we have one (for abandoned sessions)
+      if (!lastActiveDate) {
+        const rawDate = lastRawSessionDateMap.get(studentId);
+        if (rawDate) lastActiveDate = rawDate;
+      }
+
+      // At this point lastActiveDate should not be null since we verified hasAnyActivity above
+      const daysSinceActive = lastActiveDate
+        ? (Date.now() - lastActiveDate.getTime()) / (1000 * 60 * 60 * 24)
+        : 30;
 
       // Calculate risk factors (0-1 scale)
       const lowAccuracy = avgStudentAccuracy < 60 ? (60 - avgStudentAccuracy) / 60 : 0;
 
-      // Low engagement: Only flag if < 3 sessions (students with 1-2 sessions are just new)
-      const lowEngagement = studentSessions.length < 3 ? (3 - studentSessions.length) / 3 : 0;
+      // Low engagement: Use combined session count (game sessions + vocab activities + completed assignments)
+      const completedAssignmentCount = studentAssignmentProgress.filter((a: any) => a.status === 'completed').length;
+      const effectiveSessionCount = Math.max(studentSessions.length, sessionCount, completedAssignmentCount);
+      const lowEngagement = effectiveSessionCount < 3 ? (3 - effectiveSessionCount) / 3 : 0;
 
       const inactivity = daysSinceActive > 7 ? Math.min(daysSinceActive / 30, 1) : 0;
 
       // Declining trend (compare first half vs second half)
       // Only calculate if student has at least 4 sessions (need 2+ in each half for meaningful comparison)
+      // 🔧 FIXED: Calculate trend from words_correct / words_attempted instead of accuracy_percentage
       let decliningTrend = 0;
       if (studentSessions.length >= 4) {
         const midpoint = Math.floor(studentSessions.length / 2);
         const firstHalf = studentSessions.slice(0, midpoint);
         const secondHalf = studentSessions.slice(midpoint);
-        const firstHalfAvg = firstHalf.length > 0
-          ? firstHalf.reduce((sum: number, s: any) => sum + (parseFloat(s.accuracy_percentage) || 0), 0) / firstHalf.length
-          : 0;
-        const secondHalfAvg = secondHalf.length > 0
-          ? secondHalf.reduce((sum: number, s: any) => sum + (parseFloat(s.accuracy_percentage) || 0), 0) / secondHalf.length
-          : 0;
+
+        // Calculate accuracy for first half
+        const firstHalfAttempted = firstHalf.reduce((sum: number, s: any) => sum + (s.words_attempted || 0), 0);
+        const firstHalfCorrect = firstHalf.reduce((sum: number, s: any) => sum + (s.words_correct || 0), 0);
+        const firstHalfAvg = firstHalfAttempted > 0 ? (firstHalfCorrect / firstHalfAttempted) * 100 : 0;
+
+        // Calculate accuracy for second half
+        const secondHalfAttempted = secondHalf.reduce((sum: number, s: any) => sum + (s.words_attempted || 0), 0);
+        const secondHalfCorrect = secondHalf.reduce((sum: number, s: any) => sum + (s.words_correct || 0), 0);
+        const secondHalfAvg = secondHalfAttempted > 0 ? (secondHalfCorrect / secondHalfAttempted) * 100 : 0;
+
         decliningTrend = firstHalfAvg > secondHalfAvg ? (firstHalfAvg - secondHalfAvg) / 100 : 0;
       }
 
@@ -482,19 +638,11 @@ export async function GET(request: NextRequest) {
       // Build risk factors list
       const riskFactors: string[] = [];
       if (lowAccuracy > 0.3) riskFactors.push(`Low accuracy (${Math.round(avgStudentAccuracy)}%)`);
-      if (lowEngagement > 0.3) riskFactors.push(`Low engagement (${studentSessions.length} sessions)`);
+      if (lowEngagement > 0.3) riskFactors.push(`Low engagement (${effectiveSessionCount} activities)`);
       if (inactivity > 0.3) riskFactors.push(`Inactive for ${Math.round(daysSinceActive)} days`);
       if (decliningTrend > 0.1) riskFactors.push('Declining performance trend');
 
-      if (isAsher) {
-        console.log(`🔍 [ASHER DEBUG] Final risk calculation:`, {
-          avgStudentAccuracy,
-          riskScore,
-          riskLevel,
-          riskFactors,
-          lastActive: lastActiveDate,
-        });
-      }
+
 
       return {
         studentId,
@@ -517,8 +665,7 @@ export async function GET(request: NextRequest) {
       .sort((a: any, b: any) => b.riskScore - a.riskScore)
       .slice(0, 5);
 
-    console.log(`📊 [DEBUG] Students never logged in: ${studentsNeverLoggedIn.length}`);
-    console.log(`📊 [DEBUG] Active students at risk: ${activeStudentsAtRisk.length}`);
+
 
     // Calculate class average from student averages (not session averages)
     const studentsWithSessions = studentRiskScores.filter((s: any) => s.averageScore > 0);
@@ -561,21 +708,14 @@ export async function GET(request: NextRequest) {
       }),
     };
 
-    console.timeEnd('⏱️ [API] class-summary');
+
 
     return NextResponse.json({
       success: true,
       data,
       timeRange,
       generatedAt: new Date(),
-      debug: {
-        teacherId,
-        classId: classId || 'all',
-        totalClasses: classIds.length,
-        totalStudents: studentIds.length,
-        totalSessions: gameSessions?.length || 0,
-        dateFilter: dateFilter.toISOString(),
-      },
+
     });
   } catch (error) {
     console.error('Error in class-summary API:', error);

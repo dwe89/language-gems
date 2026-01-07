@@ -541,7 +541,7 @@ export class FSRSService {
 
       const { error } = await this.supabase.rpc('update_vocabulary_gem_collection', {
         p_student_id: card.studentId,
-        p_vocabulary_item_id: identifiers.vocabularyItemId,
+        p_vocabulary_item_id: identifiers.centralizedVocabularyId, // 🔧 FIX: Use UUID, not integer
         p_centralized_vocabulary_id: identifiers.centralizedVocabularyId,
         p_was_correct: wasCorrect
       });

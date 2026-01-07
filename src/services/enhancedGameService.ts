@@ -115,17 +115,17 @@ export interface GameLeaderboard {
   game_type: string;
   leaderboard_type: 'daily' | 'weekly' | 'monthly' | 'all_time' | 'class';
   class_id?: string;
-  
+
   // Ranking data
   student_id: string;
   rank_position: number;
   score: number;
   accuracy: number;
-  
+
   // Time period
   period_start: Date;
   period_end: Date;
-  
+
   // Metadata
   games_played: number;
   total_time_played: number;
@@ -137,19 +137,19 @@ export interface StudentAchievement {
   student_id: string;
   achievement_type: string;
   achievement_category: 'performance' | 'consistency' | 'improvement' | 'social' | 'milestone';
-  
+
   // Achievement details
   title: string;
   description: string;
   icon_name: string;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   points_awarded: number;
-  
+
   // Context
   game_type?: string;
   session_id?: string;
   assignment_id?: string;
-  
+
   // Achievement data
   progress_data: Record<string, any>;
   earned_at: Date;
@@ -158,43 +158,43 @@ export interface StudentAchievement {
 export interface StudentGameProfile {
   id?: string;
   student_id: string;
-  
+
   // Experience and levels
   total_xp: number;
   current_level: number;
   xp_to_next_level: number;
-  
+
   // Streaks and consistency
   current_streak: number;
   longest_streak: number;
   last_activity_date: Date;
-  
+
   // Game statistics
   total_games_played: number;
   total_time_played: number;
   favorite_game_type?: string;
-  
+
   // Achievement counts
   total_achievements: number;
   rare_achievements: number;
   epic_achievements: number;
   legendary_achievements: number;
-  
+
   // Learning metrics
   words_learned: number;
   accuracy_average: number;
   improvement_rate: number;
-  
+
   // Social features
   friends_count: number;
   challenges_won: number;
   challenges_lost: number;
-  
+
   // Preferences
   preferred_difficulty: string;
   preferred_language_pair: string;
   notification_preferences: Record<string, any>;
-  
+
   // Profile customization
   avatar_url?: string;
   display_name?: string;
@@ -207,18 +207,18 @@ export interface DailyChallenge {
   challenge_date: Date;
   challenge_type: string;
   game_type: string;
-  
+
   // Configuration
   title: string;
   description: string;
   difficulty_level: string;
   target_metric: string;
   target_value: number;
-  
+
   // Rewards
   xp_reward: number;
   achievement_id?: string;
-  
+
   // Metadata
   participation_count: number;
   completion_count: number;
@@ -227,32 +227,32 @@ export interface DailyChallenge {
 export interface AssignmentAnalytics {
   id?: string;
   assignment_id: string;
-  
+
   // Class performance
   total_students: number;
   students_started: number;
   students_completed: number;
   completion_rate: number;
-  
+
   // Performance metrics
   average_score: number;
   average_accuracy: number;
   average_time_spent: number;
-  
+
   // Difficulty analysis
   difficulty_rating: number;
   words_causing_difficulty: string[];
   common_mistakes: Record<string, any>;
-  
+
   // Engagement metrics
   average_attempts: number;
   dropout_rate: number;
   help_requests: number;
-  
+
   // Time analysis
   peak_activity_hours: number[];
   average_session_length: number;
-  
+
   last_calculated_at: Date;
 }
 
@@ -262,7 +262,7 @@ export interface AssignmentAnalytics {
 
 export class EnhancedGameService {
   private supabase: SupabaseClient;
-  
+
   constructor(supabaseClient?: SupabaseClient) {
     this.supabase = supabaseClient || createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -358,6 +358,15 @@ export class EnhancedGameService {
   }
 
   async updateGameSession(sessionId: string, updates: Partial<EnhancedGameSession>): Promise<void> {
+    // Auto-calculate accuracy if counts are provided to ensure data integrity
+    if (typeof updates.words_correct === 'number' && typeof updates.words_attempted === 'number') {
+      if (updates.words_attempted > 0) {
+        updates.accuracy_percentage = Math.round((updates.words_correct / updates.words_attempted) * 100 * 10) / 10;
+      } else {
+        updates.accuracy_percentage = 0;
+      }
+    }
+
     const { error } = await this.supabase
       .from('enhanced_game_sessions')
       .update(updates)

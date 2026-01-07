@@ -37,7 +37,15 @@ export async function GET(request: NextRequest) {
     const { data: profile } = await supabase.from('user_profiles').select('display_name').eq('user_id', studentId).single();
     if (!profile) return NextResponse.json({ success: false, error: 'Student not found' }, { status: 404 });
 
+    // Get game sessions
     const { data: sessions } = await supabase.from('enhanced_game_sessions').select('*').eq('student_id', studentId).gte('created_at', dateFilter.toISOString()).order('created_at', { ascending: false });
+
+    // Also get assignment vocabulary progress as a fallback data source
+    const { data: vocabProgress } = await supabase
+      .from('assignment_vocabulary_progress')
+      .select('assignment_id, seen_count, correct_count, incorrect_count, last_seen_at, created_at')
+      .eq('student_id', studentId)
+      .gte('created_at', dateFilter.toISOString());
 
     // Filter out abandoned sessions and memory-game (luck-based)
     const studentSessions = (sessions || []).filter(s =>
@@ -45,9 +53,37 @@ export async function GET(request: NextRequest) {
       s.game_type !== 'memory-game'
     );
 
-    const avgScore = studentSessions.length > 0 ? studentSessions.reduce((sum, s) => sum + (parseFloat(s.accuracy_percentage) || 0), 0) / studentSessions.length : 0;
-    const lastActive = studentSessions.length > 0 ? new Date(studentSessions[0].created_at) : null;
-    const currentStreak = new Set(studentSessions.map(s => new Date(s.created_at).toDateString())).size;
+    // Calculate total activity from vocab progress
+    const vocabProgressItems = vocabProgress || [];
+    const totalVocabExposures = vocabProgressItems.reduce((sum, v) => sum + (v.seen_count || 0), 0);
+    const totalVocabCorrect = vocabProgressItems.reduce((sum, v) => sum + (v.correct_count || 0), 0);
+    const lastVocabActivity = vocabProgressItems.length > 0 
+      ? new Date(Math.max(...vocabProgressItems.map(v => new Date(v.last_seen_at || v.created_at).getTime())))
+      : null;
+
+    // Determine the true last active date (from either game sessions or vocab progress)
+    const sessionLastActive = studentSessions.length > 0 ? new Date(studentSessions[0].created_at) : null;
+    const lastActive = sessionLastActive && lastVocabActivity 
+      ? (sessionLastActive > lastVocabActivity ? sessionLastActive : lastVocabActivity)
+      : sessionLastActive || lastVocabActivity;
+
+    // Calculate average score - prefer session data, fallback to vocab progress
+    let avgScore = 0;
+    let totalSessions = studentSessions.length;
+    
+    if (studentSessions.length > 0) {
+      avgScore = studentSessions.reduce((sum, s) => sum + (parseFloat(s.accuracy_percentage) || 0), 0) / studentSessions.length;
+    } else if (totalVocabExposures > 0) {
+      // Use vocab progress accuracy as fallback
+      avgScore = (totalVocabCorrect / totalVocabExposures) * 100;
+      // Count unique assignments as "sessions"
+      totalSessions = new Set(vocabProgressItems.map(v => v.assignment_id)).size;
+    }
+
+    const currentStreak = new Set([
+      ...studentSessions.map(s => new Date(s.created_at).toDateString()),
+      ...vocabProgressItems.map(v => new Date(v.last_seen_at || v.created_at).toDateString())
+    ]).size;
 
     // Only calculate trend if student has 4+ sessions
     let trendPercentage = 0;
@@ -59,8 +95,10 @@ export async function GET(request: NextRequest) {
     }
     const trendDirection: 'up' | 'down' | 'stable' = Math.abs(trendPercentage) < 5 ? 'stable' : trendPercentage > 0 ? 'up' : 'down';
 
+    // Calculate risk score with consideration for vocab progress activity
+    const hasAnyActivity = studentSessions.length > 0 || totalVocabExposures > 0;
     const lowAccuracy = avgScore < 60 ? (60 - avgScore) / 60 : 0;
-    const lowEngagement = studentSessions.length < 5 ? (5 - studentSessions.length) / 5 : 0;
+    const lowEngagement = hasAnyActivity ? (totalSessions < 5 ? (5 - totalSessions) / 5 : 0) : 1;
     const daysSinceActive = lastActive ? (Date.now() - lastActive.getTime()) / (1000 * 60 * 60 * 24) : 30;
     const inactivity = daysSinceActive > 7 ? Math.min(daysSinceActive / 30, 1) : 0;
     const decliningTrend = trendDirection === 'down' ? Math.abs(trendPercentage) / 100 : 0;
@@ -145,11 +183,26 @@ export async function GET(request: NextRequest) {
       score: Math.round(parseFloat(s.accuracy_percentage) || 0)
     }));
 
+    // If no game sessions, show vocab progress activity
+    if (engagementLog.length === 0 && vocabProgressItems.length > 0) {
+      // Group vocab progress by day and show most recent activity
+      const recentVocabActivity = vocabProgressItems
+        .sort((a, b) => new Date(b.last_seen_at || b.created_at).getTime() - new Date(a.last_seen_at || a.created_at).getTime())
+        .slice(0, 10)
+        .map(v => ({
+          timestamp: new Date(v.last_seen_at || v.created_at),
+          activityType: 'Vocabulary Practice',
+          description: `Assignment practice: ${v.correct_count}/${v.seen_count} correct`,
+          score: v.seen_count > 0 ? Math.round((v.correct_count / v.seen_count) * 100) : 0
+        }));
+      engagementLog.push(...recentVocabActivity);
+    }
+
     const data: StudentProfileData = {
       studentId,
       studentName: profile.display_name,
       averageScore: Math.round(avgScore),
-      totalSessions: studentSessions.length,
+      totalSessions,
       currentStreak,
       lastActive,
       riskScore,

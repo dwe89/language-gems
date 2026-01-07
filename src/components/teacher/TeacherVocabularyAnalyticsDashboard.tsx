@@ -42,13 +42,13 @@ interface StatCardProps {
   color?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ 
-  title, 
-  value, 
-  icon, 
-  trend, 
-  subtitle, 
-  color = 'blue' 
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  icon,
+  trend,
+  subtitle,
+  color = 'blue'
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -97,11 +97,15 @@ export default function TeacherVocabularyAnalyticsDashboard({
   const [selectedView, setSelectedView] = useState<'overview' | 'students' | 'topics' | 'trends' | 'words'>('overview');
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
-  
+
   // Class selector state
   const [availableClasses, setAvailableClasses] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(classId || null);
   const [loadingClasses, setLoadingClasses] = useState(true);
+
+  // Lazy loading state
+  const [loadingSection, setLoadingSection] = useState<string | null>(null);
+  const [loadedSections, setLoadedSections] = useState<Set<string>>(new Set(['overview']));
 
   // Utility function to format category/subcategory names
   const formatTopicName = (name: string | null | undefined): string => {
@@ -156,9 +160,13 @@ export default function TeacherVocabularyAnalyticsDashboard({
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 [TEACHER VOCAB DASHBOARD] Loading analytics...');
-      
-      const params = new URLSearchParams({ teacherId: user.id });
+      setLoadedSections(new Set(['stats'])); // Reset loaded sections
+      console.log('🔄 [TEACHER VOCAB DASHBOARD] Loading analytics overview...');
+
+      const params = new URLSearchParams({
+        teacherId: user.id,
+        sections: 'stats' // Only fetch overview stats initially
+      });
 
       if (selectedClassId && selectedClassId !== 'all') {
         params.set('classId', selectedClassId);
@@ -186,8 +194,8 @@ export default function TeacherVocabularyAnalyticsDashboard({
       }
 
       setAnalytics(data);
-      console.log('📊 [TEACHER VOCAB DASHBOARD] Analytics loaded:', data);
-      
+      console.log('📊 [TEACHER VOCAB DASHBOARD] Overview loaded:', data);
+
     } catch (err) {
       console.error('❌ [TEACHER VOCAB DASHBOARD] Error loading analytics:', err);
       setError('Failed to load vocabulary analytics. Please try again.');
@@ -197,9 +205,72 @@ export default function TeacherVocabularyAnalyticsDashboard({
     }
   };
 
+  const fetchSection = async (section: 'topics' | 'trends' | 'words' | 'students') => {
+    if (!user || !analytics || loadedSections.has(section)) return;
+
+    try {
+      setLoadingSection(section);
+      console.log(`🔄 [TEACHER VOCAB DASHBOARD] Lazy loading section: ${section}...`);
+
+      const params = new URLSearchParams({
+        teacherId: user.id,
+        sections: section === 'students' ? 'students,students_detailed' : section
+      });
+
+      if (selectedClassId && selectedClassId !== 'all') {
+        params.set('classId', selectedClassId);
+      }
+
+      const response = await fetch(`/api/dashboard/vocabulary/analytics?${params.toString()}`, {
+        cache: 'no-store'
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch section');
+
+      const body = await response.json();
+      const newData = body?.analytics;
+
+      if (newData) {
+        setAnalytics(prev => {
+          if (!prev) return newData;
+          return {
+            ...prev,
+            // Merge new data based on section
+            topicAnalysis: section === 'topics' ? newData.topicAnalysis : prev.topicAnalysis,
+            trends: section === 'trends' ? newData.trends : prev.trends,
+            detailedWordAnalytics: section === 'words' ? newData.detailedWordAnalytics : prev.detailedWordAnalytics,
+            studentWordDetails: section === 'students' ? newData.studentWordDetails : prev.studentWordDetails,
+            // Always update insights if provided
+            insights: {
+              ...prev.insights,
+              ...newData.insights
+            }
+          };
+        });
+        setLoadedSections(prev => new Set(prev).add(section));
+      }
+
+    } catch (err) {
+      console.error(`❌ Error loading section ${section}:`, err);
+    } finally {
+      setLoadingSection(null);
+    }
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
+    setLoadedSections(new Set(['overview']));
     await loadAnalytics();
+  };
+
+  const handleTabChange = (view: typeof selectedView) => {
+    setSelectedView(view);
+
+    // Trigger lazy load
+    if (view === 'topics') fetchSection('topics');
+    if (view === 'trends') fetchSection('trends');
+    if (view === 'words') fetchSection('words');
+    if (view === 'students') fetchSection('students');
   };
 
   const toggleTopicExpansion = (topicKey: string) => {
@@ -371,7 +442,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
           const activeStudentsNeedingSupport = analytics.insights.studentsNeedingAttention
             .filter(s => s.totalWords > 0); // Only students who have attempted vocabulary
           const inactiveStudents = analytics.studentProgress
-            .filter(s => s.totalWords === 0); // Students who never logged in
+            .filter(s => s.totalWords === 0 && !s.lastActivity); // 🔥 CRITICAL: Students with no vocabulary AND no other activity
 
           return (
             <>
@@ -441,6 +512,15 @@ export default function TeacherVocabularyAnalyticsDashboard({
   );
 
   const renderStudentsView = () => {
+    if (loadingSection === 'students') {
+      return (
+        <div className="flex justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-blue-600">Loading student details...</span>
+        </div>
+      );
+    }
+
     const getStudentWordDetails = (studentId: string) => {
       return analytics.studentWordDetails?.find(s => s.studentId === studentId);
     };
@@ -456,7 +536,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
             {analytics.studentProgress.map((student) => {
               const isExpanded = expandedStudents.has(student.studentId);
               const wordDetails = getStudentWordDetails(student.studentId);
-              
+
               return (
                 <div key={student.studentId} className="bg-white">
                   <button
@@ -490,10 +570,9 @@ export default function TeacherVocabularyAnalyticsDashboard({
                             <div className="text-xs text-gray-500">Struggling</div>
                           </div>
                           <div className="text-center">
-                            <div className={`text-sm font-medium ${
-                              student.averageAccuracy >= 80 ? 'text-green-600' :
+                            <div className={`text-sm font-medium ${student.averageAccuracy >= 80 ? 'text-green-600' :
                               student.averageAccuracy >= 60 ? 'text-yellow-600' : 'text-red-600'
-                            }`}>
+                              }`}>
                               {student.averageAccuracy}%
                             </div>
                             <div className="text-xs text-gray-500">Accuracy</div>
@@ -517,7 +596,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
                       </div>
                     </div>
                   </button>
-                  
+
                   {isExpanded && wordDetails && (
                     <div className="px-6 pb-4 bg-gray-50 border-t border-gray-100">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -539,7 +618,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
                                     <div className="text-sm font-semibold text-green-600">{word.accuracy.toFixed(0)}%</div>
                                     <div className="text-xs text-gray-500">
                                       {word.proficiencyLevel === 'proficient' ? '🟢 Proficient' :
-                                       word.proficiencyLevel === 'learning' ? '🟡 Learning' : '🔴 Struggling'}
+                                        word.proficiencyLevel === 'learning' ? '🟡 Learning' : '🔴 Struggling'}
                                     </div>
                                   </div>
                                 </div>
@@ -571,11 +650,10 @@ export default function TeacherVocabularyAnalyticsDashboard({
                                     </div>
                                   </div>
                                   {word.errorPattern && (
-                                    <div className={`text-xs font-medium ${
-                                      word.errorPattern === 'Frequent mistakes' ? 'text-red-600' :
+                                    <div className={`text-xs font-medium ${word.errorPattern === 'Frequent mistakes' ? 'text-red-600' :
                                       word.errorPattern === 'Moderate difficulty' ? 'text-orange-600' :
-                                      'text-yellow-600'
-                                    }`}>
+                                        'text-yellow-600'
+                                      }`}>
                                       ⚠️ {word.errorPattern}
                                     </div>
                                   )}
@@ -598,107 +676,130 @@ export default function TeacherVocabularyAnalyticsDashboard({
     );
   };
 
-  const renderTopicsView = () => (
-    <div className="space-y-6">
-      {/* Weak Topics */}
-      {analytics.insights.weakestTopics.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <TrendingDown className="h-5 w-5 text-red-500 mr-2" />
-            Topics Needing Attention
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {analytics.insights.weakestTopics.map((topic, index) => (
-              <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">{formatTopicName(topic.category)}</h4>
-                  <span className="text-sm font-semibold text-red-600">{topic.averageAccuracy}%</span>
-                </div>
-                {topic.subcategory && (
-                  <p className="text-sm text-gray-600 mb-1">{formatTopicName(topic.subcategory)}</p>
-                )}
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>{topic.studentsEngaged}/{topic.totalStudents} students</span>
-                  <span>{topic.totalWords} words</span>
-                </div>
-                <p className="text-xs text-red-700 mt-2">{topic.recommendedAction}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+  /* -------------------------------
+     RENDERERS (Updated for Lazy Loading)
+     ------------------------------- */
 
-      {/* Strong Topics */}
-      {analytics.insights.strongestTopics.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <TrendingUp className="h-5 w-5 text-green-500 mr-2" />
-            Strong Performance Topics
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {analytics.insights.strongestTopics.map((topic, index) => (
-              <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">{formatTopicName(topic.category)}</h4>
-                  <span className="text-sm font-semibold text-green-600">{topic.averageAccuracy}%</span>
-                </div>
-                {topic.subcategory && (
-                  <p className="text-sm text-gray-600 mb-1">{formatTopicName(topic.subcategory)}</p>
-                )}
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>{topic.studentsEngaged}/{topic.totalStudents} students</span>
-                  <span>{topic.totalWords} words</span>
-                </div>
-                <p className="text-xs text-green-700 mt-2">{topic.recommendedAction}</p>
-              </div>
-            ))}
-          </div>
+  const renderTopicsView = () => {
+    if (loadingSection === 'topics') {
+      return (
+        <div className="flex justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-blue-600">Loading topics...</span>
         </div>
-      )}
+      );
+    }
 
-      {/* All Topics - Only show topics with meaningful engagement */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">All Topics</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Showing topics where at least 3 students have attempted vocabulary
-        </p>
-        <div className="space-y-3">
-          {analytics.topicAnalysis
-            .filter(topic => topic.studentsEngaged >= 3) // Only show topics with meaningful engagement
-            .map((topic, index) => (
-            <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-gray-900">{formatTopicName(topic.category)}</h4>
+    return (
+      <div className="space-y-6">
+        {/* Weak Topics */}
+        {analytics.insights.weakestTopics.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <TrendingDown className="h-5 w-5 text-red-500 mr-2" />
+              Topics Needing Attention
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {analytics.insights.weakestTopics.map((topic, index) => (
+                <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 bg-red-50 rounded-lg border border-red-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-gray-900">{formatTopicName(topic.category)}</h4>
+                    <span className="text-sm font-semibold text-red-600">{topic.averageAccuracy}%</span>
+                  </div>
                   {topic.subcategory && (
-                    <p className="text-sm text-gray-600">{formatTopicName(topic.subcategory)}</p>
+                    <p className="text-sm text-gray-600 mb-1">{formatTopicName(topic.subcategory)}</p>
                   )}
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                    <span>{topic.language.toUpperCase()}</span>
-                    <span>{topic.curriculumLevel}</span>
+                  <div className="flex items-center justify-between text-sm text-gray-600">
                     <span>{topic.studentsEngaged}/{topic.totalStudents} students</span>
+                    <span>{topic.totalWords} words</span>
                   </div>
+                  <p className="text-xs text-red-700 mt-2">{topic.recommendedAction}</p>
                 </div>
-                <div className="text-right">
-                  <div className={`text-lg font-semibold ${
-                    topic.averageAccuracy >= 80 ? 'text-green-600' :
-                    topic.averageAccuracy >= 60 ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
-                    {topic.averageAccuracy}%
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {topic.proficientWords}/{topic.totalWords} proficient
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* Strong Topics */}
+        {analytics.insights.strongestTopics.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <TrendingUp className="h-5 w-5 text-green-500 mr-2" />
+              Strong Performance Topics
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {analytics.insights.strongestTopics.map((topic, index) => (
+                <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-gray-900">{formatTopicName(topic.category)}</h4>
+                    <span className="text-sm font-semibold text-green-600">{topic.averageAccuracy}%</span>
+                  </div>
+                  {topic.subcategory && (
+                    <p className="text-sm text-gray-600 mb-1">{formatTopicName(topic.subcategory)}</p>
+                  )}
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <span>{topic.studentsEngaged}/{topic.totalStudents} students</span>
+                    <span>{topic.totalWords} words</span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-2">{topic.recommendedAction}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* All Topics - Only show topics with meaningful engagement */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">All Topics</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Showing topics where at least 3 students have attempted vocabulary
+          </p>
+          <div className="space-y-3">
+            {analytics.topicAnalysis
+              .filter(topic => topic.studentsEngaged >= 3) // Only show topics with meaningful engagement
+              .map((topic, index) => (
+                <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{formatTopicName(topic.category)}</h4>
+                      {topic.subcategory && (
+                        <p className="text-sm text-gray-600">{formatTopicName(topic.subcategory)}</p>
+                      )}
+                      <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                        <span>{topic.language.toUpperCase()}</span>
+                        <span>{topic.curriculumLevel}</span>
+                        <span>{topic.studentsEngaged}/{topic.totalStudents} students</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-lg font-semibold ${topic.averageAccuracy >= 80 ? 'text-green-600' :
+                        topic.averageAccuracy >= 60 ? 'text-yellow-600' : 'text-red-600'
+                        }`}>
+                        {topic.averageAccuracy}%
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {topic.proficientWords}/{topic.totalWords} proficient
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderTrendsView = () => {
+    if (loadingSection === 'trends') {
+      return (
+        <div className="flex justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-blue-600">Loading trends...</span>
+        </div>
+      );
+    }
+
     if (!analytics || analytics.trends.length === 0) {
       return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -846,252 +947,71 @@ export default function TeacherVocabularyAnalyticsDashboard({
     );
   };
 
+
+
   const renderWordAnalysisView = () => {
-    if (!analytics?.detailedWords || analytics.detailedWords.length === 0) {
+    if (loadingSection === 'words') {
       return (
-        <div className="text-center py-12">
-          <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Word Analysis Available</h3>
-          <p className="text-gray-600">Word-level data will appear once students practice vocabulary.</p>
+        <div className="flex justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-blue-600">Loading detailed word analysis...</span>
         </div>
       );
     }
 
-    // Most challenging: words with significant exposure (min 5 encounters) AND low accuracy
-    // Sort by: (1) accuracy ascending, (2) total encounters descending (more encounters = more problematic)
-    const strugglingWords = [...analytics.detailedWords]
-      .filter(w => w.totalEncounters >= 5) // Only words with meaningful exposure
-      .sort((a, b) => {
-        // Primary sort: accuracy (lowest first)
-        if (Math.abs(a.accuracy - b.accuracy) > 5) {
-          return a.accuracy - b.accuracy;
-        }
-        // Secondary sort: encounters (highest first) for words with similar accuracy
-        return b.totalEncounters - a.totalEncounters;
-      })
-      .slice(0, 10); // Top 10 most challenging words
+    if (!analytics || !analytics.detailedWordAnalytics || analytics.detailedWordAnalytics.length === 0) {
+      return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="text-center py-12">
+            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h4 className="text-lg font-medium text-gray-900 mb-2">No Word Analysis Data</h4>
+            <p className="text-gray-600">Detailed word metrics are not available for this view.</p>
+          </div>
+        </div>
+      );
+    }
 
-    // Sort by total encounters (most practiced words)
-    const mostPracticedWords = [...analytics.detailedWords]
-      .sort((a, b) => b.totalEncounters - a.totalEncounters)
-      .slice(0, 10); // Top 10 most practiced words
+    // Sort words by problem index (struggling count)
+    const sortedWords = [...analytics.detailedWordAnalytics].sort((a, b) => b.strugglingCount - a.strugglingCount);
 
     return (
       <div className="space-y-6">
-        {/* Class-wide Word Difficulty Analysis */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Target className="h-5 w-5 text-red-500 mr-2" />
-            Most Challenging Words (Class-Wide)
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Words with significant exposure (5+ encounters) and low accuracy
-          </p>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Most Challenging Words</h3>
+            <p className="text-sm text-gray-600">Words that the highest number of students are struggling with</p>
+          </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Word</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Translation</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Encounters</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class Accuracy</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Mastery</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students Struggling</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Word</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Translation</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Accuracy</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Struggling Students</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Mistakes</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {strugglingWords.map((word, idx) => (
-                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{word.word}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{word.translation}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {word.totalEncounters} encounters
+              <tbody className="divide-y divide-gray-200">
+                {sortedWords.slice(0, 50).map((word, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{word.word}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{word.translation}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`font-semibold ${word.accuracy < 60 ? 'text-red-600' : 'text-yellow-600'}`}>
+                        {word.accuracy.toFixed(1)}%
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2 max-w-[100px]">
-                          <div
-                            className={`h-2 rounded-full ${word.accuracy < 30 ? 'bg-red-500' : word.accuracy < 50 ? 'bg-orange-500' : 'bg-yellow-500'}`}
-                            style={{ width: `${word.accuracy}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">{word.accuracy.toFixed(0)}%</span>
-                      </div>
+                    <td className="px-6 py-4 text-sm text-red-600 font-medium">
+                      {word.strugglingCount} students
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {word.masteryLevel.toFixed(1)} / 5
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        {word.studentsStruggling} students
-                      </span>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {word.mistakeCount}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        {/* Class-wide Most Practiced Words */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Award className="h-5 w-5 text-blue-500 mr-2" />
-            Most Practiced Words (Class-Wide)
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Words with the most exposure across all students
-          </p>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Word</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Translation</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Encounters</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class Accuracy</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Mastery</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students Proficient</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {mostPracticedWords.map((word, idx) => (
-                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{word.word}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{word.translation}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {word.totalEncounters} encounters
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2 max-w-[100px]">
-                          <div
-                            className={`h-2 rounded-full ${word.accuracy >= 90 ? 'bg-green-500' : word.accuracy >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                            style={{ width: `${word.accuracy}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">{word.accuracy.toFixed(0)}%</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {word.masteryLevel.toFixed(1)} / 5
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {word.studentsProficient} students
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Per-Student Word Analysis */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Users className="h-5 w-5 text-blue-500 mr-2" />
-            Individual Student Word Analysis
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Click on a student to see their strong and weak words
-          </p>
-          <div className="space-y-3">
-            {analytics.studentWordDetails && analytics.studentWordDetails.map((student) => {
-              const isExpanded = expandedStudents.has(student.studentId);
-              
-              return (
-                <div key={student.studentId} className="border border-gray-200 rounded-lg">
-                  <button
-                    onClick={() => toggleStudentExpansion(student.studentId)}
-                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-                        <ChevronRight className="h-4 w-4 text-gray-500" />
-                      </div>
-                      <span className="font-medium text-gray-900">{student.studentName}</span>
-                    </div>
-                    <div className="flex items-center space-x-4 text-sm">
-                      <span className="text-green-600 font-medium">
-                        {student.strongWords.length} strong words
-                      </span>
-                      <span className="text-red-600 font-medium">
-                        {student.weakWords.length} weak words
-                      </span>
-                    </div>
-                  </button>
-                  
-                  {isExpanded && (
-                    <div className="px-4 pb-4 pt-2 border-t border-gray-100 bg-gray-50">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Strong Words */}
-                        <div>
-                          <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center">
-                            <Award className="h-4 w-4 mr-1" />
-                            Strong Words ({student.strongWords.length})
-                          </h4>
-                          {student.strongWords.length > 0 ? (
-                            <div className="space-y-1">
-                              {student.strongWords.map((word, idx) => (
-                                <div key={idx} className="flex items-center justify-between bg-white rounded px-3 py-2 text-sm">
-                                  <span className="font-medium text-gray-900">{word.word}</span>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-gray-600">{word.translation}</span>
-                                    <span className="text-green-600 font-semibold">{word.accuracy.toFixed(0)}%</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-500 italic">No strong words yet</p>
-                          )}
-                        </div>
-
-                        {/* Weak Words */}
-                        <div>
-                          <h4 className="text-sm font-semibold text-red-700 mb-2 flex items-center">
-                            <Target className="h-4 w-4 mr-1" />
-                            Weak Words ({student.weakWords.length})
-                          </h4>
-                          {student.weakWords.length > 0 ? (
-                            <div className="space-y-1">
-                              {student.weakWords.map((word, idx) => (
-                                <div key={idx} className="flex flex-col bg-white rounded px-3 py-2 text-sm">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="font-medium text-gray-900">{word.word}</span>
-                                    <div className="flex items-center space-x-2">
-                                      <span className="text-gray-600">{word.translation}</span>
-                                      <span className="text-red-600 font-semibold">{word.accuracy.toFixed(0)}%</span>
-                                    </div>
-                                  </div>
-                                  {word.errorPattern && (
-                                    <span className={`text-xs ${
-                                      word.errorPattern === 'Frequent mistakes' ? 'text-red-600' :
-                                      word.errorPattern === 'Moderate difficulty' ? 'text-orange-600' :
-                                      'text-yellow-600'
-                                    }`}>
-                                      {word.errorPattern}
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-500 italic">No weak words identified</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
           </div>
         </div>
       </div>
@@ -1105,12 +1025,12 @@ export default function TeacherVocabularyAnalyticsDashboard({
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Vocabulary Analytics</h1>
           <p className="text-gray-600 mt-1">
-            {selectedClassId && selectedClassId !== 'all' 
+            {selectedClassId && selectedClassId !== 'all'
               ? `Viewing: ${availableClasses.find(c => c.id === selectedClassId)?.name || 'Selected Class'}`
               : 'Class-wide vocabulary progress and insights'}
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           {/* Class Selector */}
           <div className="flex items-center space-x-2">
@@ -1156,7 +1076,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setSelectedView(tab.id as any)}
+              onClick={() => handleTabChange(tab.id as any)}
               className={`
                 flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors
                 ${selectedView === tab.id

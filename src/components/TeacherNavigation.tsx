@@ -41,10 +41,10 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
       description: 'Manage your account settings and subscription'
     },
     {
-      name: 'Overview',
-      href: '/dashboard/overview',
+      name: 'Analytics',
+      href: '/dashboard/analytics',
       icon: BarChart3,
-      description: 'Daily pulse check - your 60-second class health overview'
+      description: 'Unified hub for class pulse, vocabulary, and grammar insights'
     },
     {
       name: 'Assignments',
@@ -125,11 +125,10 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
                   <button
                     key={item.name}
                     onClick={() => handleNavClick(item)}
-                    className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${
-                      isActive
+                    className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${isActive
                         ? 'bg-blue-700 text-white'
                         : 'text-blue-200 hover:text-white hover:bg-blue-700'
-                    }`}
+                      }`}
                     title={item.description}
                   >
                     <IconComponent className="h-4 w-4 mr-2" />
@@ -201,11 +200,10 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
                       handleNavClick(item);
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
+                    className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
                         ? 'bg-blue-700 text-white'
                         : 'text-blue-200 hover:text-white hover:bg-blue-700'
-                    }`}
+                      }`}
                   >
                     <IconComponent className="h-4 w-4 mr-3" />
                     {item.name}

@@ -270,7 +270,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
                 maxGemRarity: 'common', // Luck-based game
                 gameMode: 'word_completion',
                 difficultyLevel: settings.difficulty
-              }, true); // Skip FSRS for speed
+              }, false); // Enable FSRS for progress tracking
 
               if (gemEvent) {
                 console.log(`✅ [HANGMAN] Gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP) - Wrong guesses: ${wrongGuesses}, Time: ${timer}s`);
@@ -471,7 +471,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
                   maxGemRarity: 'common', // Luck-based game
                   gameMode: 'word_completion',
                   difficultyLevel: settings.difficulty
-                }, true); // Skip FSRS for speed
+                }, false); // Enable FSRS for progress tracking
 
                 if (gemEvent) {
                   console.log(`✅ [HANGMAN] Gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP) - Wrong guesses: ${wrongGuesses}, Time: ${timer}s`);
@@ -557,7 +557,9 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
             wrongGuesses: wrongGuesses + 1
           });
 
-          // Record failed word attempt with FSRS
+          // 🔧 FIX: Do NOT record failed attempts - Hangman should not penalize accuracy
+          // Students should only get credit for correct completions, not penalized for failures
+          console.log('⏭️ [HANGMAN LOSE] Skipping FSRS recording for failed attempt to avoid accuracy penalty');
         } catch (error) {
           console.error('❌ Error setting up FSRS recording for hangman (lose):', error);
         }

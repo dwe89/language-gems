@@ -399,7 +399,7 @@ export default function VocabBlastGame({
               maxGemRarity: 'rare',
               gameMode: 'action_click',
               difficultyLevel: settings.difficulty
-            }, true); // Skip FSRS for instant feedback
+            }, false); // Enable FSRS for tracking
 
             if (gemEvent) {
               console.log(`🔮 Vocab Blast earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${word.word}"`);
@@ -461,7 +461,7 @@ export default function VocabBlastGame({
                 maxGemRarity: 'common',
                 gameMode: 'typing',
                 difficultyLevel: settings.difficulty
-              }, true); // Skip FSRS for speed
+              }, false); // Enable FSRS for tracking
 
               if (gemEvent) {
                 console.log('✅ [VOCAB BLAST] Incorrect answer recorded successfully:', gemEvent);

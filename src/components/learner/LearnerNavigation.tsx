@@ -19,14 +19,22 @@ import {
   Zap,
   Target,
   Trophy,
-  Settings
+  Settings,
+  Flame
 } from 'lucide-react';
+
+interface LearnerStats {
+  level: number;
+  xp: number;
+  streak: number;
+}
 
 export default function LearnerNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [stats, setStats] = useState<LearnerStats>({ level: 1, xp: 0, streak: 0 });
   const { user, signOut } = useAuth();
 
   // Navigation items for independent learners (no class/assignment dependencies)
@@ -66,6 +74,31 @@ export default function LearnerNavigation() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Fetch user stats for the nav bar
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/learner/progress?type=stats');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.stats) {
+          setStats({
+            level: data.stats.level || 1,
+            xp: data.stats.xp || 0,
+            streak: data.stats.streak || 0
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching learner stats:', error);
+    }
+  };
 
   const isActive = (path: string) => {
     if (!pathname) return false;
@@ -114,8 +147,8 @@ export default function LearnerNavigation() {
                 key={item.name}
                 href={item.href}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive(item.href)
-                    ? 'bg-white/20 text-white'
-                    : 'text-purple-100 hover:text-white hover:bg-white/10'
+                  ? 'bg-white/20 text-white'
+                  : 'text-purple-100 hover:text-white hover:bg-white/10'
                   }`}
               >
                 <div className="flex items-center space-x-2">
@@ -134,12 +167,18 @@ export default function LearnerNavigation() {
                 <div className="hidden lg:flex items-center space-x-4 bg-white/20 rounded-full px-4 py-2">
                   <div className="flex items-center space-x-1">
                     <Star className="h-4 w-4 text-yellow-300" />
-                    <span className="text-white font-semibold text-sm">Level 1</span>
+                    <span className="text-white font-semibold text-sm">Level {stats.level}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Zap className="h-4 w-4 text-blue-300" />
-                    <span className="text-white font-semibold text-sm">0 XP</span>
+                    <span className="text-white font-semibold text-sm">{stats.xp.toLocaleString()} XP</span>
                   </div>
+                  {stats.streak > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <Flame className="h-4 w-4 text-orange-300" />
+                      <span className="text-white font-semibold text-sm">{stats.streak}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* User Menu Dropdown */}
@@ -203,8 +242,8 @@ export default function LearnerNavigation() {
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.href)
-                      ? 'bg-white/20 text-white'
-                      : 'text-purple-100 hover:text-white hover:bg-white/10'
+                    ? 'bg-white/20 text-white'
+                    : 'text-purple-100 hover:text-white hover:bg-white/10'
                     }`}
                 >
                   <item.icon className="h-5 w-5" />
@@ -221,15 +260,15 @@ export default function LearnerNavigation() {
                   <div className="flex items-center justify-between text-white">
                     <div className="flex items-center space-x-2">
                       <Star className="h-4 w-4 text-yellow-300" />
-                      <span className="text-sm">Level 1</span>
+                      <span className="text-sm">Level {stats.level}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Zap className="h-4 w-4 text-blue-300" />
-                      <span className="text-sm">0 XP</span>
+                      <span className="text-sm">{stats.xp.toLocaleString()} XP</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Trophy className="h-4 w-4 text-green-300" />
-                      <span className="text-sm">0 Streak</span>
+                      <Flame className="h-4 w-4 text-orange-300" />
+                      <span className="text-sm">{stats.streak} Streak</span>
                     </div>
                   </div>
                 </div>

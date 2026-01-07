@@ -259,10 +259,10 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   const handleAnswer = useCallback(async (answer: string) => {
     const responseTime = Date.now() - questionStartTime;
     setCurrentResponseTime(responseTime);
-    
+
     // Create unique identifier for this answer attempt
     const answerKey = `${gameState.currentWordIndex}-${answer}-${responseTime}`;
-    
+
     // Prevent duplicate processing of the same answer
     if (lastProcessedAnswer.current === answerKey) {
       console.log('⚠️ [HANDLE ANSWER] Duplicate answer detected, skipping ALL processing:', answerKey);
@@ -415,14 +415,7 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
               console.log(`🔍 [FSRS] Recorded practice for ${wordData.word}:`, {
                 isCorrect: validation.isCorrect,
                 confidence,
-                responseTime,
-                fsrsResult: fsrsResult ? {
-                  success: fsrsResult.success,
-                  algorithm: fsrsResult.algorithm,
-                  nextReviewDate: fsrsResult.nextReviewDate,
-                  interval: fsrsResult.interval,
-                  masteryLevel: fsrsResult.masteryLevel
-                } : null
+                responseTime
               });
             }
           } catch (error) {
@@ -535,7 +528,7 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
             }
           }
         }
-        
+
         // Handle non-assignment mode gem recording
         else if (gameSessionId && !config.assignmentMode) {
           console.log('🔍 [GEM COLLECTION] Recording gem in session service...');
@@ -553,8 +546,8 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
                 masteryLevel: prev.currentWord?.mastery_level || 0,
                 maxGemRarity: 'legendary' as GemRarity,
                 gameMode: prev.gameMode
-              }, true);
-              
+              }, false);
+
               console.log('🔍 [VOCAB TRACKING] Gem recorded successfully:', gemEvent);
             } catch (error) {
               console.error('Failed to record vocabulary interaction:', error);

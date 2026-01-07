@@ -46,6 +46,7 @@ export default function SchoolManagementPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isSchoolOwner, setIsSchoolOwner] = useState<boolean>(false);
   const [checkingPermissions, setCheckingPermissions] = useState(true);
+  const [subscriptionType, setSubscriptionType] = useState<string | null>(null);
 
   // Check if user is a school owner
   useEffect(() => {
@@ -79,6 +80,21 @@ export default function SchoolManagementPage() {
       fetchSchoolMembers();
     }
   }, [user, hasSubscription, isSchoolOwner]);
+
+  // Check subscription type
+  useEffect(() => {
+    async function checkSubType() {
+      if (user) {
+        const { data } = await supabaseBrowser
+          .from('user_profiles')
+          .select('subscription_type')
+          .eq('user_id', user.id)
+          .single();
+        if (data) setSubscriptionType(data.subscription_type);
+      }
+    }
+    checkSubType();
+  }, [user]);
 
   const fetchSchoolMembers = async () => {
     try {
@@ -270,22 +286,6 @@ export default function SchoolManagementPage() {
       </div>
     );
   }
-
-  // Individual Teachers shouldn't access this page
-  const [subscriptionType, setSubscriptionType] = useState<string | null>(null);
-  useEffect(() => {
-    async function checkSubType() {
-      if (user) {
-        const { data } = await supabaseBrowser
-          .from('user_profiles')
-          .select('subscription_type')
-          .eq('user_id', user.id)
-          .single();
-        if (data) setSubscriptionType(data.subscription_type);
-      }
-    }
-    checkSubType();
-  }, [user]);
 
   if (subscriptionType === 'individual_teacher') {
     return (

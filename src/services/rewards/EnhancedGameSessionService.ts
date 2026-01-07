@@ -16,7 +16,7 @@ export interface GameSessionData {
   assignment_id?: string;
   game_type: string;
   session_mode: 'free_play' | 'assignment' | 'practice' | 'challenge' | 'assessment';
-  
+
   // Performance metrics
   final_score: number;
   max_score_possible?: number;
@@ -27,11 +27,11 @@ export interface GameSessionData {
   unique_words_practiced: number;
   duration_seconds: number;
   average_response_time_ms?: number;
-  
+
   // Legacy XP (will be computed from gems)
   xp_earned?: number;
   bonus_xp?: number;
-  
+
   // Additional session data
   session_data?: any;
 }
@@ -55,14 +55,14 @@ export class EnhancedGameSessionService {
   private supabase: SupabaseClient<any>;
   private currentSessionId: string | null = null;
   private gemEvents: GemEvent[] = [];
-  
+
   constructor(supabaseClient?: SupabaseClient<any>) {
     this.supabase = supabaseClient || createBrowserClient<any>(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
   }
-  
+
   /**
    * Start a new game session
    */
@@ -123,7 +123,7 @@ export class EnhancedGameSessionService {
       throw error;
     }
   }
-  
+
   /**
    * Increment word counts in the session (for progress tracking)
    */
@@ -524,7 +524,7 @@ export class EnhancedGameSessionService {
       return null;
     }
   }
-  
+
   /**
    * Store a gem event in the database with proper gem_type
    */
@@ -639,6 +639,13 @@ export class EnhancedGameSessionService {
         await this.calculateXPFromGems(sessionId) :
         finalData.xp_earned || 0;
 
+      // 🔧 FIX: Auto-calculate accuracy_percentage from words_correct / words_attempted
+      // This ensures accuracy is always set correctly, even if games don't pass it explicitly
+      const calculatedAccuracy = finalData.words_attempted && finalData.words_attempted > 0
+        ? (finalData.words_correct || 0) / finalData.words_attempted * 100
+        : 0;
+      const accuracyToStore = finalData.accuracy_percentage ?? calculatedAccuracy;
+
       // Update session with final data
       const { error } = await this.supabase
         .from('enhanced_game_sessions')
@@ -648,7 +655,7 @@ export class EnhancedGameSessionService {
           duration_seconds: finalData.duration_seconds,
           final_score: finalData.final_score,
           max_score_possible: finalData.max_score_possible,
-          accuracy_percentage: finalData.accuracy_percentage,
+          accuracy_percentage: accuracyToStore,
           completion_percentage: finalData.completion_percentage,
           words_attempted: finalData.words_attempted,
           words_correct: finalData.words_correct,
@@ -659,7 +666,7 @@ export class EnhancedGameSessionService {
           session_data: finalData.session_data
         })
         .eq('id', sessionId);
-      
+
       if (error) throw error;
 
       // Update student profile XP
@@ -703,7 +710,7 @@ export class EnhancedGameSessionService {
       throw error;
     }
   }
-  
+
   /**
    * Award bonus gems for milestones (quest completion, perfect rounds, etc.)
    */
@@ -740,7 +747,7 @@ export class EnhancedGameSessionService {
       console.error('Error awarding bonus gem:', error);
     }
   }
-  
+
   /**
    * Get session statistics including gems
    */
@@ -754,12 +761,12 @@ export class EnhancedGameSessionService {
         `)
         .eq('id', sessionId)
         .single();
-      
+
       const { data: gemBreakdown } = await this.supabase
         .from('gem_events')
         .select('gem_rarity, xp_value')
         .eq('session_id', sessionId);
-      
+
       return {
         ...session,
         gemBreakdown: RewardEngine.groupGemsByRarity(
@@ -778,7 +785,7 @@ export class EnhancedGameSessionService {
       return null;
     }
   }
-  
+
   /**
    * Private helper methods
    */
@@ -788,19 +795,19 @@ export class EnhancedGameSessionService {
       .select('student_id')
       .eq('id', sessionId)
       .single();
-    
+
     return data?.student_id || '';
   }
-  
+
   private async calculateXPFromGems(sessionId: string): Promise<number> {
     const { data } = await this.supabase
       .from('gem_events')
       .select('xp_value')
       .eq('session_id', sessionId);
-    
+
     return data?.reduce((total, event) => total + event.xp_value, 0) || 0;
   }
-  
+
   private async logWordPerformance(sessionId: string, attempt: WordAttempt): Promise<void> {
     try {
       // Handle both UUID and integer vocabulary IDs
@@ -840,8 +847,8 @@ export class EnhancedGameSessionService {
         response_time_ms: Math.round(attempt.responseTimeMs || 0), // 🔧 FIX: Round to integer for database
         was_correct: attempt.wasCorrect,
         confidence_level: (attempt.responseTimeMs || 0) < 2000 ? 5 :
-                         (attempt.responseTimeMs || 0) < 4000 ? 4 :
-                         (attempt.responseTimeMs || 0) < 6000 ? 3 : 2,
+          (attempt.responseTimeMs || 0) < 4000 ? 4 :
+            (attempt.responseTimeMs || 0) < 6000 ? 3 : 2,
         difficulty_level: attempt.difficultyLevel || 'medium',
         hint_used: attempt.hintUsed,
         streak_count: attempt.streakCount,
@@ -880,7 +887,7 @@ export class EnhancedGameSessionService {
       console.error('Error logging word performance:', error);
     }
   }
-  
+
   /**
    * ✅ FSRS-AWARE: Direct vocabulary update with time-gated progression
    * This ensures wasCorrect value reaches the database unchanged AND respects FSRS learning/review phases
@@ -916,7 +923,7 @@ export class EnhancedGameSessionService {
 
       if (!canProgress.allowed) {
         console.log('⏰ [FSRS GATE] Word not due for review, treating as practice:', {
-            vocabularyId: identifiers.raw,
+          vocabularyId: identifiers.raw,
           reason: canProgress.reason,
           nextReviewAt: canProgress.nextReviewAt
         });
@@ -927,7 +934,7 @@ export class EnhancedGameSessionService {
       }
 
       console.log('✅ [FSRS GATE] Word is due for review, allowing progression:', {
-          vocabularyId: identifiers.raw,
+        vocabularyId: identifiers.raw,
         phase: canProgress.phase,
         state: canProgress.state
       });
@@ -939,7 +946,7 @@ export class EnhancedGameSessionService {
         p_was_correct: wasCorrect,
         p_centralized_vocabulary_id: identifiers.centralizedVocabularyId,
         p_vocabulary_item_id: identifiers.isUUID ? identifiers.centralizedVocabularyId : null,
-        p_response_time_ms: responseTimeMs,
+        p_response_time_ms: Math.round(responseTimeMs), // 🔧 FIX: Round to prevent floating-point errors
         p_hint_used: false,
         p_streak_count: 0
       });
@@ -1140,7 +1147,7 @@ export class EnhancedGameSessionService {
     // Redirect to new direct method
     return this.updateVocabularyDirectly(studentId, vocabularyId, wasCorrect, responseTimeMs);
   }
-  
+
   private async updateStudentProfileXP(studentId: string, xpAmount: number): Promise<void> {
     try {
       // Use existing enhanced game service method
@@ -1157,8 +1164,8 @@ export class EnhancedGameSessionService {
 
       const { error: updateError } = await this.supabase
         .from('student_profiles')
-        .update({ 
-          total_xp: (profile.total_xp || 0) + xpAmount 
+        .update({
+          total_xp: (profile.total_xp || 0) + xpAmount
         })
         .eq('student_id', studentId);
 
@@ -1201,7 +1208,7 @@ export class EnhancedGameSessionService {
 
       // Use GameCompletionService to check completion status
       const gameCompletionService = new GameCompletionService(this.supabase);
-      
+
       // Get all games in this assignment
       const { data: assignment } = await this.supabase
         .from('assignments')
@@ -1211,11 +1218,11 @@ export class EnhancedGameSessionService {
 
       // Get list of games to check
       const gamesToCheck: string[] = [];
-      
+
       if (assignment?.game_config?.selectedGames) {
         gamesToCheck.push(...Object.keys(assignment.game_config.selectedGames));
       }
-      
+
       if (assignment?.game_config?.selectedAssessments) {
         // 🎯 FIX: Use 'id' or 'type' from selectedAssessments, not 'activity_id'
         gamesToCheck.push(...assignment.game_config.selectedAssessments.map((a: any) => a.id || a.type));
@@ -1223,22 +1230,22 @@ export class EnhancedGameSessionService {
 
       // Check completion for each game
       let allGamesCompleted = gamesToCheck.length > 0;
-      
+
       for (const gameId of gamesToCheck) {
         const completionStatus = await gameCompletionService.checkGameCompletion(
           assignmentId,
           studentId,
           gameId
         );
-        
+
         if (!completionStatus.isComplete) {
           allGamesCompleted = false;
           break;
         }
       }
 
-      const status = allGamesCompleted ? 'completed' : 
-        (currentProgress?.status === 'completed' ? 'completed' : 
+      const status = allGamesCompleted ? 'completed' :
+        (currentProgress?.status === 'completed' ? 'completed' :
           (newScore > 0 ? 'in_progress' : 'not_started'));
 
       // Update the progress
@@ -1254,7 +1261,11 @@ export class EnhancedGameSessionService {
       // Only update best score/accuracy if this session is better
       if (isBetterScore || !currentProgress) {
         updateData.best_score = newScore;
-        updateData.best_accuracy = finalData.accuracy_percentage || 0;
+        // 🔧 FIX: Calculate accuracy from words_correct / words_attempted
+        const calculatedAccuracy = finalData.words_attempted && finalData.words_attempted > 0
+          ? ((finalData.words_correct || 0) / finalData.words_attempted) * 100
+          : 0;
+        updateData.best_accuracy = finalData.accuracy_percentage ?? calculatedAccuracy;
       }
 
       // Mark as completed if all games are done

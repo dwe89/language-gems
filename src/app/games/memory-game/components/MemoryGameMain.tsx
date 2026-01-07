@@ -92,7 +92,7 @@ export default function MemoryGameMain({
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  
+
   // Audio refs
   const correctSoundRef = useRef<HTMLAudioElement | null>(null);
   const wrongSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -101,14 +101,14 @@ export default function MemoryGameMain({
   // Global audio context for assignment mode compatibility
   const internalAudioManager = useGameAudio(true);
   const audioManager = externalAudioManager || internalAudioManager;
-  
+
   // Add state for current game settings
   const [currentLanguage, setCurrentLanguage] = useState(language);
   const [currentTopic, setCurrentTopic] = useState(topic);
   const [currentDifficulty, setCurrentDifficulty] = useState(difficulty);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
-  
+
   // Add state for custom words
   const [currentCustomWords, setCurrentCustomWords] = useState<WordPair[]>(customWords || []);
 
@@ -223,7 +223,7 @@ export default function MemoryGameMain({
       console.error('Failed to start memory game session:', error);
     }
   };
-  
+
   // Initialize game
   useEffect(() => {
     // Initialize audio context first
@@ -236,13 +236,13 @@ export default function MemoryGameMain({
     correctSoundRef.current = createAudio('/games/memory-game/sounds/correct.mp3');
     wrongSoundRef.current = createAudio('/games/memory-game/sounds/wrong.mp3');
     winSoundRef.current = createAudio('/games/memory-game/sounds/win.mp3');
-    
+
     console.log('🎵 Audio refs created:', {
       correct: !!correctSoundRef.current,
       wrong: !!wrongSoundRef.current,
       win: !!winSoundRef.current
     });
-    
+
     // Load saved theme
     const savedTheme = localStorage.getItem('memoryGameTheme');
     if (savedTheme) {
@@ -253,13 +253,13 @@ export default function MemoryGameMain({
         console.error('Error loading saved theme:', e);
       }
     }
-    
+
     // Initialize cards
     initializeGame();
-    
+
     // Set start time
     setStartTime(new Date());
-    
+
     // Cleanup on unmount
     return () => {
       correctSoundRef.current = null;
@@ -267,7 +267,7 @@ export default function MemoryGameMain({
       winSoundRef.current = null;
     };
   }, [currentLanguage, currentTopic, currentDifficulty, currentCustomWords]);
-  
+
   // LAYER 2: Record word exposures on unmount (assignment mode only)
   useEffect(() => {
     return () => {
@@ -312,7 +312,7 @@ export default function MemoryGameMain({
       if (timer) clearInterval(timer);
     };
   }, [startTime, gameWon]);
-  
+
   // Handle fullscreen toggle
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -329,28 +329,28 @@ export default function MemoryGameMain({
       }
     }
   };
-  
+
   // Listen for fullscreen change
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
-  
+
   // Helper to calculate grid columns based on number of cards
   const calculateGridLayout = (totalCards: number, difficulty: string) => {
     // Always calculate pairs from total cards to ensure consistency
     const actualPairs = Math.floor(totalCards / 2);
-    
+
     // Check if we're on a mobile device using state (more reliable for SSR)
     const isMobile = screenWidth <= 768;
     const isSmallMobile = screenWidth <= 480;
-    
+
     if (isSmallMobile) {
       // For very small screens, prioritize narrow layouts and avoid cramped grids
       if (actualPairs <= 3) return { cols: 2, rows: 3 }; // 3 pairs (6 cards) in 2x3
@@ -376,7 +376,7 @@ export default function MemoryGameMain({
       if (actualPairs <= 8) return { cols: 4, rows: 4 }; // 8 pairs (16 cards) in 4x4
       if (actualPairs <= 10) return { cols: 5, rows: 4 }; // 10 pairs (20 cards) in 5x4
     }
-    
+
     // For larger sets, calculate a reasonable square-ish layout
     const sqrt = Math.ceil(Math.sqrt(totalCards));
     if (isMobile) {
@@ -385,7 +385,7 @@ export default function MemoryGameMain({
     }
     return { cols: sqrt, rows: sqrt };
   };
-  
+
   // Save assignment progress when game is completed
   const saveAssignmentProgress = async (timeSpent: number, totalMatches: number, totalAttempts: number) => {
     console.log('saveAssignmentProgress called:', { isAssignmentMode, assignmentId, timeSpent, totalMatches, totalAttempts });
@@ -489,7 +489,7 @@ export default function MemoryGameMain({
     setStartTime(new Date());
     let totalPairs = 0;
     let wordPairs: any[] = [];
-    
+
     // First determine number of pairs based on difficulty
     switch (currentDifficulty) {
       case 'easy-1':
@@ -600,7 +600,7 @@ export default function MemoryGameMain({
         // If specific topic/language combination not found, use fallback vocabulary for the current language
         const fallbackVocab = FALLBACK_VOCABULARY[currentLanguage] || FALLBACK_VOCABULARY.english;
         wordPairs = fallbackVocab;
-        
+
         // Use appropriate number of pairs for the difficulty
         switch (currentDifficulty) {
           case 'easy-1': totalPairs = 3; break;
@@ -611,18 +611,18 @@ export default function MemoryGameMain({
           case 'expert': totalPairs = 10; break;
           default: totalPairs = 6; break;
         }
-        
+
         // Limit to available pairs
         totalPairs = Math.min(fallbackVocab.length, totalPairs);
       }
     }
-    
+
     // Create card pairs
     const newCards: Card[] = [];
-    
+
     // Limit to the determined number of pairs
     wordPairs = wordPairs.slice(0, totalPairs);
-    
+
     // Create card pairs (term and translation cards)
     wordPairs.forEach((pair, index) => {
       console.log('Creating cards for pair:', pair);
@@ -651,13 +651,13 @@ export default function MemoryGameMain({
     });
 
     console.log('Created cards:', newCards.map(c => ({ id: c.id, value: c.value, vocabularyId: c.vocabularyId })));
-    
+
     // Shuffle the cards
     for (let i = newCards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [newCards[i], newCards[j]] = [newCards[j], newCards[i]];
     }
-    
+
     setCards(newCards);
     setMatches(0);
     setAttempts(0);
@@ -666,14 +666,14 @@ export default function MemoryGameMain({
     setCanFlip(true);
     setGameWon(false);
   };
-  
+
   // Handle card click
   const handleCardClick = async (card: Card) => {
     // Ignore if can't flip or card is already flipped/matched
     if (!canFlip || card.flipped || card.matched) {
       return;
     }
-    
+
     // Flip the card and set first attempt time if needed
     const now = new Date();
     const updatedCards = cards.map(c =>
@@ -691,12 +691,12 @@ export default function MemoryGameMain({
       setFirstCard(cardWithTime);
       return;
     }
-    
+
     // If it's the second card
     setSecondCard(card);
     setCanFlip(false);
     setAttempts(attempts + 1);
-    
+
     // Check for match
     if (firstCard.pairId === card.pairId) {
       // It's a match
@@ -708,7 +708,7 @@ export default function MemoryGameMain({
       } else {
         console.warn('correctSoundRef.current is null');
       }
-      
+
       setTimeout(async () => {
         // Mark both cards as matched
         const matchedCards = cards.map(c =>
@@ -819,7 +819,7 @@ export default function MemoryGameMain({
                   difficultyLevel: 'beginner',
                   gameMode: 'memory_match',
                   maxGemRarity: 'common' // Cap at common for luck-based games
-                }, true); // Skip spaced repetition - FSRS handles it
+                }, false); // Enable FSRS for tracking
 
                 // 🔍 INSTRUMENTATION: Log gem event result
                 console.log('🔍 [VOCAB TRACKING] Gem event result:', {
@@ -869,7 +869,7 @@ export default function MemoryGameMain({
             });
           }
         }
-        
+
         // Check for win condition
         const totalPairs = cards.length / 2;
         if (matches + 1 === totalPairs) {
@@ -974,7 +974,7 @@ export default function MemoryGameMain({
       }, 1000);
     }
   };
-  
+
   // Reset game
   const resetGame = () => {
     initializeGame();
@@ -982,12 +982,12 @@ export default function MemoryGameMain({
     setStartTime(new Date());
     setGameTime(0);
   };
-  
+
   // Toggle theme modal
   const toggleThemeModal = () => {
     setShowThemeModal(!showThemeModal);
   };
-  
+
   // Open theme modal (can be called from wrapper)
   React.useEffect(() => {
     if (onThemeModalRequest) {
@@ -998,7 +998,7 @@ export default function MemoryGameMain({
       delete (window as any).__openMemoryThemeModal;
     };
   }, [onThemeModalRequest]);
-  
+
   // Open grid size modal (can be called from wrapper)
   React.useEffect(() => {
     if (onGridSizeModalRequest) {
@@ -1009,45 +1009,45 @@ export default function MemoryGameMain({
       delete (window as any).__openMemoryGridModal;
     };
   }, [onGridSizeModalRequest]);
-  
+
   // Select theme
   const selectTheme = (theme: any) => {
     setSelectedTheme(theme);
     localStorage.setItem('memoryGameTheme', JSON.stringify(theme));
     setShowThemeModal(false);
   };
-  
+
   // Toggle settings modal
   const toggleSettingsModal = () => {
     setShowSettingsModal(!showSettingsModal);
   };
-  
+
   // Handle language change
   const handleLanguageChange = (newLanguage: string) => {
     setCurrentLanguage(newLanguage);
   };
-  
+
   // Handle topic change
   const handleTopicChange = (newTopic: string) => {
     setCurrentTopic(newTopic);
-    
+
     // If custom topic is selected, show the custom words modal
     if (newTopic.toLowerCase() === 'custom') {
       setShowSettingsModal(false);
       setShowCustomModal(true);
     }
   };
-  
+
   // Handle difficulty change
   const handleDifficultyChange = (newDifficulty: string) => {
     setCurrentDifficulty(newDifficulty);
-    
+
     // Notify wrapper if in assignment mode
     if (isAssignmentMode && onGridSizeChange) {
       onGridSizeChange(newDifficulty);
     }
   };
-  
+
   // Handle custom words submission
   const handleCustomWordsSubmit = (wordPairs: WordPair[]) => {
     setCurrentCustomWords(wordPairs);
@@ -1055,12 +1055,12 @@ export default function MemoryGameMain({
     // Start the game with the custom words
     resetGame();
   };
-  
+
   // Get performance rating based on accuracy and efficiency
   const getPerformanceRating = () => {
     const accuracy = matches / Math.max(attempts, 1);
     const efficiency = matches / Math.max(cards.length / 2, 1); // Perfect would be 1.0
-    
+
     if (accuracy >= 0.8 && efficiency >= 0.9) {
       return {
         rating: 'excellent',
@@ -1081,19 +1081,19 @@ export default function MemoryGameMain({
       };
     }
   };
-  
+
   // Format time in MM:SS format
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-  
+
   // Get the optimal grid layout for the current cards
   const gridLayout = calculateGridLayout(cards.length, currentDifficulty);
-  
+
   return (
-    <div 
+    <div
       className="game-wrapper"
       style={{
         backgroundImage: `url(${selectedTheme.path})`,
@@ -1155,7 +1155,7 @@ export default function MemoryGameMain({
 
       <div className={`game-container ${isAssignmentMode ? 'assignment-mode' : ''}`}>
         <div className="cards-container">
-          <div 
+          <div
             className="cards-grid"
             style={{
               gridTemplateColumns: `repeat(${gridLayout.cols}, 1fr)`,
@@ -1163,7 +1163,7 @@ export default function MemoryGameMain({
             }}
           >
             {cards.map((card, index) => (
-              <div 
+              <div
                 key={card.id}
                 className={`card ${card.flipped ? 'flipped' : ''} ${card.matched ? 'matched' : ''}`}
                 onClick={() => handleCardClick(card)}
@@ -1223,14 +1223,14 @@ export default function MemoryGameMain({
       {gameWon && (
         <>
           <div className="modal-overlay"></div>
-          
+
           {/* Confetti Animation */}
           <div className="confetti-container">
             {[...Array(9)].map((_, i) => (
               <div key={i} className="confetti-piece"></div>
             ))}
           </div>
-          
+
           {/* Fireworks for perfect games */}
           {getPerformanceRating().rating === 'excellent' && (
             <div className="fireworks-container">
@@ -1239,21 +1239,21 @@ export default function MemoryGameMain({
               ))}
             </div>
           )}
-          
+
           <div className="modal" id="winModal">
             <div className="modal-content win-modal-new">
               {/* Trophy Icon Header */}
               <div className="win-trophy-container">
                 <Trophy className="win-trophy-icon" size={64} strokeWidth={1.5} />
               </div>
-              
+
               {/* Title */}
               <h2 className="win-title-new">
-                {getPerformanceRating().rating === 'excellent' ? 'Perfect Game!' : 
-                 getPerformanceRating().rating === 'good' ? 'Great Job!' : 
-                 'Well Done!'}
+                {getPerformanceRating().rating === 'excellent' ? 'Perfect Game!' :
+                  getPerformanceRating().rating === 'good' ? 'Great Job!' :
+                    'Well Done!'}
               </h2>
-              
+
               {/* Stars Rating */}
               <div className="win-stars-row">
                 {[...Array(getPerformanceRating().rating === 'excellent' ? 3 : getPerformanceRating().rating === 'good' ? 2 : 1)].map((_, i) => (
@@ -1262,7 +1262,7 @@ export default function MemoryGameMain({
                   </div>
                 ))}
               </div>
-              
+
               {/* Stats Grid */}
               <div className="win-stats-new">
                 <div className="stat-card">
@@ -1286,7 +1286,7 @@ export default function MemoryGameMain({
                   <div className="stat-card-label">Time</div>
                 </div>
               </div>
-              
+
               {/* Action Buttons */}
               <div className="win-actions-new">
                 <button onClick={resetGame} className="win-btn-new win-btn-play">
@@ -1322,7 +1322,7 @@ export default function MemoryGameMain({
                     <i className="fas fa-times"></i>
                   </button>
                 </div>
-                
+
                 <div className="modern-modal-body">
                   <div className="grid-options">
                     {GRID_SIZES.map((diff: { code: string; name: string; pairs: number; grid: string }, index: number) => {
@@ -1343,7 +1343,7 @@ export default function MemoryGameMain({
                     })}
                   </div>
                 </div>
-                
+
                 <div className="modern-modal-footer">
                   <button onClick={toggleSettingsModal} className="apply-btn">Apply</button>
                 </div>

@@ -1,0 +1,522 @@
+'use client';
+
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  AlertTriangle, 
+  TrendingDown, 
+  Users, 
+  Clock, 
+  Target,
+  CheckCircle,
+  XCircle,
+  ArrowRight,
+  Brain,
+  Zap,
+  BookOpen,
+  MessageSquare,
+  Trophy,
+  Flame
+} from 'lucide-react';
+
+interface CriticalInsight {
+  id: string;
+  type: 'urgent_action' | 'at_risk_student' | 'class_trend' | 'opportunity';
+  priority: 'urgent' | 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  impact: string;
+  action: {
+    label: string;
+    route: string;
+    data?: any;
+  };
+  confidence: number;
+  studentsAffected?: number;
+  timeframe: string;
+  generated_at: string;
+}
+
+interface QuickMetric {
+  label: string;
+  value: string | number;
+  change: number;
+  trend: 'up' | 'down' | 'stable';
+  icon: React.ReactNode;
+  color: string;
+}
+
+interface ProactiveAIDashboardProps {
+  teacherId: string;
+}
+
+function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
+  const [insights, setInsights] = useState<CriticalInsight[]>([]);
+  const [quickMetrics, setQuickMetrics] = useState<QuickMetric[]>([]);
+  const [studentData, setStudentData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [showAllInsights, setShowAllInsights] = useState(false);
+
+  // Load real AI insights from API
+  useEffect(() => {
+    const loadCriticalInsights = async () => {
+      setIsLoading(true);
+
+      try {
+        const response = await fetch(`/api/ai-insights?teacherId=${teacherId}&action=get_insights`);
+        const data = await response.json();
+
+        if (data.success) {
+          // Transform API data to component format
+          const transformedInsights: CriticalInsight[] = (data.insights || []).map((insight: any) => ({
+            id: insight.id,
+            type: insight.insight_type === 'at_risk_student' ? 'urgent_action' :
+                  insight.insight_type === 'engagement_alert' ? 'class_trend' : 'opportunity',
+            priority: insight.priority,
+            title: insight.title,
+            description: insight.description,
+            impact: insight.recommendation || 'No specific impact identified',
+            action: {
+              label: insight.insight_type === 'at_risk_student' ? 'Contact Student' : 'Review Details',
+              route: insight.student_id ? `/dashboard/students/${insight.student_id}` : '/dashboard/classes',
+              data: { insightId: insight.id }
+            },
+            confidence: Math.round(insight.confidence_score * 100),
+            studentsAffected: insight.student_id ? 1 : undefined,
+            timeframe: insight.priority === 'urgent' ? 'Act within 24 hours' :
+                      insight.priority === 'high' ? 'Address this week' : 'Next lesson',
+            generated_at: insight.generated_at
+          }));
+
+          setInsights(transformedInsights);
+
+          // Calculate quick metrics from student data
+          const currentStudentData = data.studentData || [];
+          setStudentData(currentStudentData);
+          const atRiskCount = currentStudentData.filter((s: any) => s.is_at_risk).length;
+          const totalStudents = currentStudentData.length;
+
+          // Calculate engagement based on session frequency and accuracy
+          const avgEngagement = totalStudents > 0
+            ? Math.round(currentStudentData.reduce((sum: number, s: any) => {
+                const sessionFrequency = Math.min(s.total_sessions || 0, 10) / 10; // Normalize to 0-1
+                const accuracyScore = (s.average_accuracy || 0) / 100; // Normalize to 0-1
+                return sum + (sessionFrequency * 0.6 + accuracyScore * 0.4) * 100; // Weighted score
+              }, 0) / totalStudents)
+            : 0;
+
+          // Calculate average session time in minutes
+          const avgSessionTime = totalStudents > 0
+            ? Math.round(currentStudentData.reduce((sum: number, s: any) => sum + (s.average_session_duration || 0), 0) / totalStudents / 60)
+            : 0;
+
+          // Count students active in last 7 days
+          const activeStudents = currentStudentData.filter((s: any) =>
+            new Date(s.last_active) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+          ).length;
+
+          const calculatedMetrics: QuickMetric[] = [
+            {
+              label: 'Students at Risk',
+              value: atRiskCount,
+              change: 0, // Would need historical data
+              trend: 'stable',
+              icon: <AlertTriangle className="w-5 h-5" />,
+              color: atRiskCount > 0 ? 'text-red-600' : 'text-green-600'
+            },
+            {
+              label: 'Class Engagement',
+              value: isNaN(avgEngagement) ? '0%' : `${avgEngagement}%`,
+              change: 0,
+              trend: 'stable',
+              icon: <TrendingDown className="w-5 h-5" />,
+              color: avgEngagement < 50 ? 'text-red-600' : avgEngagement < 75 ? 'text-orange-600' : 'text-green-600'
+            },
+            {
+              label: 'Active Students',
+              value: `${activeStudents}/${totalStudents}`,
+              change: 0,
+              trend: 'stable',
+              icon: <Users className="w-5 h-5" />,
+              color: 'text-blue-600'
+            },
+            {
+              label: 'Avg. Session Time',
+              value: isNaN(avgSessionTime) ? '0m' : `${avgSessionTime}m`,
+              change: 0,
+              trend: 'stable',
+              icon: <Clock className="w-5 h-5" />,
+              color: avgSessionTime < 10 ? 'text-red-600' : 'text-purple-600'
+            }
+          ];
+
+          setQuickMetrics(calculatedMetrics);
+        } else {
+          console.error('Failed to load insights:', data.error);
+          // Show empty state on error
+          setInsights([]);
+          setQuickMetrics([]);
+        }
+      } catch (error) {
+        console.error('Error loading insights:', error);
+        // Show empty state on error
+        setInsights([]);
+        setQuickMetrics([]);
+      }
+
+      setLastUpdated(new Date());
+      setIsLoading(false);
+    };
+
+    loadCriticalInsights();
+    
+    // Set up auto-refresh every 5 minutes
+    const interval = setInterval(loadCriticalInsights, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [teacherId]);
+
+  const handleInsightAction = useCallback(async (insight: CriticalInsight) => {
+    try {
+      // Acknowledge the insight in the database
+      const response = await fetch(`/api/ai-insights?teacherId=${teacherId}&action=acknowledge_insight&insightId=${insight.id}`, {
+        method: 'GET'
+      });
+
+      if (response.ok) {
+        // Update local state
+        setInsights(prev => prev.map(i =>
+          i.id === insight.id
+            ? { ...i, priority: 'medium' as const }
+            : i
+        ));
+
+        // In a real implementation, this would navigate to the appropriate page
+        console.log('Taking action on insight:', insight);
+        console.log('Navigate to:', insight.action.route);
+      }
+    } catch (error) {
+      console.error('Error handling insight action:', error);
+    }
+  }, [teacherId]);
+
+  const getPriorityColor = useCallback((priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'border-red-500 bg-red-50';
+      case 'high': return 'border-orange-500 bg-orange-50';
+      case 'medium': return 'border-blue-500 bg-blue-50';
+      case 'low': return 'border-green-500 bg-green-50';
+      default: return 'border-gray-300 bg-gray-50';
+    }
+  }, []);
+
+  const getPriorityIcon = useCallback((type: string) => {
+    switch (type) {
+      case 'urgent_action': return <AlertTriangle className="w-6 h-6 text-red-600" />;
+      case 'at_risk_student': return <TrendingDown className="w-6 h-6 text-orange-600" />;
+      case 'class_trend': return <Users className="w-6 h-6 text-blue-600" />;
+      case 'opportunity': return <Target className="w-6 h-6 text-green-600" />;
+      default: return <Brain className="w-6 h-6 text-gray-600" />;
+    }
+  }, []);
+
+  // Generate positive insights when students are performing well
+  const generatePositiveInsights = useCallback((studentData: any[]): CriticalInsight[] => {
+    const positiveInsights: CriticalInsight[] = [];
+    const totalStudents = studentData.length;
+    const highPerformers = studentData.filter(s => (s.average_accuracy || 0) >= 75).length;
+    const activeStudents = studentData.filter(s =>
+      new Date(s.last_active) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    ).length;
+    const avgAccuracy = totalStudents > 0
+      ? studentData.reduce((sum, s) => sum + (s.average_accuracy || 0), 0) / totalStudents
+      : 0;
+
+    if (highPerformers > 0) {
+      positiveInsights.push({
+        id: 'positive-performance',
+        type: 'opportunity',
+        priority: 'low',
+        title: `<Trophy className="w-4 h-4" /> ${highPerformers} Student${highPerformers > 1 ? 's' : ''} Excelling`,
+        description: `${highPerformers} of your students are achieving 75%+ accuracy rates. This demonstrates strong comprehension and engagement with the material.`,
+        impact: 'Positive momentum in class performance',
+        timeframe: 'Current',
+        confidence: 0.95,
+        studentsAffected: highPerformers,
+        action: { label: 'View Details', route: '/dashboard/students', data: {} },
+        generated_at: new Date().toISOString()
+      });
+    }
+
+    if (activeStudents === totalStudents && totalStudents > 0) {
+      positiveInsights.push({
+        id: 'positive-engagement',
+        type: 'opportunity',
+        priority: 'low',
+        title: '<Flame className="w-4 h-4" /> 100% Student Engagement',
+        description: 'All your students have been active within the past week, showing excellent engagement with the platform.',
+        impact: 'Strong class participation and consistency',
+        timeframe: 'Past 7 days',
+        confidence: 1.0,
+        studentsAffected: totalStudents,
+        action: { label: 'Celebrate Success', route: '/dashboard/classes', data: {} },
+        generated_at: new Date().toISOString()
+      });
+    }
+
+    if (avgAccuracy >= 80) {
+      positiveInsights.push({
+        id: 'positive-accuracy',
+        type: 'opportunity',
+        priority: 'low',
+        title: 'Outstanding Class Average',
+        description: `Your class is maintaining an impressive ${Math.round(avgAccuracy)}% average accuracy rate, indicating excellent learning outcomes.`,
+        impact: 'Strong foundational learning across all students',
+        timeframe: 'Overall',
+        confidence: 0.9,
+        studentsAffected: totalStudents,
+        action: { label: 'Share Achievement', route: '/dashboard/progress', data: {} },
+        generated_at: new Date().toISOString()
+      });
+    }
+
+    return positiveInsights;
+  }, []);
+
+  // Filter insights by priority for display (memoized for performance)
+  const criticalInsights = useMemo(() =>
+    insights.filter(insight =>
+      insight.priority === 'urgent' || insight.priority === 'high'
+    ).slice(0, 5), [insights] // Limit to 5 critical insights
+  );
+
+  const mediumInsights = useMemo(() =>
+    insights.filter(insight =>
+      insight.priority === 'medium'
+    ).slice(0, 3), [insights] // Limit to 3 medium insights
+  );
+
+  // Generate positive insights when no critical issues exist
+  const positiveInsights = useMemo(() => {
+    if (criticalInsights.length === 0 && mediumInsights.length === 0) {
+      return generatePositiveInsights(studentData);
+    }
+    return [];
+  }, [criticalInsights.length, mediumInsights.length, studentData, generatePositiveInsights]);
+
+  // Combine all insights for display
+  const allInsights = useMemo(() => [
+    ...criticalInsights,
+    ...mediumInsights,
+    ...positiveInsights
+  ], [criticalInsights, mediumInsights, positiveInsights]);
+
+  // Limit insights shown by default
+  const displayedInsights = useMemo(() => {
+    if (showAllInsights) return allInsights;
+    return allInsights.slice(0, 3); // Show only first 3 insights by default
+  }, [allInsights, showAllInsights]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Brain className="w-7 h-7 text-blue-600" />
+            AI Insights Dashboard
+          </h2>
+          <div className="animate-pulse flex items-center gap-2 text-sm text-gray-500">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
+            Analyzing student data...
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white p-4 rounded-lg border animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white p-6 rounded-lg border animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+              <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <Brain className="w-7 h-7 text-blue-600" />
+          AI Insights Dashboard
+        </h2>
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <Zap className="w-4 h-4 text-green-500" />
+          Last updated: {lastUpdated.toLocaleTimeString()}
+        </div>
+      </div>
+
+      {/* Quick Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {quickMetrics.map((metric, index) => (
+          <motion.div
+            key={metric.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-white p-4 rounded-lg border hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center justify-between">
+              <div className={metric.color}>
+                {metric.icon}
+              </div>
+              <div className={`text-sm font-medium ${
+                metric.trend === 'up' ? 'text-red-600' : 
+                metric.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+              }`}>
+                {metric.change > 0 ? '+' : ''}{metric.change}
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-2xl font-bold text-gray-900">{metric.value}</div>
+              <div className="text-sm text-gray-600">{metric.label}</div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Insights Summary */}
+      {allInsights.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-lg border border-amber-200 mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              {criticalInsights.length > 0 ? 'Action Required' : 'Performance Summary'}
+            </h3>
+          </div>
+          <p className="text-gray-700 text-sm">
+            {criticalInsights.length > 0
+              ? `${criticalInsights.length} student${criticalInsights.length > 1 ? 's' : ''} need${criticalInsights.length === 1 ? 's' : ''} immediate attention. `
+              : 'Your class is performing well overall. '
+            }
+            {allInsights.length > 3
+              ? `${allInsights.length} total insights available.`
+              : `${allInsights.length} insight${allInsights.length > 1 ? 's' : ''} to review.`
+            }
+          </p>
+        </div>
+      )}
+
+      {/* Critical Insights */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-blue-600" />
+          {allInsights.some(i => i.priority === 'urgent' || i.priority === 'high')
+            ? 'Critical Insights Requiring Action'
+            : allInsights.length > 0
+              ? 'Class Performance Insights'
+              : 'AI Insights Dashboard'
+          }
+        </h3>
+
+        <AnimatePresence>
+          {displayedInsights.length > 0 ? (
+            displayedInsights.map((insight, index) => (
+            <motion.div
+              key={insight.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ delay: index * 0.1 }}
+              className={`p-6 rounded-lg border-l-4 ${getPriorityColor(insight.priority)} hover:shadow-lg transition-all`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4 flex-1">
+                  {getPriorityIcon(insight.type)}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="text-lg font-semibold text-gray-900">{insight.title}</h4>
+                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+                        {Math.round(insight.confidence)}% confidence
+                      </span>
+                    </div>
+                    <p className="text-gray-700 mb-2">{insight.description}</p>
+                    <p className="text-sm text-gray-600 mb-3">
+                      <strong>Impact:</strong> {insight.impact}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span><Clock className="w-4 h-4" /> {insight.timeframe}</span>
+                      {insight.studentsAffected && (
+                        <span><Users className="w-4 h-4" /> {insight.studentsAffected} student{insight.studentsAffected > 1 ? 's' : ''}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleInsightAction(insight)}
+                  className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                  {insight.action.label}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+            ))
+          ) : (
+            <div className="text-center py-12 bg-gray-50 rounded-xl">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">All Clear!</h4>
+              <p className="text-gray-600">No urgent insights at the moment. Your students are doing well!</p>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Show More/Less Button */}
+        {allInsights.length > 3 && (
+          <div className="text-center mt-4">
+            <button
+              onClick={() => setShowAllInsights(!showAllInsights)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+            >
+              {showAllInsights ? (
+                <>
+                  <ArrowRight className="w-4 h-4 rotate-90" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="w-4 h-4 -rotate-90" />
+                  Show {allInsights.length - 3} More Insights
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* AI Status */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="text-sm text-gray-700">
+            AI is continuously monitoring your students' progress and will surface new insights as they emerge.
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Export memoized component for performance optimization
+export default memo(ProactiveAIDashboard);

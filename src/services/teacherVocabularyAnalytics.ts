@@ -100,6 +100,8 @@ export interface WordDetail {
   studentsProficient: number;  // Changed from studentsMastered
   studentsLearning: number;     // NEW
   commonErrors: string[];
+  strugglingCount: number;
+  mistakeCount?: number;
 }
 
 export interface StudentWordDetail {
@@ -139,12 +141,12 @@ export interface TeacherVocabularyAnalytics {
     studentsNeedingAttention: StudentVocabularyProgress[];
     classRecommendations: string[];
   };
-  detailedWords?: WordDetail[];
+  detailedWordAnalytics?: WordDetail[];
   studentWordDetails?: StudentWordDetail[];
 }
 
 export class TeacherVocabularyAnalyticsService {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private supabase: SupabaseClient) { }
 
   /**
    * Get comprehensive vocabulary analytics for all classes taught by a teacher
@@ -152,9 +154,10 @@ export class TeacherVocabularyAnalyticsService {
   async getTeacherVocabularyAnalytics(
     teacherId: string,
     classId?: string,
-    dateRange?: { from: string; to: string }
+    dateRange?: { from: string; to: string },
+    sections: string[] = ['stats', 'students', 'trends', 'topics', 'words'] // Default to all for backward compatibility
   ): Promise<TeacherVocabularyAnalytics> {
-    console.log('🔍 [TEACHER VOCAB ANALYTICS] Getting analytics for teacher:', teacherId);
+    console.log('🔍 [TEACHER VOCAB ANALYTICS] Getting analytics for teacher:', teacherId, 'Sections:', sections);
 
     try {
       // Get teacher's classes
@@ -173,39 +176,61 @@ export class TeacherVocabularyAnalyticsService {
         return this.getEmptyAnalytics();
       }
 
-      // Get vocabulary progress for all students
+      // 1. Always fetch basic student progress as it's needed for stats
       const studentProgress = await this.getStudentVocabularyProgress(students, classes);
-      
-      // Get topic analysis across all students
-      const topicAnalysis = await this.getTopicAnalysis(students.map(s => s.id));
-      
-      // Get trends data
-      const trends = await this.getVocabularyTrends(students.map(s => s.id), dateRange);
-      
-      // Get detailed word analytics
-      const detailedWords = await this.getDetailedWordAnalytics(students.map(s => s.id));
 
-      // Get student-specific word details
-      const studentWordDetails = await this.getStudentWordDetails(students);
+      // 2. Conditionally fetch other sections
+      let topicAnalysis: TopicAnalysis[] = [];
+      if (sections.includes('topics')) {
+        console.log('📊 [TOPICS] Fetching topic analysis for', students.length, 'students');
+        topicAnalysis = await this.getTopicAnalysis(students.map(s => s.id));
+        console.log('📊 [TOPICS] Result:', topicAnalysis.length, 'topics found');
+      }
 
-      // Calculate class stats with unique word count
-      const classStats = this.calculateClassStats(studentProgress, detailedWords.length);
+      let trends: VocabularyTrend[] = [];
+      if (sections.includes('trends')) {
+        console.log('📈 [TRENDS] Fetching trends for', students.length, 'students');
+        trends = await this.getVocabularyTrends(students.map(s => s.id), dateRange);
+        console.log('📈 [TRENDS] Result:', trends.length, 'trend points found');
+      }
+
+      let detailedWords: WordDetail[] = [];
+      if (sections.includes('words')) {
+        console.log('📝 [WORDS] Fetching detailed words for', students.length, 'students');
+        detailedWords = await this.getDetailedWordAnalytics(students.map(s => s.id));
+        console.log('📝 [WORDS] Result:', detailedWords.length, 'words found');
+      }
+
+      let studentWordDetails: StudentWordDetail[] = [];
+      // Fetch student details if requested OR if we need them for "words" view (though usually separate)
+      if (sections.includes('students_detailed')) {
+        studentWordDetails = await this.getStudentWordDetails(students);
+      }
+
+      // Calculate class stats
+      // Note: If detailedWords is empty (not fetched), totalWords might be less accurate but fallback to student data
+      const totalUniqueWords = detailedWords.length > 0
+        ? detailedWords.length
+        : studentProgress.reduce((acc, s) => acc + s.totalWords, 0); // Approximation if detailed not fetched
+
+      const classStats = this.calculateClassStats(studentProgress, totalUniqueWords);
 
       console.log('📊 [CLASS STATS DEBUG]', {
         totalStudents: classStats.totalStudents,
         totalWords: classStats.totalWords,
-        averageMasteredWords: classStats.averageMasteredWords,
+        proficientWords: classStats.proficientWords,
+        learningWords: classStats.learningWords,
         averageAccuracy: classStats.averageAccuracy,
         uniqueWordsFromDetailed: detailedWords.length,
         sampleStudentProgress: studentProgress.slice(0, 3).map(s => ({
           name: s.studentName,
           totalWords: s.totalWords,
-          masteredWords: s.masteredWords,
+          proficientWords: s.proficientWords,
           accuracy: s.averageAccuracy
         }))
       });
 
-      // Generate insights
+      // Generate insights if we have topic analysis
       const insights = this.generateInsights(studentProgress, topicAnalysis);
 
       return {
@@ -214,7 +239,7 @@ export class TeacherVocabularyAnalyticsService {
         topicAnalysis,
         trends,
         insights,
-        detailedWords,
+        detailedWordAnalytics: detailedWords,
         studentWordDetails
       };
 
@@ -238,7 +263,7 @@ export class TeacherVocabularyAnalyticsService {
     }
 
     const { data, error } = await query;
-    
+
     if (error) throw error;
     return data || [];
   }
@@ -304,23 +329,63 @@ export class TeacherVocabularyAnalyticsService {
     try {
       // OPTIMIZED: Single query for all students instead of N queries
       console.log('🚀 [OPTIMIZATION] Fetching vocabulary data for', studentIds.length, 'students in one query');
-      
-      const { data: gemData, error } = await this.supabase
-        .from('vocabulary_gem_collection')
-        .select(`
-          student_id,
-          total_encounters,
-          correct_encounters,
-          mastery_level,
-          last_encountered_at,
-          next_review_at,
-          fsrs_retrievability
-        `)
-        .in('student_id', studentIds)
-        .limit(50000); // Supabase default is 1000, increase for large classes
 
-      if (error) {
-        console.error('Error getting vocabulary data:', error);
+      // 🔥 CRITICAL: Fetch from BOTH tables - vocabulary_gem_collection AND assignment_vocabulary_progress
+      // BATCHED Fetching to prevent payload size errors
+      const gemData: any[] = [];
+      const assignmentVocabData: any[] = [];
+      const batchSize = 5;
+      const batches = this.chunkArray(studentIds, batchSize);
+
+      console.log(`Processing ${batches.length} batches for vocabulary data...`);
+
+      for (const batch of batches) {
+        // Add small delay
+        await this.delay(20);
+
+        const [gemResult, assignmentVocabResult] = await Promise.all([
+          this.supabase
+            .from('vocabulary_gem_collection')
+            .select(`
+              student_id,
+              vocabulary_item_id,
+              centralized_vocabulary_id,
+              total_encounters,
+              correct_encounters,
+              mastery_level,
+              last_encountered_at,
+              next_review_at,
+              fsrs_retrievability
+            `)
+            .in('student_id', batch),
+
+          this.supabase
+            .from('assignment_vocabulary_progress')
+            .select(`
+              student_id,
+              vocab_id,
+              seen_count,
+              correct_count,
+              last_seen_at
+            `)
+            .in('student_id', batch)
+        ]);
+
+        if (gemResult.error) {
+          console.error('Error getting gem vocabulary data batch:', gemResult.error);
+        } else if (gemResult.data) {
+          gemData.push(...gemResult.data);
+        }
+
+        if (assignmentVocabResult.error) {
+          console.error('Error getting assignment vocabulary data batch:', assignmentVocabResult.error);
+        } else if (assignmentVocabResult.data) {
+          assignmentVocabData.push(...assignmentVocabResult.data);
+        }
+      }
+
+      if (!gemData && !assignmentVocabData) {
+        console.error('No vocabulary data from either source');
         return [];
       }
 
@@ -333,11 +398,43 @@ export class TeacherVocabularyAnalyticsService {
         gemsByStudent.get(gem.student_id)!.push(gem);
       });
 
+      // 🔥 CRITICAL: Group assignment vocabulary by student ID
+      const assignmentVocabByStudent = new Map<string, typeof assignmentVocabData>();
+      (assignmentVocabData || []).forEach(vocab => {
+        if (!assignmentVocabByStudent.has(vocab.student_id)) {
+          assignmentVocabByStudent.set(vocab.student_id, []);
+        }
+        assignmentVocabByStudent.get(vocab.student_id)!.push(vocab);
+      });
+
+      console.log('📊 [VOCAB DATA] Loaded:', {
+        gemsStudents: gemsByStudent.size,
+        assignmentVocabStudents: assignmentVocabByStudent.size,
+        totalGems: gemData?.length || 0,
+        totalAssignmentVocab: assignmentVocabData?.length || 0
+      });
+
+      // 🔥 CRITICAL: Fetch assignment progress for ALL students upfront
+      // This ensures we catch students who have assignment activity but no vocabulary gems
+      console.log('📋 [CRITICAL] Fetching assignment progress for', studentIds.length, 'students');
+      const { data: allAssignmentProgress } = await this.supabase
+        .from('enhanced_assignment_progress')
+        .select('student_id, completed_at, last_attempt_at, created_at')
+        .in('student_id', studentIds);
+
+      const assignmentProgressByStudent = new Map<string, typeof allAssignmentProgress>();
+      (allAssignmentProgress || []).forEach(assignment => {
+        if (!assignmentProgressByStudent.has(assignment.student_id)) {
+          assignmentProgressByStudent.set(assignment.student_id, []);
+        }
+        assignmentProgressByStudent.get(assignment.student_id)!.push(assignment);
+      });
+
       // FALLBACK: Get last activity from game sessions for students with no vocabulary collection
       // This fixes the "Last active: never" issue when students play games but don't have vocab items
       const studentsWithoutVocab = studentIds.filter(id => !gemsByStudent.has(id) || gemsByStudent.get(id)!.length === 0);
       let gameSessionsByStudent = new Map<string, string>(); // student_id -> last_game_session_date
-      
+
       if (studentsWithoutVocab.length > 0) {
         console.log('🔍 [FALLBACK] Checking game sessions for', studentsWithoutVocab.length, 'students without vocabulary data');
         const { data: gameSessions } = await this.supabase
@@ -345,7 +442,7 @@ export class TeacherVocabularyAnalyticsService {
           .select('student_id, created_at')
           .in('student_id', studentsWithoutVocab)
           .order('created_at', { ascending: false });
-        
+
         (gameSessions || []).forEach(session => {
           if (!gameSessionsByStudent.has(session.student_id)) {
             gameSessionsByStudent.set(session.student_id, session.created_at);
@@ -358,22 +455,38 @@ export class TeacherVocabularyAnalyticsService {
       // Process each student's data
       for (const student of students) {
         const gems = gemsByStudent.get(student.id) || [];
-        const totalWords = gems.length;
+        const assignmentVocab = assignmentVocabByStudent.get(student.id) || [];
+
+        // 🔥 CRITICAL: Merge data from BOTH sources
+        // Total words = unique words from gems + unique assignment vocab
+        const uniqueVocabIds = new Set([
+          ...gems.map(g => g.vocabulary_item_id || g.centralized_vocabulary_id || ''),
+          ...assignmentVocab.map(v => v.vocab_id || v.vocabulary_id || '')
+        ].filter(Boolean));
+
+        const totalWords = uniqueVocabIds.size;
+
         const masteredWords = gems.filter(g => g.mastery_level >= 4).length;
         const strugglingWords = gems.filter(g => {
           const accuracy = g.total_encounters > 0 ? g.correct_encounters / g.total_encounters : 0;
           return accuracy < 0.7 && g.total_encounters > 0;
         }).length;
 
-        const overdueWords = gems.filter(g => 
+        const overdueWords = gems.filter(g =>
           g.next_review_at && new Date(g.next_review_at) < now
         ).length;
 
-        const totalEncounters = gems.reduce((sum, g) => sum + g.total_encounters, 0);
-        const totalCorrect = gems.reduce((sum, g) => sum + g.correct_encounters, 0);
+        // 🔥 CRITICAL: Calculate accuracy from BOTH sources
+        let totalEncounters = gems.reduce((sum, g) => sum + g.total_encounters, 0);
+        let totalCorrect = gems.reduce((sum, g) => sum + g.correct_encounters, 0);
+
+        // Add assignment vocabulary to totals
+        totalEncounters += assignmentVocab.reduce((sum, v) => sum + (v.seen_count || 0), 0);
+        totalCorrect += assignmentVocab.reduce((sum, v) => sum + (v.correct_count || 0), 0);
+
         const averageAccuracy = totalEncounters > 0 ? (totalCorrect / totalEncounters) * 100 : 0;
 
-        const memoryStrength = gems.length > 0 
+        const memoryStrength = gems.length > 0
           ? gems.reduce((sum, g) => sum + (g.fsrs_retrievability || 0), 0) / gems.length * 100
           : 0;
 
@@ -385,19 +498,57 @@ export class TeacherVocabularyAnalyticsService {
           return reviewDate <= today;
         }).length;
 
-        const lastActivity = gems.length > 0 
-          ? gems.reduce((latest, g) => {
-              const gDate = g.last_encountered_at ? new Date(g.last_encountered_at) : null;
-              if (!gDate) return latest;
-              return !latest || gDate > new Date(latest) ? g.last_encountered_at : latest;
-            }, null as string | null)
-          : gameSessionsByStudent.get(student.id) || null; // FALLBACK: Use game session date if no vocabulary data
+        // 🔥 CRITICAL: Get last activity from BOTH gem collection AND assignment vocabulary
+        let lastActivity: string | null = null;
+
+        if (gems.length > 0) {
+          lastActivity = gems.reduce((latest, g) => {
+            const gDate = g.last_encountered_at ? new Date(g.last_encountered_at) : null;
+            if (!gDate) return latest;
+            return !latest || gDate > new Date(latest) ? g.last_encountered_at : latest;
+          }, null as string | null);
+        }
+
+        // Check assignment vocabulary for more recent activity
+        if (assignmentVocab.length > 0) {
+          const assignmentLastActivity = assignmentVocab.reduce((latest, v) => {
+            const vDate = v.last_seen_at ? new Date(v.last_seen_at) : null;
+            if (!vDate) return latest;
+            return !latest || vDate > new Date(latest) ? v.last_seen_at : latest;
+          }, null as string | null);
+
+          if (assignmentLastActivity) {
+            if (!lastActivity || new Date(assignmentLastActivity) > new Date(lastActivity)) {
+              lastActivity = assignmentLastActivity;
+            }
+          }
+        }
+
+        // Fallback to game sessions and assignment progress
+        if (!lastActivity) {
+          lastActivity = gameSessionsByStudent.get(student.id) || this.getLatestAssignmentDate(assignmentProgressByStudent.get(student.id)) || null;
+        }
+
+        // Data validation: catch impossible combinations
+        if (totalWords === 0 && (averageAccuracy > 0 || overdueWords > 0 || strugglingWords > 0)) {
+          console.warn('⚠️ [DATA ANOMALY]', {
+            student: student.name,
+            totalWords: 0,
+            averageAccuracy,
+            overdueWords,
+            strugglingWords,
+            gemsCount: gems.length,
+            assignmentVocabCount: assignmentVocab.length,
+            uniqueVocabIds: uniqueVocabIds.size
+          });
+        }
 
         progress.push({
           studentId: student.id,
           studentName: student.name,
           totalWords,
-          masteredWords,
+          proficientWords: masteredWords,
+          learningWords: Math.max(0, totalWords - masteredWords - strugglingWords),
           strugglingWords,
           overdueWords,
           averageAccuracy: Math.round(averageAccuracy * 10) / 10,
@@ -416,6 +567,28 @@ export class TeacherVocabularyAnalyticsService {
       console.error('❌ Error processing student vocabulary progress:', error);
       return [];
     }
+  }
+
+  /**
+   * Get the latest activity date from assignment progress
+   * 🔥 CRITICAL: Used to identify students with assignment activity but no vocabulary gems
+   */
+  private getLatestAssignmentDate(
+    assignments: Array<{ completed_at: string | null; last_attempt_at: string | null; created_at: string }> | undefined
+  ): string | null {
+    if (!assignments || assignments.length === 0) return null;
+
+    const dates = assignments
+      .map(a => a.completed_at || a.last_attempt_at || a.created_at)
+      .filter(Boolean) as string[];
+
+    if (dates.length === 0) return null;
+
+    return dates.reduce((latest, date) => {
+      const latestDate = new Date(latest);
+      const currentDate = new Date(date);
+      return currentDate > latestDate ? date : latest;
+    });
   }
 
   /**
@@ -447,69 +620,97 @@ export class TeacherVocabularyAnalyticsService {
   }
 
   /**
+   * Helper to chunk array into batches
+   */
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  /**
    * Calculate class-wide statistics
    */
-  private calculateClassStats(studentProgress: StudentVocabularyProgress[]): ClassVocabularyStats {
+  private calculateClassStats(studentProgress: StudentVocabularyProgress[], detailedWordsCount?: number): ClassVocabularyStats {
     if (studentProgress.length === 0) {
       return {
         totalStudents: 0,
         totalWords: 0,
-        averageMasteredWords: 0,
+        proficientWords: 0,
+        learningWords: 0,
+        strugglingWords: 0,
         averageAccuracy: 0,
         studentsWithOverdueWords: 0,
         topPerformingStudents: [],
         strugglingStudents: [],
-        classAverageMemoryStrength: 0,
         totalWordsReadyForReview: 0
       };
     }
 
     const totalStudents = studentProgress.length;
 
-    // Only include students with vocabulary data for accuracy/memory calculations
+    // Only include students with vocabulary data for accuracy calculations
     const studentsWithVocab = studentProgress.filter(s => s.totalWords > 0);
     const studentsWithVocabCount = studentsWithVocab.length;
 
     const totalWords = studentProgress.reduce((sum, s) => sum + s.totalWords, 0);
-    const averageMasteredWords = studentsWithVocabCount > 0
-      ? Math.round(studentProgress.reduce((sum, s) => sum + s.masteredWords, 0) / studentsWithVocabCount)
-      : 0;
 
-    // FIX: Only average accuracy for students who have vocabulary data
+    // Calculate proficient/learning/struggling words from student data
+    const proficientWords = studentProgress.reduce((sum, s) => sum + s.proficientWords, 0);
+    const strugglingWordsTotal = studentProgress.reduce((sum, s) => sum + s.strugglingWords, 0);
+    // Learning words = total words - (proficient + struggling)
+    const learningWords = Math.max(0, totalWords - proficientWords - strugglingWordsTotal);
+
+    // Only average accuracy for students who have vocabulary data
     const averageAccuracy = studentsWithVocabCount > 0
       ? Math.round((studentsWithVocab.reduce((sum, s) => sum + s.averageAccuracy, 0) / studentsWithVocabCount) * 10) / 10
       : 0;
 
     const studentsWithOverdueWords = studentProgress.filter(s => s.overdueWords > 0).length;
 
-    // FIX: Only average memory strength for students who have vocabulary data
-    const classAverageMemoryStrength = studentsWithVocabCount > 0
-      ? Math.round((studentsWithVocab.reduce((sum, s) => sum + s.memoryStrength, 0) / studentsWithVocabCount) * 10) / 10
-      : 0;
-
     const totalWordsReadyForReview = studentProgress.reduce((sum, s) => sum + s.wordsReadyForReview, 0);
 
     // Sort students by performance
     const sortedByPerformance = [...studentProgress].sort((a, b) => {
-      const scoreA = (a.averageAccuracy * 0.4) + (a.masteredWords * 0.3) + (a.memoryStrength * 0.3);
-      const scoreB = (b.averageAccuracy * 0.4) + (b.masteredWords * 0.3) + (b.memoryStrength * 0.3);
+      const scoreA = (a.averageAccuracy * 0.4) + (a.proficientWords * 0.3) + (a.memoryStrength * 0.3);
+      const scoreB = (b.averageAccuracy * 0.4) + (b.proficientWords * 0.3) + (b.memoryStrength * 0.3);
       return scoreB - scoreA;
     });
 
     const topPerformingStudents = sortedByPerformance.slice(0, 5);
     const strugglingStudents = sortedByPerformance.slice(-5).reverse();
 
+    console.log('📊 [CLASS STATS CALCULATED]', {
+      totalStudents,
+      totalWords,
+      proficientWords,
+      learningWords,
+      strugglingWords: strugglingWordsTotal,
+      averageAccuracy,
+      studentsWithVocab: studentsWithVocabCount
+    });
+
     return {
       totalStudents,
       totalWords,
-      averageMasteredWords,
+      proficientWords,
+      learningWords,
+      strugglingWords: strugglingWordsTotal,
       averageAccuracy,
       studentsWithOverdueWords,
       topPerformingStudents,
       strugglingStudents,
-      classAverageMemoryStrength,
       totalWordsReadyForReview
     };
+  }
+
+  /**
+   * Helper to add delay between batches
+   */
+  private async delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
@@ -520,26 +721,41 @@ export class TeacherVocabularyAnalyticsService {
 
     try {
       // Get vocabulary gem collection data with vocabulary details
-      const { data: gemData, error } = await this.supabase
-        .from('vocabulary_gem_collection')
-        .select(`
-          student_id,
-          centralized_vocabulary_id,
-          vocabulary_item_id,
-          total_encounters,
-          correct_encounters,
-          mastery_level
-        `)
-        .in('student_id', studentIds)
-        .limit(50000); // Supabase default is 1000, increase for large classes
+      // BATCHED FETCHING
+      const gemData: any[] = [];
+      const batchSize = 5;
+      const batches = this.chunkArray(studentIds, batchSize);
 
-      if (error) throw error;
+      for (const batch of batches) {
+        // Add small delay to prevent rate limiting/connection issues
+        await this.delay(20);
 
-      // Get centralized vocabulary details
+        const { data, error } = await this.supabase
+          .from('vocabulary_gem_collection')
+          .select(`
+            student_id,
+            centralized_vocabulary_id,
+            vocabulary_item_id,
+            total_encounters,
+            correct_encounters,
+            mastery_level
+          `)
+          .in('student_id', batch);
+
+        if (error) {
+          console.error('Error fetching batch topic data', error);
+          continue;
+        }
+        if (data) gemData.push(...data);
+      }
+
+      console.log('🔍 [TOPIC ANALYSIS] Gem data fetched:', gemData.length, 'records for', studentIds.length, 'students');
+
+      // Get centralized vocabulary details - use both ID fields
       const centralizedIds = [...new Set(
         (gemData || [])
-          .filter(g => g.centralized_vocabulary_id)
-          .map(g => g.centralized_vocabulary_id)
+          .map(g => g.centralized_vocabulary_id || g.vocabulary_item_id)
+          .filter(Boolean)
       )];
 
       let vocabularyDetails: Array<{
@@ -553,15 +769,28 @@ export class TeacherVocabularyAnalyticsService {
         theme_name: string | null;
         unit_name: string | null;
       }> = [];
-      
-      if (centralizedIds.length > 0) {
-        const { data: vocabData, error: vocabError } = await this.supabase
-          .from('centralized_vocabulary')
-          .select('id, word, translation, category, subcategory, curriculum_level, language, theme_name, unit_name')
-          .in('id', centralizedIds);
 
-        if (vocabError) throw vocabError;
-        vocabularyDetails = vocabData || [];
+      if (centralizedIds.length > 0) {
+        console.log('🔍 [TOPIC ANALYSIS] Looking up', centralizedIds.length, 'unique vocabulary IDs');
+
+        // BATCH the vocabulary lookup to avoid overwhelming the database with 1000+ IDs
+        const vocabBatchSize = 100;
+        const vocabBatches = this.chunkArray(centralizedIds, vocabBatchSize);
+
+        for (const batch of vocabBatches) {
+          const { data: vocabData, error: vocabError } = await this.supabase
+            .from('centralized_vocabulary')
+            .select('id, word, translation, category, subcategory, curriculum_level, language, theme_name, unit_name')
+            .in('id', batch);
+
+          if (vocabError) {
+            console.error('Error fetching vocabulary batch for topics:', vocabError);
+            continue;
+          }
+          if (vocabData) vocabularyDetails.push(...vocabData);
+        }
+
+        console.log('🔍 [TOPIC ANALYSIS] Vocabulary details fetched:', vocabularyDetails.length, 'items');
       }
 
       // Create vocabulary lookup map
@@ -578,7 +807,8 @@ export class TeacherVocabularyAnalyticsService {
       }>();
 
       (gemData || []).forEach(gem => {
-        const vocab = vocabMap.get(gem.centralized_vocabulary_id);
+        const vocabId = gem.centralized_vocabulary_id || gem.vocabulary_item_id;
+        const vocab = vocabMap.get(vocabId);
         if (!vocab) return;
 
         // Skip vocabulary items without required category or curriculum level
@@ -675,27 +905,52 @@ export class TeacherVocabularyAnalyticsService {
     if (studentIds.length === 0) return [];
 
     try {
-      // Get real historical data from enhanced_game_sessions
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Use provided date range or default to 30 days
+      const startDate = dateRange?.from
+        ? new Date(dateRange.from)
+        : (() => {
+          const date = new Date();
+          date.setDate(date.getDate() - 30);
+          return date;
+        })();
 
-      const { data: sessionData, error: sessionError } = await this.supabase
-        .from('enhanced_game_sessions')
-        .select('student_id, created_at')
-        .in('student_id', studentIds)
-        .gte('created_at', thirtyDaysAgo.toISOString());
+      // BATCHED FETCHING for session data
+      const sessionData: any[] = [];
+      const batchSize = 5;
+      const batches = this.chunkArray(studentIds, batchSize);
 
-      if (sessionError) throw sessionError;
+      for (const batch of batches) {
+        await this.delay(20);
+
+        const { data, error } = await this.supabase
+          .from('enhanced_game_sessions')
+          .select('student_id, created_at')
+          .in('student_id', batch)
+          .gte('created_at', startDate.toISOString());
+
+        if (error) {
+          console.error('Error fetching batch session data for trends', error);
+          continue;
+        }
+        if (data) sessionData.push(...data);
+      }
 
       // Get vocabulary data with last_encountered_at for accuracy trends
-      const { data: vocabData, error: vocabError } = await this.supabase
-        .from('vocabulary_gem_collection')
-        .select('student_id, last_encountered_at, total_encounters, correct_encounters, mastery_level')
-        .in('student_id', studentIds)
-        .gte('last_encountered_at', thirtyDaysAgo.toISOString())
-        .limit(50000); // Supabase default is 1000, increase for large classes
+      const vocabData: any[] = [];
+      // Batches already defined above
+      for (const batch of batches) {
+        const { data, error } = await this.supabase
+          .from('vocabulary_gem_collection')
+          .select('student_id, last_encountered_at, total_encounters, correct_encounters, mastery_level')
+          .in('student_id', batch)
+          .gte('last_encountered_at', startDate.toISOString());
 
-      if (vocabError) throw vocabError;
+        if (error) {
+          console.error('Error fetching batch vocabulary trends', error);
+          continue;
+        }
+        if (data) vocabData.push(...data);
+      }
 
       // Group by date with proficiency tracking
       const trendsByDate = new Map<string, {
@@ -841,35 +1096,65 @@ export class TeacherVocabularyAnalyticsService {
     if (studentIds.length === 0) return [];
 
     try {
-      const { data: gemData, error } = await this.supabase
-        .from('vocabulary_gem_collection')
-        .select(`
-          centralized_vocabulary_id,
-          total_encounters,
-          correct_encounters,
-          mastery_level,
-          student_id
-        `)
-        .in('student_id', studentIds)
-        .limit(50000); // Supabase default is 1000, increase for large classes
+      // BATCHED FETCHING
+      const gemData: any[] = [];
+      const batchSize = 5;
+      const batches = this.chunkArray(studentIds, batchSize);
 
-      if (error) throw error;
+      for (const batch of batches) {
+        await this.delay(20);
 
-      // Get vocabulary details
+        const { data, error } = await this.supabase
+          .from('vocabulary_gem_collection')
+          .select(`
+            centralized_vocabulary_id,
+            vocabulary_item_id,
+            total_encounters,
+            correct_encounters,
+            mastery_level,
+            student_id
+          `)
+          .in('student_id', batch);
+
+        if (error) {
+          console.error('Error fetching batch detailed words', error);
+          continue;
+        }
+        if (data) gemData.push(...data);
+      }
+
+      console.log('🔍 [DETAILED WORDS] Gem data fetched:', gemData.length, 'records for', studentIds.length, 'students');
+
+      // Get vocabulary details - use both ID fields
       const centralizedIds = [...new Set(
         (gemData || [])
-          .filter(g => g.centralized_vocabulary_id)
-          .map(g => g.centralized_vocabulary_id)
+          .map(g => g.centralized_vocabulary_id || g.vocabulary_item_id)
+          .filter(Boolean)
       )];
 
       if (centralizedIds.length === 0) return [];
 
-      const { data: vocabData, error: vocabError } = await this.supabase
-        .from('centralized_vocabulary')
-        .select('id, word, translation, category, subcategory, language')
-        .in('id', centralizedIds);
+      console.log('🔍 [DETAILED WORDS] Looking up', centralizedIds.length, 'unique vocabulary IDs');
 
-      if (vocabError) throw vocabError;
+      // BATCH the vocabulary lookup to avoid overwhelming the database with 1000+ IDs
+      const vocabData: any[] = [];
+      const vocabBatchSize = 100; // Fetch 100 vocabulary items at a time
+      const vocabBatches = this.chunkArray(centralizedIds, vocabBatchSize);
+
+      for (const batch of vocabBatches) {
+        const { data, error: vocabError } = await this.supabase
+          .from('centralized_vocabulary')
+          .select('id, word, translation, category, subcategory, language')
+          .in('id', batch);
+
+        if (vocabError) {
+          console.error('Error fetching vocabulary batch:', vocabError);
+          continue;
+        }
+        if (data) vocabData.push(...data);
+      }
+
+      console.log('🔍 [DETAILED WORDS] Vocabulary details fetched:', vocabData.length, 'items');
 
       const vocabMap = new Map((vocabData || []).map(v => [v.id, v]));
 
@@ -883,10 +1168,11 @@ export class TeacherVocabularyAnalyticsService {
       }>();
 
       (gemData || []).forEach(gem => {
-        const vocab = vocabMap.get(gem.centralized_vocabulary_id);
+        const vocabId = gem.centralized_vocabulary_id || gem.vocabulary_item_id;
+        const vocab = vocabMap.get(vocabId);
         if (!vocab) return;
 
-        const key = gem.centralized_vocabulary_id;
+        const key = vocabId;
         if (!wordGroups.has(key)) {
           wordGroups.set(key, {
             vocab,
@@ -951,7 +1237,9 @@ export class TeacherVocabularyAnalyticsService {
           studentsStruggling,
           studentsLearning,   // NEW
           studentsProficient, // Replaces studentsMastered
-          commonErrors: [] // Could be enhanced with error tracking
+          commonErrors: [], // Could be enhanced with error tracking
+          strugglingCount: studentsStruggling,
+          mistakeCount: group.totalEncounters - group.correctEncounters
         });
       });
 
@@ -972,27 +1260,39 @@ export class TeacherVocabularyAnalyticsService {
     const studentWordDetails: StudentWordDetail[] = [];
 
     try {
-      // Fetch all vocabulary data for all students in one query
+      // Fetch all vocabulary data for all students in one query (BATCHED)
       const studentIds = students.map(s => s.id);
-      const { data: gemData, error } = await this.supabase
-        .from('vocabulary_gem_collection')
-        .select(`
-          student_id,
-          centralized_vocabulary_id,
-          total_encounters,
-          correct_encounters,
-          mastery_level
-        `)
-        .in('student_id', studentIds)
-        .limit(50000); // Supabase default is 1000, increase for large classes
+      const gemData: any[] = [];
+      const batchSize = 5;
+      const batches = this.chunkArray(studentIds, batchSize);
 
-      if (error) throw error;
+      for (const batch of batches) {
+        await this.delay(20);
 
-      // Get vocabulary details
+        const { data, error } = await this.supabase
+          .from('vocabulary_gem_collection')
+          .select(`
+            student_id,
+            centralized_vocabulary_id,
+            vocabulary_item_id,
+            total_encounters,
+            correct_encounters,
+            mastery_level
+          `)
+          .in('student_id', batch);
+
+        if (error) {
+          console.error('Error fetching batch student word details', error);
+          continue;
+        }
+        if (data) gemData.push(...data);
+      }
+
+      // Get vocabulary details - use both ID fields
       const centralizedIds = [...new Set(
         (gemData || [])
-          .filter(g => g.centralized_vocabulary_id)
-          .map(g => g.centralized_vocabulary_id)
+          .map(g => g.centralized_vocabulary_id || g.vocabulary_item_id)
+          .filter(Boolean)
       )];
 
       if (centralizedIds.length === 0) {
@@ -1005,12 +1305,23 @@ export class TeacherVocabularyAnalyticsService {
         }));
       }
 
-      const { data: vocabData, error: vocabError } = await this.supabase
-        .from('centralized_vocabulary')
-        .select('id, word, translation, category')
-        .in('id', centralizedIds);
+      // BATCH the vocabulary lookup to avoid overwhelming the database with 1000+ IDs
+      const vocabData: any[] = [];
+      const vocabBatchSize = 100;
+      const vocabBatches = this.chunkArray(centralizedIds, vocabBatchSize);
 
-      if (vocabError) throw vocabError;
+      for (const batch of vocabBatches) {
+        const { data, error: vocabError } = await this.supabase
+          .from('centralized_vocabulary')
+          .select('id, word, translation, category')
+          .in('id', batch);
+
+        if (vocabError) {
+          console.error('Error fetching vocabulary batch for student details:', vocabError);
+          continue;
+        }
+        if (data) vocabData.push(...data);
+      }
 
       const vocabMap = new Map((vocabData || []).map(v => [v.id, v]));
 
@@ -1026,11 +1337,12 @@ export class TeacherVocabularyAnalyticsService {
       // Process each student
       for (const student of students) {
         const gems = gemsByStudent.get(student.id) || [];
-        
+
         // Calculate strong words (high mastery, high accuracy)
         const strongWords = gems
           .filter(g => {
-            const vocab = vocabMap.get(g.centralized_vocabulary_id);
+            const vocabId = g.centralized_vocabulary_id || g.vocabulary_item_id;
+            const vocab = vocabMap.get(vocabId);
             if (!vocab) return false;
             const accuracy = g.total_encounters > 0 ? g.correct_encounters / g.total_encounters : 0;
             return g.mastery_level >= 4 || (accuracy >= 0.9 && g.total_encounters >= 3);
@@ -1038,7 +1350,8 @@ export class TeacherVocabularyAnalyticsService {
           .sort((a, b) => b.mastery_level - a.mastery_level)
           .slice(0, 10)
           .map(g => {
-            const vocab = vocabMap.get(g.centralized_vocabulary_id);
+            const vocabId = g.centralized_vocabulary_id || g.vocabulary_item_id;
+            const vocab = vocabMap.get(vocabId);
             const accuracy = g.total_encounters > 0 ? (g.correct_encounters / g.total_encounters) * 100 : 0;
             const proficiencyLevel = calculateProficiencyLevel(accuracy, g.total_encounters);
             return {
@@ -1053,7 +1366,8 @@ export class TeacherVocabularyAnalyticsService {
         // Calculate weak words (low accuracy, multiple attempts)
         const weakWords = gems
           .filter(g => {
-            const vocab = vocabMap.get(g.centralized_vocabulary_id);
+            const vocabId = g.centralized_vocabulary_id || g.vocabulary_item_id;
+            const vocab = vocabMap.get(vocabId);
             if (!vocab) return false;
             const accuracy = g.total_encounters > 0 ? g.correct_encounters / g.total_encounters : 0;
             return accuracy < 0.6 && g.total_encounters >= 2;
@@ -1065,7 +1379,8 @@ export class TeacherVocabularyAnalyticsService {
           })
           .slice(0, 10)
           .map(g => {
-            const vocab = vocabMap.get(g.centralized_vocabulary_id);
+            const vocabId = g.centralized_vocabulary_id || g.vocabulary_item_id;
+            const vocab = vocabMap.get(vocabId);
             const accuracy = g.total_encounters > 0 ? (g.correct_encounters / g.total_encounters) * 100 : 0;
             return {
               word: vocab?.word || '',

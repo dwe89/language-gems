@@ -192,6 +192,10 @@ export class TeacherAssignmentAnalyticsService {
       const isAssessmentType = assignment?.game_type === 'assessment' ||
         assignment?.game_config?.assessmentConfig;
 
+      // Check if this is a skills (grammar) assignment
+      const isSkillsType = assignment?.game_type === 'skills' ||
+        assignment?.game_config?.skillsConfig;
+
       let completedStudents = 0;
       let inProgressStudents = 0;
       let notStartedStudents = totalStudents;
@@ -243,6 +247,91 @@ export class TeacherAssignmentAnalyticsService {
             studentBestMap.size;
           studentsNeedingHelp = Array.from(studentBestMap.values()).filter(item => item.bestScore < 50).length;
         }
+      } else if (isSkillsType) {
+        // Skills (Grammar) assignments - fetch from grammar_assignment_sessions
+        console.log('🔍 [SKILLS] Fetching grammar sessions for assignment:', assignmentId);
+
+        const { data: grammarSessions, error: grammarSessionError } = await this.supabase
+          .from('grammar_assignment_sessions')
+          .select(`
+            id,
+            student_id,
+            topic_id,
+            session_type,
+            questions_attempted,
+            questions_correct,
+            accuracy_percentage,
+            duration_seconds,
+            completion_status,
+            created_at,
+            ended_at
+          `)
+          .eq('assignment_id', assignmentId);
+
+        if (grammarSessionError) {
+          console.error('❌ Error fetching grammar sessions:', grammarSessionError);
+          throw grammarSessionError;
+        }
+
+        console.log('🔍 [SKILLS] Grammar sessions found:', grammarSessions?.length || 0);
+
+        // Group sessions by student
+        const studentSessionsMap = new Map<string, typeof grammarSessions>();
+        grammarSessions?.forEach(session => {
+          const existing = studentSessionsMap.get(session.student_id) || [];
+          existing.push(session);
+          studentSessionsMap.set(session.student_id, existing);
+        });
+
+        const studentsWithSessions = new Set(grammarSessions?.map(s => s.student_id) || []);
+
+        // A student is completed if they have at least one completed session
+        const studentsCompleted = new Set(
+          grammarSessions
+            ?.filter(s => s.completion_status === 'completed')
+            .map(s => s.student_id) || []
+        );
+
+        completedStudents = studentsCompleted.size;
+        inProgressStudents = studentsWithSessions.size - studentsCompleted.size;
+        notStartedStudents = Math.max(0, totalStudents - studentsWithSessions.size);
+
+        console.log('📊 [SKILLS] Completion stats:', { completedStudents, inProgressStudents, notStartedStudents });
+
+        // Calculate average time
+        const sessionTimes = grammarSessions?.filter(s => s.duration_seconds && s.duration_seconds > 0) || [];
+        if (sessionTimes.length > 0) {
+          averageTimeSeconds = sessionTimes.reduce((sum, s) => sum + (s.duration_seconds || 0), 0) / sessionTimes.length;
+        }
+
+        // Calculate class success score from accuracy
+        const sessionsWithAccuracy = grammarSessions?.filter(s =>
+          s.questions_attempted && s.questions_attempted > 0
+        ) || [];
+
+        if (sessionsWithAccuracy.length > 0) {
+          const totalQuestions = sessionsWithAccuracy.reduce((sum, s) => sum + (s.questions_attempted || 0), 0);
+          const totalCorrect = sessionsWithAccuracy.reduce((sum, s) => sum + (s.questions_correct || 0), 0);
+          classSuccessScore = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
+          console.log('📊 [SKILLS] Success score:', classSuccessScore, '% (', totalCorrect, '/', totalQuestions, ')');
+        }
+
+        // Calculate students needing help (accuracy < 50%)
+        const studentAccuracyMap = new Map<string, { total: number; correct: number }>();
+        grammarSessions?.forEach(session => {
+          const current = studentAccuracyMap.get(session.student_id) || { total: 0, correct: 0 };
+          current.total += session.questions_attempted || 0;
+          current.correct += session.questions_correct || 0;
+          studentAccuracyMap.set(session.student_id, current);
+        });
+
+        studentsNeedingHelp = Array.from(studentAccuracyMap.values()).filter(stats => {
+          const accuracy = stats.total > 0 ? (stats.correct / stats.total) * 100 : 0;
+          return accuracy < 50;
+        }).length;
+
+        console.log('📊 [SKILLS] Students needing help:', studentsNeedingHelp);
       } else {
         console.log('🔍 [DEBUG] Fetching sessions for assignment:', assignmentId);
         console.log('🔍 [DEBUG] Is assessment type:', assignment?.game_type === 'assessment');
@@ -1101,18 +1190,28 @@ export class TeacherAssignmentAnalyticsService {
       };
 
       current.total++;
-      if (gem.gem_rarity === 'common') current.failures++;
+      // 🔧 FIXED: All gems represent CORRECT answers
+      // The gem_rarity just indicates XP value, not correctness
+      // Mastery gems = stronger retrieval, Activity gems = weaker retrieval, but both are CORRECT
+      if (gem.gem_rarity === 'common') current.weakRetrieval++;
       if (['rare', 'epic', 'legendary'].includes(gem.gem_rarity)) current.strongRetrieval++;
-      if (['uncommon', 'common'].includes(gem.gem_rarity)) current.weakRetrieval++;
+      if (gem.gem_rarity === 'uncommon') current.weakRetrieval++;
+      // NO failures from gems - failures would need to come from 
+      // incorrect attempts which don't generate gems at all
 
       wordMap.set(key, current);
     });
 
     // Convert to array with failure rates
+    // 🔧 FIXED: Since all gems = correct, failure rate based on gem_rarity doesn't make sense
+    // Instead, we'll use the "weak retrieval" (common/uncommon gems) as a proxy for "needs review"
     const words = Array.from(wordMap.values())
       .map(word => ({
         ...word,
-        failureRate: word.total > 0 ? Math.round((word.failures / word.total) * 100) : 0
+        // Failure rate now means "weak retrieval rate" - percentage of attempts where 
+        // the student got it but showed weak retention (common/uncommon gems)
+        failureRate: word.total > 0 ? Math.round((word.weakRetrieval / word.total) * 100) : 0,
+        failures: word.weakRetrieval // Rename for compatibility
       }));
 
     // TIER 1: High Confidence Problems (≥5 attempts)
@@ -1288,6 +1387,36 @@ export class TeacherAssignmentAnalyticsService {
       const isAssessmentType = assignmentCheckData &&
         (assignmentCheckData.game_type === 'assessment' || assignmentCheckData.game_config?.assessmentConfig);
 
+      const isSkillsType = assignmentCheckData &&
+        (assignmentCheckData.game_type === 'skills' || assignmentCheckData.game_config?.skillsConfig);
+
+      // For skills assignments, also fetch grammar sessions
+      let grammarSessionsByStudent = new Map<string, any[]>();
+      if (isSkillsType) {
+        const { data: grammarSessions } = await this.supabase
+          .from('grammar_assignment_sessions')
+          .select(`
+            id,
+            student_id,
+            topic_id,
+            session_type,
+            questions_attempted,
+            questions_correct,
+            accuracy_percentage,
+            duration_seconds,
+            completion_status,
+            created_at,
+            ended_at
+          `)
+          .eq('assignment_id', assignmentId);
+
+        grammarSessions?.forEach(session => {
+          const existing = grammarSessionsByStudent.get(session.student_id) || [];
+          existing.push(session);
+          grammarSessionsByStudent.set(session.student_id, existing);
+        });
+      }
+
       // Get progress for each student
       const studentProgress: StudentProgress[] = [];
 
@@ -1348,7 +1477,41 @@ export class TeacherAssignmentAnalyticsService {
         const isAssessmentAssignment = assignmentData &&
           (assignmentData.game_type === 'assessment' || assignmentData.game_config?.assessmentConfig);
 
-        if (isAssessmentAssignment) {
+        const isSkillsAssignment = assignmentData &&
+          (assignmentData.game_type === 'skills' || assignmentData.game_config?.skillsConfig);
+
+        if (isSkillsAssignment) {
+          // For skills (grammar) assignments, use grammar_assignment_sessions
+          const studentGrammarSessions = grammarSessionsByStudent.get(studentId) || [];
+
+          if (studentGrammarSessions.length > 0) {
+            // Calculate metrics from grammar sessions
+            const totalQuestions = studentGrammarSessions.reduce((sum, s) => sum + (s.questions_attempted || 0), 0);
+            const totalCorrect = studentGrammarSessions.reduce((sum, s) => sum + (s.questions_correct || 0), 0);
+
+            successScore = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+            failureRate = 100 - successScore;
+            weakRetrievalPercent = failureRate;
+
+            // Calculate time
+            const totalGrammarSeconds = studentGrammarSessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+            if (totalGrammarSeconds > 0) {
+              timeSpentMinutes = Math.round(totalGrammarSeconds / 60);
+            }
+
+            // Get last attempt
+            const sortedSessions = [...studentGrammarSessions]
+              .filter(s => s.created_at)
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            if (sortedSessions.length > 0) {
+              lastAttempt = sortedSessions[0].ended_at || sortedSessions[0].created_at;
+            }
+
+            // Update status based on grammar sessions
+            const hasCompleted = studentGrammarSessions.some(s => s.completion_status === 'completed');
+            status = hasCompleted ? 'completed' : 'in_progress';
+          }
+        } else if (isAssessmentAssignment) {
           // For assessments, ALWAYS fetch actual results from the results tables first
           // This ensures we catch results even if sessions are missing or RLS hides them
           const { data: rcResults } = await this.supabase
@@ -1394,29 +1557,36 @@ export class TeacherAssignmentAnalyticsService {
           if (gems.length > 0) {
             gems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+            // 🔧 FIXED: All gems represent CORRECT answers
+            // Rarity indicates XP value, not correctness:
+            // - 'common', 'uncommon' = weak retrieval (student was slower or less confident)
+            // - 'rare', 'epic', 'legendary' = strong retrieval (quick and confident)
+            // Since ALL gems = correct, successScore is 100% if any gems exist
+            // Failure rate = 0% (no failures generate gems)
             const total = gems.length;
-            const strongWeak = gems.filter(g => ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)).length;
-            const weak = gems.filter(g => ['uncommon', 'common'].includes(g.gem_rarity)).length;
-            const failures = gems.filter(g => g.gem_rarity === 'common').length;
+            const strongRetrievals = gems.filter(g => ['rare', 'epic', 'legendary'].includes(g.gem_rarity)).length;
+            const weakRetrievals = gems.filter(g => ['uncommon', 'common'].includes(g.gem_rarity)).length;
 
-            successScore = Math.round((strongWeak / total) * 100);
-            weakRetrievalPercent = Math.round((weak / total) * 100);
-            failureRate = Math.round((failures / total) * 100);
+            successScore = 100; // All gems = correct answers
+            weakRetrievalPercent = Math.round((weakRetrievals / total) * 100);
+            failureRate = 0; // No failures - all gems are correct answers
             lastAttempt = gems[0].created_at;
 
-            // Get struggle words (words with high failure rate)
-            const wordFailures = new Map<string, { total: number; failures: number }>();
+            // For struggle words, we now look at weak retrieval patterns
+            // (words where the student usually got common gems instead of rare)
+            const wordRetrievalStrength = new Map<string, { total: number; weak: number }>();
             gems.forEach(gem => {
               if (!gem.word_text) return;
-              const current = wordFailures.get(gem.word_text) || { total: 0, failures: 0 };
+              const current = wordRetrievalStrength.get(gem.word_text) || { total: 0, weak: 0 };
               current.total++;
-              if (gem.gem_rarity === 'common') current.failures++;
-              wordFailures.set(gem.word_text, current);
+              if (['common', 'uncommon'].includes(gem.gem_rarity)) current.weak++;
+              wordRetrievalStrength.set(gem.word_text, current);
             });
 
-            keyStruggleWords = Array.from(wordFailures.entries())
-              .filter(([_, stats]) => stats.total >= 2 && (stats.failures / stats.total) > 0.5)
-              .sort((a, b) => (b[1].failures / b[1].total) - (a[1].failures / a[1].total))
+            // Get words with high "weak retrieval" rate (student needs more practice)
+            keyStruggleWords = Array.from(wordRetrievalStrength.entries())
+              .filter(([_, stats]) => stats.total >= 2 && (stats.weak / stats.total) > 0.5)
+              .sort((a, b) => (b[1].weak / b[1].total) - (a[1].weak / a[1].total))
               .slice(0, 3)
               .map(([word]) => word);
           }
@@ -1482,13 +1652,20 @@ export class TeacherAssignmentAnalyticsService {
       if (!gems) return [];
 
       // Group by student
-      const studentMap = new Map<string, { correct: number; incorrect: number; lastAttempt: string }>();
+      // 🔧 FIXED: All gems represent CORRECT answers
+      // The rarity just indicates retrieval strength, not correctness
+      const studentMap = new Map<string, {
+        strong: number;  // rare, epic, legendary = strong retrieval
+        weak: number;    // common, uncommon = weak retrieval (but still correct!)
+        lastAttempt: string
+      }>();
       gems.forEach(gem => {
-        const current = studentMap.get(gem.student_id) || { correct: 0, incorrect: 0, lastAttempt: gem.created_at };
-        if (['uncommon', 'rare', 'epic', 'legendary'].includes(gem.gem_rarity)) {
-          current.correct++;
+        const current = studentMap.get(gem.student_id) || { strong: 0, weak: 0, lastAttempt: gem.created_at };
+        if (['rare', 'epic', 'legendary'].includes(gem.gem_rarity)) {
+          current.strong++;
         } else {
-          current.incorrect++;
+          // common and uncommon = weaker retrieval (but still correct answers!)
+          current.weak++;
         }
         if (new Date(gem.created_at) > new Date(current.lastAttempt)) {
           current.lastAttempt = gem.created_at;
@@ -1506,23 +1683,26 @@ export class TeacherAssignmentAnalyticsService {
       const nameMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
 
       // Build result
+      // 🔧 FIXED: "failures" now means "weak retrievals" - student needs more practice
+      // but they ARE getting the answers correct
       const struggles: StudentWordStruggle[] = Array.from(studentMap.entries())
         .map(([studentId, stats]) => {
-          const exposures = stats.correct + stats.incorrect;
-          const failureRate = Math.round((stats.incorrect / exposures) * 100);
+          const exposures = stats.strong + stats.weak;
+          // "Failure rate" now means "weak retrieval rate" - how often they needed help/were slow
+          const weakRetrievalRate = Math.round((stats.weak / exposures) * 100);
 
           return {
             studentId,
             studentName: nameMap.get(studentId) || 'Unknown',
             exposures,
-            correct: stats.correct,
-            incorrect: stats.incorrect,
-            failureRate,
+            correct: exposures, // All gems = correct answers!
+            incorrect: 0, // No incorrect - gems only track correct answers
+            failureRate: weakRetrievalRate, // Repurposed: now means "weak retrieval rate"  
             lastAttempt: stats.lastAttempt,
-            recommendedIntervention: this.getRecommendedIntervention(failureRate)
+            recommendedIntervention: this.getRecommendedIntervention(weakRetrievalRate)
           };
         })
-        .sort((a, b) => b.failureRate - a.failureRate);
+        .sort((a, b) => b.failureRate - a.failureRate); // Sort by weak retrieval rate
 
       return struggles;
     } catch (error) {

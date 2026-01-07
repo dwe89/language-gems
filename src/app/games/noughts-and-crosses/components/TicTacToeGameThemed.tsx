@@ -367,7 +367,7 @@ export default function TicTacToeGame({
               vocabularyId: vocabularyId,
               wordText: currentQuestion.word,
               translationText: currentQuestion.translation,
-              responseTimeMs: responseTime * 1000,
+              responseTimeMs: Math.round(responseTime * 1000),
               wasCorrect: isCorrect,
               hintUsed: false,
               streakCount: correctAnswers,
@@ -375,7 +375,7 @@ export default function TicTacToeGame({
               maxGemRarity: 'common',
               gameMode: 'multiple_choice',
               difficultyLevel: 'beginner'
-            }, true).then(gemEvent => {
+            }, false).then(gemEvent => {
               if (gemEvent) {
                 console.log('✅ [NOUGHTS] Gem awarded successfully:', gemEvent);
               } else {
@@ -483,10 +483,10 @@ export default function TicTacToeGame({
             wordText: currentQuestion.word,
             translationText: currentQuestion.translation,
             wasCorrect: false,
-            responseTimeMs: responseTime * 1000,
+            responseTimeMs: Math.round(responseTime * 1000),
             hintUsed: false,
             streakCount: 0
-          }, true).then(gemEvent => {
+          }, false).then(gemEvent => {
             console.log('✅ [NOUGHTS] Wrong answer recorded:', gemEvent);
           }).catch(error => {
             console.error('🚨 [NOUGHTS] Wrong answer recording failed:', error);

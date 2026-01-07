@@ -101,6 +101,7 @@ export default function GrammarPractice({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const sessionServiceRef = useRef<GrammarSessionService | null>(null);
+  const sessionEndedRef = useRef<boolean>(false);
 
   // Check if we have valid practice items
   const hasValidItems = practiceItems && practiceItems.length > 0;
@@ -174,7 +175,7 @@ export default function GrammarPractice({
   // Add keyboard support for multiple choice
   useEffect(() => {
     if (!hasValidItems) return;
-    
+
     const handleKeyPress = (e: KeyboardEvent) => {
       if (showFeedback) return;
 
@@ -194,10 +195,42 @@ export default function GrammarPractice({
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentItem, showFeedback, userAnswer, hasValidItems, practiceItems]);
 
+  // Ensure the session is ended when completion screen is shown
+  useEffect(() => {
+    const endCurrentSession = async () => {
+      if (showCompletion && sessionId && sessionServiceRef.current && !sessionEndedRef.current) {
+        sessionEndedRef.current = true;
+        try {
+          const totalTimeSpent = Math.round((Date.now() - startTime) / 1000);
+          const accuracy = practiceItems.length > 0
+            ? (correctAnswers / practiceItems.length) * 100
+            : 0;
+
+          await sessionServiceRef.current.endSession(sessionId, {
+            questions_attempted: practiceItems.length,
+            questions_correct: correctAnswers,
+            accuracy_percentage: accuracy,
+            final_score: score,
+            duration_seconds: totalTimeSpent,
+            average_response_time_ms: Math.round((totalTimeSpent * 1000) / Math.max(practiceItems.length, 1)),
+            hints_used: 0, // TODO: Track hints
+            streak_count: streak
+          });
+          console.log('✅ Grammar session automatically ended on completion');
+        } catch (error) {
+          console.error('❌ Failed to auto-end grammar session:', error);
+          sessionEndedRef.current = false; // Allow retry if it failed (optional, depends on error type)
+        }
+      }
+    };
+
+    endCurrentSession();
+  }, [showCompletion, sessionId, startTime, practiceItems.length, correctAnswers, score, streak]);
+
   // Auto-focus management
   useEffect(() => {
     if (!hasValidItems) return;
-    
+
     const currentPracticeItem = practiceItems[currentItem];
     if (!showFeedback && currentPracticeItem && !currentPracticeItem.options) {
       setTimeout(() => {
@@ -229,9 +262,9 @@ export default function GrammarPractice({
   const isLastItem = currentItem === practiceItems.length - 1;
   const displayTypeLabel = currentPracticeItem
     ? (() => {
-        const normalized = currentPracticeItem.type.replace(/_/g, ' ');
-        return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-      })()
+      const normalized = currentPracticeItem.type.replace(/_/g, ' ');
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    })()
     : 'Question';
 
 
@@ -245,22 +278,20 @@ export default function GrammarPractice({
     const testFailed = isTestMode && lives <= 0;
 
     return (
-      <div className={`min-h-screen flex items-center justify-center p-4 ${
-        testFailed
-          ? 'bg-gradient-to-br from-red-600 to-orange-600'
-          : 'bg-gradient-to-br from-purple-600 to-blue-600'
-      }`}>
+      <div className={`min-h-screen flex items-center justify-center p-4 ${testFailed
+        ? 'bg-gradient-to-br from-red-600 to-orange-600'
+        : 'bg-gradient-to-br from-purple-600 to-blue-600'
+        }`}>
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
           className="max-w-2xl w-full"
         >
-          <GemCard className={`text-center p-12 shadow-2xl ${
-            testFailed
-              ? 'border-4 border-red-300 bg-white'
-              : 'border-4 border-yellow-300 bg-white'
-          }`}>
+          <GemCard className={`text-center p-12 shadow-2xl ${testFailed
+            ? 'border-4 border-red-300 bg-white'
+            : 'border-4 border-yellow-300 bg-white'
+            }`}>
             {/* Icon */}
             <motion.div
               initial={{ scale: 0 }}
@@ -364,32 +395,8 @@ export default function GrammarPractice({
                   <GemButton
                     variant="gem"
                     gemType="legendary"
-                    onClick={async () => {
+                    onClick={() => {
                       const totalTimeSpent = Math.round((Date.now() - startTime) / 1000);
-
-                      // End session if in assignment mode
-                      if (sessionId && sessionServiceRef.current) {
-                        try {
-                          const accuracy = practiceItems.length > 0
-                            ? (correctAnswers / practiceItems.length) * 100
-                            : 0;
-
-                          await sessionServiceRef.current.endSession(sessionId, {
-                            questions_attempted: practiceItems.length,
-                            questions_correct: correctAnswers,
-                            accuracy_percentage: accuracy,
-                            final_score: score,
-                            duration_seconds: totalTimeSpent,
-                            average_response_time_ms: Math.round((totalTimeSpent * 1000) / practiceItems.length),
-                            hints_used: 0, // TODO: Track hints
-                            streak_count: streak
-                          });
-                          console.log('✅ Grammar session ended successfully');
-                        } catch (error) {
-                          console.error('❌ Failed to end grammar session:', error);
-                        }
-                      }
-
                       onComplete(score, gemsEarned, totalTimeSpent);
                     }}
                     className="px-8 py-3 text-lg"
@@ -422,7 +429,7 @@ export default function GrammarPractice({
             </div>
           </GemCard>
         </motion.div>
-      </div>
+      </div >
     );
   }
 
@@ -559,19 +566,19 @@ export default function GrammarPractice({
 
   const calculateGemsAwarded = (correct: boolean, currentStreak: number, speedBonus: number) => {
     if (!correct) return 0;
-    
+
     let gems = 1; // Base gem
-    
+
     // Streak bonus
     if (currentStreak >= 5) gems += 2;
     else if (currentStreak >= 3) gems += 1;
-    
+
     // Speed bonus
     if (speedBonus > 0) gems += 1;
-    
+
     // Difficulty bonus
     if (currentPracticeItem.difficulty === 'advanced') gems += 1;
-    
+
     return gems;
   };
 
@@ -620,7 +627,7 @@ export default function GrammarPractice({
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
               placeholder="Type the conjugated form..."
-              className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full p-4 text-lg text-gray-900 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               onKeyPress={(e) => e.key === 'Enter' && checkAnswer()}
             />
           </div>
@@ -639,7 +646,7 @@ export default function GrammarPractice({
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
               placeholder="Fill in the blank..."
-              className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full p-4 text-lg text-gray-900 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               onKeyPress={(e) => e.key === 'Enter' && checkAnswer()}
             />
           </div>
@@ -697,7 +704,7 @@ export default function GrammarPractice({
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
               placeholder="Type your translation..."
-              className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full p-4 text-lg text-gray-900 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               onKeyPress={(e) => e.key === 'Enter' && checkAnswer()}
             />
           </div>
@@ -720,11 +727,10 @@ export default function GrammarPractice({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setUserAnswer(option)}
-                    className={`p-4 text-lg border-2 rounded-lg transition-all ${
-                      userAnswer === option
-                        ? 'border-purple-500 bg-purple-50 text-purple-900'
-                        : 'border-gray-300 bg-white hover:border-purple-300'
-                    }`}
+                    className={`p-4 text-lg border-2 rounded-lg transition-all ${userAnswer === option
+                      ? 'border-purple-500 bg-purple-50 text-purple-900'
+                      : 'border-gray-300 bg-white hover:border-purple-300'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <span className="font-semibold text-gray-500">{index + 1}</span>
@@ -748,7 +754,7 @@ export default function GrammarPractice({
       <div className={`border-b shadow-lg ${isTestMode
         ? 'bg-gradient-to-r from-red-600 to-purple-700 border-red-400'
         : 'bg-gradient-to-r from-purple-600 to-blue-600 border-purple-300'
-      }`}>
+        }`}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Left: Logo + Back + Title */}
@@ -842,7 +848,7 @@ export default function GrammarPractice({
             <GemCard className={`mb-6 shadow-2xl ${isTestMode
               ? 'border-4 border-red-200/50 bg-white'
               : 'border-4 border-purple-200/50'
-            }`}>
+              }`}>
               <div className="p-8">
                 {/* Card Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -850,11 +856,10 @@ export default function GrammarPractice({
                     {isTestMode ? `Test Question ${currentItem + 1}` : `Practice Item ${currentItem + 1}`}
                   </h2>
                   <div className="flex items-center space-x-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      currentPracticeItem.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${currentPracticeItem.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
                       currentPracticeItem.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
+                        'bg-red-100 text-red-800'
+                      }`}>
                       {currentPracticeItem.difficulty}
                     </span>
                     <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium capitalize">
@@ -876,7 +881,7 @@ export default function GrammarPractice({
                   <div className={`p-8 rounded-2xl border-2 mb-8 ${isTestMode
                     ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200'
                     : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200'
-                  }`}>
+                    }`}>
                     <p className="text-3xl font-bold text-gray-800 text-center leading-relaxed">
                       <QuestionContent
                         value={currentPracticeItem.question}
@@ -918,7 +923,7 @@ export default function GrammarPractice({
                         value={userAnswer}
                         onChange={(e) => setUserAnswer(e.target.value)}
                         placeholder="Type your answer here..."
-                        className="w-full p-6 text-2xl border-3 border-blue-300 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-400 transition-all duration-200 text-center font-medium shadow-lg"
+                        className="w-full p-6 text-2xl text-gray-900 border-3 border-blue-300 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-400 transition-all duration-200 text-center font-medium shadow-lg"
                         onKeyDown={(e) => e.key === 'Enter' && !showFeedback && userAnswer.trim() && checkAnswer()}
                         disabled={showFeedback}
                         autoFocus
@@ -927,48 +932,46 @@ export default function GrammarPractice({
                   )}
                 </div>
 
-            {/* Feedback */}
-            <AnimatePresence>
-              {showFeedback && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className={`mt-6 p-4 rounded-lg border ${
-                    isCorrect
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-red-50 border-red-200'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2 mb-2">
-                    {isCorrect ? (
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-600" />
-                    )}
-                    <span className={`font-semibold ${
-                      isCorrect ? 'text-green-800' : 'text-red-800'
-                    }`}>
-                      {isCorrect ? 'Correct!' : 'Incorrect'}
-                    </span>
-                  </div>
-                  
-                  {!isCorrect && (
-                    <p className="text-red-700 mb-2">
-                      Correct answer: {currentPracticeItem.answer}
-                    </p>
+                {/* Feedback */}
+                <AnimatePresence>
+                  {showFeedback && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className={`mt-6 p-4 rounded-lg border ${isCorrect
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-red-50 border-red-200'
+                        }`}
+                    >
+                      <div className="flex items-center space-x-2 mb-2">
+                        {isCorrect ? (
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-600" />
+                        )}
+                        <span className={`font-semibold ${isCorrect ? 'text-green-800' : 'text-red-800'
+                          }`}>
+                          {isCorrect ? 'Correct!' : 'Incorrect'}
+                        </span>
+                      </div>
+
+                      {!isCorrect && (
+                        <p className="text-red-700 mb-2">
+                          Correct answer: {currentPracticeItem.answer}
+                        </p>
+                      )}
+
+                      {isCorrect && gamified && (
+                        <div className="flex items-center space-x-4 text-sm">
+                          <span className="text-green-700">+{getDifficultyPoints(currentPracticeItem.difficulty)} points</span>
+                          {streak > 1 && <span className="text-orange-700">+{Math.min(streak * 5, 50)} streak bonus</span>}
+                          {timeBonus > 0 && <span className="text-blue-700">+{timeBonus} speed bonus</span>}
+                        </div>
+                      )}
+                    </motion.div>
                   )}
-                  
-                  {isCorrect && gamified && (
-                    <div className="flex items-center space-x-4 text-sm">
-                      <span className="text-green-700">+{getDifficultyPoints(currentPracticeItem.difficulty)} points</span>
-                      {streak > 1 && <span className="text-orange-700">+{Math.min(streak * 5, 50)} streak bonus</span>}
-                      {timeBonus > 0 && <span className="text-blue-700">+{timeBonus} speed bonus</span>}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </AnimatePresence>
 
                 {/* Enhanced Navigation */}
                 <div className="flex justify-center mt-8">

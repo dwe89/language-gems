@@ -36,7 +36,7 @@ export interface UrgentIntervention {
   riskLevel: RiskLevel;
   riskScore: number;
   averageScore: number;
-  lastActive: Date;
+  lastActive: Date | null;
   riskFactors: string[];
 }
 

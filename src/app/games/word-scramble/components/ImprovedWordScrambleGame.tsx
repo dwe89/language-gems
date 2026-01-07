@@ -547,7 +547,7 @@ export default function WordScrambleGame({
             maxGemRarity: isCorrect ? (streak > 5 ? 'rare' : 'uncommon') : 'common',
             gameMode: 'word_scramble',
             difficultyLevel: difficulty
-          }, true); // Skip FSRS for speed
+          }, false); // Enable FSRS for tracking
 
           if (gemEvent) {
             console.log(`✅ [WORD SCRAMBLE] ${isCorrect ? 'Gem awarded' : 'Incorrect answer recorded'}: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
@@ -702,7 +702,7 @@ export default function WordScrambleGame({
           maxGemRarity: 'common',
           gameMode: 'word_scramble',
           difficultyLevel: difficulty
-        }, true); // Skip FSRS for speed
+        }, false); // Enable FSRS for tracking
 
         if (gemEvent) {
           console.log('✅ [WORD SCRAMBLE] Skip recorded as incorrect answer');

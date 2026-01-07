@@ -5,10 +5,12 @@ export interface TeacherGrammarAnalytics {
     totalStudents: number;
     totalAttempts: number;
     averageAccuracy: number;
-    totalTensesTracked: number;
+    totalTopicsTracked: number;
+    totalTensesTracked?: number; // Backwards compatibility
     activeStudentsLast7Days: number;
   };
-  tensePerformance: TensePerformance[];
+  topicPerformance: TopicPerformance[];
+  tensePerformance?: TensePerformance[]; // Backwards compatibility
   studentProgress: StudentGrammarProgress[];
   insights: {
     studentsNeedingAttention: Array<{
@@ -16,14 +18,28 @@ export interface TeacherGrammarAnalytics {
       studentName: string;
       accuracy: number;
       attemptsCount: number;
-      weakestTense: string;
+      weakestTopic: string;
+      weakestTense?: string; // Backwards compatibility
     }>;
-    strongestTenses: string[];
-    weakestTenses: string[];
+    strongestTopics: string[];
+    strongestTenses?: string[]; // Backwards compatibility
+    weakestTopics: string[];
+    weakestTenses?: string[]; // Backwards compatibility
     recentTrend: 'improving' | 'declining' | 'stable';
   };
 }
 
+export interface TopicPerformance {
+  topicId: string;
+  topicTitle: string;
+  totalAttempts: number;
+  correctAttempts: number;
+  accuracyPercentage: number;
+  studentsAttempted: number;
+  averageResponseTime: number;
+}
+
+// Keep tense for backwards compatibility
 export interface TensePerformance {
   tense: string;
   totalAttempts: number;
@@ -39,8 +55,10 @@ export interface StudentGrammarProgress {
   totalAttempts: number;
   correctAttempts: number;
   accuracyPercentage: number;
-  tensesMastered: number;
-  tensesInProgress: number;
+  topicsMastered: number;
+  topicsInProgress: number;
+  tensesMastered: number; // Keep for backwards compatibility
+  tensesInProgress: number; // Keep for backwards compatibility
   lastActive: Date | null;
   tenseBreakdown: Array<{
     tense: string;
@@ -48,10 +66,17 @@ export interface StudentGrammarProgress {
     correct: number;
     accuracy: number;
   }>;
+  topicBreakdown: Array<{
+    topicId: string;
+    topicTitle: string;
+    attempts: number;
+    correct: number;
+    accuracy: number;
+  }>;
 }
 
 export class TeacherGrammarAnalyticsService {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private supabase: SupabaseClient) { }
 
   async getTeacherGrammarAnalytics(
     teacherId: string,
@@ -103,51 +128,85 @@ export class TeacherGrammarAnalyticsService {
         (profiles || []).map(p => [p.user_id, p.display_name])
       );
 
-      // Get grammar practice attempts
-      let attemptsQuery = this.supabase
-        .from('grammar_practice_attempts')
-        .select('*')
+      // Get grammar_assignment_sessions (the PRIMARY source of grammar data)
+      let sessionsQuery = this.supabase
+        .from('grammar_assignment_sessions')
+        .select(`
+          id,
+          student_id,
+          assignment_id,
+          topic_id,
+          session_type,
+          questions_attempted,
+          questions_correct,
+          accuracy_percentage,
+          duration_seconds,
+          completion_status,
+          session_data,
+          created_at,
+          ended_at
+        `)
         .in('student_id', studentIds);
 
       if (dateRange) {
-        attemptsQuery = attemptsQuery
+        sessionsQuery = sessionsQuery
           .gte('created_at', dateRange.from)
           .lte('created_at', dateRange.to);
       }
 
-      const { data: attempts, error: attemptsError } = await attemptsQuery;
-      if (attemptsError) throw attemptsError;
+      const { data: sessions, error: sessionsError } = await sessionsQuery;
+      if (sessionsError) {
+        console.error('Error fetching grammar sessions:', sessionsError);
+        throw sessionsError;
+      }
 
-      const allAttempts = attempts || [];
+      const allSessions = sessions || [];
 
-      // Calculate class stats
-      const totalAttempts = allAttempts.length;
-      const correctAttempts = allAttempts.filter(a => a.is_correct).length;
-      const averageAccuracy = totalAttempts > 0 ? (correctAttempts / totalAttempts) * 100 : 0;
+      // Get topic titles for mapping
+      const topicIds = [...new Set(allSessions.map(s => s.topic_id).filter(Boolean))];
+      let topicMap = new Map<string, string>();
 
-      const uniqueTenses = new Set(allAttempts.map(a => a.tense));
-      const totalTensesTracked = uniqueTenses.size;
+      if (topicIds.length > 0) {
+        const { data: topics } = await this.supabase
+          .from('grammar_topics')
+          .select('id, title')
+          .in('id', topicIds);
+
+        if (topics) {
+          topicMap = new Map(topics.map(t => [t.id, t.title]));
+        }
+      }
+
+      // Calculate class stats from sessions
+      const totalQuestions = allSessions.reduce((sum, s) => sum + (s.questions_attempted || 0), 0);
+      const correctQuestions = allSessions.reduce((sum, s) => sum + (s.questions_correct || 0), 0);
+      const averageAccuracy = totalQuestions > 0 ? (correctQuestions / totalQuestions) * 100 : 0;
+
+      const uniqueTopics = new Set(allSessions.map(s => s.topic_id).filter(Boolean));
+      const totalTopicsTracked = uniqueTopics.size;
 
       // Active students in last 7 days
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const activeStudents = new Set(
-        allAttempts
-          .filter(a => new Date(a.created_at) >= sevenDaysAgo)
-          .map(a => a.student_id)
+        allSessions
+          .filter(s => new Date(s.created_at) >= sevenDaysAgo)
+          .map(s => s.student_id)
       );
 
-      // Calculate tense performance
-      const tenseMap = new Map<string, {
+      // Calculate topic performance
+      const topicStatsMap = new Map<string, {
         total: number;
         correct: number;
         students: Set<string>;
         responseTimes: number[];
       }>();
 
-      allAttempts.forEach(attempt => {
-        if (!tenseMap.has(attempt.tense)) {
-          tenseMap.set(attempt.tense, {
+      allSessions.forEach(session => {
+        if (!session.topic_id) return;
+
+        if (!topicStatsMap.has(session.topic_id)) {
+          topicStatsMap.set(session.topic_id, {
             total: 0,
             correct: 0,
             students: new Set(),
@@ -155,21 +214,24 @@ export class TeacherGrammarAnalyticsService {
           });
         }
 
-        const tenseData = tenseMap.get(attempt.tense)!;
-        tenseData.total++;
-        if (attempt.is_correct) tenseData.correct++;
-        tenseData.students.add(attempt.student_id);
-        if (attempt.response_time_ms) {
-          tenseData.responseTimes.push(attempt.response_time_ms);
+        const topicData = topicStatsMap.get(session.topic_id)!;
+        topicData.total += session.questions_attempted || 0;
+        topicData.correct += session.questions_correct || 0;
+        topicData.students.add(session.student_id);
+
+        if (session.duration_seconds && session.questions_attempted) {
+          const avgResponseTime = (session.duration_seconds * 1000) / session.questions_attempted;
+          topicData.responseTimes.push(avgResponseTime);
         }
       });
 
-      const tensePerformance: TensePerformance[] = Array.from(tenseMap.entries())
-        .map(([tense, data]) => ({
-          tense,
+      const topicPerformance: TopicPerformance[] = Array.from(topicStatsMap.entries())
+        .map(([topicId, data]) => ({
+          topicId,
+          topicTitle: topicMap.get(topicId) || 'Unknown Topic',
           totalAttempts: data.total,
           correctAttempts: data.correct,
-          accuracyPercentage: (data.correct / data.total) * 100,
+          accuracyPercentage: data.total > 0 ? (data.correct / data.total) * 100 : 0,
           studentsAttempted: data.students.size,
           averageResponseTime: data.responseTimes.length > 0
             ? data.responseTimes.reduce((a, b) => a + b, 0) / data.responseTimes.length
@@ -177,49 +239,74 @@ export class TeacherGrammarAnalyticsService {
         }))
         .sort((a, b) => b.accuracyPercentage - a.accuracyPercentage);
 
+      // Convert to tensePerformance for backwards compatibility
+      const tensePerformance: TensePerformance[] = topicPerformance.map(tp => ({
+        tense: tp.topicTitle,
+        totalAttempts: tp.totalAttempts,
+        correctAttempts: tp.correctAttempts,
+        accuracyPercentage: tp.accuracyPercentage,
+        studentsAttempted: tp.studentsAttempted,
+        averageResponseTime: tp.averageResponseTime
+      }));
+
       // Calculate student progress
       const studentProgress: StudentGrammarProgress[] = studentIds.map(studentId => {
-        const studentAttempts = allAttempts.filter(a => a.student_id === studentId);
-        const studentCorrect = studentAttempts.filter(a => a.is_correct).length;
-        const studentAccuracy = studentAttempts.length > 0
-          ? (studentCorrect / studentAttempts.length) * 100
+        const studentSessions = allSessions.filter(s => s.student_id === studentId);
+        const totalAttempts = studentSessions.reduce((sum, s) => sum + (s.questions_attempted || 0), 0);
+        const correctAttempts = studentSessions.reduce((sum, s) => sum + (s.questions_correct || 0), 0);
+        const studentAccuracy = totalAttempts > 0
+          ? (correctAttempts / totalAttempts) * 100
           : 0;
 
-        // Tense breakdown for this student
-        const studentTenseMap = new Map<string, { attempts: number; correct: number }>();
-        studentAttempts.forEach(attempt => {
-          if (!studentTenseMap.has(attempt.tense)) {
-            studentTenseMap.set(attempt.tense, { attempts: 0, correct: 0 });
+        // Topic breakdown for this student
+        const studentTopicMap = new Map<string, { attempts: number; correct: number }>();
+        studentSessions.forEach(session => {
+          if (!session.topic_id) return;
+
+          if (!studentTopicMap.has(session.topic_id)) {
+            studentTopicMap.set(session.topic_id, { attempts: 0, correct: 0 });
           }
-          const tenseData = studentTenseMap.get(attempt.tense)!;
-          tenseData.attempts++;
-          if (attempt.is_correct) tenseData.correct++;
+          const topicData = studentTopicMap.get(session.topic_id)!;
+          topicData.attempts += session.questions_attempted || 0;
+          topicData.correct += session.questions_correct || 0;
         });
 
-        const tenseBreakdown = Array.from(studentTenseMap.entries()).map(([tense, data]) => ({
-          tense,
+        const topicBreakdown = Array.from(studentTopicMap.entries()).map(([topicId, data]) => ({
+          topicId,
+          topicTitle: topicMap.get(topicId) || 'Unknown Topic',
           attempts: data.attempts,
           correct: data.correct,
-          accuracy: (data.correct / data.attempts) * 100
+          accuracy: data.attempts > 0 ? (data.correct / data.attempts) * 100 : 0
         }));
 
-        const tensesMastered = tenseBreakdown.filter(t => t.accuracy >= 80).length;
-        const tensesInProgress = tenseBreakdown.filter(t => t.accuracy < 80 && t.accuracy >= 50).length;
+        // Convert to tenseBreakdown for backwards compatibility
+        const tenseBreakdown = topicBreakdown.map(tb => ({
+          tense: tb.topicTitle,
+          attempts: tb.attempts,
+          correct: tb.correct,
+          accuracy: tb.accuracy
+        }));
 
-        const lastAttempt = studentAttempts.length > 0
-          ? new Date(Math.max(...studentAttempts.map(a => new Date(a.created_at).getTime())))
+        const topicsMastered = topicBreakdown.filter(t => t.accuracy >= 80).length;
+        const topicsInProgress = topicBreakdown.filter(t => t.accuracy < 80 && t.accuracy >= 50).length;
+
+        const lastSession = studentSessions.length > 0
+          ? new Date(Math.max(...studentSessions.map(s => new Date(s.created_at).getTime())))
           : null;
 
         return {
           studentId,
           studentName: studentMap.get(studentId) || 'Unknown Student',
-          totalAttempts: studentAttempts.length,
-          correctAttempts: studentCorrect,
+          totalAttempts,
+          correctAttempts,
           accuracyPercentage: studentAccuracy,
-          tensesMastered,
-          tensesInProgress,
-          lastActive: lastAttempt,
-          tenseBreakdown
+          topicsMastered,
+          topicsInProgress,
+          tensesMastered: topicsMastered, // For backwards compatibility
+          tensesInProgress: topicsInProgress, // For backwards compatibility
+          lastActive: lastSession,
+          tenseBreakdown,
+          topicBreakdown
         };
       }).sort((a, b) => b.accuracyPercentage - a.accuracyPercentage);
 
@@ -228,8 +315,8 @@ export class TeacherGrammarAnalyticsService {
         .filter(s => s.accuracyPercentage < 60 || s.totalAttempts < 10)
         .slice(0, 10)
         .map(s => {
-          const weakestTense = s.tenseBreakdown.length > 0
-            ? s.tenseBreakdown.sort((a, b) => a.accuracy - b.accuracy)[0].tense
+          const weakestTopic = s.topicBreakdown.length > 0
+            ? s.topicBreakdown.sort((a, b) => a.accuracy - b.accuracy)[0].topicTitle
             : 'N/A';
 
           return {
@@ -237,19 +324,20 @@ export class TeacherGrammarAnalyticsService {
             studentName: s.studentName,
             accuracy: s.accuracyPercentage,
             attemptsCount: s.totalAttempts,
-            weakestTense
+            weakestTopic,
+            weakestTense: weakestTopic // For backwards compatibility
           };
         });
 
-      const strongestTenses = tensePerformance
+      const strongestTopics = topicPerformance
         .filter(t => t.accuracyPercentage >= 75)
         .slice(0, 3)
-        .map(t => t.tense);
+        .map(t => t.topicTitle);
 
-      const weakestTenses = tensePerformance
+      const weakestTopics = topicPerformance
         .filter(t => t.accuracyPercentage < 60)
         .slice(0, 3)
-        .map(t => t.tense);
+        .map(t => t.topicTitle);
 
       // Calculate trend (simplified)
       const recentTrend: 'improving' | 'declining' | 'stable' = 'stable';
@@ -257,17 +345,21 @@ export class TeacherGrammarAnalyticsService {
       return {
         classStats: {
           totalStudents: studentIds.length,
-          totalAttempts,
+          totalAttempts: totalQuestions,
           averageAccuracy,
-          totalTensesTracked,
+          totalTensesTracked: totalTopicsTracked, // For backwards compatibility
+          totalTopicsTracked,
           activeStudentsLast7Days: activeStudents.size
         },
-        tensePerformance,
+        tensePerformance, // For backwards compatibility
+        topicPerformance,
         studentProgress,
         insights: {
           studentsNeedingAttention,
-          strongestTenses,
-          weakestTenses,
+          strongestTenses: strongestTopics, // For backwards compatibility
+          strongestTopics,
+          weakestTenses: weakestTopics, // For backwards compatibility
+          weakestTopics,
           recentTrend
         }
       };
@@ -284,17 +376,20 @@ export class TeacherGrammarAnalyticsService {
         totalAttempts: 0,
         averageAccuracy: 0,
         totalTensesTracked: 0,
+        totalTopicsTracked: 0,
         activeStudentsLast7Days: 0
       },
       tensePerformance: [],
+      topicPerformance: [],
       studentProgress: [],
       insights: {
         studentsNeedingAttention: [],
         strongestTenses: [],
+        strongestTopics: [],
         weakestTenses: [],
+        weakestTopics: [],
         recentTrend: 'stable'
       }
     };
   }
 }
-

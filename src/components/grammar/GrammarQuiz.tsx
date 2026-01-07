@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Award, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Award,
+  Clock,
+  CheckCircle,
+  XCircle,
   Star,
   Target,
   Brain,
@@ -53,12 +53,12 @@ interface GrammarQuizProps {
   timeLimit?: number; // in seconds
 }
 
-export default function GrammarQuiz({ 
-  quizData, 
-  onComplete, 
-  onExit, 
+export default function GrammarQuiz({
+  quizData,
+  onComplete,
+  onExit,
   showHints = true,
-  timeLimit 
+  timeLimit
 }: GrammarQuizProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
@@ -188,11 +188,10 @@ export default function GrammarQuiz({
                 key={index}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  currentAnswer === option
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${currentAnswer === option
                     ? 'border-purple-500 bg-purple-50'
                     : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <input
                   type="radio"
@@ -221,7 +220,7 @@ export default function GrammarQuiz({
               placeholder="Type your answer here..."
               value={currentAnswer}
               onChange={(e) => setCurrentAnswer(e.target.value)}
-              className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full p-4 text-lg text-gray-900 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               onKeyPress={(e) => e.key === 'Enter' && handleAnswerSubmit()}
             />
           </div>
@@ -236,11 +235,10 @@ export default function GrammarQuiz({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setCurrentAnswer(option)}
-                className={`p-6 rounded-lg border-2 font-semibold text-lg transition-all ${
-                  currentAnswer === option
+                className={`p-6 rounded-lg border-2 font-semibold text-lg transition-all ${currentAnswer === option
                     ? 'border-purple-500 bg-purple-500 text-white'
                     : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                }`}
+                  }`}
               >
                 {option}
               </motion.button>
@@ -255,7 +253,7 @@ export default function GrammarQuiz({
             placeholder="Type your answer..."
             value={currentAnswer}
             onChange={(e) => setCurrentAnswer(e.target.value)}
-            className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="w-full p-4 text-lg text-gray-900 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
             onKeyPress={(e) => e.key === 'Enter' && handleAnswerSubmit()}
           />
         );
@@ -265,7 +263,7 @@ export default function GrammarQuiz({
   if (isCompleted) {
     const finalScore = calculateScore();
     const gemType = getGemType(finalScore);
-    
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
         <motion.div
@@ -352,7 +350,7 @@ export default function GrammarQuiz({
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {timeLimit && (
                 <div className="flex items-center space-x-2 text-white">
@@ -367,11 +365,11 @@ export default function GrammarQuiz({
               </div>
             </div>
           </div>
-          
+
           {/* Progress Bar */}
           <div className="mt-4">
             <div className="w-full bg-white/20 rounded-full h-2">
-              <div 
+              <div
                 className="bg-gradient-to-r from-purple-400 to-pink-400 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
@@ -389,22 +387,21 @@ export default function GrammarQuiz({
                 <h2 className="text-2xl font-bold text-gray-900">
                   Question {currentQuestion + 1}
                 </h2>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  currentQuestionData.difficulty_level === 'beginner' ? 'bg-green-100 text-green-800' :
-                  currentQuestionData.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${currentQuestionData.difficulty_level === 'beginner' ? 'bg-green-100 text-green-800' :
+                    currentQuestionData.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                  }`}>
                   {currentQuestionData.difficulty_level}
                 </span>
               </div>
-              
+
               <p className="text-lg text-gray-700 mb-6 leading-relaxed">
                 {currentQuestionData.question_text}
               </p>
             </div>
-            
+
             {renderQuestion()}
-            
+
             {/* Hint */}
             {showHints && currentQuestionData.hint_text && (
               <div className="mt-6">
@@ -415,7 +412,7 @@ export default function GrammarQuiz({
                 >
                   💡 {showHint ? 'Hide Hint' : 'Show Hint'}
                 </GemButton>
-                
+
                 <AnimatePresence>
                   {showHint && (
                     <motion.div
@@ -438,11 +435,10 @@ export default function GrammarQuiz({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className={`mt-6 p-4 rounded-lg border ${
-                    answers[answers.length - 1]?.isCorrect
+                  className={`mt-6 p-4 rounded-lg border ${answers[answers.length - 1]?.isCorrect
                       ? 'bg-green-50 border-green-200'
                       : 'bg-red-50 border-red-200'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center space-x-2 mb-2">
                     {answers[answers.length - 1]?.isCorrect ? (
@@ -450,19 +446,18 @@ export default function GrammarQuiz({
                     ) : (
                       <XCircle className="w-5 h-5 text-red-600" />
                     )}
-                    <span className={`font-semibold ${
-                      answers[answers.length - 1]?.isCorrect ? 'text-green-800' : 'text-red-800'
-                    }`}>
+                    <span className={`font-semibold ${answers[answers.length - 1]?.isCorrect ? 'text-green-800' : 'text-red-800'
+                      }`}>
                       {answers[answers.length - 1]?.isCorrect ? 'Correct!' : 'Incorrect'}
                     </span>
                   </div>
-                  
+
                   {!answers[answers.length - 1]?.isCorrect && (
                     <p className="text-red-700 mb-2">
                       Correct answer: {currentQuestionData.correct_answer}
                     </p>
                   )}
-                  
+
                   <p className="text-gray-700">{currentQuestionData.explanation}</p>
                 </motion.div>
               )}
@@ -474,7 +469,7 @@ export default function GrammarQuiz({
             <div className="text-sm text-purple-200">
               {answers.filter(a => a.isCorrect).length} correct out of {answers.length} answered
             </div>
-            
+
             {showFeedback ? (
               <GemButton
                 variant="gem"
