@@ -206,7 +206,7 @@ export default function ComingSoonOverlay({
             Explore our complete collection of interactive language learning games - available now!
           </p>
           <a
-            href="/games"
+            href="/activities"
             className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold transition-colors"
           >
             Try Our Games

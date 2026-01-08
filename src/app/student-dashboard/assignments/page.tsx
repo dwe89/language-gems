@@ -743,7 +743,7 @@ function AssignmentsPageContent() {
               </div>
             </div>
             <Link
-              href="/student-dashboard/games"
+              href="/student-dashboard/activities"
               className="inline-flex bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl transition-all items-center gap-2 font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
             >
               <Gamepad2 className="h-4 w-4" />
@@ -806,7 +806,7 @@ function AssignmentsPageContent() {
                   <h3 className="text-xl font-bold text-gray-900 mb-2">No current assignments</h3>
                   <p className="text-gray-600 mb-4">All your assignments are up to date!</p>
                   <Link
-                    href="/student-dashboard/games"
+                    href="/student-dashboard/activities"
                     className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
                   >
                     <Gamepad2 className="h-4 w-4" />
@@ -846,7 +846,7 @@ function AssignmentsPageContent() {
                   <h3 className="text-xl font-bold text-gray-900 mb-2">No past assignments</h3>
                   <p className="text-gray-600 mb-4">You're all caught up with your assignments!</p>
                   <Link
-                    href="/student-dashboard/games"
+                    href="/student-dashboard/activities"
                     className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
                   >
                     <Gamepad2 className="h-4 w-4" />

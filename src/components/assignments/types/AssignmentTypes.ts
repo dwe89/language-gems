@@ -28,9 +28,11 @@ export interface VocabularyConfig {
 }
 
 export interface SentenceConfig {
-  source: 'category' | 'subcategory' | 'custom' | 'create' | '';
+  source: 'category' | 'subcategory' | 'custom' | 'create' | 'theme' | 'topic' | '';
   category?: string;
   subcategory?: string;
+  theme?: string; // KS4 Theme
+  topic?: string; // KS4 Topic
   customSetId?: string;
   customSet?: any;
   sentenceCount?: number;

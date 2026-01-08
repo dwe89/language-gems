@@ -398,13 +398,35 @@ export class EnhancedGameService {
 
   async logWordPerformance(performanceData: WordPerformanceLog): Promise<void> {
     try {
-      // Enrich performance data with language and curriculum_level
-      const enrichedData = {
-        ...performanceData,
+      // Extract vocabulary_id to handle UUID vs integer correctly
+      // The database has vocabulary_id (INTEGER) and centralized_vocabulary_id (UUID)
+      const { vocabulary_id, ...restData } = performanceData;
+
+      // Determine if the vocabulary_id is a UUID or legacy integer
+      const isUUID = vocabulary_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(vocabulary_id);
+
+      // Build the enriched data with correct column mapping
+      const enrichedData: Record<string, any> = {
+        ...restData,
         language: performanceData.language || this.deriveLanguageFromContext(performanceData),
         curriculum_level: performanceData.curriculum_level || await this.deriveCurriculumLevel(performanceData),
         timestamp: new Date()
       };
+
+      // Map vocabulary ID to the correct column based on type
+      if (isUUID) {
+        // Use the UUID column for UUID-format IDs
+        enrichedData.centralized_vocabulary_id = vocabulary_id;
+        // Also set vocabulary_uuid for compatibility
+        enrichedData.vocabulary_uuid = vocabulary_id;
+        // Leave vocabulary_id (integer) as null
+      } else if (vocabulary_id) {
+        // Legacy integer ID - parse and use integer column
+        const numericId = parseInt(vocabulary_id, 10);
+        if (!isNaN(numericId)) {
+          enrichedData.vocabulary_id = numericId;
+        }
+      }
 
       const { error } = await this.supabase
         .from('word_performance_logs')

@@ -26,6 +26,8 @@ interface Props {
     theme?: string;
     assignment?: string;
     standalone?: string;
+    mode?: string;  // assignment mode (e.g., 'assignment')
+    vocabMode?: string;  // specific VocabMaster mode to auto-start
     // KS4-specific parameters
     examBoard?: string;
     tier?: string;
@@ -146,14 +148,14 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     console.log('🔧 VocabMaster service initialization:', {
       hasSupabase: !!supabase,
       hasUser: !!user,
-  hasUnifiedUser: !!user,
-  userId: user?.id,
+      hasUnifiedUser: !!user,
+      userId: user?.id,
       isDemo
     });
 
     // Always allow demo mode or when supabase is available
     if (supabase || isDemo) {
-  const userId = user?.id;
+      const userId = user?.id;
 
       // Handle demo mode - don't initialize services that require real user IDs
       if (isDemo || !userId || userId === 'demo-user-id') {
@@ -222,7 +224,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     setVocabulary(vocabularySubset);
     console.log('✅ VocabMaster vocabulary set:', vocabularySubset.length, 'items');
 
-  const userId = user?.id;
+    const userId = user?.id;
 
     // Handle demo mode
     if (isDemo || !gameService || userId === 'demo-user-id') {
@@ -528,6 +530,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     return (
       <VocabMasterAssignmentWrapper
         assignmentId={searchParams.assignment!}
+        autoStartMode={searchParams.vocabMode}
         onAssignmentComplete={() => window.location.href = '/student-dashboard/assignments'}
         onBackToAssignments={() => window.location.href = '/student-dashboard/assignments'}
         onBackToMenu={() => window.location.href = '/games/vocab-master'}

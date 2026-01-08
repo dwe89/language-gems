@@ -428,7 +428,7 @@ function generateAIRecommendations(weakWords: WeakWord[], strongWords: StrongWor
         type: 'game',
         title: `Improve ${topCategory} Vocabulary`,
         description: `You have ${categoryGroups[topCategory].length} weak words in ${topCategory}. Try targeted games!`,
-        action: `/student-dashboard/games?category=${topCategory}`,
+        action: `/student-dashboard/activities?category=${topCategory}`,
         priority: 'medium',
         estimatedTime: '15-20 minutes',
         targetWords: categoryGroups[topCategory].map(w => w.word)

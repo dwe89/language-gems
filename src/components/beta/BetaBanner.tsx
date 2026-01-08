@@ -108,7 +108,7 @@ export default function BetaBanner({
               </a>
 
               <a
-                href="/games"
+                href="/activities"
                 className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/30 transition-colors border border-white/30"
               >
                 Try Games Now
@@ -146,7 +146,7 @@ export default function BetaBanner({
 
             <div className="flex flex-wrap gap-3">
               <a
-                href="/games"
+                href="/activities"
                 className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors"
               >
                 Explore Games

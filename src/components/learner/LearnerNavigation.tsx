@@ -47,7 +47,7 @@ export default function LearnerNavigation() {
     },
     {
       name: 'Games',
-      href: '/games',
+      href: '/activities',
       icon: Gamepad2,
       description: 'Interactive learning games'
     },

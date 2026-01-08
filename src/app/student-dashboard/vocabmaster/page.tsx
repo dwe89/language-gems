@@ -8,7 +8,7 @@ export default function VocabMasterRedirectPage() {
 
   useEffect(() => {
     // Redirect to VocabMaster game with default settings
-    router.replace('/student-dashboard/games/vocab-master?lang=es&level=KS3&cat=basics_core_language&subcat=greetings_introductions&theme=default');
+    router.replace('/student-dashboard/activities/vocab-master?lang=es&level=KS3&cat=basics_core_language&subcat=greetings_introductions&theme=default');
   }, [router]);
 
   return (

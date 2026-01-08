@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import GemCollectorGame from '../../app/games/gem-collector/page';
+import GemCollectorGame from '../../app/activities/gem-collector/page';
 import { useAuth } from '../../components/auth/AuthProvider';
 
 // Mock Next.js hooks

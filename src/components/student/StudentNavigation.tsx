@@ -48,7 +48,7 @@ export default function StudentNavigation() {
     },
     {
       name: 'Games',
-      href: '/games',
+      href: '/activities',
       icon: Gamepad2,
       description: 'Practice with fun games'
     },

@@ -206,7 +206,7 @@ export default function GamesPageClient() {
           subcategories: ['sentences'],
           popular: true,
           languages: ['es', 'fr', 'de'],
-          path: '/games/speed-builder'
+          path: '/activities/speed-builder'
         },
         {
           id: 'word-towers',
@@ -216,7 +216,7 @@ export default function GamesPageClient() {
           category: 'vocabulary',
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German'],
-          path: '/games/word-towers'
+          path: '/activities/word-towers'
         },
         {
           id: 'sentence-towers',
@@ -226,7 +226,7 @@ export default function GamesPageClient() {
           category: 'sentences',
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German'],
-          path: '/games/sentence-towers'
+          path: '/activities/sentence-towers'
         },
         {
           id: 'hangman',
@@ -236,7 +236,7 @@ export default function GamesPageClient() {
           category: 'vocabulary',
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Japanese'],
-          path: '/games/hangman',
+          path: '/activities/hangman',
           themes: ['default', 'tokyo', 'pirate', 'space', 'temple']
         },
         {
@@ -247,7 +247,7 @@ export default function GamesPageClient() {
           category: 'vocabulary',
           popular: false,
           languages: ['English', 'Spanish', 'French', 'German'],
-          path: '/games/memory-game'
+          path: '/activities/memory-game'
         },
         {
           id: 'noughts-and-crosses',
@@ -257,7 +257,7 @@ export default function GamesPageClient() {
           category: 'vocabulary',
           popular: false,
           languages: ['English', 'Spanish', 'French', 'German'],
-          path: '/games/noughts-and-crosses'
+          path: '/activities/noughts-and-crosses'
         },
         {
           id: 'word-scramble',
@@ -267,7 +267,7 @@ export default function GamesPageClient() {
           category: 'spelling',
           popular: true,
           languages: ['English', 'Spanish', 'French'],
-          path: '/games/word-scramble'
+          path: '/activities/word-scramble'
         },
         {
           id: 'detective-listening',
@@ -277,7 +277,7 @@ export default function GamesPageClient() {
           category: 'listening',
           popular: true,
           languages: ['Spanish', 'French', 'German'],
-          path: '/games/detective-listening'
+          path: '/activities/detective-listening'
         },
         {
           id: 'case-file-translator',
@@ -288,7 +288,7 @@ export default function GamesPageClient() {
           subcategories: ['sentences'],
           popular: true,
           languages: ['Spanish', 'French', 'German'],
-          path: '/games/case-file-translator'
+          path: '/activities/case-file-translator'
         },
         {
           id: 'lava-temple-word-restore',
@@ -299,7 +299,7 @@ export default function GamesPageClient() {
           subcategories: ['sentences'],
           popular: true,
           languages: ['Spanish', 'French', 'German'],
-          path: '/games/lava-temple-word-restore'
+          path: '/activities/lava-temple-word-restore'
         },
         {
           id: 'vocab-blast', // New game ID
@@ -309,7 +309,7 @@ export default function GamesPageClient() {
           category: 'vocabulary',
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German'], // Example languages
-          path: '/games/vocab-blast' // New path
+          path: '/activities/vocab-blast' // New path
         },
         {
           id: 'conjugation-duel',
@@ -320,7 +320,7 @@ export default function GamesPageClient() {
           popular: true,
           comingSoon: true,
           languages: ['Spanish'],
-          path: '/games/conjugation-duel'
+          path: '/activities/conjugation-duel'
         },
         {
           id: 'verb-quest',
@@ -331,7 +331,7 @@ export default function GamesPageClient() {
           popular: true,
           comingSoon: true,
           languages: ['Spanish', 'French', 'German'],
-          path: '/games/verb-quest'
+          path: '/activities/verb-quest'
         }
       ];
 

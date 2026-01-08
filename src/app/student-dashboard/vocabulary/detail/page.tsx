@@ -407,7 +407,7 @@ export default function VocabularyDetailPage() {
         {/* Practice Button */}
         <div className="text-center">
           <button
-            onClick={() => router.push(`/student-dashboard/games?word=${vocabularyDetail.id}`)}
+            onClick={() => router.push(`/student-dashboard/activities?word=${vocabularyDetail.id}`)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold flex items-center space-x-2 mx-auto"
           >
             <Play className="w-5 h-5" />

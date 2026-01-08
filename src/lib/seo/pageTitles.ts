@@ -14,7 +14,7 @@ export const PAGE_TITLES = {
   // MAIN PUBLIC PAGES
   // ===============================
   '/': 'GCSE Language Learning Games | Interactive Vocabulary Platform | Language Gems',
-  '/games': 'GCSE Language Learning Games | 15+ Interactive Vocabulary Games | Language Gems',
+  '/activities': 'GCSE Language Learning Games | 15+ Interactive Vocabulary Games | Language Gems',
   '/about': 'About Daniel Etienne - MFL Teacher, Language Gems Founder, EdTech Innovator',
   '/schools': 'Language Gems for Schools | GCSE Language Learning Platform for UK Schools',
   '/schools/pricing': 'Pricing Plans for UK Schools | LanguageGems',
@@ -61,22 +61,22 @@ export const PAGE_TITLES = {
   // ===============================
   // GAME PAGES
   // ===============================
-  '/games/vocabulary-mining': 'Vocabulary Mining Game | Interactive Word Learning | Language Gems',
-  '/games/hangman': 'Language Learning Hangman | GCSE Vocabulary Game | Language Gems',
-  '/games/memory-game': 'Memory Match Game | Visual Vocabulary Learning | Language Gems',
-  '/games/conjugation-duel': 'Conjugation Duel | Interactive Verb Practice Game | Language Gems',
-  '/games/word-scramble': 'Word Scramble Game | GCSE Vocabulary Practice | Language Gems',
-  '/games/verb-quest': 'Verb Quest Adventure | Interactive Grammar Game | Language Gems',
-  '/games/vocab-blast': 'Vocab Blast | Fast-Paced Vocabulary Game | Language Gems',
-  '/games/sentence-towers': 'Sentence Building Game | Grammar Practice | Language Gems',
-  '/games/noughts-and-crosses': 'Educational Noughts & Crosses | Language Learning Game | Language Gems',
-  '/games/case-file-translator': 'Case File Translator | Detective Language Game | Language Gems',
-  '/games/vocab-master': 'Vocab Master | Advanced Vocabulary Challenge | Language Gems',
-  '/games/speed-builder': 'Speed Builder | Quick Vocabulary Practice | Language Gems',
-  '/games/detective-listening': 'Detective Listening Game | Audio Comprehension | Language Gems',
-  '/games/lava-temple-word-restore': 'Lava Temple Adventure | Word Restoration Game | Language Gems',
-  '/games/word-blast': 'Word Blast Game | Explosive Vocabulary Learning | Language Gems',
-  '/games/multi-game': 'Multi-Game Challenge | Variety Language Learning | Language Gems',
+  '/activities/vocabulary-mining': 'Vocabulary Mining Game | Interactive Word Learning | Language Gems',
+  '/activities/hangman': 'Language Learning Hangman | GCSE Vocabulary Game | Language Gems',
+  '/activities/memory-game': 'Memory Match Game | Visual Vocabulary Learning | Language Gems',
+  '/activities/conjugation-duel': 'Conjugation Duel | Interactive Verb Practice Game | Language Gems',
+  '/activities/word-scramble': 'Word Scramble Game | GCSE Vocabulary Practice | Language Gems',
+  '/activities/verb-quest': 'Verb Quest Adventure | Interactive Grammar Game | Language Gems',
+  '/activities/vocab-blast': 'Vocab Blast | Fast-Paced Vocabulary Game | Language Gems',
+  '/activities/sentence-towers': 'Sentence Building Game | Grammar Practice | Language Gems',
+  '/activities/noughts-and-crosses': 'Educational Noughts & Crosses | Language Learning Game | Language Gems',
+  '/activities/case-file-translator': 'Case File Translator | Detective Language Game | Language Gems',
+  '/activities/vocab-master': 'Vocab Master | Advanced Vocabulary Challenge | Language Gems',
+  '/activities/speed-builder': 'Speed Builder | Quick Vocabulary Practice | Language Gems',
+  '/activities/detective-listening': 'Detective Listening Game | Audio Comprehension | Language Gems',
+  '/activities/lava-temple-word-restore': 'Lava Temple Adventure | Word Restoration Game | Language Gems',
+  '/activities/word-blast': 'Word Blast Game | Explosive Vocabulary Learning | Language Gems',
+  '/activities/multi-game': 'Multi-Game Challenge | Variety Language Learning | Language Gems',
   
   // ===============================
   // ASSESSMENT & EXAM PAGES
@@ -192,7 +192,7 @@ export const PAGE_TITLES = {
   // STUDENT DASHBOARD (NOINDEX)
   // ===============================
   '/student-dashboard': 'Student Dashboard | My Learning Progress | Language Gems',
-  '/student-dashboard/games': 'My Games | Student Dashboard | Language Gems',
+  '/student-dashboard/activities': 'My Games | Student Dashboard | Language Gems',
   '/student-dashboard/assignments': 'My Assignments | Student Dashboard | Language Gems',
   '/student-dashboard/vocabulary': 'My Vocabulary | Student Dashboard | Language Gems',
   '/student-dashboard/leaderboard': 'Leaderboard | Student Dashboard | Language Gems',

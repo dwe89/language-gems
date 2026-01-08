@@ -350,7 +350,7 @@ export default function VocabularyReviewPage() {
                   </div>
                   
                   <button
-                    onClick={() => window.location.href = `/student-dashboard/games?word=${word.id}&mode=review`}
+                    onClick={() => window.location.href = `/student-dashboard/activities?word=${word.id}&mode=review`}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium flex items-center space-x-2"
                   >
                     <Play className="w-4 h-4" />
@@ -379,7 +379,7 @@ export default function VocabularyReviewPage() {
         {filteredWords.length > 0 && (
           <div className="text-center mt-8">
             <button
-              onClick={() => window.location.href = `/student-dashboard/games?mode=review&filter=${filter}`}
+              onClick={() => window.location.href = `/student-dashboard/activities?mode=review&filter=${filter}`}
               className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold text-lg flex items-center space-x-2 mx-auto"
             >
               <Play className="w-5 h-5" />

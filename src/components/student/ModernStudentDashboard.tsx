@@ -1329,7 +1329,7 @@ export default function ModernStudentDashboard({
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Vocabulary Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Link
-                  href="/student-dashboard/games/vocab-master?lang=es&level=KS3&mode=weak&theme=default"
+                  href="/student-dashboard/activities/vocab-master?lang=es&level=KS3&mode=weak&theme=default"
                   className="bg-red-600 text-white px-4 py-3 rounded-full hover:bg-red-700 transition-colors flex items-center space-x-2 shadow-sm"
                 >
                   <PlayCircle className="h-4 w-4" />
@@ -1495,7 +1495,7 @@ export default function ModernStudentDashboard({
                 <h3 className="text-xl font-bold text-gray-900 mb-2">No assignments yet</h3>
                 <p className="text-gray-600 mb-4">Your teacher hasn't assigned any work yet.</p>
                 <Link
-                  href="/student-dashboard/games"
+                  href="/student-dashboard/activities"
                   className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
                 >
                   <Gamepad2 className="h-4 w-4" />

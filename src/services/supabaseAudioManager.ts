@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { gameData } from '../app/games/detective-listening/data/gameData';
+import { gameData } from '../app/activities/detective-listening/data/gameData';
 import dotenv from 'dotenv';
 
 // Load environment variables

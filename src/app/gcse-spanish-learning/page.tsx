@@ -166,7 +166,7 @@ export default function GCSESpanishLearningPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="/games/vocabulary-mining"
+                  href="/activities/vocabulary-mining"
                   className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-lg hover:from-orange-700 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Start Spanish Games

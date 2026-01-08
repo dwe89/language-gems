@@ -74,7 +74,7 @@ export default function AssignmentPreviewPage() {
         };
 
         const gamePath = gamePathMap[gameType] || 'memory-game';
-        const gameUrl = `/games/${gamePath}?assignment=${assignmentId}&mode=assignment&preview=true`;
+        const gameUrl = `/activities/${gamePath}?assignment=${assignmentId}&mode=assignment&preview=true`;
         
         router.push(gameUrl);
       } catch (error) {

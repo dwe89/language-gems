@@ -33,6 +33,8 @@ export default function VocabMasterPage() {
     subcat: searchParams?.get('subcat') || undefined,
     theme: searchParams?.get('theme') || undefined,
     assignment: searchParams?.get('assignment') || undefined,
+    mode: searchParams?.get('mode') || undefined,  // assignment mode
+    vocabMode: searchParams?.get('vocabMode') || undefined,  // specific VocabMaster mode to auto-start
     // KS4-specific parameters
     examBoard: searchParams?.get('examBoard') || undefined,
     tier: searchParams?.get('tier') || undefined,

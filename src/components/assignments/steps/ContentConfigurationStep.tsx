@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Gamepad2, FileCheck, BookOpen, Brain, Target, PenLine, Plus, Trash2 } from 'lucide-react';
+import { Settings, Gamepad2, FileCheck, BookOpen, Brain, Target, PenLine, Plus, Trash2, Info } from 'lucide-react';
 import { StepProps } from '../types/AssignmentTypes';
 
 import CurriculumContentSelector from '../CurriculumContentSelector';
@@ -62,12 +62,12 @@ function SkillsConfigurationSection({
     const updatedSkills = skillsConfig.selectedSkills.map((s: any) =>
       s.id === skillId
         ? {
-            ...s,
-            instanceConfig: {
-              ...s.instanceConfig,
-              ...updates
-            }
+          ...s,
+          instanceConfig: {
+            ...s.instanceConfig,
+            ...updates
           }
+        }
         : s
     );
     setSkillsConfig((prev: any) => ({
@@ -317,11 +317,10 @@ function SkillsConfigurationSection({
                           <div className="text-sm font-medium text-gray-900">{topic.title}</div>
                           <div className="text-xs text-gray-500">{topic.description}</div>
                           <div className="flex items-center space-x-2 mt-1">
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              topic.difficulty_level === 'beginner' ? 'bg-green-100 text-green-700' :
+                            <span className={`text-xs px-2 py-1 rounded ${topic.difficulty_level === 'beginner' ? 'bg-green-100 text-green-700' :
                               topic.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
+                                'bg-red-100 text-red-700'
+                              }`}>
                               {topic.difficulty_level}
                             </span>
                             <span className="text-xs text-gray-500">{topic.curriculum_level}</span>
@@ -334,7 +333,7 @@ function SkillsConfigurationSection({
             )}
           </div>
         ))}
-        
+
         {/* Add Another Skill Button */}
         <button
           onClick={addNewSkill}
@@ -378,7 +377,7 @@ export default function ContentConfigurationStep({
   onStepComplete,
   assignmentDetails
 }: StepProps) {
-  const [activeTab, setActiveTab] = useState<'games' | 'assessments' | 'skills'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'assessments' | 'skills' | 'vocab-master'>('games');
   const [contentConfig, setContentConfig] = useState<ContentConfig>({
     type: assignmentDetails?.curriculum_level || 'KS3',
     language: 'spanish',
@@ -440,17 +439,20 @@ export default function ContentConfigurationStep({
   useEffect(() => {
     const hasGames = gameConfig.selectedGames.length > 0;
     const hasAssessments = assessmentConfig.selectedAssessments.length > 0;
+    const hasSkills = skillsConfig.selectedSkills.length > 0;
+    const hasVocabMaster = vocabMasterConfig?.selectedModes?.length > 0;
 
     let gameConfigComplete = true;
     let assessmentConfigComplete = true;
     let skillsConfigComplete = true;
+    let vocabMasterConfigComplete = true;
 
     // Check game configuration completeness
     if (hasGames) {
       // Define vocabulary games by ID
-  const vocabGameIds = ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening', 'vocab-master', 'word-towers'];
-  const sentenceGameIds = ['speed-builder', 'case-file-translator', 'lava-temple-word-restore', 'sentence-towers'];
-  const grammarGameIds = ['conjugation-duel'];
+      const vocabGameIds = ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening', 'vocab-master', 'word-towers'];
+      const sentenceGameIds = ['speed-builder', 'case-file-translator', 'lava-temple-word-restore', 'sentence-towers'];
+      const grammarGameIds = ['conjugation-duel'];
 
       const hasVocabGames = gameConfig.selectedGames.some(gameId => vocabGameIds.includes(gameId));
       const hasSentenceGames = gameConfig.selectedGames.some(gameId => sentenceGameIds.includes(gameId));
@@ -467,8 +469,8 @@ export default function ContentConfigurationStep({
         gameConfigComplete = gameConfigComplete &&
           gameConfig.sentenceConfig.source !== '' &&
           (gameConfig.sentenceConfig.source === 'custom' ||
-           (gameConfig.sentenceConfig.source === 'theme' && !!gameConfig.sentenceConfig.theme) ||
-           (gameConfig.sentenceConfig.source === 'topic' && !!gameConfig.sentenceConfig.topic));
+            (gameConfig.sentenceConfig.source === 'theme' && !!gameConfig.sentenceConfig.theme) ||
+            (gameConfig.sentenceConfig.source === 'topic' && !!gameConfig.sentenceConfig.topic));
       }
       if (hasGrammarGames) {
         // Check if grammar config has language, at least one verb type, tense, and person
@@ -509,43 +511,60 @@ export default function ContentConfigurationStep({
     if (hasSkills) {
       skillsConfigComplete = skillsConfig.selectedSkills.every(skill => {
         const config = skill.instanceConfig;
-        return config?.language && 
-               config?.category && 
-               config?.topicIds && 
-               config?.topicIds.length > 0 &&
-               config?.contentTypes &&
-               config?.contentTypes.length > 0; // Ensure at least one content type is selected
+        return config?.language &&
+          config?.category &&
+          config?.topicIds &&
+          config?.topicIds.length > 0 &&
+          config?.contentTypes &&
+          config?.contentTypes.length > 0; // Ensure at least one content type is selected
       });
     }
 
-    const isCompleted = (!hasGames || gameConfigComplete) && (!hasAssessments || assessmentConfigComplete) && (!hasSkills || skillsConfigComplete);
+    // VocabMaster configuration completeness
+    if (hasVocabMaster) {
+      vocabMasterConfigComplete = vocabMasterConfig.selectedModes.every(mode => {
+        const source = mode.instanceConfig?.vocabularySource?.source;
+        return source && source !== '';
+      });
+    }
+
+    const isCompleted = (!hasGames || gameConfigComplete) && (!hasAssessments || assessmentConfigComplete) && (!hasSkills || skillsConfigComplete) && (!hasVocabMaster || vocabMasterConfigComplete);
     onStepComplete('content', isCompleted);
-  }, [gameConfig, assessmentConfig, skillsConfig, onStepComplete]);
+  }, [gameConfig, assessmentConfig, skillsConfig, vocabMasterConfig, onStepComplete]);
 
   // Determine which tab to show first
   useEffect(() => {
-    if (gameConfig.selectedGames.length > 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0) {
+    if (gameConfig.selectedGames.length > 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0 && vocabMasterConfig.selectedModes.length === 0) {
       setActiveTab('games');
-    } else if (assessmentConfig.selectedAssessments.length > 0 && gameConfig.selectedGames.length === 0 && skillsConfig.selectedSkills.length === 0) {
+    } else if (assessmentConfig.selectedAssessments.length > 0 && gameConfig.selectedGames.length === 0 && skillsConfig.selectedSkills.length === 0 && vocabMasterConfig.selectedModes.length === 0) {
       setActiveTab('assessments');
-    } else if (skillsConfig.selectedSkills.length > 0 && gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0) {
+    } else if (skillsConfig.selectedSkills.length > 0 && gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && vocabMasterConfig.selectedModes.length === 0) {
       setActiveTab('skills');
+    } else if (vocabMasterConfig.selectedModes.length > 0 && gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0) {
+      setActiveTab('vocab-master');
     }
-  }, [gameConfig.selectedGames.length, assessmentConfig.selectedAssessments.length, skillsConfig.selectedSkills.length]);
+  }, [gameConfig.selectedGames.length, assessmentConfig.selectedAssessments.length, skillsConfig.selectedSkills.length, vocabMasterConfig.selectedModes.length]);
 
   const hasGames = gameConfig.selectedGames.length > 0;
   const hasAssessments = assessmentConfig.selectedAssessments.length > 0;
   const hasSkills = skillsConfig.selectedSkills.length > 0;
+  const hasVocabMaster = vocabMasterConfig?.selectedModes?.length > 0;
 
   // Compute skills configuration completeness for display
   const skillsConfigComplete = hasSkills ? skillsConfig.selectedSkills.every(skill => {
     const config = skill.instanceConfig;
-    return config?.language && 
-           config?.category && 
-           config?.topicIds && 
-           config?.topicIds.length > 0 &&
-           config?.contentTypes &&
-           config?.contentTypes.length > 0; // Ensure at least one content type is selected
+    return config?.language &&
+      config?.category &&
+      config?.topicIds &&
+      config?.topicIds.length > 0 &&
+      config?.contentTypes &&
+      config?.contentTypes.length > 0;
+  }) : true;
+
+  // Compute VocabMaster completeness for display
+  const vocabMasterConfigComplete = hasVocabMaster ? vocabMasterConfig.selectedModes.every(mode => {
+    const source = mode.instanceConfig?.vocabularySource?.source;
+    return source && source !== '';
   }) : true;
 
   // Define game types for different configurations
@@ -570,7 +589,7 @@ export default function ContentConfigurationStep({
       </div>
 
       {/* Show tabs if multiple activity types are selected */}
-      {((hasGames && hasAssessments) || (hasGames && hasSkills) || (hasAssessments && hasSkills) || (hasGames && hasAssessments && hasSkills)) && (
+      {((hasGames && hasAssessments) || (hasGames && hasSkills) || (hasGames && hasVocabMaster) || (hasAssessments && hasSkills) || (hasAssessments && hasVocabMaster) || (hasSkills && hasVocabMaster)) && (
         <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
           {hasGames && (
             <button
@@ -608,285 +627,296 @@ export default function ContentConfigurationStep({
               Skills Configuration
             </button>
           )}
+          {hasVocabMaster && (
+            <button
+              onClick={() => setActiveTab('vocab-master')}
+              className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'vocab-master'
+                ? 'bg-white text-purple-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
+              VocabMaster Config
+            </button>
+          )}
         </div>
       )}
 
       {/* Unified Content Configuration */}
       <div className="min-h-[400px]">
-        {(hasGames || hasAssessments || hasSkills) && (
+        {(activeTab === 'games' && hasGames) && (
           <div className="space-y-6">
             {/* Content Configuration (only for vocabulary and sentence games - NOT for assessments/skills) */}
             {(hasVocabGames || hasSentenceGames) && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-              <div className="flex items-center mb-3">
-                <BookOpen className="h-6 w-6 text-blue-600 mr-3" />
-                <h3 className="text-xl font-semibold text-gray-900">Vocabulary Content Configuration</h3>
-              </div>
-              <p className="text-sm text-gray-600 mb-4">
-                Configure the vocabulary and content for your games based on curriculum level
-              </p>
+                <div className="flex items-center mb-3">
+                  <BookOpen className="h-6 w-6 text-blue-600 mr-3" />
+                  <h3 className="text-xl font-semibold text-gray-900">Vocabulary Content Configuration</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Configure the vocabulary and content for your games based on curriculum level
+                </p>
 
-              {/* Language Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Target Language *
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {['spanish', 'french', 'german'].map((lang) => (
-                    <button
-                      key={lang}
-                      type="button"
-                      onClick={() => {
-                        const newContentConfig = { ...contentConfig, language: lang as 'spanish' | 'french' | 'german' };
-                        setContentConfig(newContentConfig);
-                        
-                        // Update game config with selected language
-                        if (hasGames) {
-                          setGameConfig(prev => ({
-                            ...prev,
-                            vocabularyConfig: {
-                              ...prev.vocabularyConfig,
-                              language: lang as 'spanish' | 'french' | 'german'
-                            }
-                          }));
-                        }
-                        
-                        // Update assessment config with selected language
-                        if (hasAssessments) {
-                          setAssessmentConfig(prev => ({
-                            ...prev,
-                            generalLanguage: lang as 'spanish' | 'french' | 'german'
-                          }));
-                        }
+                {/* Language Selection */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Target Language *
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['spanish', 'french', 'german'].map((lang) => (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => {
+                          const newContentConfig = { ...contentConfig, language: lang as 'spanish' | 'french' | 'german' };
+                          setContentConfig(newContentConfig);
 
-                        // Update skills config with selected language
-                        if (hasSkills) {
-                          setSkillsConfig(prev => ({
-                            ...prev,
-                            generalLanguage: lang as 'spanish' | 'french' | 'german'
-                          }));
-                        }
-                      }}
-                      className={`p-3 rounded-lg text-center transition-all duration-200 border-2 ${
-                        contentConfig.language === lang
+                          // Update game config with selected language
+                          if (hasGames) {
+                            setGameConfig(prev => ({
+                              ...prev,
+                              vocabularyConfig: {
+                                ...prev.vocabularyConfig,
+                                language: lang as 'spanish' | 'french' | 'german'
+                              }
+                            }));
+                          }
+
+                          // Update assessment config with selected language
+                          if (hasAssessments) {
+                            setAssessmentConfig(prev => ({
+                              ...prev,
+                              generalLanguage: lang as 'spanish' | 'french' | 'german'
+                            }));
+                          }
+
+                          // Update skills config with selected language
+                          if (hasSkills) {
+                            setSkillsConfig(prev => ({
+                              ...prev,
+                              generalLanguage: lang as 'spanish' | 'french' | 'german'
+                            }));
+                          }
+                        }}
+                        className={`p-3 rounded-lg text-center transition-all duration-200 border-2 ${contentConfig.language === lang
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
                           : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      }`}
-                    >
-                      <div className="font-medium capitalize">{lang}</div>
-                    </button>
-                  ))}
+                          }`}
+                      >
+                        <div className="font-medium capitalize">{lang}</div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <CurriculumContentSelector
-                curriculumLevel={
-                  contentConfig.type === 'custom' || contentConfig.type === 'my-vocabulary'
-                    ? contentConfig.type
-                    : (assignmentDetails?.curriculum_level || 'KS3')
-                }
-                language={contentConfig.language}
-                onConfigChange={(config) => {
-                  console.log('🎯 [CONTENT CONFIG STEP] Config received:', config);
-                  setContentConfig(config);
+                <CurriculumContentSelector
+                  curriculumLevel={
+                    contentConfig.type === 'custom' || contentConfig.type === 'my-vocabulary'
+                      ? contentConfig.type
+                      : (assignmentDetails?.curriculum_level || 'KS3')
+                  }
+                  language={contentConfig.language}
+                  onConfigChange={(config) => {
+                    console.log('🎯 [CONTENT CONFIG STEP] Config received:', config);
+                    setContentConfig(config);
 
-                  // Update both game and assessment configs based on the unified content config
-                  if (hasGames) {
-                    // @ts-ignore - Temporarily disable TypeScript checking
-                    setGameConfig(prev => {
-                      // Determine the correct source based on config type
-                      let vocabularyConfig;
-
+                    // Update both game and assessment configs based on the unified content config
+                    if (hasGames) {
                       // @ts-ignore - Temporarily disable TypeScript checking
-                      if (config.type === 'my-vocabulary') {
-                        // Custom vocabulary from user's lists
-                        console.log('🎯 [CONTENT CONFIG STEP] Setting up CUSTOM vocabulary config (from lists)');
-                        vocabularyConfig = {
-                          ...prev.vocabularyConfig,
-                          source: 'custom' as const,
-                          customListId: config.customListId,
-                          customList: { name: config.customListName },
-                          curriculumLevel: 'KS3' as const, // Default for custom lists
-                          language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de',
-                        };
-                      } else if (config.type === 'custom') {
-                        // Custom vocabulary created inline
-                        console.log('🎯 [CONTENT CONFIG STEP] Setting up CREATE vocabulary config (inline custom)');
-                        vocabularyConfig = {
-                          ...prev.vocabularyConfig,
-                          source: 'create' as const,
-                          customVocabulary: config.customVocabulary,
-                          curriculumLevel: 'KS3' as const, // Default for custom vocabulary
-                          language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de',
-                        };
-                      } else {
-                        // Standard category-based vocabulary
-                        console.log('🎯 [CONTENT CONFIG STEP] Setting up CATEGORY vocabulary config');
-                        vocabularyConfig = {
-                          ...prev.vocabularyConfig,
-                          source: 'category' as const,
-                          // For KS4, use themes/units; for others, use categories/subcategories
-                          categories: config.type === 'KS4' ? config.themes : config.categories,
-                          subcategories: config.type === 'KS4' ? config.units : config.subcategories,
-                          category: config.type === 'KS4' ? (config.themes?.[0] || '') : (config.categories?.[0] || ''),
-                          subcategory: config.type === 'KS4' ? (config.units?.[0] || '') : (config.subcategories?.[0] || ''),
-                          curriculumLevel: config.type === 'my-vocabulary' ? 'KS3' : config.type as 'KS3' | 'KS4',
-                          examBoard: config.examBoard,
-                          tier: config.tier,
-                          language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de',
-                        };
-                      }
+                      setGameConfig(prev => {
+                        // Determine the correct source based on config type
+                        let vocabularyConfig;
 
-                      return {
-                        ...prev,
-                        vocabularyConfig,
-                        // Store KS4-specific data
-                        themes: config.themes,
-                        units: config.units
-                      };
-                    });
-                  }
-
-                  if (hasAssessments) {
-                    // @ts-ignore - Temporarily disable TypeScript checking
-                    setAssessmentConfig(prev => ({
-                      ...prev,
-                      assessmentCategory: config.type === 'KS4' ? (config.themes?.[0] || '') : (config.categories?.[0] || ''),
-                      assessmentSubcategory: config.type === 'KS4' ? (config.units?.[0] || '') : (config.subcategories?.[0] || ''),
-                      generalLevel: config.type === 'my-vocabulary' ? 'KS3' : config.type as 'KS3' | 'KS4',
-                      generalExamBoard: config.examBoard || 'General',
-                      generalLanguage: config.language
-                    }));
-                  }
-                }}
-                initialConfig={contentConfig}
-              />
-
-              {/* Vocabulary Options */}
-              {(() => {
-                const shouldShow = (contentConfig.type === 'KS4' || contentConfig.type === 'KS3') && (
-                  (contentConfig.categories?.length || 0) > 0 ||
-                  (contentConfig.subcategories?.length || 0) > 0 ||
-                  (contentConfig.themes?.length || 0) > 0 ||
-                  (contentConfig.units?.length || 0) > 0
-                );
-                console.log('🎯 [VOCAB OPTIONS] Should show vocabulary options?', {
-                  shouldShow,
-                  contentConfigType: contentConfig.type,
-                  categoriesLength: contentConfig.categories?.length,
-                  themesLength: contentConfig.themes?.length,
-                  unitsLength: contentConfig.units?.length,
-                  contentConfig
-                });
-                return shouldShow;
-              })() && (
-                <div className="mt-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
-                      <Target className="h-5 w-5 text-white" />
-                    </div>
-                    <h4 className="text-base font-bold text-blue-900">Vocabulary Pool Settings</h4>
-                  </div>
-                  <p className="text-sm text-blue-700 mb-4">
-                    Configure how many words students will practice across multiple game sessions
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Word Pool Selection */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Word pool
-                      </label>
-                      <select
-                        value={gameConfig.vocabularyConfig.useAllWords ? 'all' : String(gameConfig.vocabularyConfig.wordCount ?? 'all')}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setGameConfig(prev => ({
-                            ...prev,
-                            vocabularyConfig: {
-                              ...prev.vocabularyConfig,
-                              useAllWords: value === 'all',
-                              wordCount: value === 'all' ? undefined : parseInt(value)
-                            }
-                          }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="all">All words from selected {contentConfig.type === 'KS4' ? 'units' : 'categories'} (capped at 75)</option>
-                        <option value="10">Limit to 10</option>
-                        <option value="15">Limit to 15</option>
-                        <option value="20">Limit to 20</option>
-                        <option value="30">Limit to 30</option>
-                        <option value="50">Limit to 50</option>
-                      </select>
-                      <p className="mt-2 text-xs text-gray-500">
-                        Games pull a small set (~10 words) each session from the pool. The pool sets the total unique words students may encounter.
-                      </p>
-                    </div>
-
-                    {/* Shuffle Option */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Word Selection
-                      </label>
-                      <select
-                        value={gameConfig.vocabularyConfig.shuffleWords ? 'shuffle' : 'order'}
-                        onChange={(e) => setGameConfig(prev => ({
-                          ...prev,
-                          vocabularyConfig: {
+                        // @ts-ignore - Temporarily disable TypeScript checking
+                        if (config.type === 'my-vocabulary') {
+                          // Custom vocabulary from user's lists
+                          console.log('🎯 [CONTENT CONFIG STEP] Setting up CUSTOM vocabulary config (from lists)');
+                          vocabularyConfig = {
                             ...prev.vocabularyConfig,
-                            shuffleWords: e.target.value === 'shuffle'
-                          }
-                        }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="order">In order (as stored)</option>
-                        <option value="shuffle">Shuffled randomly</option>
-                      </select>
-                    </div>
-                  </div>
+                            source: 'custom' as const,
+                            customListId: config.customListId,
+                            customList: { name: config.customListName },
+                            curriculumLevel: 'KS3' as const, // Default for custom lists
+                            language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de',
+                          };
+                        } else if (config.type === 'custom') {
+                          // Custom vocabulary created inline
+                          console.log('🎯 [CONTENT CONFIG STEP] Setting up CREATE vocabulary config (inline custom)');
+                          vocabularyConfig = {
+                            ...prev.vocabularyConfig,
+                            source: 'create' as const,
+                            customVocabulary: config.customVocabulary,
+                            curriculumLevel: 'KS3' as const, // Default for custom vocabulary
+                            language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de',
+                          };
+                        } else {
+                          // Standard category-based vocabulary
+                          console.log('🎯 [CONTENT CONFIG STEP] Setting up CATEGORY vocabulary config');
+                          vocabularyConfig = {
+                            ...prev.vocabularyConfig,
+                            source: 'category' as const,
+                            // For KS4, use themes/units; for others, use categories/subcategories
+                            categories: config.type === 'KS4' ? config.themes : config.categories,
+                            subcategories: config.type === 'KS4' ? config.units : config.subcategories,
+                            category: config.type === 'KS4' ? (config.themes?.[0] || '') : (config.categories?.[0] || ''),
+                            subcategory: config.type === 'KS4' ? (config.units?.[0] || '') : (config.subcategories?.[0] || ''),
+                            curriculumLevel: config.type === 'my-vocabulary' ? 'KS3' : config.type as 'KS3' | 'KS4',
+                            examBoard: config.examBoard,
+                            tier: config.tier,
+                            language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de',
+                          };
+                        }
 
-                  {/* Preview Info */}
-                  <div className="mt-4 p-4 bg-gradient-to-br from-white to-blue-50 border-2 border-blue-300 rounded-xl shadow-sm">
-                    <div className="text-sm font-bold text-blue-900 mb-3 flex items-center">
-                      <Target className="h-4 w-4 mr-2" />
-                      Pool Summary
-                    </div>
-                    <div className="text-sm text-gray-700 space-y-2">
-                      <div className="bg-white rounded-lg p-2 border border-blue-100">
-                        <strong className="text-blue-900">Selected:</strong> {
-                          contentConfig.type === 'KS4'
-                            ? `${contentConfig.themes?.length || 0} theme(s), ${contentConfig.units?.length || 0} unit(s)`
-                            : `${contentConfig.categories?.length || 0} categor${(contentConfig.categories?.length || 0) === 1 ? 'y' : 'ies'}, ${contentConfig.subcategories?.length || 0} subcategor${(contentConfig.subcategories?.length || 0) === 1 ? 'y' : 'ies'}`
-                        }
-                      </div>
-                      <div className="bg-white rounded-lg p-2 border border-blue-100">
-                        <strong className="text-blue-900">Pool size:</strong> {
-                          gameConfig.vocabularyConfig.useAllWords
-                            ? 'All available words (capped at 75)'
-                            : `Limited to ${gameConfig.vocabularyConfig.wordCount || 10} words`
-                        }
-                      </div>
-                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-2 border border-indigo-200">
-                        <strong className="text-indigo-900">Estimated sessions:</strong> {
-                          gameConfig.vocabularyConfig.useAllWords
-                            ? '≈ 5–8 sessions'
-                            : `≈ ${Math.ceil((gameConfig.vocabularyConfig.wordCount || 10) / 10)} session(s)`
-                        }
-                      </div>
-                      {gameConfig.vocabularyConfig.shuffleWords && (
-                        <div className="text-blue-600 bg-blue-50 rounded-lg p-2 border border-blue-200">
-                          🔀 Words will be shuffled for variety
+                        return {
+                          ...prev,
+                          vocabularyConfig,
+                          // Store KS4-specific data
+                          themes: config.themes,
+                          units: config.units
+                        };
+                      });
+                    }
+
+                    if (hasAssessments) {
+                      // @ts-ignore - Temporarily disable TypeScript checking
+                      setAssessmentConfig(prev => ({
+                        ...prev,
+                        assessmentCategory: config.type === 'KS4' ? (config.themes?.[0] || '') : (config.categories?.[0] || ''),
+                        assessmentSubcategory: config.type === 'KS4' ? (config.units?.[0] || '') : (config.subcategories?.[0] || ''),
+                        generalLevel: config.type === 'my-vocabulary' ? 'KS3' : config.type as 'KS3' | 'KS4',
+                        generalExamBoard: config.examBoard || 'General',
+                        generalLanguage: config.language
+                      }));
+                    }
+                  }}
+                  initialConfig={contentConfig}
+                />
+
+                {/* Vocabulary Options */}
+                {(() => {
+                  const shouldShow = (contentConfig.type === 'KS4' || contentConfig.type === 'KS3') && (
+                    (contentConfig.categories?.length || 0) > 0 ||
+                    (contentConfig.subcategories?.length || 0) > 0 ||
+                    (contentConfig.themes?.length || 0) > 0 ||
+                    (contentConfig.units?.length || 0) > 0
+                  );
+                  console.log('🎯 [VOCAB OPTIONS] Should show vocabulary options?', {
+                    shouldShow,
+                    contentConfigType: contentConfig.type,
+                    categoriesLength: contentConfig.categories?.length,
+                    themesLength: contentConfig.themes?.length,
+                    unitsLength: contentConfig.units?.length,
+                    contentConfig
+                  });
+                  return shouldShow;
+                })() && (
+                    <div className="mt-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl shadow-sm">
+                      <div className="flex items-center mb-4">
+                        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                          <Target className="h-5 w-5 text-white" />
                         </div>
-                      )}
-                      <div className="text-xs text-gray-600 mt-2 pt-2 border-t border-blue-200 flex items-start">
-                        <span className="mr-1">💡</span>
-                        <span>About 10 words per session. Pool rotation mixes new (~70%) and review (~30%) items across sessions.</span>
+                        <h4 className="text-base font-bold text-blue-900">Vocabulary Pool Settings</h4>
+                      </div>
+                      <p className="text-sm text-blue-700 mb-4">
+                        Configure how many words students will practice across multiple game sessions
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Word Pool Selection */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Word pool
+                          </label>
+                          <select
+                            value={gameConfig.vocabularyConfig.useAllWords ? 'all' : String(gameConfig.vocabularyConfig.wordCount ?? 'all')}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setGameConfig(prev => ({
+                                ...prev,
+                                vocabularyConfig: {
+                                  ...prev.vocabularyConfig,
+                                  useAllWords: value === 'all',
+                                  wordCount: value === 'all' ? undefined : parseInt(value)
+                                }
+                              }));
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value="all">All words from selected {contentConfig.type === 'KS4' ? 'units' : 'categories'} (capped at 75)</option>
+                            <option value="10">Limit to 10</option>
+                            <option value="15">Limit to 15</option>
+                            <option value="20">Limit to 20</option>
+                            <option value="30">Limit to 30</option>
+                            <option value="50">Limit to 50</option>
+                          </select>
+                          <p className="mt-2 text-xs text-gray-500">
+                            Games pull a small set (~10 words) each session from the pool. The pool sets the total unique words students may encounter.
+                          </p>
+                        </div>
+
+                        {/* Shuffle Option */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Word Selection
+                          </label>
+                          <select
+                            value={gameConfig.vocabularyConfig.shuffleWords ? 'shuffle' : 'order'}
+                            onChange={(e) => setGameConfig(prev => ({
+                              ...prev,
+                              vocabularyConfig: {
+                                ...prev.vocabularyConfig,
+                                shuffleWords: e.target.value === 'shuffle'
+                              }
+                            }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value="order">In order (as stored)</option>
+                            <option value="shuffle">Shuffled randomly</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Preview Info */}
+                      <div className="mt-4 p-4 bg-gradient-to-br from-white to-blue-50 border-2 border-blue-300 rounded-xl shadow-sm">
+                        <div className="text-sm font-bold text-blue-900 mb-3 flex items-center">
+                          <Target className="h-4 w-4 mr-2" />
+                          Pool Summary
+                        </div>
+                        <div className="text-sm text-gray-700 space-y-2">
+                          <div className="bg-white rounded-lg p-2 border border-blue-100">
+                            <strong className="text-blue-900">Selected:</strong> {
+                              contentConfig.type === 'KS4'
+                                ? `${contentConfig.themes?.length || 0} theme(s), ${contentConfig.units?.length || 0} unit(s)`
+                                : `${contentConfig.categories?.length || 0} categor${(contentConfig.categories?.length || 0) === 1 ? 'y' : 'ies'}, ${contentConfig.subcategories?.length || 0} subcategor${(contentConfig.subcategories?.length || 0) === 1 ? 'y' : 'ies'}`
+                            }
+                          </div>
+                          <div className="bg-white rounded-lg p-2 border border-blue-100">
+                            <strong className="text-blue-900">Pool size:</strong> {
+                              gameConfig.vocabularyConfig.useAllWords
+                                ? 'All available words (capped at 75)'
+                                : `Limited to ${gameConfig.vocabularyConfig.wordCount || 10} words`
+                            }
+                          </div>
+                          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-2 border border-indigo-200">
+                            <strong className="text-indigo-900">Estimated sessions:</strong> {
+                              gameConfig.vocabularyConfig.useAllWords
+                                ? '≈ 5–8 sessions'
+                                : `≈ ${Math.ceil((gameConfig.vocabularyConfig.wordCount || 10) / 10)} session(s)`
+                            }
+                          </div>
+                          {gameConfig.vocabularyConfig.shuffleWords && (
+                            <div className="text-blue-600 bg-blue-50 rounded-lg p-2 border border-blue-200">
+                              🔀 Words will be shuffled for variety
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-600 mt-2 pt-2 border-t border-blue-200 flex items-start">
+                            <span className="mr-1">💡</span>
+                            <span>About 10 words per session. Pool rotation mixes new (~70%) and review (~30%) items across sessions.</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
               </div>
             )}
 
@@ -1165,11 +1195,10 @@ export default function ContentConfigurationStep({
                             />
                             <div className="flex-1">
                               <div className="text-sm font-medium text-gray-900">{tense.name}</div>
-                              <div className={`text-xs px-1 py-0.5 rounded inline-block ${
-                                tense.level === 'beginner' ? 'bg-green-100 text-green-700' :
+                              <div className={`text-xs px-1 py-0.5 rounded inline-block ${tense.level === 'beginner' ? 'bg-green-100 text-green-700' :
                                 tense.level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
+                                  'bg-red-100 text-red-700'
+                                }`}>
                                 {tense.level}
                               </div>
                             </div>
@@ -1208,10 +1237,9 @@ export default function ContentConfigurationStep({
                             <div className="flex-1">
                               <div className="text-sm font-medium text-gray-900">{tense.name}</div>
                               <div className="text-xs text-gray-500 italic">e.g., {tense.example}</div>
-                              <div className={`text-xs px-1 py-0.5 rounded inline-block mt-1 ${
-                                tense.level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                              <div className={`text-xs px-1 py-0.5 rounded inline-block mt-1 ${tense.level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
                                 'bg-red-100 text-red-700'
-                              }`}>
+                                }`}>
                                 {tense.level}
                               </div>
                             </div>
@@ -1224,74 +1252,190 @@ export default function ContentConfigurationStep({
               </div>
             )}
 
-            {/* Skills Configuration */}
-            {hasSkills && (
-              <SkillsConfigurationSection
-                skillsConfig={skillsConfig}
-                setSkillsConfig={setSkillsConfig}
-              />
-            )}
           </div>
         )}
 
-        {/* No activities selected */}
-        {!hasGames && !hasAssessments && !hasSkills && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
-              <Settings className="h-16 w-16 mx-auto" />
+        {/* Assessments Configuration */}
+        {activeTab === 'assessments' && hasAssessments && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="flex items-center mb-4">
+                <FileCheck className="h-6 w-6 text-indigo-600 mr-3" />
+                <h3 className="text-lg font-medium text-gray-900">Assessments Configuration</h3>
+              </div>
+              <p className="text-gray-600">
+                {assessmentConfig.selectedAssessments.length} assessment(s) selected. Assessments do not require additional configuration in this step.
+              </p>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Activities Selected</h3>
-            <p className="text-gray-600">Please go back to the Activities step and select some games or assessments to configure.</p>
+          </div>
+        )}
+
+        {/* Skills Configuration */}
+        {activeTab === 'skills' && hasSkills && (
+          <div className="space-y-6">
+            <SkillsConfigurationSection
+              skillsConfig={skillsConfig}
+              setSkillsConfig={setSkillsConfig}
+            />
+          </div>
+        )}
+
+        {/* VocabMaster Configuration */}
+        {activeTab === 'vocab-master' && hasVocabMaster && (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start">
+                <Info className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
+                <div>
+                  <h4 className="font-medium text-blue-900">VocabMaster Configuration</h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Configure the vocabulary content for each selected VocabMaster mode.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {vocabMasterConfig.selectedModes.map((mode, index) => {
+              const vocabSource = (mode.instanceConfig?.vocabularySource || {
+                source: '',
+                language: contentConfig.language,
+                difficulty: 'intermediate',
+                curriculumLevel: assignmentDetails.curriculum_level
+              }) as any;
+
+              // Map VocabularyConfig to ContentConfig for initialization
+              const initialContentConfig: any = {
+                type: vocabSource.source === 'create' ? 'custom' :
+                  vocabSource.source === 'custom' ? 'my-vocabulary' :
+                    (vocabSource.curriculumLevel || assignmentDetails.curriculum_level || 'KS3'),
+                language: vocabSource.language || contentConfig.language,
+                categories: vocabSource.categories,
+                subcategories: vocabSource.subcategories,
+                customListId: vocabSource.customListId,
+                customVocabulary: vocabSource.customVocabulary,
+                examBoard: vocabSource.examBoard,
+                tier: vocabSource.tier,
+                themes: vocabSource.themes,
+                units: vocabSource.units
+              };
+
+              return (
+                <div key={mode.id} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                  <div className="flex items-center mb-4 pb-2 border-b border-gray-100">
+                    <div className="p-2 bg-indigo-100 rounded-lg mr-3">
+                      <BookOpen className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900">{mode.name}</h4>
+                      <p className="text-xs text-gray-500">Configure content for this activity</p>
+                    </div>
+                  </div>
+
+                  <CurriculumContentSelector
+                    curriculumLevel={assignmentDetails.curriculum_level || 'KS3'}
+                    language={(vocabSource.language || 'spanish') as any}
+                    initialConfig={initialContentConfig}
+                    onConfigChange={(newContentConfig: any) => {
+                      // Map ContentConfig back to VocabularyConfig
+                      const newVocabConfig: any = {
+                        source: newContentConfig.type === 'custom' ? 'create' : newContentConfig.type === 'my-vocabulary' ? 'custom' : 'category',
+                        language: newContentConfig.language,
+                        categories: newContentConfig.categories,
+                        subcategories: newContentConfig.subcategories,
+                        customListId: newContentConfig.customListId,
+                        customVocabulary: newContentConfig.customVocabulary,
+                        examBoard: newContentConfig.examBoard,
+                        tier: newContentConfig.tier,
+                        themes: newContentConfig.themes,
+                        units: newContentConfig.units,
+                        curriculumLevel: newContentConfig.type === 'KS3' || newContentConfig.type === 'KS4' ? newContentConfig.type : assignmentDetails.curriculum_level
+                      };
+
+                      const newModes = [...vocabMasterConfig.selectedModes];
+                      newModes[index] = {
+                        ...newModes[index],
+                        instanceConfig: {
+                          ...newModes[index].instanceConfig,
+                          vocabularySource: newVocabConfig
+                        }
+                      };
+                      setVocabMasterConfig({ ...vocabMasterConfig, selectedModes: newModes });
+                    }}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Configuration Summary */}
-      {(hasGames || hasAssessments || hasSkills) && (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-sm font-semibold text-gray-800 mb-2">Configuration Summary</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-            {hasVocabGames && (
-              <div>
-                <span className="text-gray-600">Vocabulary:</span>
-                <span className="ml-2 font-medium text-blue-600">
-                  {gameConfig.vocabularyConfig.source ? '✓ Configured' : '⚠ Needs setup'}
-                </span>
-              </div>
-            )}
-            {hasSentenceGames && (
-              <div>
-                <span className="text-gray-600">Sentences:</span>
-                <span className="ml-2 font-medium text-green-600">
-                  {(gameConfig.sentenceConfig.source && (gameConfig.sentenceConfig.theme || gameConfig.sentenceConfig.topic || gameConfig.sentenceConfig.customSetId)) ? '✓ Configured' : '⚠ Needs setup'}
-                </span>
-              </div>
-            )}
-            {hasGrammarGames && (
-              <div>
-                <span className="text-gray-600">Grammar:</span>
-                <span className="ml-2 font-medium text-purple-600">
-                  {gameConfig.grammarConfig.verbTypes.length > 0 && gameConfig.grammarConfig.tenses.length > 0 && (gameConfig.grammarConfig.persons?.length || 0) > 0 ? '✓ Configured' : '⚠ Needs setup'}
-                </span>
-              </div>
-            )}
-            {hasAssessments && (
-              <div>
-                <span className="text-gray-600">Assessments:</span>
-                <span className="ml-2 font-medium text-indigo-600">{assessmentConfig.selectedAssessments.length} configured</span>
-              </div>
-            )}
-            {hasSkills && (
-              <div>
-                <span className="text-gray-600">Skills:</span>
-                <span className="ml-2 font-medium text-purple-600">
-                  {skillsConfigComplete ? '✓ Configured' : '⚠ Needs setup'}
-                </span>
-              </div>
-            )}
+      {/* No activities selected */}
+      {!hasGames && !hasAssessments && !hasSkills && !hasVocabMaster && (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">
+            <Settings className="h-16 w-16 mx-auto" />
           </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Activities Selected</h3>
+          <p className="text-gray-600">Please go back to the Activities step and select some games or assessments to configure.</p>
         </div>
       )}
-    </motion.div>
+
+      {/* Configuration Summary */}
+      {
+        (hasGames || hasAssessments || hasSkills || hasVocabMaster) && (
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="text-sm font-semibold text-gray-800 mb-2">Configuration Summary</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              {hasVocabGames && (
+                <div>
+                  <span className="text-gray-600">Vocabulary:</span>
+                  <span className="ml-2 font-medium text-blue-600">
+                    {gameConfig.vocabularyConfig.source ? '✓ Configured' : '⚠ Needs setup'}
+                  </span>
+                </div>
+              )}
+              {hasSentenceGames && (
+                <div>
+                  <span className="text-gray-600">Sentences:</span>
+                  <span className="ml-2 font-medium text-green-600">
+                    {(gameConfig.sentenceConfig.source && (gameConfig.sentenceConfig.theme || gameConfig.sentenceConfig.topic || gameConfig.sentenceConfig.customSetId)) ? '✓ Configured' : '⚠ Needs setup'}
+                  </span>
+                </div>
+              )}
+              {hasGrammarGames && (
+                <div>
+                  <span className="text-gray-600">Grammar:</span>
+                  <span className="ml-2 font-medium text-purple-600">
+                    {gameConfig.grammarConfig.verbTypes.length > 0 && gameConfig.grammarConfig.tenses.length > 0 && (gameConfig.grammarConfig.persons?.length || 0) > 0 ? '✓ Configured' : '⚠ Needs setup'}
+                  </span>
+                </div>
+              )}
+              {hasAssessments && (
+                <div>
+                  <span className="text-gray-600">Assessments:</span>
+                  <span className="ml-2 font-medium text-indigo-600">{assessmentConfig.selectedAssessments.length} configured</span>
+                </div>
+              )}
+              {hasSkills && (
+                <div>
+                  <span className="text-gray-600">Skills:</span>
+                  <span className="ml-2 font-medium text-purple-600">
+                    {skillsConfigComplete ? '✓ Configured' : '⚠ Needs setup'}
+                  </span>
+                </div>
+              )}
+              {hasVocabMaster && (
+                <div>
+                  <span className="text-gray-600">VocabMaster:</span>
+                  <span className="ml-2 font-medium text-purple-600">
+                    {vocabMasterConfigComplete ? '✓ Configured' : '⚠ Needs setup'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      }
+    </motion.div >
   );
 }

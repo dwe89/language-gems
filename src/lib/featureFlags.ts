@@ -112,7 +112,7 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
     },
     {
       name: 'Games',
-      path: '/games',
+      path: '/activities',
       enabled: flags.games,
       comingSoon: !flags.games,
       comingSoonPath: null,

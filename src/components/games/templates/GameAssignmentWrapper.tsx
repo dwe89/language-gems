@@ -18,9 +18,9 @@ import UniversalThemeSelector from '../UniversalThemeSelector';
 const getThemeProvider = (gameId: string) => {
   switch (gameId) {
     case 'noughts-and-crosses':
-      return require('../../../app/games/noughts-and-crosses/components/ThemeProvider').ThemeProvider;
+      return require('../../../app/activities/noughts-and-crosses/components/ThemeProvider').ThemeProvider;
     case 'hangman':
-      return require('../../../app/games/hangman/components/ThemeProvider').ThemeProvider;
+      return require('../../../app/activities/hangman/components/ThemeProvider').ThemeProvider;
     default:
       return null;
   }

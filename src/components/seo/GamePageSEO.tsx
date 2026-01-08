@@ -22,7 +22,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Master GCSE vocabulary through intelligent spaced repetition and adaptive learning. Mine rare vocabulary gems while building long-term retention with our scientifically-proven memory techniques.',
     category: 'vocabulary',
     languages: ['Spanish', 'French', 'German', 'Italian'],
-    path: '/games/vocabulary-mining',
+    path: '/activities/vocabulary-mining',
     features: ['Spaced Repetition', 'Adaptive Learning', 'Progress Tracking', 'Audio Pronunciation'],
     educationalLevel: 'GCSE, A-Level',
     targetAudience: 'Secondary school students, GCSE candidates'
@@ -33,7 +33,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Enhance vocabulary retention with engaging memory card games. Match words with translations, images, or audio to strengthen neural pathways and improve recall speed.',
     category: 'vocabulary',
     languages: ['Spanish', 'French', 'German', 'Italian'],
-    path: '/games/memory-match',
+    path: '/activities/memory-match',
     features: ['Visual Memory Training', 'Audio Integration', 'Difficulty Scaling', 'Performance Analytics'],
     educationalLevel: 'KS3, GCSE',
     targetAudience: 'Language learners of all levels'
@@ -44,7 +44,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Practice spelling and vocabulary recognition with our educational hangman game. Features GCSE-specific vocabulary lists and progressive difficulty levels.',
     category: 'vocabulary',
     languages: ['Spanish', 'French', 'German', 'Italian'],
-    path: '/games/hangman',
+    path: '/activities/hangman',
     features: ['Spelling Practice', 'Vocabulary Recognition', 'Category Selection', 'Hint System'],
     educationalLevel: 'KS3, GCSE',
     targetAudience: 'Students learning vocabulary spelling'
@@ -55,7 +55,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Master verb conjugations through competitive gameplay. Battle opponents while practicing Spanish, French, and German verb forms with real-time feedback.',
     category: 'grammar',
     languages: ['Spanish', 'French', 'German'],
-    path: '/games/conjugation-duel',
+    path: '/activities/conjugation-duel',
     features: ['Verb Conjugation Practice', 'Competitive Gameplay', 'Real-time Feedback', 'Progress Tracking'],
     educationalLevel: 'GCSE, A-Level',
     targetAudience: 'Students struggling with verb conjugations'
@@ -66,7 +66,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Develop listening comprehension skills through immersive detective scenarios. Solve cases while improving audio comprehension and vocabulary recognition.',
     category: 'listening',
     languages: ['Spanish', 'French', 'German'],
-    path: '/games/detective-listening',
+    path: '/activities/detective-listening',
     features: ['Audio Comprehension', 'Story-based Learning', 'Context Clues', 'Vocabulary in Context'],
     educationalLevel: 'GCSE, A-Level',
     targetAudience: 'Students developing listening skills'
@@ -77,7 +77,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Unscramble vocabulary words to reinforce spelling and recognition. Features themed categories and adaptive difficulty for optimal learning progression.',
     category: 'vocabulary',
     languages: ['Spanish', 'French', 'German', 'Italian'],
-    path: '/games/word-scramble',
+    path: '/activities/word-scramble',
     features: ['Spelling Reinforcement', 'Pattern Recognition', 'Themed Categories', 'Time Challenges'],
     educationalLevel: 'KS3, GCSE',
     targetAudience: 'Students improving spelling and recognition'
@@ -88,7 +88,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Collect gems while learning vocabulary through engaging gameplay and spaced repetition techniques.',
     category: 'vocabulary',
     languages: ['Spanish', 'French', 'German', 'Italian'],
-    path: '/games/gem-collector',
+    path: '/activities/gem-collector',
     features: ['Gem Collection', 'Spaced Repetition', 'Progress Tracking', 'Achievement System'],
     educationalLevel: 'KS3, GCSE',
     targetAudience: 'Students who enjoy gamified learning'
@@ -99,7 +99,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Classic tic-tac-toe with a language learning twist. Answer vocabulary questions to claim your squares.',
     category: 'vocabulary',
     languages: ['Spanish', 'French', 'German', 'Italian'],
-    path: '/games/noughts-and-crosses',
+    path: '/activities/noughts-and-crosses',
     features: ['Strategic Gameplay', 'Vocabulary Practice', 'Competitive Elements', 'Quick Sessions'],
     educationalLevel: 'KS3, GCSE',
     targetAudience: 'Students who enjoy strategy games'
@@ -110,7 +110,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Construct grammatically correct sentences by arranging words and phrases in the right order.',
     category: 'grammar',
     languages: ['Spanish', 'French', 'German'],
-    path: '/games/sentence-builder',
+    path: '/activities/sentence-builder',
     features: ['Grammar Practice', 'Sentence Construction', 'Drag and Drop', 'Immediate Feedback'],
     educationalLevel: 'GCSE, A-Level',
     targetAudience: 'Students learning sentence structure'
@@ -121,7 +121,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Embark on an RPG adventure to master Spanish verb conjugations through epic battles.',
     category: 'grammar',
     languages: ['Spanish'],
-    path: '/games/verb-quest',
+    path: '/activities/verb-quest',
     features: ['RPG Adventure', 'Verb Conjugations', 'Character Progression', 'Epic Battles'],
     educationalLevel: 'GCSE, A-Level',
     targetAudience: 'Students learning verb conjugations'
@@ -132,7 +132,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Fast-paced vocabulary practice with click-to-reveal translations and themed challenges.',
     category: 'vocabulary',
     languages: ['Spanish', 'French', 'German', 'Italian'],
-    path: '/games/vocab-blast',
+    path: '/activities/vocab-blast',
     features: ['Fast-paced Action', 'Translation Practice', 'Themed Challenges', 'High Scores'],
     educationalLevel: 'KS3, GCSE',
     targetAudience: 'Students who enjoy fast-paced games'
@@ -143,7 +143,7 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     description: 'Master vocabulary through comprehensive practice sessions with multiple game modes including flashcards, speed challenges, pronunciation practice, and adaptive learning.',
     category: 'vocabulary',
     languages: ['Spanish', 'French', 'German', 'Italian'],
-    path: '/games/vocab-master',
+    path: '/activities/vocab-master',
     features: ['Multiple Game Modes', 'Adaptive Difficulty', 'Pronunciation Practice', 'Progress Analytics', 'Flashcards', 'Speed Challenges'],
     educationalLevel: 'KS3, GCSE, A-Level',
     targetAudience: 'Students seeking comprehensive vocabulary practice'
@@ -207,7 +207,7 @@ export function generateGameStructuredData(gameId: string) {
   
   const breadcrumbSchema = getBreadcrumbSchema([
     { name: 'Home', url: '/' },
-    { name: 'Games', url: '/games' },
+    { name: 'Games', url: '/activities' },
     { name: game.name, url: game.path }
   ]);
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Play, CheckCircle, Clock, Gamepad2, Target, Star, Gem, TrendingUp, Activity, Award, Zap, BookOpen } from 'lucide-react';
+import { ArrowLeft, Play, CheckCircle, Clock, Gamepad2, Target, Star, Gem, TrendingUp, Activity, Award, Zap, BookOpen, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
@@ -11,6 +11,9 @@ import { MasteryScoreService, MasteryScoreBreakdown } from '../../../../services
 import { calculateRemainingTime, getTimeCategory } from '../../../../utils/assignmentTimeEstimation';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import AssessmentAssignmentView from '../../../../components/student-dashboard/AssessmentAssignmentView';
+import AssignmentIntroModal from '../../../../components/assignments/AssignmentIntroModal';
+import { useAssignmentWinConditions } from '../../../../hooks/useAssignmentCompletion';
+import { COMPLETION_CONFIG } from '../../../../services/assignments/GameCompletionService';
 
 // Map game types to actual game directory paths
 const mapGameTypeToPath = (gameType: string | null): string => {
@@ -18,19 +21,16 @@ const mapGameTypeToPath = (gameType: string | null): string => {
 
   const gameTypeMap: Record<string, string> = {
     // Direct mappings for existing games
-    'memory-game': 'memory-game',
-    'vocab-blast': 'vocab-blast',
+    'memory-game': 'memory-game', // ✅ Memory Game assignment support
+    'vocab-blast': 'vocab-blast', // ✅ Vocab Blast assignment support
     'vocab-master': 'vocab-master', // ✅ VocabMaster assignment support
-    'hangman': 'hangman',
+    'hangman': 'hangman', // ✅ Hangman assignment support
     'noughts-and-crosses': 'noughts-and-crosses',
-    'speed-builder': 'speed-builder',
+    'speed-builder': 'speed-builder', // ✅ Speed Builder assignment support
     'vocabulary-mining': 'vocabulary-mining',
     'detective-listening': 'detective-listening',
     'word-scramble': 'word-scramble', // ✅ Word Scramble assignment support
-    'memory-game': 'memory-game', // ✅ Memory Game assignment support
-    'hangman': 'hangman', // ✅ Hangman assignment support
     'word-blast': 'word-blast', // ✅ Word Blast assignment support
-    'speed-builder': 'speed-builder', // ✅ Speed Builder assignment support
     'word-towers': 'word-towers', // ✅ Word Towers assignment support
     'sentence-towers': 'sentence-towers', // ✅ Sentence Towers assignment support
     'conjugation-duel': 'conjugation-duel', // ✅ Conjugation Duel assignment support
@@ -40,15 +40,11 @@ const mapGameTypeToPath = (gameType: string | null): string => {
 
     // Legacy mappings for potential mismatches
     'quiz': 'memory-game', // Fallback for quiz to memory game
-    'word-blast': 'vocab-blast', // Map word-blast to vocab-blast
     'tic-tac-toe': 'noughts-and-crosses', // Alternative name
     'tictactoe': 'noughts-and-crosses', // Alternative name
     'gem-collector': 'vocabulary-mining', // Map gem collector to vocabulary mining
     'translation-tycoon': 'speed-builder', // Map to closest equivalent
-    'conjugation-duel': 'conjugation-duel',
-    'word-scramble': 'word-scramble',
     'word-guesser': 'hangman', // Map to closest equivalent
-    'sentence-towers': 'sentence-towers',
     'sentence-builder': 'speed-builder', // Map to closest equivalent
     'word-association': 'memory-game', // Map to closest equivalent
   };
@@ -76,11 +72,26 @@ export default function StudentAssignmentDetailPage() {
   // Check if this is a preview mode (teacher viewing the assignment)
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
+  // Intro modal state
+  const [showIntroModal, setShowIntroModal] = useState(false);
+  const [hasSeenIntro, setHasSeenIntro] = useState(false);
+  const { winConditions, isLoading: winConditionsLoading } = useAssignmentWinConditions(assignmentId);
+
   useEffect(() => {
     // Check if preview mode is enabled from URL params
     const urlParams = new URLSearchParams(window.location.search);
     setIsPreviewMode(urlParams.get('preview') === 'true');
-  }, []);
+
+    // Check if user has already seen the intro for this assignment
+    if (assignmentId && typeof window !== 'undefined') {
+      const seenIntros = JSON.parse(localStorage.getItem('seenAssignmentIntros') || '{}');
+      if (!seenIntros[assignmentId]) {
+        setShowIntroModal(true);
+      } else {
+        setHasSeenIntro(true);
+      }
+    }
+  }, [assignmentId]);
 
   useEffect(() => {
     if (!user || !assignmentId) return;
@@ -199,6 +210,7 @@ export default function StudentAssignmentDetailPage() {
           'word-blast': { name: 'Word Blast', description: 'Fast-paced sentence building with falling words' },
           'vocab-blast': { name: 'Vocab Blast', description: 'Click vocabulary objects in themed environments' },
           'speed-builder': { name: 'Speed Builder', description: 'Build sentences quickly and accurately' },
+          'word-towers': { name: 'Word Towers', description: 'Build towers by stacking correct words' },
           'translation-tycoon': { name: 'Translation Tycoon', description: 'Build your business empire with vocabulary' },
           'conjugation-duel': { name: 'Conjugation Duel', description: 'Epic verb battles in different arenas' },
           'word-scramble': { name: 'Word Scramble', description: 'Unscramble letters to form words' },
@@ -223,6 +235,7 @@ export default function StudentAssignmentDetailPage() {
         let games: any[] = [];
         let assessments: any[] = [];
         let skills: any[] = [];
+        let vocabMasterActivities: any[] = [];
 
         if (isMultiGame) {
           // Multi-game assignment - handle both old and new config structures
@@ -390,6 +403,38 @@ export default function StudentAssignmentDetailPage() {
               totalTopics: topicIds.length
             };
           });
+
+          // Extract VocabMaster config
+          const vocabMasterConfig = assignmentData.game_config?.vocabMasterConfig;
+          const vocabMasterModes = vocabMasterConfig?.selectedModes || [];
+
+          if (vocabMasterModes.length > 0) {
+            // Get progress for vocab-master (shared across modes for now)
+            const vmMetrics = await progressService.getGameProgress(assignmentId, user.id, 'vocab-master');
+
+            vocabMasterActivities = vocabMasterModes.map((mode: any) => {
+              // Find individual mode progress if tracked separately
+              const modeProgress = gameProgressData?.find(gp => gp.game_id === `vocab-master-${mode.id}`) ||
+                gameProgressData?.find(gp => gp.game_id === 'vocab-master');
+
+              return {
+                id: `vocab-master-${mode.id}`,
+                gameId: 'vocab-master', // Base game ID for routing
+                modeId: mode.id, // Specific mode (flashcards, writing, etc.)
+                name: `VocabMaster: ${mode.name || mode.id}`,
+                description: mode.description || 'Master vocabulary through interactive exercises',
+                type: 'vocab-master',
+                completed: modeProgress?.status === 'completed' || vmMetrics.completed,
+                score: modeProgress?.score || vmMetrics.bestScore || 0,
+                accuracy: modeProgress?.accuracy || vmMetrics.accuracy || 0,
+                timeSpent: modeProgress?.time_spent || vmMetrics.totalTimeSpent || 0,
+                completedAt: modeProgress?.completed_at || vmMetrics.completedAt,
+                progressPercentage: vmMetrics.progressPercentage || 0,
+                status: modeProgress?.status || vmMetrics.status || 'not_started',
+                instanceConfig: mode.instanceConfig // Pass config for vocabulary source
+              };
+            });
+          }
         } else {
           // Single game assignment - use overall assignment progress
           const gameInfo = gameNameMap[assignmentData.game_type] || { name: assignmentData.game_type, description: 'Language learning game' };
@@ -407,7 +452,7 @@ export default function StudentAssignmentDetailPage() {
           }];
         }
 
-        const allActivities = [...games, ...assessments, ...skills];
+        const allActivities = [...games, ...assessments, ...skills, ...vocabMasterActivities];
 
         const completedActivities = allActivities.filter(a => a.completed).length;
         const inProgressActivities = allActivities.filter(a =>
@@ -588,6 +633,22 @@ export default function StudentAssignmentDetailPage() {
     router.push(`/games/${mapGameTypeToPath(gameId)}?assignment=${assignmentId}&mode=assignment${previewParam}${filterParam}`);
   };
 
+  const handlePlayVocabMaster = (activity: any) => {
+    const previewParam = isPreviewMode ? '&preview=true' : '';
+    const filterParam = '&filterOutstanding=true';
+
+    // Build URL with VocabMaster-specific parameters
+    const modeParam = activity.modeId ? `&vocabMode=${activity.modeId}` : '';
+
+    console.log('🎓 Launching VocabMaster:', {
+      modeId: activity.modeId,
+      assignmentId,
+      instanceConfig: activity.instanceConfig
+    });
+
+    router.push(`/games/vocab-master?assignment=${assignmentId}&mode=assignment${modeParam}${previewParam}${filterParam}`);
+  };
+
   const handlePlayAssessment = (assessment: any) => {
     const previewParam = isPreviewMode ? '&preview=true' : '';
     let assessmentUrl = '';
@@ -686,7 +747,9 @@ export default function StudentAssignmentDetailPage() {
 
       switch (skill.skillType) {
         case 'lesson':
-          // Lesson pages - go to main grammar page with assignment tracking
+        case 'combined':
+          // Lesson and combined pages - go to main grammar page with assignment tracking
+          // Combined includes both lesson content and practice exercises
           skillUrl = `/grammar/${languageSlug}/${categorySlug}/${topicSlug}?assignment=${assignmentId}&mode=assignment${previewParam}`;
           break;
         case 'practice':
@@ -900,12 +963,23 @@ export default function StudentAssignmentDetailPage() {
           <div className="w-full bg-gray-200 rounded-full h-4 mb-4 shadow-inner">
             <div
               className={`h-4 rounded-full transition-all duration-700 ${assignment.overallProgress === 100
-                  ? 'bg-gradient-to-r from-green-400 to-green-600'
-                  : 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                ? 'bg-gradient-to-r from-green-400 to-green-600'
+                : 'bg-gradient-to-r from-indigo-500 to-purple-500'
                 }`}
               style={{ width: `${assignment.overallProgress}%` }}
             ></div>
           </div>
+
+          {/* How to Complete Info Button */}
+          {winConditions && hasSeenIntro && (
+            <button
+              onClick={() => setShowIntroModal(true)}
+              className="mb-4 flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800 transition-colors"
+            >
+              <Info className="h-4 w-4" />
+              <span>How to complete this assignment</span>
+            </button>
+          )}
 
           {assignment.overallProgress === 100 && !assignment.isAssessmentOnly && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -925,8 +999,8 @@ export default function StudentAssignmentDetailPage() {
                 </div>
                 <div className="text-right">
                   <div className={`text-4xl font-bold ${assignment.assessmentData.score >= 70 ? 'text-green-600' :
-                      assignment.assessmentData.score >= 50 ? 'text-yellow-600' :
-                        'text-red-600'
+                    assignment.assessmentData.score >= 50 ? 'text-yellow-600' :
+                      'text-red-600'
                     }`}>
                     {assignment.assessmentData.score}%
                   </div>
@@ -1170,10 +1244,10 @@ export default function StudentAssignmentDetailPage() {
               <div
                 key={activity.id}
                 className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${activity.completed
-                    ? 'border-green-400 bg-gradient-to-br from-green-50 to-green-100'
-                    : activity.status === 'in_progress'
-                      ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-yellow-100'
-                      : 'border-gray-300 bg-white hover:border-indigo-400'
+                  ? 'border-green-400 bg-gradient-to-br from-green-50 to-green-100'
+                  : activity.status === 'in_progress'
+                    ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-yellow-100'
+                    : 'border-gray-300 bg-white hover:border-indigo-400'
                   }`}
               >
                 {/* Header with title and status */}
@@ -1182,12 +1256,14 @@ export default function StudentAssignmentDetailPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-lg font-bold text-gray-900">{activity.name}</h3>
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${activity.type === 'game'
-                          ? 'bg-blue-100 text-blue-700'
-                          : activity.type === 'assessment'
-                            ? 'bg-purple-100 text-purple-700'
+                        ? 'bg-blue-100 text-blue-700'
+                        : activity.type === 'assessment'
+                          ? 'bg-purple-100 text-purple-700'
+                          : activity.type === 'vocab-master'
+                            ? 'bg-orange-100 text-orange-700'
                             : 'bg-green-100 text-green-700'
                         }`}>
-                        {activity.type === 'game' ? 'GAME' : activity.type === 'assessment' ? 'ASSESSMENT' : 'SKILL'}
+                        {activity.type === 'game' ? 'GAME' : activity.type === 'assessment' ? 'ASSESSMENT' : activity.type === 'vocab-master' ? 'VOCAB MASTER' : 'SKILL'}
                       </span>
                     </div>
                     <p className="text-gray-600 text-sm">{activity.description}</p>
@@ -1340,8 +1416,8 @@ export default function StudentAssignmentDetailPage() {
                                     </span>
                                     <h4 className="font-bold text-gray-900">{topic.title}</h4>
                                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${topic.difficulty_level === 'beginner' ? 'bg-green-100 text-green-700' :
-                                        topic.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                                          'bg-red-100 text-red-700'
+                                      topic.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-red-100 text-red-700'
                                       }`}>
                                       {topic.difficulty_level}
                                     </span>
@@ -1403,13 +1479,15 @@ export default function StudentAssignmentDetailPage() {
                         handlePlayAssessment(activity);
                       } else if (activity.type === 'skill') {
                         handlePlaySkill(activity);
+                      } else if (activity.type === 'vocab-master') {
+                        handlePlayVocabMaster(activity);
                       }
                     }}
                     className={`w-full py-3 px-4 rounded-lg font-bold transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-lg ${activity.completed
-                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
-                        : activity.status === 'in_progress'
-                          ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
-                          : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
+                      : activity.status === 'in_progress'
+                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
+                        : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
                       }`}
                   >
                     <Play className="h-5 w-5 mr-2" />
@@ -1425,6 +1503,27 @@ export default function StudentAssignmentDetailPage() {
           })}
         </div>
       </div>
+
+      {/* Intro Modal - Shows on first visit */}
+      {showIntroModal && winConditions && (
+        <AssignmentIntroModal
+          isOpen={showIntroModal}
+          assignmentTitle={assignment.title}
+          perGameThresholds={winConditions.perGameThresholds}
+          assignmentThreshold={winConditions.assignmentThreshold}
+          tips={winConditions.tips}
+          onStart={() => {
+            setShowIntroModal(false);
+            setHasSeenIntro(true);
+            // Remember that user has seen intro for this assignment
+            if (assignmentId && typeof window !== 'undefined') {
+              const seenIntros = JSON.parse(localStorage.getItem('seenAssignmentIntros') || '{}');
+              seenIntros[assignmentId] = true;
+              localStorage.setItem('seenAssignmentIntros', JSON.stringify(seenIntros));
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -11,8 +11,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if this is a protected dashboard route
-  if (path.startsWith('/dashboard') && path !== '/dashboard/preview') {
+  // Check if this is a protected route that needs auth
+  const isProtectedRoute = (path.startsWith('/dashboard') && path !== '/dashboard/preview') || 
+                          path.startsWith('/activities');
+
+  if (isProtectedRoute) {
     try {
       // Create Supabase client for middleware
       const { supabase, response } = createClient(req);
@@ -49,8 +52,8 @@ export async function middleware(req: NextRequest) {
 
       const role = profileData?.role || user.user_metadata?.role;
 
-      // Only check subscription for teachers (admins always have access)
-      if (role === 'teacher') {
+      // Only check subscription for dashboard routes (not activities)
+      if (path.startsWith('/dashboard') && role === 'teacher') {
         const hasActiveSubscription = await checkSubscriptionAccess(supabase, profileData, user.id);
 
         if (!hasActiveSubscription) {

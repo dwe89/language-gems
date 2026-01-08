@@ -91,9 +91,9 @@ export class AssignmentExposureService {
       return { success: true };
     } catch (error) {
       console.error(`❌ [EXPOSURE SERVICE] Exception recording exposures [${callId}]:`, error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -123,9 +123,9 @@ export class AssignmentExposureService {
 
     try {
       // Get assignment details
-      const { data: assignment, error: assignmentError} = await this.supabase
+      const { data: assignment, error: assignmentError } = await this.supabase
         .from('assignments')
-        .select('vocabulary_count')
+        .select('vocabulary_count, vocabulary_assignment_list_id')
         .eq('id', assignmentId)
         .single();
 
@@ -134,7 +134,20 @@ export class AssignmentExposureService {
         return null;
       }
 
-      const totalWords = assignment.vocabulary_count || 10;
+      // Try to get actual vocabulary count from the assignment list (most accurate)
+      let totalWords = assignment.vocabulary_count || 10;
+
+      if (assignment.vocabulary_assignment_list_id) {
+        const { count, error: countError } = await this.supabase
+          .from('vocabulary_assignment_items')
+          .select('*', { count: 'exact', head: true })
+          .eq('assignment_list_id', assignment.vocabulary_assignment_list_id);
+
+        if (!countError && count !== null && count > 0) {
+          totalWords = count;
+          console.log(`📊 [EXPOSURE SERVICE] Using actual vocabulary count: ${totalWords} [${callId}]`);
+        }
+      }
 
       // Get exposed words for this student
       const { data: exposures, error: exposuresError } = await this.supabase
@@ -194,7 +207,7 @@ export class AssignmentExposureService {
     studentId: string
   ): Promise<string[] | null> {
     const progress = await this.getAssignmentProgress(assignmentId, studentId);
-    
+
     if (!progress) {
       return null;
     }
@@ -281,9 +294,9 @@ export class AssignmentExposureService {
       return { success: true };
     } catch (error) {
       console.error('❌ [EXPOSURE SERVICE] Exception resetting exposures:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

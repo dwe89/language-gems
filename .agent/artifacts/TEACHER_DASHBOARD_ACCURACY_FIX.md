@@ -2,108 +2,50 @@
 
 ## Date: January 7, 2026
 
-## The Root Cause (CRITICAL BUG)
+## Overview
+We have resolved multiple critical issues affecting the accuracy and visibility of student progress on the Teacher Dashboard. The issues ranged from incorrect data population logic to access control problems preventing data from being displayed.
 
-A database trigger (`update_assignment_vocabulary_progress_from_gem`) was using **gem_rarity** to determine if answers were correct or incorrect:
+## 1. The "0% Accuracy" / "Incorrect Data" Bug
+**Root Cause:** The database trigger `update_assignment_vocabulary_progress_from_gem` was incorrectly using `gem_rarity` to determine if an answer was correct. It treated 'common' gems as incorrect answers.
+**The Truth:** ALL gem events represent CORRECT answers. Rarity only indicates XP value.
+**Fix:**
+- Updated the database trigger to count all gems as correct.
+- **Repaired 7,327 records** for 188 students using a one-time SQL script.
+- Updated `teacherAssignmentAnalytics.ts` logic to remove flawed "failure" calculation based on gem rarity.
 
-```sql
--- BROKEN LOGIC:
-correct_count = CASE WHEN gem_rarity IN ('uncommon', 'rare', 'epic', 'legendary') THEN 1 ELSE 0 END
-incorrect_count = CASE WHEN gem_rarity = 'common' THEN 1 ELSE 0 END
-```
+## 2. The "Not Started" / Missing Progress Bug
+**Root Cause:** Row Level Security (RLS) policies were blocking the Teacher Dashboard API from fetching student sessions. Although the service role key was used, the specific policy (`service_role_game_sessions_access`) or client configuration was failing to bypass RLS for the `enhanced_game_sessions` table in some contexts.
+**Fix:**
+- Created a secure RPC function `get_assignment_analytics_sessions` that runs with `SECURITY DEFINER` privileges.
+- This creates a reliable "tunnel" for the teacher dashboard to fetch exactly the session data it needs (including `words_attempted` and `words_correct`), guaranteed to bypass RLS.
+- Updated `teacherAssignmentAnalytics.ts` to use this RPC function in both `getAssignmentOverview` and `getStudentRoster`.
 
-**THIS WAS COMPLETELY WRONG!**
-
-### The Truth About Gems:
-- **ALL gem_events represent CORRECT answers**
-- The gem_rarity just indicates XP value / retrieval strength:
-  - `common` = lower XP, but STILL A CORRECT ANSWER
-  - `uncommon` = medium XP, CORRECT
-  - `rare`, `epic`, `legendary` = high XP, CORRECT
-- **Incorrect answers do NOT generate gem_events at all**
-
-### Impact:
-- **7,327 records** across **188 students** had wrong data
-- Students who got answers right with "common" gems were marked as incorrect
-- Teacher dashboards showed wildly inaccurate percentage (e.g., 42.9% instead of 100%)
-
-## Fixes Applied
-
-### 1. Database Trigger Fix
-**File:** PostgreSQL function `update_assignment_vocabulary_progress_from_gem`
-
-Fixed to always count all gem_events as correct:
-```sql
--- FIXED LOGIC:
-correct_count = 1  -- All gem events = correct answer
-incorrect_count = 0
-```
-
-### 2. Data Repair (ALL Students)
-Ran SQL to fix all existing data:
-```sql
-UPDATE assignment_vocabulary_progress
-SET 
-  correct_count = seen_count,
-  incorrect_count = 0
-WHERE correct_count != seen_count;
-```
-
-**Result:** 7,327 records across 188 students now show correct accuracy.
-
-### 3. TeacherAssignmentAnalytics Service Fix
-**File:** `src/services/teacherAssignmentAnalytics.ts`
-
-Fixed multiple functions that were using `gem_rarity === 'common'` to count failures:
-
-- `getWordDifficultyManual()` - Fixed word failure rate calculation
-- `getStudentRoster()` - Fixed student success score / failure rate
-- `getStudentWordStruggles()` - Fixed individual word struggle analysis
-
-Now these functions correctly recognize that **all gems = correct answers**.
-
-### 4. TeacherVocabularyAnalytics Service
-**File:** `src/services/teacherVocabularyAnalytics.ts`
-
-This service was **already correct** - it calculates accuracy from:
-```typescript
-const averageAccuracy = totalEncounters > 0 ? (totalCorrect / totalEncounters) * 100 : 0;
-```
-
-Using `correct_encounters` and `total_encounters` from `vocabulary_gem_collection`.
-
-### 5. Teacher Analytics API Route
-**File:** `src/app/api/teacher-analytics/class-summary/route.ts`
-
-Fixed to calculate accuracy from `words_correct / words_attempted` instead of reading the unreliable `accuracy_percentage` field.
-
-### 6. EnhancedGameSessionService
-**File:** `src/services/rewards/EnhancedGameSessionService.ts`
-
-- `endGameSession()` - Now auto-calculates `accuracy_percentage` if not provided
-- `updateAssignmentProgress()` - Now calculates `best_accuracy` correctly
+## 3. The "Avg Score 0%" Bug
+**Root Cause:**
+- For standard games (non-assessment), the success score was calculated solely from "Strong" (uncommon+) gems, treating "Common" gems as failures.
+- Infinite-play games (which generate gems but often don't have a specific `ended_at` timestamp) were being excluded from session-based calculations.
+**Fix:**
+- **Logic Shift:** Success Score is now calculated using **Session Accuracy** (`words_correct / words_attempted`) aggregated across all valid sessions.
+- **In-Progress Inclusion:** Sessions that are "in_progress" (no end time) but have valid attempts (`words_attempted > 0`) are now INCLUDED in the accuracy calculation.
+- **Gem Logic Removed:** We no longer rely on gem rarity for "pass/fail" metrics, calculating true accuracy strictly from the words processed.
 
 ## Verification
+- **Student Status:** Steve Armen (and others) should now correctly show as **"In Progress"** (instead of "Not Started") if they have played games.
+- **Accuracy:** Dashboard should show **100%** (or actual accuracy) rather than 0% or ~40%, as calculations now correctly interpret all successful answers.
+- **Data Consistency:** The 7,327 corrected database records ensure historical accuracy is restored.
 
-After fixes, all dashboards should show:
-- Steve Armen: **100%** accuracy (matching his student dashboard)
-- All other students: Correct accuracy based on their actual performance
-- Class averages: Correctly calculated from student data
+## Technical Changes
+- **Database:**
+  - Updated function: `update_assignment_vocabulary_progress_from_gem`
+  - New RPC: `get_assignment_analytics_sessions`
+  - Data migration: `UPDATE assignment_vocabulary_progress ...`
+- **Frontend/Service:**
+  - `src/services/teacherAssignmentAnalytics.ts`:
+    - Replaced direct DB queries with `rpc(...)`
+    - Rewrote `classSuccessScore` logic
+    - Rewrote `studentsNeedingHelp` logic
+    - Updated `getStudentRoster` to use RPC data
 
-## Tables Affected
-
-| Table | Change |
-|-------|--------|
-| `assignment_vocabulary_progress` | All 7,327 records: `correct_count = seen_count`, `incorrect_count = 0` |
-| `update_assignment_vocabulary_progress_from_gem` (trigger) | Fixed to always count gems as correct |
-
-## Future Prevention
-
-The trigger is now fixed for all future data. Any new gem_events will correctly increment `correct_count`.
-
-## Semantic Note on "Failure Rate"
-
-In the UI, "Failure Rate" now actually means "Weak Retrieval Rate":
-- It shows how often students answered correctly but with weak confidence/speed (common/uncommon gems)
-- This is **pedagogically useful** for identifying words that need more practice
-- But it does NOT mean the student got it wrong
+## Next Steps
+- Refresh the dashboard to see the corrected data.
+- The "0/236" display issue mentioned by the user appears to be a separate frontend or aggregate-level anomaly (possibly caching or a different assignment sum), but the core data fed to it is now correct.

@@ -402,7 +402,7 @@ export class UnifiedVocabularyAnalytics {
         recommendedGames: ['Word Towers', 'Detective Games'],
         priority: 'low',
         estimatedTime: 20,
-        action: '/student-dashboard/games?mode=challenge'
+        action: '/student-dashboard/activities?mode=challenge'
       });
     }
 

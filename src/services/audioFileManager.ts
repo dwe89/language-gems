@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { gameData } from '../app/games/detective-listening/data/gameData';
+import { gameData } from '../app/activities/detective-listening/data/gameData';
 
 export interface AudioFileInfo {
   filename: string;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import GameAssignmentWrapper, { GameProgress } from '../../../components/games/templates/GameAssignmentWrapper';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
@@ -10,6 +10,7 @@ import { GameCompletionScreen } from './GameCompletionScreen';
 
 interface VocabMasterAssignmentWrapperProps {
   assignmentId: string;
+  autoStartMode?: string;  // If provided, auto-start this mode instead of showing launcher
   onAssignmentComplete: () => void;
   onBackToAssignments: () => void;
   onBackToMenu: () => void;
@@ -24,10 +25,10 @@ function calculateStandardScore(
 ): { score: number; accuracy: number; maxScore: number } {
   const accuracy = totalWords > 0 ? (correctAnswers / totalWords) * 100 : 0;
   const maxScore = totalWords * 100;
-  
+
   // Base score calculation
   let score = correctAnswers * 100;
-  
+
   // Time bonus (faster completion gets bonus points)
   const averageTimePerWord = timeSpent / totalWords;
   if (averageTimePerWord < 5) { // Less than 5 seconds per word
@@ -35,7 +36,7 @@ function calculateStandardScore(
   } else if (averageTimePerWord < 10) { // Less than 10 seconds per word
     score += Math.floor(score * 0.1); // 10% bonus
   }
-  
+
   return {
     score: Math.min(score, maxScore),
     accuracy: Math.round(accuracy),
@@ -45,15 +46,34 @@ function calculateStandardScore(
 
 export default function VocabMasterAssignmentWrapper({
   assignmentId,
+  autoStartMode,
   onAssignmentComplete,
   onBackToAssignments,
   onBackToMenu
 }: VocabMasterAssignmentWrapperProps) {
   const { user } = useUnifiedAuth();
 
-  // Game state management
-  const [gameState, setGameState] = useState<'launcher' | 'playing' | 'complete'>('launcher');
-  const [selectedMode, setSelectedMode] = useState<string>('');
+  // Game state management - if autoStartMode is provided, start in 'playing' state
+  const [gameState, setGameState] = useState<'launcher' | 'playing' | 'complete'>(
+    autoStartMode ? 'playing' : 'launcher'
+  );
+
+  // Extract the base mode name from vocabMode (e.g., "multiple_choice_quiz-1234567" -> "multiple_choice_quiz")
+  // The VocabMasterGameEngine will then map this to the actual game mode
+  const extractModeId = (vocabMode: string): string => {
+    // Remove the timestamp suffix if present (format: mode_name-timestamp)
+    // Handle both "multiple_choice_quiz-1234567" and just "multiple_choice_quiz"
+    const parts = vocabMode.split('-');
+    // If the last part is numeric (timestamp), remove it
+    if (parts.length > 1 && /^\d+$/.test(parts[parts.length - 1])) {
+      return parts.slice(0, -1).join('-');
+    }
+    return vocabMode;
+  };
+
+  const [selectedMode, setSelectedMode] = useState<string>(
+    autoStartMode ? extractModeId(autoStartMode) : ''
+  );
   const [gameResults, setGameResults] = useState<GameResult | null>(null);
 
   if (!user) {

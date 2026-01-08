@@ -322,7 +322,7 @@ export default function GameLauncher({
 
   const renderGame = () => {
     // Redirect to VocabMaster page
-    window.location.href = '/games/vocab-master';
+    window.location.href = '/activities/vocab-master';
     return null;
   };
 

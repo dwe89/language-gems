@@ -461,7 +461,7 @@ export default function CategoryPerformanceBreakdown() {
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-100">
                       <Link
-                        href={`/student-dashboard/games?category=${category.category}`}
+                        href={`/student-dashboard/activities?category=${category.category}`}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
                       >
                         <Gamepad2 className="h-4 w-4" />

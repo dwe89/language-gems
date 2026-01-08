@@ -210,7 +210,7 @@ export default function UnifiedStudentAssignmentDashboard() {
       const isMultiGame = config.multiGame && config.selectedGames?.length > 1;
       if (isMultiGame) {
         // For multi-game assignments, navigate to the multi-game assignment page
-        window.location.href = `/games/multi-game?assignment=${assignmentId}&mode=assignment`;
+        window.location.href = `/activities/multi-game?assignment=${assignmentId}&mode=assignment`;
         return;
       }
 
@@ -219,17 +219,17 @@ export default function UnifiedStudentAssignmentDashboard() {
 
       // Map game types to their URL paths
       const gameRoutes: Record<string, string> = {
-        'hangman': '/games/hangman',
-        'memory-game': '/games/memory-game',
-        'word-scramble': '/games/word-scramble',
-        'vocab-blast': '/games/vocab-blast',
-        'vocab-master': '/games/vocab-master',
-        'word-guesser': '/games/word-guesser',
-        'noughts-crosses': '/games/noughts-crosses',
-        'vocabulary-mining': '/games/vocabulary-mining',
-        'word-blast': '/games/word-blast',
-        'detective-listening': '/games/detective-listening',
-        'multi-game': '/games/multi-game'
+        'hangman': '/activities/hangman',
+        'memory-game': '/activities/memory-game',
+        'word-scramble': '/activities/word-scramble',
+        'vocab-blast': '/activities/vocab-blast',
+        'vocab-master': '/activities/vocab-master',
+        'word-guesser': '/activities/word-guesser',
+        'noughts-crosses': '/activities/noughts-crosses',
+        'vocabulary-mining': '/activities/vocabulary-mining',
+        'word-blast': '/activities/word-blast',
+        'detective-listening': '/activities/detective-listening',
+        'multi-game': '/activities/multi-game'
       };
 
       const gamePath = gameRoutes[gameType];
@@ -271,13 +271,13 @@ export default function UnifiedStudentAssignmentDashboard() {
       console.error('Error starting assignment:', error);
       // Fallback to old method if new method fails
       const gameRoutes: Record<string, string> = {
-        'hangman': '/games/hangman/assignment',
-        'memory-game': '/games/memory-game/assignment',
-        'word-scramble': '/games/word-scramble/assignment',
-        'vocab-blast': '/games/vocab-blast/assignment',
-        'vocab-master': '/games/vocab-master/assignment',
-        'word-guesser': '/games/word-guesser/assignment',
-        'noughts-crosses': '/games/noughts-crosses/assignment'
+        'hangman': '/activities/hangman/assignment',
+        'memory-game': '/activities/memory-game/assignment',
+        'word-scramble': '/activities/word-scramble/assignment',
+        'vocab-blast': '/activities/vocab-blast/assignment',
+        'vocab-master': '/activities/vocab-master/assignment',
+        'word-guesser': '/activities/word-guesser/assignment',
+        'noughts-crosses': '/activities/noughts-crosses/assignment'
       };
 
       const route = gameRoutes[gameType];

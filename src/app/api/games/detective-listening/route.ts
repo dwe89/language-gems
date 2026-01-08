@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateGameData, getAvailableCaseTypes } from '../../../games/detective-listening/data/databaseGameData';
+import { generateGameData, getAvailableCaseTypes } from '../../../activities/detective-listening/data/databaseGameData';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error generating detective listening game data:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Failed to generate game data',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error getting available case types:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Failed to get case types',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

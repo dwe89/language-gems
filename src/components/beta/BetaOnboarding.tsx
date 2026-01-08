@@ -146,7 +146,7 @@ export default function BetaOnboarding({
           </div>
           
           <a
-            href="/games"
+            href="/activities"
             className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:shadow-lg transition-all"
           >
             <Play className="h-5 w-5" />

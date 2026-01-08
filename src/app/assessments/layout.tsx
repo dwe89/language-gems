@@ -106,7 +106,7 @@ export default function AssessmentsLayout({
             {/* Navigation Links */}
             <nav className="hidden lg:flex items-center space-x-2 flex-grow justify-center">
               <NavLink icon={<BookOpen className="h-5 w-5" />} label="Assignments" href="/student-dashboard/assignments" />
-              <NavLink icon={<Hexagon className="h-5 w-5" />} label="Games" href="/student-dashboard/games" />
+              <NavLink icon={<Hexagon className="h-5 w-5" />} label="Games" href="/student-dashboard/activities" />
               <NavLink icon={<Edit className="h-5 w-5" />} label="Assessments" href="/assessments" />
             </nav>
             
@@ -139,7 +139,7 @@ export default function AssessmentsLayout({
             <nav className="lg:hidden mt-4 pt-4 border-t border-indigo-700">
               <div className="grid grid-cols-1 gap-2">
                 <NavLink icon={<BookOpen className="h-5 w-5" />} label="Assignments" href="/student-dashboard/assignments" />
-                <NavLink icon={<Hexagon className="h-5 w-5" />} label="Games" href="/student-dashboard/games" />
+                <NavLink icon={<Hexagon className="h-5 w-5" />} label="Games" href="/student-dashboard/activities" />
                 <NavLink icon={<Edit className="h-5 w-5" />} label="Assessments" href="/assessments" />
               </div>
               <div className="mt-4 pt-4 border-t border-indigo-700">

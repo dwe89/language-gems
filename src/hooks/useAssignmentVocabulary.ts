@@ -233,15 +233,23 @@ export function useAssignmentVocabulary(
               // ✅ If all words are exposed (100% complete), allow continued practice with all words
               if (unexposedWords.length === 0) {
                 console.log('🎉 [HOOK] Assignment 100% complete! Allowing continued practice with all words.');
-                setVocabulary(vocabularyItems);
+                // ALWAYS shuffle for variety
+                const shuffled = [...vocabularyItems].sort(() => Math.random() - 0.5);
+                setVocabulary(shuffled);
               } else {
-                setVocabulary(unexposedWords);
+                // ALWAYS shuffle for variety
+                const shuffled = [...unexposedWords].sort(() => Math.random() - 0.5);
+                setVocabulary(shuffled);
               }
             } else {
-              setVocabulary(vocabularyItems);
+              // ALWAYS shuffle for variety
+              const shuffled = [...vocabularyItems].sort(() => Math.random() - 0.5);
+              setVocabulary(shuffled);
             }
           } else {
-            setVocabulary(vocabularyItems);
+            // ALWAYS shuffle for variety (regardless of assignment config)
+            const shuffled = [...vocabularyItems].sort(() => Math.random() - 0.5);
+            setVocabulary(shuffled);
           }
 
           setSentences([]); // No sentences for vocabulary-based assignments

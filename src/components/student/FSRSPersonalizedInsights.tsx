@@ -99,7 +99,7 @@ export default function FSRSPersonalizedInsights({ className = '' }: FSRSPersona
         title: `${dueWords.length} words ready for review`,
         description: `Your memory is strongest when you review at the optimal time. These words are ready now!`,
         actionText: 'Start Review Session',
-        actionUrl: `/student-dashboard/games?fsrs=true&mode=review`,
+        actionUrl: `/student-dashboard/activities?fsrs=true&mode=review`,
         priority: 'high',
         icon: <Clock className="w-5 h-5" />,
         data: { wordCount: dueWords.length, estimatedTime: dueWords.reduce((sum, w) => sum + w.estimatedStudyTime, 0) }
@@ -114,7 +114,7 @@ export default function FSRSPersonalizedInsights({ className = '' }: FSRSPersona
         title: `Focus on ${strugglingWords.length} challenging words`,
         description: `These words need extra attention. Targeted practice will help you master them faster.`,
         actionText: 'Practice Difficult Words',
-        actionUrl: `/student-dashboard/games?fsrs=true&mode=struggling`,
+        actionUrl: `/student-dashboard/activities?fsrs=true&mode=struggling`,
         priority: 'high',
         icon: <Target className="w-5 h-5" />,
         data: { wordCount: strugglingWords.length }
@@ -148,7 +148,7 @@ export default function FSRSPersonalizedInsights({ className = '' }: FSRSPersona
         title: 'Perfect time to study!',
         description: `Morning hours are great for learning. Your brain is fresh and ready to absorb new information.`,
         actionText: 'Start Learning Session',
-        actionUrl: `/student-dashboard/games?fsrs=true`,
+        actionUrl: `/student-dashboard/activities?fsrs=true`,
         priority: 'medium',
         icon: <Zap className="w-5 h-5" />,
         data: { optimalTime: true }
@@ -163,7 +163,7 @@ export default function FSRSPersonalizedInsights({ className = '' }: FSRSPersona
         title: `Learning ${Math.round(efficiency)} words per week`,
         description: `You're making steady progress! Keep up the consistent practice to maintain this pace.`,
         actionText: 'Continue Learning',
-        actionUrl: `/student-dashboard/games`,
+        actionUrl: `/student-dashboard/activities`,
         priority: 'low',
         icon: <TrendingUp className="w-5 h-5" />,
         data: { velocity: efficiency }

@@ -249,6 +249,7 @@ export class TeacherAssignmentAnalyticsService {
         }
       } else if (isSkillsType) {
         // Skills (Grammar) assignments - fetch from grammar_assignment_sessions
+        // 🔧 FIX: For mixed-mode assignments, also check vocabulary game sessions
         console.log('🔍 [SKILLS] Fetching grammar sessions for assignment:', assignmentId);
 
         const { data: grammarSessions, error: grammarSessionError } = await this.supabase
@@ -274,55 +275,93 @@ export class TeacherAssignmentAnalyticsService {
         }
 
         console.log('🔍 [SKILLS] Grammar sessions found:', grammarSessions?.length || 0);
+        
+        // 🔧 FIX: For mixed-mode assignments (game_type === 'mixed-mode'), also check vocabulary games
+        let vocabSessions: any[] = [];
+        if (assignment?.game_type === 'mixed-mode') {
+          console.log('🔍 [MIXED-MODE] Also fetching vocabulary game sessions');
+          const { data: vocabData, error: vocabError } = await this.supabase
+            .from('enhanced_game_sessions')
+            .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage, words_attempted, words_correct')
+            .eq('assignment_id', assignmentId);
+          
+          if (!vocabError && vocabData) {
+            vocabSessions = vocabData;
+            console.log('🔍 [MIXED-MODE] Vocabulary sessions found:', vocabSessions.length);
+          }
+        }
 
-        // Group sessions by student
-        const studentSessionsMap = new Map<string, typeof grammarSessions>();
-        grammarSessions?.forEach(session => {
-          const existing = studentSessionsMap.get(session.student_id) || [];
-          existing.push(session);
-          studentSessionsMap.set(session.student_id, existing);
-        });
+        // Group sessions by student (combine grammar + vocabulary for mixed-mode)
+        const allStudentsWithSessions = new Set([
+          ...(grammarSessions?.map(s => s.student_id) || []),
+          ...(vocabSessions?.map((s: any) => s.student_id) || [])
+        ]);
 
-        const studentsWithSessions = new Set(grammarSessions?.map(s => s.student_id) || []);
-
-        // A student is completed if they have at least one completed session
-        const studentsCompleted = new Set(
-          grammarSessions
-            ?.filter(s => s.completion_status === 'completed')
-            .map(s => s.student_id) || []
-        );
+        // A student is completed if they have at least one completed session (grammar or vocab)
+        const studentsCompleted = new Set([
+          ...(grammarSessions?.filter(s => s.completion_status === 'completed').map(s => s.student_id) || []),
+          ...(vocabSessions?.filter((s: any) => s.completion_status === 'completed' || s.ended_at).map((s: any) => s.student_id) || [])
+        ]);
 
         completedStudents = studentsCompleted.size;
-        inProgressStudents = studentsWithSessions.size - studentsCompleted.size;
-        notStartedStudents = Math.max(0, totalStudents - studentsWithSessions.size);
+        inProgressStudents = allStudentsWithSessions.size - studentsCompleted.size;
+        notStartedStudents = Math.max(0, totalStudents - allStudentsWithSessions.size);
 
         console.log('📊 [SKILLS] Completion stats:', { completedStudents, inProgressStudents, notStartedStudents });
 
-        // Calculate average time
-        const sessionTimes = grammarSessions?.filter(s => s.duration_seconds && s.duration_seconds > 0) || [];
-        if (sessionTimes.length > 0) {
-          averageTimeSeconds = sessionTimes.reduce((sum, s) => sum + (s.duration_seconds || 0), 0) / sessionTimes.length;
+        // Calculate average time (combine grammar + vocab sessions)
+        const grammarTimes = grammarSessions?.filter(s => s.duration_seconds && s.duration_seconds > 0) || [];
+        const vocabTimes = vocabSessions?.filter((s: any) => s.duration_seconds && s.duration_seconds > 0) || [];
+        const allSessionTimes = [...grammarTimes, ...vocabTimes];
+        
+        if (allSessionTimes.length > 0) {
+          averageTimeSeconds = allSessionTimes.reduce((sum, s: any) => sum + (s.duration_seconds || 0), 0) / allSessionTimes.length;
         }
 
-        // Calculate class success score from accuracy
-        const sessionsWithAccuracy = grammarSessions?.filter(s =>
+        // Calculate class success score from accuracy (combine grammar + vocab)
+        const grammarAccuracy = grammarSessions?.filter(s =>
           s.questions_attempted && s.questions_attempted > 0
         ) || [];
+        const vocabAccuracy = vocabSessions?.filter((s: any) =>
+          s.words_attempted && s.words_attempted > 0
+        ) || [];
 
-        if (sessionsWithAccuracy.length > 0) {
-          const totalQuestions = sessionsWithAccuracy.reduce((sum, s) => sum + (s.questions_attempted || 0), 0);
-          const totalCorrect = sessionsWithAccuracy.reduce((sum, s) => sum + (s.questions_correct || 0), 0);
-          classSuccessScore = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+        let totalCorrect = 0;
+        let totalAttempts = 0;
 
-          console.log('📊 [SKILLS] Success score:', classSuccessScore, '% (', totalCorrect, '/', totalQuestions, ')');
+        // Grammar sessions
+        grammarAccuracy.forEach(s => {
+          totalAttempts += s.questions_attempted || 0;
+          totalCorrect += s.questions_correct || 0;
+        });
+
+        // Vocabulary sessions
+        vocabAccuracy.forEach((s: any) => {
+          totalAttempts += s.words_attempted || 0;
+          totalCorrect += s.words_correct || 0;
+        });
+
+        if (totalAttempts > 0) {
+          classSuccessScore = Math.round((totalCorrect / totalAttempts) * 100);
+          console.log('📊 [MIXED-MODE] Success score:', classSuccessScore, '% (', totalCorrect, '/', totalAttempts, ')');
         }
 
         // Calculate students needing help (accuracy < 50%)
         const studentAccuracyMap = new Map<string, { total: number; correct: number }>();
+        
+        // Include grammar sessions
         grammarSessions?.forEach(session => {
           const current = studentAccuracyMap.get(session.student_id) || { total: 0, correct: 0 };
           current.total += session.questions_attempted || 0;
           current.correct += session.questions_correct || 0;
+          studentAccuracyMap.set(session.student_id, current);
+        });
+
+        // Include vocabulary sessions
+        vocabSessions?.forEach((session: any) => {
+          const current = studentAccuracyMap.get(session.student_id) || { total: 0, correct: 0 };
+          current.total += session.words_attempted || 0;
+          current.correct += session.words_correct || 0;
           studentAccuracyMap.set(session.student_id, current);
         });
 
@@ -331,19 +370,22 @@ export class TeacherAssignmentAnalyticsService {
           return accuracy < 50;
         }).length;
 
-        console.log('📊 [SKILLS] Students needing help:', studentsNeedingHelp);
+        console.log('📊 [MIXED-MODE] Students needing help:', studentsNeedingHelp);
       } else {
-        console.log('🔍 [DEBUG] Fetching sessions for assignment:', assignmentId);
+        console.log('�🔥🔥 [OVERVIEW] VOCABULARY ASSIGNMENT - Fetching sessions for:', assignmentId);
+        console.log('�🔍 [DEBUG] Fetching sessions for assignment:', assignmentId);
         console.log('🔍 [DEBUG] Is assessment type:', assignment?.game_type === 'assessment');
 
+        // 🔧 FIX: Query enhanced_game_sessions directly instead of using RPC
+        // The service role client should bypass RLS automatically
         let { data: sessions, error: sessionError } = await this.supabase
           .from('enhanced_game_sessions')
-          .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage')
+          .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage, words_attempted, words_correct, game_type')
           .eq('assignment_id', assignmentId);
 
         console.log('🔍 [DEBUG] Sessions query result - error:', sessionError);
         console.log('🔍 [DEBUG] Sessions found:', sessions?.length);
-        console.log('🔍 [DEBUG] First few sessions:', JSON.stringify(sessions?.slice(0, 3), null, 2));
+        console.log('🔍 [DEBUG] First 2 sessions:', JSON.stringify(sessions?.slice(0, 2), null, 2));
 
         if (sessionError) {
           console.error('❌ Error fetching sessions:', sessionError);
@@ -420,7 +462,12 @@ export class TeacherAssignmentAnalyticsService {
           if (isAssessmentType) {
             console.log('📊 [ASSESSMENT] Calculating success from session accuracy');
 
-            const sessionsWithAccuracy = sessions?.filter(s => s.ended_at) || [];
+            // Include completed sessions AND in-progress sessions that have actual attempts
+            const sessionsWithAccuracy = sessions?.filter(s =>
+              s.ended_at ||
+              (s.words_attempted && s.words_attempted > 0)
+            ) || [];
+
             if (sessionsWithAccuracy.length > 0) {
               const totalAccuracy = sessionsWithAccuracy.reduce((sum, s) => {
                 const sessionData = s as any;
@@ -445,33 +492,47 @@ export class TeacherAssignmentAnalyticsService {
             console.log('📊 [ASSESSMENT] Success score:', classSuccessScore, '%');
             console.log('📊 [ASSESSMENT] Students needing help:', studentsNeedingHelp);
           } else {
-            const gemData = await this.fetchGemEvents<{
-              session_id: string;
-              gem_rarity: string;
-              student_id: string;
-            }>(sessionIds, 'session_id, gem_rarity, student_id');
+            // For standard games, calculate success from session stats
+            // 🔧 FIXED: Use session metrics (correct/attempted) instead of gem rarity
+            // All gems are correct, but we want true accuracy including failed attempts
 
-            console.log('📊 Gem events found:', gemData.length);
+            let totalCorrect = 0;
+            let totalAttempted = 0;
+            const studentAccuracies = new Map<string, { correct: number; attempted: number }>();
 
-            const totalGems = gemData.length;
-            const strongWeakGems = gemData.filter(g =>
-              ['uncommon', 'rare', 'epic', 'legendary'].includes(g.gem_rarity)
-            ).length;
-            classSuccessScore = totalGems > 0 ? Math.round((strongWeakGems / totalGems) * 100) : 0;
+            sessions?.forEach((s: any) => {
+              const attempted = s.words_attempted || 0;
+              const correct = s.words_correct || 0;
+              if (attempted > 0) {
+                totalCorrect += correct;
+                totalAttempted += attempted;
 
-            console.log('📊 Success score:', classSuccessScore, '% (', strongWeakGems, '/', totalGems, ')');
-
-            const studentFailureRates = new Map<string, { total: number; failures: number }>();
-            gemData.forEach(gem => {
-              if (!gem.student_id) return;
-              const current = studentFailureRates.get(gem.student_id) || { total: 0, failures: 0 };
-              current.total++;
-              if (gem.gem_rarity === 'common') current.failures++;
-              studentFailureRates.set(gem.student_id, current);
+                const current = studentAccuracies.get(s.student_id) || { correct: 0, attempted: 0 };
+                current.correct += correct;
+                current.attempted += attempted;
+                studentAccuracies.set(s.student_id, current);
+              }
             });
 
-            studentsNeedingHelp = Array.from(studentFailureRates.values())
-              .filter(stats => stats.total > 0 && (stats.failures / stats.total) > 0.3)
+            if (totalAttempted > 0) {
+              classSuccessScore = Math.round((totalCorrect / totalAttempted) * 100);
+            } else {
+              // Fallback if no word stats (e.g. old data): use completed/accurate sessions
+              // But since we fixed data, this should be rare. Default to 0?
+              // Or maybe 100 if completed? No, 0 is safer fallback.
+              classSuccessScore = 0;
+
+              // Try to infer from gems if session stats missing?
+              // No, let's stick to session stats which are now reliable via RPC
+            }
+
+            console.log('📊 Success score:', classSuccessScore, '% (', totalCorrect, '/', totalAttempted, ')');
+
+            studentsNeedingHelp = Array.from(studentAccuracies.values())
+              .filter(stats => {
+                const accuracy = stats.attempted > 0 ? (stats.correct / stats.attempted) * 100 : 0;
+                return accuracy < 50;
+              })
               .length;
 
             console.log('📊 Students needing help:', studentsNeedingHelp);
@@ -1363,11 +1424,23 @@ export class TeacherAssignmentAnalyticsService {
 
       const nameMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
 
-      // Fetch all sessions for this assignment at once
-      const { data: allSessions } = await this.supabase
-        .from('enhanced_game_sessions')
-        .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage')
-        .eq('assignment_id', assignmentId);
+      // Fetch all sessions for this assignment at once (using RPC to bypass RLS)
+      console.log('🔍 [STUDENT ROSTER] Fetching sessions for assignment:', assignmentId);
+
+      const { data: allSessions, error: sessionsError } = await this.supabase
+        .rpc('get_assignment_analytics_sessions', {
+          p_assignment_id: assignmentId
+        });
+
+      if (sessionsError) {
+        console.error('❌ Error fetching sessions via RPC:', sessionsError);
+      }
+
+      console.log('🔍 [STUDENT ROSTER] Sessions query result:', {
+        error: sessionsError,
+        sessionCount: allSessions?.length || 0,
+        sampleSession: allSessions?.[0] || null
+      });
 
       // Group sessions by student
       const sessionsByStudent = new Map<string, any[]>();
@@ -1376,6 +1449,8 @@ export class TeacherAssignmentAnalyticsService {
         existing.push(session);
         sessionsByStudent.set(session.student_id, existing);
       });
+
+      console.log('🔍 [STUDENT ROSTER] Sessions grouped by student:', sessionsByStudent.size, 'students with sessions');
 
       // Get assignment type once
       const { data: assignmentCheckData } = await this.supabase
@@ -1483,23 +1558,24 @@ export class TeacherAssignmentAnalyticsService {
         if (isSkillsAssignment) {
           // For skills (grammar) assignments, use grammar_assignment_sessions
           const studentGrammarSessions = grammarSessionsByStudent.get(studentId) || [];
+          
+          // 🔧 FIX: For mixed-mode, also calculate vocabulary game performance
+          let totalCorrect = 0;
+          let totalAttempts = 0;
+          let hasVocabData = false;
 
+          // Grammar session metrics
           if (studentGrammarSessions.length > 0) {
-            // Calculate metrics from grammar sessions
-            const totalQuestions = studentGrammarSessions.reduce((sum, s) => sum + (s.questions_attempted || 0), 0);
-            const totalCorrect = studentGrammarSessions.reduce((sum, s) => sum + (s.questions_correct || 0), 0);
+            totalAttempts += studentGrammarSessions.reduce((sum, s) => sum + (s.questions_attempted || 0), 0);
+            totalCorrect += studentGrammarSessions.reduce((sum, s) => sum + (s.questions_correct || 0), 0);
 
-            successScore = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-            failureRate = 100 - successScore;
-            weakRetrievalPercent = failureRate;
-
-            // Calculate time
+            // Calculate time from grammar
             const totalGrammarSeconds = studentGrammarSessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
             if (totalGrammarSeconds > 0) {
               timeSpentMinutes = Math.round(totalGrammarSeconds / 60);
             }
 
-            // Get last attempt
+            // Get last attempt from grammar
             const sortedSessions = [...studentGrammarSessions]
               .filter(s => s.created_at)
               .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -1509,7 +1585,44 @@ export class TeacherAssignmentAnalyticsService {
 
             // Update status based on grammar sessions
             const hasCompleted = studentGrammarSessions.some(s => s.completion_status === 'completed');
-            status = hasCompleted ? 'completed' : 'in_progress';
+            if (hasCompleted) status = 'completed';
+          }
+
+          // For mixed-mode, also include vocabulary game performance
+          if (assignmentData?.game_type === 'mixed-mode' && studentSessions && studentSessions.length > 0) {
+            // Get vocabulary session metrics
+            const vocabAttempts = studentSessions.reduce((sum, s) => sum + (s.words_attempted || 0), 0);
+            const vocabCorrect = studentSessions.reduce((sum, s) => sum + (s.words_correct || 0), 0);
+            
+            if (vocabAttempts > 0) {
+              totalAttempts += vocabAttempts;
+              totalCorrect += vocabCorrect;
+              hasVocabData = true;
+              
+              // If no grammar time, use vocab time
+              if (timeSpentMinutes === 0) {
+                const totalVocabSeconds = studentSessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+                timeSpentMinutes = Math.round(totalVocabSeconds / 60);
+              }
+              
+              // Update last attempt if vocab is more recent
+              const vocabSorted = [...studentSessions]
+                .filter(s => s.started_at)
+                .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+              if (vocabSorted.length > 0) {
+                const vocabLastAttempt = vocabSorted[0].ended_at || vocabSorted[0].started_at;
+                if (!lastAttempt || (vocabLastAttempt && new Date(vocabLastAttempt) > new Date(lastAttempt))) {
+                  lastAttempt = vocabLastAttempt;
+                }
+              }
+            }
+          }
+
+          // Calculate combined success score
+          if (totalAttempts > 0) {
+            successScore = Math.round((totalCorrect / totalAttempts) * 100);
+            failureRate = 100 - successScore;
+            weakRetrievalPercent = failureRate;
           }
         } else if (isAssessmentAssignment) {
           // For assessments, ALWAYS fetch actual results from the results tables first

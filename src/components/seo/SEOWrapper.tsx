@@ -173,7 +173,7 @@ export function generateGameMetadata(gameId: string, gameName: string, gameDescr
       'educational game',
       'language learning platform'
     ],
-    canonical: `/games/${gameId}`,
+    canonical: `/activities/${gameId}`,
     ogImage: `/images/games/${gameId}-og.jpg`,
   });
 }
