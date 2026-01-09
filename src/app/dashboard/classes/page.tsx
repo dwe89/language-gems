@@ -304,7 +304,7 @@ export default function ClassesPage() {
           {!isOwnClass && classData.teacher_name && (
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="inline-flex items-center px-3 py-1.5 bg-blue-100 border border-blue-200 rounded-lg">
-                <Users className="h-3.5 w-3.5 text-blue-600 mr-1.5" />
+                <Users className="h-3.5 w-3.5 text-blue-600 mr-1.5 flex-shrink-0" />
                 <span className="text-xs font-medium text-blue-700">
                   {classData.teacher_name}
                 </span>
