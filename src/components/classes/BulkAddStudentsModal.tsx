@@ -64,21 +64,25 @@ export function BulkAddStudentsModal({
         });
 
       let schoolCode = "LG"; // Default fallback
+      let schoolInitials = "LG"; // For backward compatibility
 
       try {
         const response = await fetch('/api/user/profile');
         if (response.ok) {
           const profileData = await response.json();
-          // Use school_initials which now contains the actual school code
+          // Prioritize school_code (e.g., "SKIBIDI123") over school_initials (e.g., "S1")
+          if (profileData.school_code) {
+            schoolCode = profileData.school_code;
+          }
           if (profileData.school_initials) {
-            schoolCode = profileData.school_initials;
+            schoolInitials = profileData.school_initials;
           }
         }
       } catch (profileError) {
         console.log('Could not fetch profile, using default school code');
       }
 
-      console.log('Sending student data:', { students, classId, schoolCode });
+      console.log('Sending student data:', { students, classId, schoolCode, schoolInitials });
 
       const response = await fetch('/api/students/bulk', {
         method: 'POST',
@@ -88,7 +92,8 @@ export function BulkAddStudentsModal({
         body: JSON.stringify({
           students,
           classId,
-          schoolInitials: schoolCode, // API still expects schoolInitials parameter
+          schoolCode: schoolCode, // The actual school code (e.g., "SKIBIDI123")
+          schoolInitials: schoolInitials, // For backward compatibility (e.g., "S1")
         }),
       });
 
@@ -105,7 +110,7 @@ export function BulkAddStudentsModal({
         console.error('Student addition errors:', data.errors);
         let errorMsg = `${data.errors.length} student(s) could not be added.`;
 
-        const commonError = data.errors.every((err: { error: string}) =>
+        const commonError = data.errors.every((err: { error: string }) =>
           err.error === data.errors[0].error);
 
         if (commonError && data.errors.length === students.length) {

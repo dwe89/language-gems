@@ -19,6 +19,7 @@ import {
   Trophy,
   Award,
   ClipboardCheck,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
@@ -316,6 +317,11 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
         </div>
       </section>
 
+      {/* School Code Update Notification */}
+      {schoolCode && !scopeLoading && (
+        <SchoolCodeNotification schoolCode={schoolCode} />
+      )}
+
       {/* Loading Overlay */}
       {scopeLoading && (
         <div className="max-w-7xl mx-auto px-6 py-16">
@@ -462,6 +468,61 @@ function TeacherDashboard({ username: initialUsername }: { username: string }) {
 
       {/* Beta Feedback Widget */}
       <FeedbackWidget source="dashboard" />
+    </div>
+  );
+}
+
+// Notification component for the school code update
+function SchoolCodeNotification({ schoolCode }: { schoolCode: string | null }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Check if previously dismissed
+    const dismissed = localStorage.getItem('school_code_update_dismissed_v1');
+    if (!dismissed) {
+      setIsVisible(true);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setIsVisible(false);
+    localStorage.setItem('school_code_update_dismissed_v1', 'true');
+  };
+
+  if (!isVisible || !schoolCode) return null;
+
+  return (
+    <div className="max-w-7xl mx-auto px-6 mt-8 mb-[-2rem] animate-in slide-in-from-top duration-500 fade-in">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+        <button
+          onClick={handleDismiss}
+          className="absolute top-4 right-4 p-2 rounded-lg text-indigo-200 hover:text-white hover:bg-white/10 transition-colors z-20"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="flex items-start gap-4 z-10 relative">
+          <div className="flex-shrink-0 p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/20">
+            <Sparkles className="h-6 w-6 text-yellow-300" />
+          </div>
+          <div>
+            <h3 className="font-bold text-xl mb-2 flex items-center gap-2">
+              School Code Update
+              <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-200 text-xs border border-green-500/30">Resolved</span>
+            </h3>
+            <p className="text-indigo-100 leading-relaxed max-w-3xl">
+              Good news! We've updated the student login system. Your students can now log in using your specific School Code:
+              <span className="inline-block mx-2 px-3 py-1 bg-white/20 rounded-lg font-mono font-bold text-white border border-white/30 tracking-wider">
+                {schoolCode}
+              </span>
+              (Previous school initials will also continue to work).
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

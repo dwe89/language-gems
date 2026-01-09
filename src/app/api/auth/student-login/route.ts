@@ -29,15 +29,45 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // First, find the student by username and school code using admin client
-    const { data: student, error: studentError } = await adminClient
+    // Check school_code first, then fallback to school_initials for backward compatibility
+    let student = null;
+    let studentError = null;
+
+    console.log(`Login attempt: username=${username}, schoolCode=${schoolCode}`);
+
+    // Try to find by school_code first (preferred)
+    const { data: studentByCode, error: codeError } = await adminClient
       .from('user_profiles')
-      .select('user_id, email, username, school_initials, initial_password, role')
+      .select('user_id, email, username, school_code, school_initials, initial_password, role')
       .eq('username', username.toLowerCase())
-      .eq('school_initials', schoolCode.toUpperCase())
+      .eq('school_code', schoolCode.toUpperCase())
       .eq('role', 'student')
       .single();
 
-    if (studentError || !student) {
+    if (studentByCode) {
+      console.log('Found student by school_code');
+      student = studentByCode;
+    } else {
+      console.log('Student not found by school_code, trying initials. Error:', codeError?.message);
+      // Fallback to school_initials for backward compatibility
+      const { data: studentByInitials, error: initialsError } = await adminClient
+        .from('user_profiles')
+        .select('user_id, email, username, school_code, school_initials, initial_password, role')
+        .eq('username', username.toLowerCase())
+        .eq('school_initials', schoolCode.toUpperCase())
+        .eq('role', 'student')
+        .single();
+
+      if (studentByInitials) {
+        console.log('Found student by school_initials');
+        student = studentByInitials;
+      } else {
+        console.log('Student not found by school_initials either. Error:', initialsError?.message);
+        studentError = initialsError;
+      }
+    }
+
+    if (!student) {
       return NextResponse.json(
         { error: 'Invalid username or school code' },
         { status: 401 }

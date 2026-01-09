@@ -49,15 +49,19 @@ export function AddStudentModal({
     try {
       // Get teacher's school code from their profile
       let schoolCode = "LG"; // Default fallback
-      
+      let schoolInitials = "LG"; // For backward compatibility
+
       if (user) {
         try {
           const response = await fetch('/api/user/profile');
           if (response.ok) {
             const profileData = await response.json();
-            // Use school_initials which now contains the actual school code
+            // Prioritize school_code (e.g., "SKIBIDI123") over school_initials (e.g., "S1")
+            if (profileData.school_code) {
+              schoolCode = profileData.school_code;
+            }
             if (profileData.school_initials) {
-              schoolCode = profileData.school_initials;
+              schoolInitials = profileData.school_initials;
             }
           }
         } catch (profileError) {
@@ -73,7 +77,8 @@ export function AddStudentModal({
         body: JSON.stringify({
           students: [{ name: studentName.trim() }],
           classId,
-          schoolInitials: schoolCode, // Now uses the actual school code from school_initials
+          schoolCode: schoolCode, // The actual school code (e.g., "SKIBIDI123")
+          schoolInitials: schoolInitials, // For backward compatibility (e.g., "S1")
         }),
       });
 
@@ -92,7 +97,7 @@ export function AddStudentModal({
           joined_date: new Date().toISOString(),
           last_active: new Date().toISOString(),
         });
-        
+
         // Reset form
         setStudentName("");
         onClose();

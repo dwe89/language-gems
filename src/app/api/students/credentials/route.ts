@@ -4,16 +4,16 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     console.log('=== CREDENTIALS API CALLED ===');
-    
+
     // Get the service role key
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
+
     if (!serviceRoleKey) {
       return NextResponse.json({ error: 'Service configuration error' }, { status: 500 });
     }
-    
+
     console.log('Using service role key:', serviceRoleKey ? 'Available' : 'Not available');
-    
+
     // Create admin client for user operations
     const adminClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,10 +44,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
 
-    // Fetch teacher's school initials
+    // Fetch teacher's school code (prefer school_code over school_initials)
     const { data: teacherProfile, error: teacherError } = await adminClient
       .from('user_profiles')
-      .select('school_initials')
+      .select('school_code, school_initials')
       .eq('user_id', classData.teacher_id)
       .single();
 
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     // Fetch student profiles with credentials
     const { data: students, error: studentsError } = await adminClient
       .from('user_profiles')
-      .select('user_id, display_name, username, initial_password, created_at')
+      .select('user_id, display_name, username, initial_password, school_code, created_at')
       .in('user_id', studentIds)
       .order('display_name');
 
@@ -89,6 +89,7 @@ export async function POST(request: Request) {
         name: student.display_name || 'Unknown',
         username: student.username || 'No username',
         password: student.initial_password || 'Password not available',
+        schoolCode: student.school_code || teacherProfile?.school_code || teacherProfile?.school_initials || 'LG',
         joinedDate: enrollment?.enrolled_at || student.created_at
       };
     });
@@ -96,15 +97,15 @@ export async function POST(request: Request) {
     return NextResponse.json({
       students: formattedStudents,
       className: classData.name,
-      schoolCode: teacherProfile?.school_initials || undefined,
+      schoolCode: teacherProfile?.school_code || teacherProfile?.school_initials || undefined,
       total: formattedStudents.length
     });
-    
+
   } catch (error: any) {
     console.error('Error fetching student credentials:', error);
-    return NextResponse.json({ 
-      error: 'Failed to fetch student credentials', 
-      details: error.message 
+    return NextResponse.json({
+      error: 'Failed to fetch student credentials',
+      details: error.message
     }, { status: 500 });
   }
 } 
