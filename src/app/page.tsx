@@ -394,6 +394,91 @@ export default function Home() {
 
       {/* Admin Edit Button */}
       {userIsAdmin && <PageEditButton pageSlug="homepage" onSave={reload} />}
+
+      {/* School Code Update Notification Modal */}
+      <SchoolCodeUpdateModal />
     </SEOWrapper>
+  );
+}
+
+function SchoolCodeUpdateModal() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    // Check if previously dismissed
+    const dismissed = localStorage.getItem('school_code_update_modal_dismissed_v1');
+    if (!dismissed) {
+      // Delay slightly to show after page load
+      const timer = setTimeout(() => setIsOpen(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setIsOpen(false);
+    localStorage.setItem('school_code_update_modal_dismissed_v1', 'true');
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: isOpen ? 1 : 0 }}
+      style={{ pointerEvents: isOpen ? 'auto' : 'none' }}
+      className="fixed inset-0 z-[100] flex items-center justify-center px-4 overflow-hidden"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        onClick={handleDismiss}
+      />
+
+      {/* Modal Content */}
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: isOpen ? 1 : 0.9, y: isOpen ? 0 : 20 }}
+        className="relative bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-white/20"
+      >
+        {/* Header Decoration */}
+        <div className="h-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 w-full" />
+
+        <div className="p-8 md:p-10 text-center">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+            <Sparkles className="h-10 w-10 text-blue-600" />
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 border border-green-100 mb-6">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs font-bold text-green-700 uppercase tracking-wider">Update Resolved</span>
+          </div>
+
+          <h2 className="text-3xl font-bold text-slate-900 mb-4 px-4">
+            Student Login Issue Fixed
+          </h2>
+
+          <p className="text-slate-600 text-lg leading-relaxed mb-10">
+            We've updated our system to ensure your chosen school code is used correctly for student logins. If your students had trouble logging in earlier today, they can now log in using your specific school code.
+          </p>
+
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={handleDismiss}
+              className="w-full bg-slate-900 text-white font-bold py-5 rounded-2xl hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl active:scale-95 text-lg"
+            >
+              Great, thanks!
+            </button>
+          </div>
+        </div>
+
+        {/* Close Button */}
+        <button
+          onClick={handleDismiss}
+          className="absolute top-6 right-6 p-3 rounded-full hover:bg-slate-100 transition-all text-slate-400 hover:text-slate-600"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </motion.div>
+    </motion.div>
   );
 }
