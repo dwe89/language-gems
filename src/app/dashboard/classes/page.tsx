@@ -299,12 +299,12 @@ export default function ClassesPage() {
       <div className={`bg-white/90 backdrop-blur-sm rounded-2xl border shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group ${
         isOwnClass ? 'border-slate-200/60' : 'border-blue-200/60 bg-blue-50/30'
       }`}>
-        <div className="p-6 flex flex-col h-full">
+        <div className="p-4 sm:p-6 flex flex-col h-full">
           {/* Teacher Badge for School View */}
           {!isOwnClass && classData.teacher_name && (
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="inline-flex items-center px-3 py-1.5 bg-blue-100 border border-blue-200 rounded-lg">
-                <Users className="h-3.5 w-3.5 text-blue-600 mr-1.5" />
+                <Users className="h-3.5 w-3.5 text-blue-600 mr-1.5 flex-shrink-0" />
                 <span className="text-xs font-medium text-blue-700">
                   {classData.teacher_name}
                 </span>
@@ -315,60 +315,57 @@ export default function ClassesPage() {
             </div>
           )}
 
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 ${
-                isOwnClass
-                  ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
-                  : 'bg-gradient-to-br from-blue-400 to-cyan-500'
-              }`}>
-                <BookOpen className="h-6 w-6 text-white" />
-              </div>
-              <div>
-              <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{classData.name}</h3>
-              <p className="text-sm text-slate-500">Year {classData.year_group}</p>
+          {/* Header with icon and title */}
+          <div className="flex items-start space-x-3 mb-4">
+            <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 ${
+              isOwnClass
+                ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                : 'bg-gradient-to-br from-blue-400 to-cyan-500'
+            }`}>
+              <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">{classData.name}</h3>
+              <p className="text-sm text-slate-500 truncate">Year {classData.year_group}</p>
             </div>
           </div>
-        </div>
 
+          {/* Student count and creation date */}
+          <div className="flex items-center space-x-2 mb-2">
+            <Users className="h-4 w-4 text-slate-400 flex-shrink-0" />
+            <span className="text-sm font-medium text-slate-600">
+              {classData.student_count || 0} student{(classData.student_count || 0) !== 1 ? 's' : ''}
+            </span>
+          </div>
 
+          <div className="text-xs text-slate-400 mb-6">
+            Created {new Date(classData.created_at).toLocaleDateString()}
+          </div>
 
-        {/* Student count and creation date - fixed positioning */}
-        <div className="flex items-center space-x-2 mb-2">
-          <Users className="h-4 w-4 text-slate-400" />
-          <span className="text-sm font-medium text-slate-600">
-            {classData.student_count || 0} student{(classData.student_count || 0) !== 1 ? 's' : ''}
-          </span>
-        </div>
-
-        <div className="text-xs text-slate-400 mb-6">
-          Created {new Date(classData.created_at).toLocaleDateString()}
-        </div>
-
-        {/* Bottom section with button and delete icon */}
-        <div className="mt-auto flex items-center justify-between">
-          <Link
-            href={`/dashboard/classes/${classData.id}`}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl ${
-              isOwnClass
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
-                : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white'
-            }`}
-          >
-            {isOwnClass ? 'View Class' : 'View Class (Read-Only)'}
-          </Link>
-          {isOwnClass && (
-            <button
-              onClick={() => onDelete(classData.id)}
-              className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-200/50 hover:border-red-300 ml-3"
-              aria-label="Delete class"
+          {/* Bottom section with button and delete icon */}
+          <div className="mt-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <Link
+              href={`/dashboard/classes/${classData.id}`}
+              className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl text-center ${
+                isOwnClass
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                  : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white'
+              }`}
             >
-              <Trash2 size={18} />
-            </button>
-          )}
+              {isOwnClass ? 'View Class' : 'View Class (Read-Only)'}
+            </Link>
+            {isOwnClass && (
+              <button
+                onClick={() => onDelete(classData.id)}
+                className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-200/50 hover:border-red-300"
+                aria-label="Delete class"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     );
   };
 
