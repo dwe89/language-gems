@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { students, classId, schoolInitials, schoolCode } = body;
+    const { students, classId, schoolCode } = body;
 
     if (!students || !Array.isArray(students) || students.length === 0) {
       return NextResponse.json({ error: 'Student list is required' }, { status: 400 });
@@ -123,12 +123,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Class ID is required' }, { status: 400 });
     }
 
-    // Accept either schoolCode or schoolInitials (for backward compatibility)
-    const effectiveSchoolCode = schoolCode || schoolInitials;
-    const effectiveSchoolInitials = schoolInitials || schoolCode;
-
-    if (!effectiveSchoolCode) {
-      return NextResponse.json({ error: 'School code or initials are required' }, { status: 400 });
+    if (!schoolCode) {
+      return NextResponse.json({ error: 'School code is required' }, { status: 400 });
     }
 
     // Verify teacher owns the class
@@ -206,7 +202,7 @@ export async function POST(request: Request) {
         const displayName = `${firstName} ${lastName}`;
 
         // Generate username and password client-side
-        const username = generateScopedUsername(firstName, lastName, schoolInitials, existingUsernames);
+        const username = generateScopedUsername(firstName, lastName, schoolCode, existingUsernames);
         const password = generatePassword();
 
         // Create unique email with timestamp to avoid duplicates
@@ -297,8 +293,7 @@ export async function POST(request: Request) {
               username: result.student.username,
               teacher_id: user.id,
               initial_password: result.student.password,
-              school_code: effectiveSchoolCode,
-              school_initials: effectiveSchoolInitials
+              school_code: schoolCode
             })
             .eq('user_id', result.authUser!.id)
         );

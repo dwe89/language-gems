@@ -44,10 +44,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
 
-    // Fetch teacher's school code (prefer school_code over school_initials)
+    // Fetch teacher's school code
     const { data: teacherProfile, error: teacherError } = await adminClient
       .from('user_profiles')
-      .select('school_code, school_initials')
+      .select('school_code')
       .eq('user_id', classData.teacher_id)
       .single();
 
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
         name: student.display_name || 'Unknown',
         username: student.username || 'No username',
         password: student.initial_password || 'Password not available',
-        schoolCode: student.school_code || teacherProfile?.school_code || teacherProfile?.school_initials || 'LG',
+        schoolCode: student.school_code || teacherProfile?.school_code || 'LG',
         joinedDate: enrollment?.enrolled_at || student.created_at
       };
     });
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       students: formattedStudents,
       className: classData.name,
-      schoolCode: teacherProfile?.school_code || teacherProfile?.school_initials || undefined,
+      schoolCode: teacherProfile?.school_code || undefined,
       total: formattedStudents.length
     });
 

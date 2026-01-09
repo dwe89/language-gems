@@ -64,25 +64,20 @@ export function BulkAddStudentsModal({
         });
 
       let schoolCode = "LG"; // Default fallback
-      let schoolInitials = "LG"; // For backward compatibility
 
       try {
         const response = await fetch('/api/user/profile');
         if (response.ok) {
           const profileData = await response.json();
-          // Prioritize school_code (e.g., "SKIBIDI123") over school_initials (e.g., "S1")
           if (profileData.school_code) {
             schoolCode = profileData.school_code;
-          }
-          if (profileData.school_initials) {
-            schoolInitials = profileData.school_initials;
           }
         }
       } catch (profileError) {
         console.log('Could not fetch profile, using default school code');
       }
 
-      console.log('Sending student data:', { students, classId, schoolCode, schoolInitials });
+      console.log('Sending student data:', { students, classId, schoolCode });
 
       const response = await fetch('/api/students/bulk', {
         method: 'POST',
@@ -92,8 +87,7 @@ export function BulkAddStudentsModal({
         body: JSON.stringify({
           students,
           classId,
-          schoolCode: schoolCode, // The actual school code (e.g., "SKIBIDI123")
-          schoolInitials: schoolInitials, // For backward compatibility (e.g., "S1")
+          schoolCode: schoolCode,
         }),
       });
 

@@ -28,43 +28,19 @@ export async function POST(request: NextRequest) {
     // Create regular client for auth operations
     const supabase = await createClient();
 
-    // First, find the student by username and school code using admin client
-    // Check school_code first, then fallback to school_initials for backward compatibility
-    let student = null;
-    let studentError = null;
-
+    // Find the student by username and school_code using admin client
     console.log(`Login attempt: username=${username}, schoolCode=${schoolCode}`);
 
-    // Try to find by school_code first (preferred)
-    const { data: studentByCode, error: codeError } = await adminClient
+    const { data: student, error: studentError } = await adminClient
       .from('user_profiles')
-      .select('user_id, email, username, school_code, school_initials, initial_password, role')
+      .select('user_id, email, username, school_code, initial_password, role')
       .eq('username', username.toLowerCase())
       .eq('school_code', schoolCode.toUpperCase())
       .eq('role', 'student')
       .single();
 
-    if (studentByCode) {
-      console.log('Found student by school_code');
-      student = studentByCode;
-    } else {
-      console.log('Student not found by school_code, trying initials. Error:', codeError?.message);
-      // Fallback to school_initials for backward compatibility
-      const { data: studentByInitials, error: initialsError } = await adminClient
-        .from('user_profiles')
-        .select('user_id, email, username, school_code, school_initials, initial_password, role')
-        .eq('username', username.toLowerCase())
-        .eq('school_initials', schoolCode.toUpperCase())
-        .eq('role', 'student')
-        .single();
-
-      if (studentByInitials) {
-        console.log('Found student by school_initials');
-        student = studentByInitials;
-      } else {
-        console.log('Student not found by school_initials either. Error:', initialsError?.message);
-        studentError = initialsError;
-      }
+    if (studentError) {
+      console.log('Student lookup failed:', studentError.message);
     }
 
     if (!student) {
@@ -73,6 +49,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    console.log('Found student:', student.username);
 
     // Verify password (check both current password and initial password)
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
