@@ -12,7 +12,7 @@ import TicTacToeGameWrapper from './TicTacToeGameWrapper';
 import ErrorBoundary from '../../../../components/ErrorBoundary';
 import GameCompletionModal from '../../../../components/games/GameCompletionModal';
 import { GAME_COMPLETION_THRESHOLDS } from '../../../../services/assignments/GameCompletionService';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/client';
 
 interface NoughtsAndCrossesAssignmentWrapperProps {
   assignmentId: string;
@@ -26,7 +26,7 @@ export default function NoughtsAndCrossesAssignmentWrapper({
 }: NoughtsAndCrossesAssignmentWrapperProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   // Add comprehensive logging for debugging Windows issue
   console.log('🎮 [NOUGHTS WRAPPER] Component mounted:', {
