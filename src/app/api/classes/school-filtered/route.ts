@@ -124,9 +124,10 @@ export async function GET(request: NextRequest) {
     const classesWithCounts = await Promise.all(
       (classes || []).map(async (classItem) => {
         const { count } = await supabase
-          .from('class_students')
+          .from('class_enrollments')
           .select('*', { count: 'exact', head: true })
-          .eq('class_id', classItem.id);
+          .eq('class_id', classItem.id)
+          .eq('status', 'active');
 
         return {
           ...classItem,

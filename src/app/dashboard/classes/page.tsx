@@ -219,33 +219,15 @@ export default function ClassesPage() {
         .delete()
         .eq('class_id', classId);
 
-      // 3. Delete announcements
-      await supabaseBrowser
-        .from('announcements')
-        .delete()
-        .eq('class_id', classId);
-
-      // 4. Delete class vocabulary assignments
+      // 3. Delete class vocabulary assignments
       await supabaseBrowser
         .from('class_vocabulary_assignments')
         .delete()
         .eq('class_id', classId);
 
-      // 5. Delete competitions
-      await supabaseBrowser
-        .from('competitions')
-        .delete()
-        .eq('class_id', classId);
-
-      // 6. Delete leaderboard snapshots
+      // 4. Delete leaderboard snapshots
       await supabaseBrowser
         .from('leaderboard_snapshots')
-        .delete()
-        .eq('class_id', classId);
-
-      // 7. Delete student ranking history
-      await supabaseBrowser
-        .from('student_ranking_history')
         .delete()
         .eq('class_id', classId);
 
@@ -296,9 +278,8 @@ export default function ClassesPage() {
     const isOwnClass = classData.is_own_class !== false; // Default to true if not specified
 
     return (
-      <div className={`bg-white/90 backdrop-blur-sm rounded-2xl border shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group ${
-        isOwnClass ? 'border-slate-200/60' : 'border-blue-200/60 bg-blue-50/30'
-      }`}>
+      <div className={`bg-white/90 backdrop-blur-sm rounded-2xl border shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group ${isOwnClass ? 'border-slate-200/60' : 'border-blue-200/60 bg-blue-50/30'
+        }`}>
         <div className="p-6 flex flex-col h-full">
           {/* Teacher Badge for School View */}
           {!isOwnClass && classData.teacher_name && (
@@ -317,58 +298,56 @@ export default function ClassesPage() {
 
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 ${
-                isOwnClass
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 ${isOwnClass
                   ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
                   : 'bg-gradient-to-br from-blue-400 to-cyan-500'
-              }`}>
+                }`}>
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
               <div>
-              <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{classData.name}</h3>
-              <p className="text-sm text-slate-500">Year {classData.year_group}</p>
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{classData.name}</h3>
+                <p className="text-sm text-slate-500">Year {classData.year_group}</p>
+              </div>
             </div>
           </div>
-        </div>
 
 
 
-        {/* Student count and creation date - fixed positioning */}
-        <div className="flex items-center space-x-2 mb-2">
-          <Users className="h-4 w-4 text-slate-400" />
-          <span className="text-sm font-medium text-slate-600">
-            {classData.student_count || 0} student{(classData.student_count || 0) !== 1 ? 's' : ''}
-          </span>
-        </div>
+          {/* Student count and creation date - fixed positioning */}
+          <div className="flex items-center space-x-2 mb-2">
+            <Users className="h-4 w-4 text-slate-400" />
+            <span className="text-sm font-medium text-slate-600">
+              {classData.student_count || 0} student{(classData.student_count || 0) !== 1 ? 's' : ''}
+            </span>
+          </div>
 
-        <div className="text-xs text-slate-400 mb-6">
-          Created {new Date(classData.created_at).toLocaleDateString()}
-        </div>
+          <div className="text-xs text-slate-400 mb-6">
+            Created {new Date(classData.created_at).toLocaleDateString()}
+          </div>
 
-        {/* Bottom section with button and delete icon */}
-        <div className="mt-auto flex items-center justify-between">
-          <Link
-            href={`/dashboard/classes/${classData.id}`}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl ${
-              isOwnClass
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
-                : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white'
-            }`}
-          >
-            {isOwnClass ? 'View Class' : 'View Class (Read-Only)'}
-          </Link>
-          {isOwnClass && (
-            <button
-              onClick={() => onDelete(classData.id)}
-              className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-200/50 hover:border-red-300 ml-3"
-              aria-label="Delete class"
+          {/* Bottom section with button and delete icon */}
+          <div className="mt-auto flex items-center justify-between">
+            <Link
+              href={`/dashboard/classes/${classData.id}`}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl ${isOwnClass
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                  : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white'
+                }`}
             >
-              <Trash2 size={18} />
-            </button>
-          )}
+              {isOwnClass ? 'View Class' : 'View Class (Read-Only)'}
+            </Link>
+            {isOwnClass && (
+              <button
+                onClick={() => onDelete(classData.id)}
+                className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-200/50 hover:border-red-300 ml-3"
+                aria-label="Delete class"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     );
   };
 
@@ -422,21 +401,19 @@ export default function ClassesPage() {
                 <div className="flex bg-slate-100 rounded-xl p-1">
                   <button
                     onClick={() => setClassScope('my')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      classScope === 'my'
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${classScope === 'my'
                         ? 'bg-white text-indigo-600 shadow-sm'
                         : 'text-slate-600 hover:text-slate-800'
-                    }`}
+                      }`}
                   >
                     My Classes
                   </button>
                   <button
                     onClick={() => setClassScope('school')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      classScope === 'school'
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${classScope === 'school'
                         ? 'bg-white text-indigo-600 shadow-sm'
                         : 'text-slate-600 hover:text-slate-800'
-                    }`}
+                      }`}
                   >
                     All School Classes
                   </button>
