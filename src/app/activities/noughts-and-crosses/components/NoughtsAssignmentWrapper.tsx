@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useAuth, supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import GameAssignmentWrapper, {
   StandardVocabularyItem,
   AssignmentData,
@@ -12,7 +12,6 @@ import TicTacToeGameWrapper from './TicTacToeGameWrapper';
 import ErrorBoundary from '../../../../components/ErrorBoundary';
 import GameCompletionModal from '../../../../components/games/GameCompletionModal';
 import { GAME_COMPLETION_THRESHOLDS } from '../../../../services/assignments/GameCompletionService';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface NoughtsAndCrossesAssignmentWrapperProps {
   assignmentId: string;
@@ -26,7 +25,7 @@ export default function NoughtsAndCrossesAssignmentWrapper({
 }: NoughtsAndCrossesAssignmentWrapperProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = supabaseBrowser;
 
   // Add comprehensive logging for debugging Windows issue
   console.log('🎮 [NOUGHTS WRAPPER] Component mounted:', {
