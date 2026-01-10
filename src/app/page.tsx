@@ -35,7 +35,7 @@ import { iconMap } from '../lib/iconMap';
 const heroTextVariations = [
   { text: "Master Languages", color: "text-blue-600" },
   { text: "Learn Through Gaming", color: "text-green-600" },
-  { text: "Achieve GCSE Success", color: "text-purple-600" },
+  { text: "Achieve KS2-KS4 Success", color: "text-purple-600" },
   { text: "Build Vocabulary", color: "text-indigo-600" },
   { text: "Practice Daily", color: "text-emerald-600" },
   { text: "Reach Fluency", color: "text-orange-600" }
@@ -115,8 +115,8 @@ export default function Home() {
       color: "from-blue-500 to-indigo-600"
     },
     {
-      title: "GCSE Curriculum Aligned",
-      description: "Content specifically designed for Spanish, French, and German GCSE exams",
+      title: "KS2, KS3 & KS4 Aligned",
+      description: "Content specifically designed for Spanish, French, and German across all key stages",
       icon: "Award",
       color: "from-green-500 to-emerald-600"
     },
@@ -169,7 +169,12 @@ export default function Home() {
                   transition={{ duration: 0.6, delay: 0.2 }}
                   className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-4xl mx-auto"
                 >
-                  {hero.subheadline || "The complete language learning platform for Spanish, French, and German. Perfect for schools, teachers, and individual learners."}
+                  {hero.subheadline || (
+                    <>
+                      The complete language learning platform for Spanish 🇪🇸, French 🇫🇷, and German 🇩🇪.
+                      Perfect for <span className="font-bold text-slate-800">KS2, KS3 & KS4</span> schools, teachers, and individual learners worldwide.
+                    </>
+                  )}
                 </motion.p>
 
                 {/* Key Features Usps */}
@@ -325,7 +330,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-purple-500" />
-                    <span>GCSE Exam Ready</span>
+                    <span>KS2, KS3 & KS4 Aligned</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Heart className="w-4 h-4 text-red-500" />
