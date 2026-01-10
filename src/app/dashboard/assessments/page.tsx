@@ -16,6 +16,7 @@ import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { AssignmentCard } from '../../../components/classes/AssignmentCard';
 import DashboardHeader from '../../../components/dashboard/DashboardHeader';
 import ConfirmationDialog from '../../../components/ui/ConfirmationDialog';
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 
 export default function AssessmentsPage() {
   const { user } = useAuth();
@@ -142,7 +143,7 @@ export default function AssessmentsPage() {
     // Find assignment and prepare confirmation dialog
     const assignment = assignments.find(a => a.id === id);
     const assignmentName = assignment?.title || assignment?.name || 'Untitled Assessment';
-    
+
     setDeleteConfirmation({
       isOpen: true,
       assignmentId: id,
@@ -175,13 +176,22 @@ export default function AssessmentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader 
-        title="Assessments" 
+      <DashboardHeader
+        title="Assessments"
         subtitle="Create and track student assessments"
         icon={<GraduationCap className="w-8 h-8 text-indigo-600" />}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <Alert className="mb-6 bg-amber-50 border-amber-200 text-amber-900">
+          <Clock className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">Work in Progress</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            We are actively developing the Assessment tools. Some features may be incomplete or subject to change as we improve the experience.
+          </AlertDescription>
+        </Alert>
+
         {/* Actions Bar */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div className="flex items-center space-x-4 w-full md:w-auto">
@@ -195,29 +205,26 @@ export default function AssessmentsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            
+
             <div className="flex bg-white rounded-lg border border-gray-200 p-1">
               <button
                 onClick={() => setFilter('active')}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  filter === 'active' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filter === 'active' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
+                  }`}
               >
                 Active
               </button>
               <button
                 onClick={() => setFilter('completed')}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  filter === 'completed' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filter === 'completed' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
+                  }`}
               >
                 Completed
               </button>
               <button
                 onClick={() => setFilter('all')}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  filter === 'all' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filter === 'all' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
+                  }`}
               >
                 All
               </button>
@@ -229,17 +236,15 @@ export default function AssessmentsPage() {
               <div className="flex bg-white rounded-lg border border-gray-200 p-1">
                 <button
                   onClick={() => setViewScope('my')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    viewScope === 'my' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewScope === 'my' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
                   My Assessments
                 </button>
                 <button
                   onClick={() => setViewScope('school')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    viewScope === 'school' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewScope === 'school' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
                   School
                 </button>
@@ -278,7 +283,7 @@ export default function AssessmentsPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No assessments found</h3>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
-              {searchQuery 
+              {searchQuery
                 ? `No assessments match "${searchQuery}"`
                 : "You haven't created any assessments yet. Get started by creating your first assessment."}
             </p>

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
-import { useSupabase } from '../../../components/supabase/SupabaseProvider';
+import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
+import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 
 import { 
   ArrowRight, Shuffle, Target, Brain, Headphones, BookOpen, 
@@ -14,8 +14,8 @@ import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { VocabularyWord as VocabWord, GameResult } from '../types';
 
 // Category system imports
-import ModernCategorySelector from '../../../components/games/ModernCategorySelector';
-import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
+import ModernCategorySelector from '../../../../components/games/ModernCategorySelector';
+import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
 
 // Helper function to get category display name
 const getCategoryById = (id: string) => {

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
-import GameAssignmentWrapper, { GameProgress } from '../../../components/games/templates/GameAssignmentWrapper';
+import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
+import GameAssignmentWrapper, { GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { VocabularyWord, GameResult } from '../types';
 import VocabMasterAssignmentLauncher from './VocabMasterAssignmentLauncher';

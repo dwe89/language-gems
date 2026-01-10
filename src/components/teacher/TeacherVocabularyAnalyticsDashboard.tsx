@@ -97,6 +97,9 @@ export default function TeacherVocabularyAnalyticsDashboard({
   const [selectedView, setSelectedView] = useState<'overview' | 'students' | 'topics' | 'trends' | 'words'>('overview');
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
+  // Word analysis sorting
+  const [wordSortField, setWordSortField] = useState<'struggling' | 'accuracy' | 'word' | 'translation' | 'mistakes'>('struggling');
+  const [wordSortOrder, setWordSortOrder] = useState<'desc' | 'asc'>('desc');
 
   // Class selector state
   const [availableClasses, setAvailableClasses] = useState<Array<{ id: string; name: string }>>([]);
@@ -971,8 +974,43 @@ export default function TeacherVocabularyAnalyticsDashboard({
       );
     }
 
-    // Sort words by problem index (struggling count)
-    const sortedWords = [...analytics.detailedWordAnalytics].sort((a, b) => b.strugglingCount - a.strugglingCount);
+    // Sort words by selected field
+    const comparator = (a: any, b: any) => {
+      let va: any; let vb: any;
+
+      switch (wordSortField) {
+        case 'word':
+          va = (a.word || '').toLowerCase();
+          vb = (b.word || '').toLowerCase();
+          if (va < vb) return -1;
+          if (va > vb) return 1;
+          return 0;
+        case 'translation':
+          va = (a.translation || '').toLowerCase();
+          vb = (b.translation || '').toLowerCase();
+          if (va < vb) return -1;
+          if (va > vb) return 1;
+          return 0;
+        case 'accuracy':
+          va = a.accuracy ?? 0;
+          vb = b.accuracy ?? 0;
+          return va - vb;
+        case 'mistakes':
+          va = a.mistakeCount ?? a.mistake_count ?? 0;
+          vb = b.mistakeCount ?? b.mistake_count ?? 0;
+          return va - vb;
+        case 'struggling':
+        default:
+          va = a.strugglingCount ?? a.studentsStruggling ?? a.students_struggling ?? 0;
+          vb = b.strugglingCount ?? b.studentsStruggling ?? b.students_struggling ?? 0;
+          return va - vb;
+      }
+    };
+
+    const sortedWords = [...analytics.detailedWordAnalytics].sort((a, b) => {
+      const res = comparator(a, b);
+      return wordSortOrder === 'asc' ? res : -res;
+    });
 
     return (
       <div className="space-y-6">
@@ -980,6 +1018,29 @@ export default function TeacherVocabularyAnalyticsDashboard({
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Most Challenging Words</h3>
             <p className="text-sm text-gray-600">Words that the highest number of students are struggling with</p>
+          </div>
+          {/* Sort controls */}
+          <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-end gap-3">
+            <label className="text-sm text-gray-600">Sort by:</label>
+            <select
+              value={wordSortField}
+              onChange={(e) => setWordSortField(e.target.value as any)}
+              className="border border-gray-300 rounded px-2 py-1 text-sm"
+            >
+              <option value="struggling">Struggling Students</option>
+              <option value="accuracy">Accuracy</option>
+              <option value="word">Word</option>
+              <option value="translation">Translation</option>
+              <option value="mistakes">Mistakes</option>
+            </select>
+
+            <button
+              onClick={() => setWordSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+              className="px-2 py-1 border border-gray-300 rounded text-sm"
+              title="Toggle sort order"
+            >
+              {wordSortOrder === 'asc' ? '▲' : '▼'}
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">

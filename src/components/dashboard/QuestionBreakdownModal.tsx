@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+
 import {
   CheckCircle,
   XCircle,
@@ -18,7 +19,10 @@ import {
   ChevronRight,
   X,
   User,
-  FileText
+  FileText,
+  Brain,
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 
 interface Question {
@@ -32,6 +36,12 @@ interface Question {
   maxPoints: number;
   timeSpent?: number;
   feedback?: string;
+  holisticScores?: { AO1?: number; AO3?: number };
+  aiGrading?: {
+    breakdown?: Record<string, number>;
+    suggestions?: string[];
+    model?: string;
+  };
 }
 
 interface StudentResultWithMeta extends StudentResult {
@@ -68,6 +78,7 @@ export function QuestionBreakdownModal({
   const [studentResults, setStudentResults] = useState<StudentResult[]>([]);
   const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
+  const [gradingInProgress, setGradingInProgress] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -112,8 +123,19 @@ export function QuestionBreakdownModal({
     }
   };
 
-  const handleManualOverride = async (resultId: string, questionId: string, markAsCorrect: boolean, setScore?: number) => {
+  const handleManualOverride = async (
+    resultId: string,
+    questionId: string,
+    options: {
+      markAsCorrect?: boolean;
+      setScore?: number;
+      ao1Score?: number;
+      ao3Score?: number;
+    }
+  ) => {
     try {
+      const { markAsCorrect = false, setScore, ao1Score, ao3Score } = options;
+
       const response = await fetch('/api/assessments/manual-override', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,7 +144,9 @@ export function QuestionBreakdownModal({
           questionId,
           markAsCorrect,
           assessmentType,
-          setScore
+          setScore,
+          ao1Score,
+          ao3Score
         })
       });
 
@@ -138,56 +162,33 @@ export function QuestionBreakdownModal({
     }
   };
 
-  const generateMockData = () => {
-    // Mock data for demonstration
-    const mockResults: StudentResult[] = [
-      {
-        resultId: 'mock-result-1',
-        studentId: '1',
-        studentName: 'Language Gems1',
-        score: 82,
-        maxScore: 100,
-        percentage: 82,
-        timeSpent: 900,
-        questions: [
-          {
-            questionId: 'mock-q-1',
-            questionNumber: 1,
-            questionText: 'Translate: "I like to play football"',
-            studentAnswer: 'Me gusta jugar al fútbol',
-            correctAnswer: 'Me gusta jugar al fútbol',
-            isCorrect: true,
-            points: 10,
-            maxPoints: 10,
-            timeSpent: 45
-          },
-          {
-            questionId: 'mock-q-2',
-            questionNumber: 2,
-            questionText: 'Fill in the blank: "Yo ____ español" (hablar)',
-            studentAnswer: 'habla',
-            correctAnswer: 'hablo',
-            isCorrect: false,
-            points: 0,
-            maxPoints: 10,
-            timeSpent: 60,
-            feedback: 'Remember: "yo" uses the first person singular form'
-          },
-          {
-            questionId: 'mock-q-3',
-            questionNumber: 3,
-            questionText: 'Multiple choice: What is "casa" in English?',
-            studentAnswer: 'House',
-            correctAnswer: 'House',
-            isCorrect: true,
-            points: 10,
-            maxPoints: 10,
-            timeSpent: 30
-          }
-        ]
+  const handleAIGrading = async (resultId: string, questionId: string) => {
+    try {
+      setGradingInProgress(true);
+      // We need to pass the studentId for writing results if needed by the backend
+      const studentId = studentResults[currentStudentIndex].studentId;
+
+      const response = await fetch('/api/assessments/grade-writing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resultId,
+          questionId,
+          studentId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('AI Grading failed');
       }
-    ];
-    setStudentResults(mockResults);
+
+      await fetchQuestionData();
+    } catch (error) {
+      console.error('AI Grading error:', error);
+      alert('Failed to grade with AI. Please try again.');
+    } finally {
+      setGradingInProgress(false);
+    }
   };
 
   const currentStudent = studentResults[currentStudentIndex];
@@ -206,6 +207,9 @@ export function QuestionBreakdownModal({
       setSelectedQuestionIndex(0);
     }
   };
+
+  const isDictation = assessmentType === 'dictation' || assessmentType === 'aqa-dictation';
+  const isWriting = assessmentType === 'gcse-writing' || assessmentType === 'aqa-writing';
 
   if (!isOpen) return null;
 
@@ -308,20 +312,22 @@ export function QuestionBreakdownModal({
             {/* Question Grid */}
             <div>
               <h4 className="font-semibold text-slate-900 mb-3">Question Navigator</h4>
-              <div className="grid grid-cols-10 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {currentStudent.questions.map((q, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedQuestionIndex(index)}
                     className={`
-                      p-3 rounded-lg border-2 font-semibold transition-all
+                      w-10 h-10 flex items-center justify-center rounded-lg border-2 font-semibold transition-all
                       ${selectedQuestionIndex === index
                         ? 'ring-2 ring-indigo-500 scale-105'
                         : ''
                       }
                       ${q.isCorrect
                         ? 'bg-green-50 border-green-300 text-green-900 hover:bg-green-100'
-                        : 'bg-red-50 border-red-300 text-red-900 hover:bg-red-100'
+                        : q.points > 0
+                          ? 'bg-yellow-50 border-yellow-300 text-yellow-900 hover:bg-yellow-100'
+                          : 'bg-red-50 border-red-300 text-red-900 hover:bg-red-100'
                       }
                     `}
                   >
@@ -360,7 +366,7 @@ export function QuestionBreakdownModal({
                   {/* Question Text */}
                   <div className="p-4 bg-slate-50 rounded-lg">
                     <p className="text-sm font-medium text-slate-600 mb-2">Question:</p>
-                    <p className="text-slate-900">{currentQuestion.questionText}</p>
+                    <p className="text-slate-900 whitespace-pre-wrap">{currentQuestion.questionText}</p>
                   </div>
 
                   {/* Student Answer */}
@@ -369,7 +375,7 @@ export function QuestionBreakdownModal({
                     : 'bg-red-50 border-red-200'
                     }`}>
                     <p className="text-sm font-medium mb-2">Student's Answer:</p>
-                    <p className="font-medium">{currentQuestion.studentAnswer}</p>
+                    <p className="font-medium whitespace-pre-wrap">{currentQuestion.studentAnswer}</p>
                   </div>
 
                   {/* Correct Answer - Always show for teachers */}
@@ -377,47 +383,182 @@ export function QuestionBreakdownModal({
                     <p className="text-sm font-medium text-green-900 mb-2">
                       Correct Answer:
                     </p>
-                    <p className="font-medium text-green-900">
+                    <p className="font-medium text-green-900 whitespace-pre-wrap">
                       {currentQuestion.correctAnswer}
                     </p>
                   </div>
 
-                  {/* Manual Override Buttons for Teachers */}
-                  {/* Manual Grading Buttons */}
-                  <div className="space-y-2 pt-4 border-t border-slate-200">
-                    <p className="text-sm font-medium text-slate-700">Award Marks:</p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={currentQuestion.points === 0 ? "default" : "outline"}
-                        size="sm"
-                        className={currentQuestion.points === 0 ? "bg-red-600 hover:bg-red-700" : ""}
-                        onClick={() => handleManualOverride(currentStudent.resultId, currentQuestion.questionId, false, 0)}
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        0 Marks
-                      </Button>
-                      <Button
-                        variant={currentQuestion.points === 1 ? "default" : "outline"}
-                        size="sm"
-                        className={currentQuestion.points === 1 ? "bg-yellow-600 hover:bg-yellow-700" : ""}
-                        onClick={() => handleManualOverride(currentStudent.resultId, currentQuestion.questionId, false, 1)}
-                      >
-                        1 Mark
-                      </Button>
-                      <Button
-                        variant={currentQuestion.points === currentQuestion.maxPoints ? "default" : "outline"}
-                        size="sm"
-                        className={currentQuestion.points === currentQuestion.maxPoints ? "bg-green-600 hover:bg-green-700" : ""}
-                        onClick={() => handleManualOverride(currentStudent.resultId, currentQuestion.questionId, true, currentQuestion.maxPoints)}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        {currentQuestion.maxPoints} Marks
-                      </Button>
-                    </div>
+                  {/* Grading Controls */}
+                  <div className="space-y-4 pt-4 border-t border-slate-200">
+                    <h5 className="font-semibold text-slate-900 flex items-center gap-2">
+                      <Award className="w-5 h-5 text-indigo-600" />
+                      Teacher Grading
+                    </h5>
+
+                    {isDictation ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-lg">
+                        {/* Dictation: AO1 Score */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-slate-700 flex justify-between">
+                            <span>AO1: Communication</span>
+                            <span className="font-bold text-indigo-600">{currentQuestion.holisticScores?.AO1 ?? 0}/4</span>
+                          </label>
+                          <div className="flex gap-2">
+                            {[0, 1, 2, 3, 4].map((score) => (
+                              <Button
+                                key={`ao1-${score}`}
+                                size="sm"
+                                variant={(currentQuestion.holisticScores?.AO1 ?? 0) === score ? "default" : "outline"}
+                                className={`flex-1 ${(currentQuestion.holisticScores?.AO1 ?? 0) === score ? "bg-indigo-600" : ""}`}
+                                onClick={() => handleManualOverride(
+                                  currentStudent.resultId,
+                                  currentQuestion.questionId,
+                                  {
+                                    ao1Score: score,
+                                    ao3Score: currentQuestion.holisticScores?.AO3 ?? 0
+                                  }
+                                )}
+                              >
+                                {score}
+                              </Button>
+                            ))}
+                          </div>
+                          <p className="text-xs text-slate-500">Conveying meaning effectively</p>
+                        </div>
+
+                        {/* Dictation: AO3 Score */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-slate-700 flex justify-between">
+                            <span>AO3: Accuracy</span>
+                            <span className="font-bold text-indigo-600">{currentQuestion.holisticScores?.AO3 ?? 0}/4</span>
+                          </label>
+                          <div className="flex gap-2">
+                            {[0, 1, 2, 3, 4].map((score) => (
+                              <Button
+                                key={`ao3-${score}`}
+                                size="sm"
+                                variant={(currentQuestion.holisticScores?.AO3 ?? 0) === score ? "default" : "outline"}
+                                className={`flex-1 ${(currentQuestion.holisticScores?.AO3 ?? 0) === score ? "bg-indigo-600" : ""}`}
+                                onClick={() => handleManualOverride(
+                                  currentStudent.resultId,
+                                  currentQuestion.questionId,
+                                  {
+                                    ao1Score: currentQuestion.holisticScores?.AO1 ?? 0,
+                                    ao3Score: score
+                                  }
+                                )}
+                              >
+                                {score}
+                              </Button>
+                            ))}
+                          </div>
+                          <p className="text-xs text-slate-500">Grammar and spelling accuracy</p>
+                        </div>
+                      </div>
+                    ) : isWriting ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1 flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
+                            <span className="font-medium">Score:</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max={currentQuestion.maxPoints}
+                              value={currentQuestion.points}
+                              onChange={(e) => handleManualOverride(
+                                currentStudent.resultId,
+                                currentQuestion.questionId,
+                                { setScore: parseInt(e.target.value) || 0 }
+                              )}
+                              className="w-20 p-2 border rounded text-center font-bold text-lg"
+                            />
+                            <span className="text-slate-500">/ {currentQuestion.maxPoints}</span>
+                          </div>
+
+                          <Button
+                            onClick={() => handleAIGrading(currentStudent.resultId, currentQuestion.questionId)}
+                            disabled={gradingInProgress}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                          >
+                            {gradingInProgress ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            ) : (
+                              <Brain className="w-4 h-4 mr-2" />
+                            )}
+                            Auto-Grade with AI
+                          </Button>
+                        </div>
+
+                        {currentQuestion.aiGrading && (
+                          <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                            <h6 className="font-semibold text-indigo-900 flex items-center gap-2 mb-2">
+                              <Sparkles className="w-4 h-4" />
+                              AI Grading Feedback
+                            </h6>
+
+                            {currentQuestion.aiGrading.breakdown && (
+                              <div className="grid grid-cols-3 gap-2 mb-3">
+                                {Object.entries(currentQuestion.aiGrading.breakdown).map(([key, score]) => (
+                                  <div key={key} className="bg-white p-2 rounded border text-center">
+                                    <div className="text-xs text-slate-500 uppercase font-bold">{key}</div>
+                                    <div className="font-bold text-indigo-600">{score}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="mb-3">
+                              <p className="text-sm text-slate-800">{currentQuestion.feedback}</p>
+                            </div>
+
+                            {currentQuestion.aiGrading.suggestions && currentQuestion.aiGrading.suggestions.length > 0 && (
+                              <div className="text-sm bg-white p-3 rounded">
+                                <div className="font-semibold text-indigo-900 mb-1">Suggestions:</div>
+                                <ul className="list-disc pl-4 space-y-1 text-slate-700">
+                                  {currentQuestion.aiGrading.suggestions.map((s, i) => (
+                                    <li key={i}>{s}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      // Standard 0, 1, Max buttons for Reading/Listening
+                      <div className="flex gap-2">
+                        <Button
+                          variant={currentQuestion.points === 0 ? "default" : "outline"}
+                          size="sm"
+                          className={currentQuestion.points === 0 ? "bg-red-600 hover:bg-red-700" : ""}
+                          onClick={() => handleManualOverride(currentStudent.resultId, currentQuestion.questionId, { markAsCorrect: false, setScore: 0 })}
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          0 Marks
+                        </Button>
+                        <Button
+                          variant={currentQuestion.points === 1 ? "default" : "outline"}
+                          size="sm"
+                          className={currentQuestion.points === 1 ? "bg-yellow-600 hover:bg-yellow-700" : ""}
+                          onClick={() => handleManualOverride(currentStudent.resultId, currentQuestion.questionId, { markAsCorrect: false, setScore: 1 })}
+                        >
+                          1 Mark
+                        </Button>
+                        <Button
+                          variant={currentQuestion.points === currentQuestion.maxPoints ? "default" : "outline"}
+                          size="sm"
+                          className={currentQuestion.points === currentQuestion.maxPoints ? "bg-green-600 hover:bg-green-700" : ""}
+                          onClick={() => handleManualOverride(currentStudent.resultId, currentQuestion.questionId, { markAsCorrect: true, setScore: currentQuestion.maxPoints })}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          {currentQuestion.maxPoints} Marks
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Feedback */}
-                  {currentQuestion.feedback && (
+                  {/* Feedback (if generic feedback exists and not already shown in AI section) */}
+                  {currentQuestion.feedback && !currentQuestion.aiGrading && (
                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                       <p className="text-sm font-medium text-blue-900 mb-2">Feedback:</p>
                       <p className="text-blue-900">{currentQuestion.feedback}</p>

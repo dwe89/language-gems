@@ -8,14 +8,14 @@ import { exerciseDataService } from '../services/exerciseDataService';
 
 
 // Import gamification components
-import GemIcon, { GemType } from '../../../components/ui/GemIcon'; // Keep for now, though not used in new gem structure
-import GemCollectionAnimation from '../../../components/ui/GemCollectionAnimation';
-import AchievementNotification from '../../../components/ui/AchievementNotification';
-import { audioFeedbackService } from '../../../services/audioFeedbackService';
-import { achievementService, Achievement } from '../../../services/achievementService';
+import GemIcon, { GemType } from '../../../../components/ui/GemIcon'; // Keep for now, though not used in new gem structure
+import GemCollectionAnimation from '../../../../components/ui/GemCollectionAnimation';
+import AchievementNotification from '../../../../components/ui/AchievementNotification';
+import { audioFeedbackService } from '../../../../services/audioFeedbackService';
+import { achievementService, Achievement } from '../../../../services/achievementService';
 import { GEM_TYPES } from '../../vocabulary-mining/utils/gameConstants';
-import { RewardEngine, type GemRarity } from '../../../services/rewards/RewardEngine';
-import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
+import { RewardEngine, type GemRarity } from '../../../../services/rewards/RewardEngine';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // Import mode components
 import { DictationMode } from '../modes/DictationMode';
