@@ -16,6 +16,7 @@ export interface GameVocabularyWord {
   example_translation?: string;
   audio_url?: string;
   curriculum_level?: string;
+  isCustomVocabulary?: boolean; // TRUE if from enhanced_vocabulary_items (custom/teacher vocabulary)
 }
 
 interface UseGameVocabularyProps {

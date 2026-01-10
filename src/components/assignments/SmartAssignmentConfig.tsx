@@ -100,7 +100,7 @@ export default function SmartAssignmentConfig({
   onSentenceChange,
   onGrammarChange
 }: SmartAssignmentConfigProps) {
-  
+
   const configSections = useMemo(() => {
     if (!selectedGames || selectedGames.length === 0) {
       return {
@@ -112,7 +112,7 @@ export default function SmartAssignmentConfig({
         grammarGames: []
       };
     }
-    
+
     const games = selectedGames.map(id => GAME_TYPES[id]).filter(Boolean);
 
     const needsVocabulary = games.some(game => game.type === 'vocabulary' || game.type === 'mixed');
@@ -162,7 +162,7 @@ export default function SmartAssignmentConfig({
             </div>
           </div>
 
-          <VocabularyConfigSection 
+          <VocabularyConfigSection
             config={vocabularyConfig}
             onChange={onVocabularyChange}
           />
@@ -186,7 +186,7 @@ export default function SmartAssignmentConfig({
             </div>
           </div>
 
-          <SentenceConfigSection 
+          <SentenceConfigSection
             config={sentenceConfig}
             onChange={onSentenceChange}
           />
@@ -240,9 +240,9 @@ export default function SmartAssignmentConfig({
 }
 
 // Vocabulary Configuration Component
-function VocabularyConfigSection({ config, onChange }: { 
-  config: VocabularyConfig; 
-  onChange: (config: VocabularyConfig) => void; 
+function VocabularyConfigSection({ config, onChange }: {
+  config: VocabularyConfig;
+  onChange: (config: VocabularyConfig) => void;
 }) {
   return (
     <div className="space-y-6">
@@ -250,7 +250,7 @@ function VocabularyConfigSection({ config, onChange }: {
         <label className="block text-sm font-medium text-gray-700 mb-3">Language</label>
         <select
           value={config.language || 'es'}
-          onChange={(e) => onChange({...config, language: e.target.value})}
+          onChange={(e) => onChange({ ...config, language: e.target.value })}
           className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="es">Spanish</option>
@@ -263,7 +263,7 @@ function VocabularyConfigSection({ config, onChange }: {
         <label className="block text-sm font-medium text-gray-700 mb-3">Content Source</label>
         <select
           value={config.source}
-          onChange={(e) => onChange({...config, source: e.target.value as any})}
+          onChange={(e) => onChange({ ...config, source: e.target.value as any })}
           className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="">Choose source...</option>
@@ -297,27 +297,27 @@ function VocabularyConfigSection({ config, onChange }: {
       {config.source === 'theme' && (
         <ThemeSelector
           value={config.theme || ''}
-          onChange={(theme) => onChange({...config, theme})}
+          onChange={(theme) => onChange({ ...config, theme })}
         />
       )}
 
       {config.source === 'topic' && (
         <TopicSelector
           value={config.topic || ''}
-          onChange={(topic) => onChange({...config, topic})}
+          onChange={(topic) => onChange({ ...config, topic })}
         />
       )}
 
       {config.source === 'custom' && (
-        <CustomVocabularySelector 
-          value={config.customListId || ''} 
-          onChange={(customListId) => onChange({...config, customListId})}
+        <CustomVocabularySelector
+          value={config.customListId || ''}
+          onChange={(customListId) => onChange({ ...config, customListId })}
         />
       )}
 
       {config.source === 'create' && (
-        <InlineVocabularyCreator 
-          onSave={(newList) => onChange({...config, source: 'custom', customList: newList})}
+        <InlineVocabularyCreator
+          onSave={(newList) => onChange({ ...config, source: 'custom', customList: newList })}
         />
       )}
 
@@ -327,9 +327,9 @@ function VocabularyConfigSection({ config, onChange }: {
 }
 
 // Sentence Configuration Component  
-function SentenceConfigSection({ config, onChange }: { 
-  config: SentenceConfig; 
-  onChange: (config: SentenceConfig) => void; 
+function SentenceConfigSection({ config, onChange }: {
+  config: SentenceConfig;
+  onChange: (config: SentenceConfig) => void;
 }) {
   return (
     <div className="space-y-6">
@@ -337,7 +337,7 @@ function SentenceConfigSection({ config, onChange }: {
         <label className="block text-sm font-medium text-gray-700 mb-3">Content Source</label>
         <select
           value={config.source}
-          onChange={(e) => onChange({...config, source: e.target.value as any})}
+          onChange={(e) => onChange({ ...config, source: e.target.value as any })}
           className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent"
         >
           <option value="">Choose source...</option>
@@ -351,27 +351,27 @@ function SentenceConfigSection({ config, onChange }: {
       {config.source === 'theme' && (
         <ThemeSelector
           value={config.theme || ''}
-          onChange={(theme) => onChange({...config, theme})}
+          onChange={(theme) => onChange({ ...config, theme })}
         />
       )}
 
       {config.source === 'topic' && (
         <TopicSelector
           value={config.topic || ''}
-          onChange={(topic) => onChange({...config, topic})}
+          onChange={(topic) => onChange({ ...config, topic })}
         />
       )}
 
       {config.source === 'custom' && (
-        <CustomSentenceSelector 
-          value={config.customSetId || ''} 
-          onChange={(customSetId) => onChange({...config, customSetId})}
+        <CustomSentenceSelector
+          value={config.customSetId || ''}
+          onChange={(customSetId) => onChange({ ...config, customSetId })}
         />
       )}
 
       {config.source === 'create' && (
-        <InlineSentenceCreator 
-          onSave={(newSet) => onChange({...config, source: 'custom', customSet: newSet})}
+        <InlineSentenceCreator
+          onSave={(newSet) => onChange({ ...config, source: 'custom', customSet: newSet })}
         />
       )}
 
@@ -384,7 +384,7 @@ function SentenceConfigSection({ config, onChange }: {
             min="5"
             max="30"
             value={config.sentenceCount || 10}
-            onChange={(e) => onChange({...config, sentenceCount: parseInt(e.target.value)})}
+            onChange={(e) => onChange({ ...config, sentenceCount: parseInt(e.target.value) })}
             className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
@@ -421,9 +421,9 @@ function ThemeSelector({ value, onChange }: { value: string; onChange: (value: s
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
-      <select 
-        value={value} 
-        onChange={(e) => onChange(e.target.value)} 
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         disabled={loading}
       >
@@ -465,9 +465,9 @@ function TopicSelector({ value, onChange }: { value: string; onChange: (value: s
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">Select Topic</label>
-      <select 
-        value={value} 
-        onChange={(e) => onChange(e.target.value)} 
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         disabled={loading}
       >
@@ -669,9 +669,9 @@ function CustomSentenceSelector({ value, onChange }: { value: string; onChange: 
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">Custom Sentence Set</label>
       <div className="space-y-3">
-        <select 
-          value={value} 
-          onChange={(e) => onChange(e.target.value)} 
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         >
           <option value="">Select custom sentence set...</option>
@@ -824,11 +824,10 @@ function GrammarConfigSection({ config, onChange }: GrammarConfigSectionProps) {
             <button
               key={lang.id}
               onClick={() => updateConfig({ language: lang.id as any })}
-              className={`p-3 rounded-lg border-2 transition-all ${
-                config.language === lang.id
-                  ? 'border-purple-500 bg-purple-50 text-purple-700'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              className={`p-3 rounded-lg border-2 transition-all ${config.language === lang.id
+                ? 'border-purple-500 bg-purple-50 text-purple-700'
+                : 'border-gray-200 hover:border-gray-300'
+                }`}
             >
               <div className="text-2xl mb-1">{lang.flag}</div>
               <div className="text-sm font-medium">{lang.name}</div>
@@ -880,11 +879,10 @@ function GrammarConfigSection({ config, onChange }: GrammarConfigSectionProps) {
               />
               <div className="flex-1">
                 <div className="font-medium text-gray-900">{tense.name}</div>
-                <div className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${
-                  tense.difficulty === 'beginner' ? 'bg-green-100 text-green-700' :
+                <div className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${tense.difficulty === 'beginner' ? 'bg-green-100 text-green-700' :
                   tense.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-red-100 text-red-700'
-                }`}>
+                    'bg-red-100 text-red-700'
+                  }`}>
                   {tense.difficulty}
                 </div>
               </div>

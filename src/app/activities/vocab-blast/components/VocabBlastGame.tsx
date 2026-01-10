@@ -386,7 +386,9 @@ export default function VocabBlastGame({
           try {
             const sessionService = new EnhancedGameSessionService();
             const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-blast', {
-              vocabularyId: word.id,
+              // ✅ FIXED: Use correct ID field based on vocabulary source
+              vocabularyId: word.isCustomVocabulary ? undefined : word.id,
+              enhancedVocabularyItemId: word.isCustomVocabulary ? word.id : undefined,
               wordText: word.word,
               translationText: word.translation,
               responseTimeMs: responseTime,
@@ -438,6 +440,7 @@ export default function VocabBlastGame({
           if (gameSessionId && currentWord.id) {
             console.log('🎮 [VOCAB BLAST] Attempting to record INCORRECT answer gem:', {
               vocabularyId: currentWord.id,
+              isCustomVocabulary: currentWord.isCustomVocabulary,
               gameSessionId,
               word: currentWord.word,
               isCorrect: false
@@ -448,7 +451,9 @@ export default function VocabBlastGame({
               const sessionService = new EnhancedGameSessionService();
 
               const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-blast', {
-                vocabularyId: currentWord.id,
+                // ✅ FIXED: Use correct ID field based on vocabulary source
+                vocabularyId: currentWord.isCustomVocabulary ? undefined : currentWord.id,
+                enhancedVocabularyItemId: currentWord.isCustomVocabulary ? currentWord.id : undefined,
                 wordText: currentWord.word,
                 translationText: currentWord.translation,
                 responseTimeMs: responseTime,

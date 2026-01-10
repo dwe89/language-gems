@@ -24,6 +24,7 @@ export interface Evidence {
   isCorrect?: boolean;
   attempts: number;
   word?: string; // The original word in the target language
+  isCustomVocabulary?: boolean; // ✅ Track if from enhanced_vocabulary_items
 }
 
 export interface GameProgress {

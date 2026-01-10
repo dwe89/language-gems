@@ -66,8 +66,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           isOpen={isSignupModalOpen}
           onClose={() => setIsSignupModalOpen(false)}
         />
-      </div>
       <BetaFeedbackWidget />
+      </div>
     </div>
   );
 }

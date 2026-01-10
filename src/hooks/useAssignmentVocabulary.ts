@@ -5,7 +5,7 @@ import { createBrowserClient } from '../lib/supabase-client';
 import { loadSentencesForAssignment } from '../utils/assignmentLoaders';
 
 export interface StandardVocabularyItem {
-  id: string;          // UUID from centralized_vocabulary
+  id: string;          // UUID from centralized_vocabulary OR enhanced_vocabulary_items
   word: string;        // Spanish/target language
   translation: string; // English translation
   category: string;    // Modern category field
@@ -18,6 +18,7 @@ export interface StandardVocabularyItem {
   article?: string;    // Article for nouns
   display_word?: string; // Display version of word
   order_position?: number;
+  isCustomVocabulary?: boolean; // TRUE if from enhanced_vocabulary_items (custom/teacher vocabulary)
 }
 
 export interface AssignmentData {
@@ -151,12 +152,13 @@ export function useAssignmentVocabulary(
             return; // Stop here; we handled via fallback
           }
 
-          // Load vocabulary items from the assignment list
+          // Load vocabulary items from the assignment list (supporting both centralized and custom items)
           const { data: listItems, error: listError } = await supabase
             .from('vocabulary_assignment_items')
             .select(`
               vocabulary_id,
               order_position,
+              enhanced_vocabulary_item_id,
               centralized_vocabulary (
                 id,
                 word,
@@ -170,6 +172,14 @@ export function useAssignmentVocabulary(
                 gender,
                 article,
                 display_word
+              ),
+              enhanced_vocabulary_item:enhanced_vocabulary_items (
+                id,
+                term,
+                translation,
+                part_of_speech,
+                audio_url,
+                difficulty_level
               )
             `)
             .eq('assignment_list_id', listId)
@@ -177,26 +187,49 @@ export function useAssignmentVocabulary(
 
           if (listError) throw listError;
 
-          // Transform to StandardVocabularyItem format
+          // Transform to StandardVocabularyItem format, handling both sources
           const vocabularyItems: StandardVocabularyItem[] = (listItems || [])
-            .filter(item => item.centralized_vocabulary)
+            .filter(item => item.centralized_vocabulary || item.enhanced_vocabulary_item)
             .map(item => {
-              const vocab = item.centralized_vocabulary as any;
-              return {
-                id: vocab.id,
-                word: vocab.word,
-                translation: vocab.translation,
-                category: vocab.category || 'general',
-                subcategory: vocab.subcategory || 'general',
-                part_of_speech: vocab.part_of_speech || 'noun',
-                language: vocab.language || 'spanish',
-                audio_url: vocab.audio_url,
-                word_type: vocab.word_type,
-                gender: vocab.gender,
-                article: vocab.article,
-                display_word: vocab.display_word,
-                order_position: item.order_position
-              };
+              if (item.centralized_vocabulary) {
+                const vocab = item.centralized_vocabulary as any;
+                return {
+                  id: vocab.id,
+                  word: vocab.word,
+                  translation: vocab.translation,
+                  category: vocab.category || 'general',
+                  subcategory: vocab.subcategory || 'general',
+                  part_of_speech: vocab.part_of_speech || 'noun',
+                  language: vocab.language || 'spanish',
+                  audio_url: vocab.audio_url,
+                  word_type: vocab.word_type,
+                  gender: vocab.gender,
+                  article: vocab.article,
+                  display_word: vocab.display_word,
+                  order_position: item.order_position,
+                  isCustomVocabulary: false // Standard/centralized vocabulary
+                };
+              } else {
+                // Handle custom vocabulary item
+                const vocab = item.enhanced_vocabulary_item as any;
+                return {
+                  id: vocab.id, // Use valid UUID from enhanced item
+                  word: vocab.term, // term -> word
+                  translation: vocab.translation,
+                  category: 'custom',
+                  subcategory: 'user_list',
+                  part_of_speech: vocab.part_of_speech || 'noun',
+                  language: 'spanish', // Default if not stored, but usually available in context or parent list
+                  audio_url: vocab.audio_url,
+                  // Additional fields that might be missing in custom items:
+                  word_type: undefined,
+                  gender: undefined,
+                  article: undefined,
+                  display_word: vocab.term,
+                  order_position: item.order_position,
+                  isCustomVocabulary: true // ✅ FLAG: This is custom/enhanced vocabulary
+                };
+              }
             });
 
           // Filter to outstanding words if requested

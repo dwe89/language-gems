@@ -155,14 +155,16 @@ export class TeacherVocabularyAnalyticsService {
 
   /**
    * Get comprehensive vocabulary analytics for all classes taught by a teacher
+   * @param vocabularySource - Filter by vocabulary source: 'all' (default), 'centralized' (curriculum), 'custom' (teacher lists)
    */
   async getTeacherVocabularyAnalytics(
     teacherId: string,
     classId?: string,
     dateRange?: { from: string; to: string },
-    sections: string[] = ['stats', 'students', 'trends', 'topics', 'words'] // Default to all for backward compatibility
+    sections: string[] = ['stats', 'students', 'trends', 'topics', 'words'],
+    vocabularySource: 'all' | 'centralized' | 'custom' = 'all'
   ): Promise<TeacherVocabularyAnalytics> {
-    console.log('🔍 [TEACHER VOCAB ANALYTICS] Getting analytics for teacher:', teacherId, 'Sections:', sections);
+    console.log('🔍 [TEACHER VOCAB ANALYTICS] Getting analytics for teacher:', teacherId, 'Sections:', sections, 'Source:', vocabularySource);
 
     try {
       // Get teacher's classes
@@ -182,12 +184,17 @@ export class TeacherVocabularyAnalyticsService {
       }
 
       // 1. Always fetch basic student progress as it's needed for stats
-      const studentProgress = await this.getStudentVocabularyProgress(students, classes);
+      const studentProgress = await this.getStudentVocabularyProgress(
+        students,
+        classes,
+        vocabularySource
+      );
 
       // 2. Conditionally fetch other sections
+      // 🔧 FIX: Now support custom vocabulary in topic analysis
       let topicAnalysis: TopicAnalysis[] = [];
       if (sections.includes('topics')) {
-        console.log('📊 [TOPICS] Fetching topic analysis for', students.length, 'students');
+        console.log('📊 [TOPICS] Fetching topic analysis for', students.length, 'students (source:', vocabularySource, ')');
         topicAnalysis = await this.getTopicAnalysis(students.map(s => s.id));
         console.log('📊 [TOPICS] Result:', topicAnalysis.length, 'topics found');
       }
@@ -323,8 +330,9 @@ export class TeacherVocabularyAnalyticsService {
    * OPTIMIZED: Single bulk query instead of N queries
    */
   private async getStudentVocabularyProgress(
-    students: Array<{ id: string; name: string; classId: string; className: string }>,
-    classes: Array<{ id: string; name: string }>
+    students: any[],
+    classes: any[],
+    vocabularySource: 'all' | 'centralized' | 'custom' = 'all'
   ): Promise<StudentVocabularyProgress[]> {
     if (students.length === 0) return [];
 
@@ -348,13 +356,14 @@ export class TeacherVocabularyAnalyticsService {
         // Add small delay
         await this.delay(20);
 
-        const [gemResult, assignmentVocabResult] = await Promise.all([
-          this.supabase
-            .from('vocabulary_gem_collection')
-            .select(`
+        // Create queries with filters
+        let gemQuery = this.supabase
+          .from('vocabulary_gem_collection')
+          .select(`
               student_id,
               vocabulary_item_id,
               centralized_vocabulary_id,
+              enhanced_vocabulary_item_id,
               total_encounters,
               correct_encounters,
               mastery_level,
@@ -362,18 +371,29 @@ export class TeacherVocabularyAnalyticsService {
               next_review_at,
               fsrs_retrievability
             `)
-            .in('student_id', batch),
+          .in('student_id', batch);
 
-          this.supabase
-            .from('assignment_vocabulary_progress')
-            .select(`
+        // Apply source filter
+        if (vocabularySource === 'centralized') {
+          gemQuery = gemQuery.not('centralized_vocabulary_id', 'is', null);
+        } else if (vocabularySource === 'custom') {
+          gemQuery = gemQuery.not('enhanced_vocabulary_item_id', 'is', null);
+        }
+
+        const assignmentVocabQuery = this.supabase
+          .from('assignment_vocabulary_progress')
+          .select(`
               student_id,
               vocab_id,
               seen_count,
               correct_count,
               last_seen_at
             `)
-            .in('student_id', batch)
+          .in('student_id', batch);
+
+        const [gemResult, assignmentVocabResult] = await Promise.all([
+          gemQuery,
+          assignmentVocabQuery
         ]);
 
         if (gemResult.error) {
@@ -462,10 +482,10 @@ export class TeacherVocabularyAnalyticsService {
         const gems = gemsByStudent.get(student.id) || [];
         const assignmentVocab = assignmentVocabByStudent.get(student.id) || [];
 
-        // 🔥 CRITICAL: Merge data from BOTH sources
-        // Total words = unique words from gems + unique assignment vocab
+        // 🔥 CRITICAL: Merge data from BOTH sources (now includes enhanced vocabulary)
+        // Total words = unique words from gems + unique assignment vocab + custom vocab
         const uniqueVocabIds = new Set([
-          ...gems.map(g => g.vocabulary_item_id || g.centralized_vocabulary_id || ''),
+          ...gems.map(g => g.vocabulary_item_id || g.centralized_vocabulary_id || g.enhanced_vocabulary_item_id || ''),
           ...assignmentVocab.map(v => v.vocab_id || v.vocabulary_id || '')
         ].filter(Boolean));
 
@@ -751,11 +771,13 @@ export class TeacherVocabularyAnalyticsService {
             student_id,
             centralized_vocabulary_id,
             vocabulary_item_id,
+            enhanced_vocabulary_item_id,
             total_encounters,
             correct_encounters,
             mastery_level
           `)
           .in('student_id', batch);
+
 
         if (error) {
           console.error('Error fetching batch topic data', error);
@@ -766,12 +788,21 @@ export class TeacherVocabularyAnalyticsService {
 
       console.log('🔍 [TOPIC ANALYSIS] Gem data fetched:', gemData.length, 'records for', studentIds.length, 'students');
 
-      // Get centralized vocabulary details - use both ID fields
+      // Separate centralized and enhanced vocabulary IDs
       const centralizedIds = [...new Set(
         (gemData || [])
           .map(g => g.centralized_vocabulary_id || g.vocabulary_item_id)
           .filter(Boolean)
       )];
+
+      // 🔧 FIX: Also get enhanced vocabulary IDs for custom words
+      const enhancedIds = [...new Set(
+        (gemData || [])
+          .map(g => g.enhanced_vocabulary_item_id)
+          .filter(Boolean)
+      )];
+
+      console.log('🔍 [TOPIC ANALYSIS] Centralized IDs:', centralizedIds.length, 'Enhanced IDs:', enhancedIds.length);
 
       let vocabularyDetails: Array<{
         id: string;
@@ -783,10 +814,12 @@ export class TeacherVocabularyAnalyticsService {
         language: string;
         theme_name: string | null;
         unit_name: string | null;
+        isCustom?: boolean;
       }> = [];
 
+      // 1. Fetch centralized vocabulary
       if (centralizedIds.length > 0) {
-        console.log('🔍 [TOPIC ANALYSIS] Looking up', centralizedIds.length, 'unique vocabulary IDs');
+        console.log('🔍 [TOPIC ANALYSIS] Looking up', centralizedIds.length, 'centralized vocabulary IDs');
 
         // BATCH the vocabulary lookup to avoid overwhelming the database with 1000+ IDs
         const vocabBatchSize = 100;
@@ -802,11 +835,75 @@ export class TeacherVocabularyAnalyticsService {
             console.error('Error fetching vocabulary batch for topics:', vocabError);
             continue;
           }
-          if (vocabData) vocabularyDetails.push(...vocabData);
+          if (vocabData) vocabularyDetails.push(...vocabData.map(v => ({ ...v, isCustom: false })));
         }
-
-        console.log('🔍 [TOPIC ANALYSIS] Vocabulary details fetched:', vocabularyDetails.length, 'items');
       }
+
+      // 2. 🔧 FIX: Also fetch enhanced (custom) vocabulary with list info for language
+      if (enhancedIds.length > 0) {
+        console.log('🔍 [TOPIC ANALYSIS] Looking up', enhancedIds.length, 'enhanced vocabulary IDs');
+        const enhancedBatchSize = 100;
+        const enhancedBatches = this.chunkArray(enhancedIds, enhancedBatchSize);
+
+        for (const batch of enhancedBatches) {
+          const { data: enhancedData, error: enhancedError } = await this.supabase
+            .from('enhanced_vocabulary_items')
+            .select(`
+              id,
+              term,
+              translation,
+              effective_category,
+              effective_subcategory,
+              difficulty_level,
+              list:enhanced_vocabulary_lists!list_id(name, language, topic, theme)
+            `)
+            .in('id', batch);
+
+          if (enhancedError) {
+            console.error('Error fetching enhanced vocabulary batch for topics:', enhancedError);
+            continue;
+          }
+          // Map enhanced vocab to same structure as centralized
+          // For custom vocabulary: category = theme (top line), subcategory = topic (subtitle)
+          if (enhancedData) {
+            vocabularyDetails.push(...enhancedData.map(v => {
+              const list = v.list as any;
+              // Use effective_category if set, otherwise use theme, fallback to list name
+              let category = v.effective_category;
+              let subcategory = v.effective_subcategory;
+              
+              if (!category && list) {
+                // For custom vocab: theme becomes category, topic becomes subcategory
+                if (list.theme) {
+                  category = list.theme;
+                  if (list.topic && !subcategory) {
+                    subcategory = list.topic;
+                  }
+                } else if (list.topic) {
+                  category = list.topic;
+                } else {
+                  category = list.name || 'Custom Vocabulary';
+                }
+              }
+              
+              return {
+                id: v.id,
+                word: v.term,
+                translation: v.translation,
+                category: category || 'Custom Vocabulary',
+                subcategory: subcategory || null,
+                curriculum_level: v.difficulty_level || 'Custom',
+                language: list?.language || 'unknown',
+                theme_name: list?.theme || null,
+                unit_name: list?.topic || null,
+                isCustom: true
+              };
+            }));
+          }
+        }
+      }
+
+      console.log('🔍 [TOPIC ANALYSIS] Total vocabulary details fetched:', vocabularyDetails.length, 'items');
 
       // Create vocabulary lookup map
       const vocabMap = new Map(vocabularyDetails.map(v => [v.id, v]));
@@ -822,7 +919,8 @@ export class TeacherVocabularyAnalyticsService {
       }>();
 
       (gemData || []).forEach(gem => {
-        const vocabId = gem.centralized_vocabulary_id || gem.vocabulary_item_id;
+        // 🔧 FIX: Check enhanced_vocabulary_item_id first, then centralized
+        const vocabId = gem.enhanced_vocabulary_item_id || gem.centralized_vocabulary_id || gem.vocabulary_item_id;
         const vocab = vocabMap.get(vocabId);
         if (!vocab) return;
 
@@ -1166,6 +1264,7 @@ export class TeacherVocabularyAnalyticsService {
           .select(`
             centralized_vocabulary_id,
             vocabulary_item_id,
+            enhanced_vocabulary_item_id,
             total_encounters,
             correct_encounters,
             mastery_level,
@@ -1182,36 +1281,107 @@ export class TeacherVocabularyAnalyticsService {
 
       console.log('🔍 [DETAILED WORDS] Gem data fetched:', gemData.length, 'records for', studentIds.length, 'students');
 
-      // Get vocabulary details - use both ID fields
+      // Separate centralized and enhanced vocabulary IDs
       const centralizedIds = [...new Set(
         (gemData || [])
           .map(g => g.centralized_vocabulary_id || g.vocabulary_item_id)
           .filter(Boolean)
       )];
 
-      if (centralizedIds.length === 0) return [];
+      // 🔧 FIX: Also get enhanced vocabulary IDs for custom words
+      const enhancedIds = [...new Set(
+        (gemData || [])
+          .map(g => g.enhanced_vocabulary_item_id)
+          .filter(Boolean)
+      )];
 
-      console.log('🔍 [DETAILED WORDS] Looking up', centralizedIds.length, 'unique vocabulary IDs');
+      console.log('🔍 [DETAILED WORDS] Centralized IDs:', centralizedIds.length, 'Enhanced IDs:', enhancedIds.length);
+
+      if (centralizedIds.length === 0 && enhancedIds.length === 0) return [];
 
       // BATCH the vocabulary lookup to avoid overwhelming the database with 1000+ IDs
       const vocabData: any[] = [];
-      const vocabBatchSize = 100; // Fetch 100 vocabulary items at a time
-      const vocabBatches = this.chunkArray(centralizedIds, vocabBatchSize);
+      const vocabBatchSize = 100;
 
-      for (const batch of vocabBatches) {
-        const { data, error: vocabError } = await this.supabase
-          .from('centralized_vocabulary')
-          .select('id, word, translation, category, subcategory, language')
-          .in('id', batch);
+      // 1. Fetch centralized vocabulary
+      if (centralizedIds.length > 0) {
+        console.log('🔍 [DETAILED WORDS] Looking up', centralizedIds.length, 'centralized vocabulary IDs');
+        const vocabBatches = this.chunkArray(centralizedIds, vocabBatchSize);
 
-        if (vocabError) {
-          console.error('Error fetching vocabulary batch:', vocabError);
-          continue;
+        for (const batch of vocabBatches) {
+          const { data, error: vocabError } = await this.supabase
+            .from('centralized_vocabulary')
+            .select('id, word, translation, category, subcategory, language')
+            .in('id', batch);
+
+          if (vocabError) {
+            console.error('Error fetching centralized vocabulary batch:', vocabError);
+            continue;
+          }
+          if (data) vocabData.push(...data.map(v => ({ ...v, isCustom: false })));
         }
-        if (data) vocabData.push(...data);
       }
 
-      console.log('🔍 [DETAILED WORDS] Vocabulary details fetched:', vocabData.length, 'items');
+      // 2. 🔧 FIX: Also fetch enhanced (custom) vocabulary with list info for language
+      if (enhancedIds.length > 0) {
+        console.log('🔍 [DETAILED WORDS] Looking up', enhancedIds.length, 'enhanced vocabulary IDs');
+        const enhancedBatches = this.chunkArray(enhancedIds, vocabBatchSize);
+
+        for (const batch of enhancedBatches) {
+          const { data, error: enhancedError } = await this.supabase
+            .from('enhanced_vocabulary_items')
+            .select(`
+              id,
+              term,
+              translation,
+              effective_category,
+              effective_subcategory,
+              list:enhanced_vocabulary_lists!list_id(name, language, topic, theme)
+            `)
+            .in('id', batch);
+
+          if (enhancedError) {
+            console.error('Error fetching enhanced vocabulary batch:', enhancedError);
+            continue;
+          }
+          // Map enhanced vocab to same structure as centralized
+          // For custom vocabulary: category = theme, subcategory = topic
+          if (data) {
+            vocabData.push(...data.map(v => {
+              const list = v.list as any;
+              // Use effective_category if set, otherwise use theme, fallback to list name
+              let category = v.effective_category;
+              let subcategory = v.effective_subcategory;
+              
+              if (!category && list) {
+                // For custom vocab: theme becomes category, topic becomes subcategory
+                if (list.theme) {
+                  category = list.theme;
+                  if (list.topic && !subcategory) {
+                    subcategory = list.topic;
+                  }
+                } else if (list.topic) {
+                  category = list.topic;
+                } else {
+                  category = list.name || 'Custom';
+                }
+              }
+              
+              return {
+                id: v.id,
+                word: v.term,
+                translation: v.translation,
+                category: category || 'Custom',
+                subcategory: subcategory || null,
+                language: list?.language || 'unknown',
+                isCustom: true
+              };
+            }));
+          }
+        }
+      }
+
+      console.log('🔍 [DETAILED WORDS] Total vocabulary details fetched:', vocabData.length, 'items');
 
       const vocabMap = new Map((vocabData || []).map(v => [v.id, v]));
 
@@ -1225,7 +1395,8 @@ export class TeacherVocabularyAnalyticsService {
       }>();
 
       (gemData || []).forEach(gem => {
-        const vocabId = gem.centralized_vocabulary_id || gem.vocabulary_item_id;
+        // 🔧 FIX: Check enhanced_vocabulary_item_id first, then centralized
+        const vocabId = gem.enhanced_vocabulary_item_id || gem.centralized_vocabulary_id || gem.vocabulary_item_id;
         const vocab = vocabMap.get(vocabId);
         if (!vocab) return;
 

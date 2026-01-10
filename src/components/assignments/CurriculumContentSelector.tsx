@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, GraduationCap, Target, ChevronRight,
-  Check, Search, Filter, Sparkles, Plus, AlertCircle, CheckCircle
+  Check, Search, Filter, Sparkles, Plus, AlertCircle, CheckCircle, X
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../auth/AuthProvider';
@@ -12,6 +12,7 @@ import { supabaseBrowser } from '../auth/AuthProvider';
 import { useUserAccess } from '@/hooks/useUserAccess';
 import DatabaseCategorySelector from './DatabaseCategorySelector';
 import KS4ThemeUnitSelector from './KS4ThemeUnitSelector';
+import InlineVocabularyCreator from '../vocabulary/InlineVocabularyCreator';
 
 interface CurriculumContentSelectorProps {
   curriculumLevel: 'KS3' | 'KS4' | 'custom' | 'my-vocabulary';
@@ -58,6 +59,9 @@ export default function CurriculumContentSelector({
   });
   const { canAccessFeature } = useUserAccess();
   const [selectedType, setSelectedType] = useState<'KS3' | 'KS4' | 'custom' | 'my-vocabulary' | undefined>(initialConfig?.type);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const [config, setConfig] = useState<ContentConfig>(
     initialConfig || {
       // Default config stays inert until a selection is made
@@ -114,7 +118,7 @@ export default function CurriculumContentSelector({
           </div>
           Content Level
         </h3>
-        
+
         <div className="grid grid-cols-4 gap-3">
           <button
             type="button"
@@ -129,11 +133,10 @@ export default function CurriculumContentSelector({
               setConfig(newConfig);
               onConfigChange(newConfig);
             }}
-            className={`p-4 rounded-xl text-center transition-all duration-200 ${
-              selectedType === 'KS3'
-                ? 'bg-blue-500 text-white shadow-lg transform scale-105'
-                : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
-            }`}
+            className={`p-4 rounded-xl text-center transition-all duration-200 ${selectedType === 'KS3'
+              ? 'bg-blue-500 text-white shadow-lg transform scale-105'
+              : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
+              }`}
           >
             <BookOpen className="h-6 w-6 mx-auto mb-2" />
             <div className="font-semibold">KS3</div>
@@ -157,86 +160,39 @@ export default function CurriculumContentSelector({
               setConfig(newConfig);
               onConfigChange(newConfig);
             }}
-            className={`p-4 rounded-xl text-center transition-all duration-200 ${
-              selectedType === 'KS4'
-                ? 'bg-blue-500 text-white shadow-lg transform scale-105'
-                : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
-            }`}
+            className={`p-4 rounded-xl text-center transition-all duration-200 ${selectedType === 'KS4'
+              ? 'bg-blue-500 text-white shadow-lg transform scale-105'
+              : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
+              }`}
           >
             <GraduationCap className="h-6 w-6 mx-auto mb-2" />
             <div className="font-semibold">KS4 (GCSE)</div>
             <div className="text-xs opacity-80">Years 10-11</div>
           </button>
 
-          {canAccessFeature('customVocabularyLists') && (
-            <button
-              type="button"
-              onClick={() => {
-                console.log('🎯 [CURRICULUM SELECTOR] ===== CUSTOM BUTTON CLICKED =====');
-                console.log('🎯 [CURRICULUM SELECTOR] BEFORE - selectedType:', selectedType);
-                console.log('🎯 [CURRICULUM SELECTOR] BEFORE - config:', config);
-
-                setSelectedType('custom');
-                const newConfig: ContentConfig = {
-                  type: 'custom',
-                  language,
-                  customCategories: [],
-                  customSubcategories: []
-                };
-
-                console.log('🎯 [CURRICULUM SELECTOR] NEW config being set:', newConfig);
-                setConfig(newConfig);
-
-                console.log('🎯 [CURRICULUM SELECTOR] About to call onConfigChange with:', newConfig);
-                onConfigChange(newConfig);
-                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange called - DONE');
-              }}
-              className={`p-4 rounded-xl text-center transition-all duration-200 ${
-                selectedType === 'custom'
-                  ? 'bg-orange-500 text-white shadow-lg transform scale-105'
-                  : 'bg-white text-gray-700 hover:bg-orange-50 border border-gray-200'
+          {/* Custom paste-in option removed. Teachers should create vocabulary in /vocabulary/new first, then select via 'My Lists' */}
+          <button
+            type="button"
+            onClick={() => {
+              console.log('🎯 [CURRICULUM SELECTOR] My Lists clicked - BEFORE state change');
+              setSelectedType('my-vocabulary');
+              const newConfig: ContentConfig = {
+                type: 'my-vocabulary',
+                language,
+                customListId: ''
+              };
+              setConfig(newConfig);
+              onConfigChange(newConfig);
+            }}
+            className={`p-4 rounded-xl text-center transition-all duration-200 ${selectedType === 'my-vocabulary'
+              ? 'bg-green-500 text-white shadow-lg transform scale-105'
+              : 'bg-white text-gray-700 hover:bg-green-50 border border-gray-200'
               }`}
-            >
-              <Sparkles className="h-6 w-6 mx-auto mb-2" />
-              <div className="font-semibold">Custom</div>
-              <div className="text-xs opacity-80">Enter your own</div>
-            </button>
-          )}
-
-          {canAccessFeature('customVocabularyLists') && (
-            <button
-              type="button"
-              onClick={() => {
-                console.log('🎯 [CURRICULUM SELECTOR] My Lists clicked - BEFORE state change');
-                console.log('🎯 [CURRICULUM SELECTOR] Current selectedType:', selectedType);
-                console.log('🎯 [CURRICULUM SELECTOR] Current config:', config);
-
-                setSelectedType('my-vocabulary');
-                const newConfig: ContentConfig = {
-                  type: 'my-vocabulary',
-                  language,
-                  customListId: ''
-                };
-                console.log('🎯 [CURRICULUM SELECTOR] NEW config being set:', newConfig);
-                setConfig(newConfig);
-
-                console.log('🎯 [CURRICULUM SELECTOR] About to call onConfigChange with:', newConfig);
-                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange function:', onConfigChange);
-                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange type:', typeof onConfigChange);
-                onConfigChange(newConfig);
-                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange called successfully');
-              }}
-              className={`p-4 rounded-xl text-center transition-all duration-200 ${
-                selectedType === 'my-vocabulary'
-                  ? 'bg-green-500 text-white shadow-lg transform scale-105'
-                  : 'bg-white text-gray-700 hover:bg-green-50 border border-gray-200'
-              }`}
-            >
-              <BookOpen className="h-6 w-6 mx-auto mb-2" />
-              <div className="font-semibold">My Lists</div>
-              <div className="text-xs opacity-80">Your vocabulary</div>
-            </button>
-          )}
+          >
+            <BookOpen className="h-6 w-6 mx-auto mb-2" />
+            <div className="font-semibold">My Lists</div>
+            <div className="text-xs opacity-80">Your vocabulary</div>
+          </button>
         </div>
       </div>
 
@@ -259,7 +215,7 @@ export default function CurriculumContentSelector({
             <p className="text-sm text-gray-600 mb-6">
               Choose categories and topics for Years 7-9 students
             </p>
-            
+
             <DatabaseCategorySelector
               language={language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'de'}
               curriculumLevel="KS3"
@@ -289,7 +245,7 @@ export default function CurriculumContentSelector({
               </div>
               GCSE Configuration
             </h4>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Exam Board Selection */}
               <div>
@@ -306,11 +262,10 @@ export default function CurriculumContentSelector({
                         setConfig(newConfig);
                         onConfigChange(newConfig);
                       }}
-                      className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${
-                        config.examBoard === board
-                          ? 'bg-purple-500 text-white shadow-md'
-                          : 'bg-white text-gray-700 hover:bg-purple-50 border border-gray-200'
-                      }`}
+                      className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${config.examBoard === board
+                        ? 'bg-purple-500 text-white shadow-md'
+                        : 'bg-white text-gray-700 hover:bg-purple-50 border border-gray-200'
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{board}</span>
@@ -339,11 +294,10 @@ export default function CurriculumContentSelector({
                         setConfig(newConfig);
                         onConfigChange(newConfig);
                       }}
-                      className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${
-                        config.tier === tier.id
-                          ? 'bg-purple-500 text-white shadow-md'
-                          : 'bg-white text-gray-700 hover:bg-purple-50 border border-gray-200'
-                      }`}
+                      className={`w-full p-3 rounded-lg text-left transition-all duration-200 ${config.tier === tier.id
+                        ? 'bg-purple-500 text-white shadow-md'
+                        : 'bg-white text-gray-700 hover:bg-purple-50 border border-gray-200'
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -379,88 +333,7 @@ export default function CurriculumContentSelector({
           </motion.div>
         )}
 
-        {selectedType === 'custom' && (
-          <motion.div
-            key="custom"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-100"
-          >
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <div className="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center mr-2">
-                <Sparkles className="h-4 w-4 text-orange-600" />
-              </div>
-              Custom Content Entry
-            </h4>
-            <p className="text-sm text-gray-600 mb-6">
-              Enter your own vocabulary words, sentences, or phrases for the assignment
-            </p>
-
-            <div className="space-y-6">
-              {/* Custom Vocabulary with Format Selector */}
-              <CustomVocabularyInput
-                value={config.customVocabulary || ''}
-                onChange={(value) => {
-                  const newConfig = { ...config, customVocabulary: value };
-                  setConfig(newConfig);
-                  onConfigChange(newConfig);
-                }}
-              />
-
-              {/* Custom Sentences */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Custom Sentences
-                </label>
-                <p className="text-xs text-gray-500 mb-3">
-                  Enter sentences, one per line. Format: "sentence = translation"
-                </p>
-                <textarea
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Me gusta la pizza = I like pizza&#10;¿Cómo estás? = How are you?"
-                  onChange={(e) => {
-                    const newConfig = { ...config, customSentences: e.target.value };
-                    setConfig(newConfig);
-                    onConfigChange(newConfig);
-                  }}
-                />
-              </div>
-
-              {/* Custom Phrases */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Custom Phrases or Expressions
-                </label>
-                <p className="text-xs text-gray-500 mb-3">
-                  Enter phrases or expressions, one per line
-                </p>
-                <textarea
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Buenos días = Good morning&#10;Por favor = Please"
-                  onChange={(e) => {
-                    const newConfig = { ...config, customPhrases: e.target.value };
-                    setConfig(newConfig);
-                    onConfigChange(newConfig);
-                  }}
-                />
-              </div>
-
-              {/* Instructions */}
-              <div className="bg-orange-100 border border-orange-200 rounded-lg p-4">
-                <h5 className="font-medium text-orange-800 mb-2">Tips for Custom Content:</h5>
-                <ul className="text-sm text-orange-700 space-y-1">
-                  <li>• Use the format "original = translation" for vocabulary and sentences</li>
-                  <li>• Put each item on a new line</li>
-                  <li>• Mix different difficulty levels as needed</li>
-                  <li>• Include context-specific vocabulary for your lesson</li>
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-        )}
+        {/* Custom paste-in content panel removed - teachers use /vocabulary/new instead */}
 
         {selectedType === 'my-vocabulary' && (
           <motion.div
@@ -481,6 +354,7 @@ export default function CurriculumContentSelector({
             </p>
 
             <CustomVocabularySelector
+              key={refreshKey}
               value={config.customListId || ''}
               onChange={(customListId, customListName) => {
                 console.log('🎯 [CURRICULUM SELECTOR] Custom list selected:', customListId, customListName);
@@ -492,10 +366,42 @@ export default function CurriculumContentSelector({
                 onConfigChange(newConfig);
                 console.log('🎯 [CURRICULUM SELECTOR] onConfigChange called with custom list - DONE');
               }}
+              onCreatenew={() => setShowCreateModal(true)}
             />
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Create New List Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <InlineVocabularyCreator
+              onClose={() => setShowCreateModal(false)}
+              onSuccess={(listId) => {
+                setShowCreateModal(false);
+                setRefreshKey(prev => prev + 1);
+                // If we have a listId, we could auto-select it, but for now just refreshing the list text is good.
+                // To auto-select, we'd need to fetch the name, or trust the component to refresh and then we set the ID.
+                if (listId) {
+                  // We can speculatively set the ID, and when the selector refreshes (due to key change),
+                  // it will load the list details for this ID.
+                  const newConfig = { ...config, customListId: listId };
+                  setConfig(newConfig);
+                  // We don't have the name yet, but CustomVocabularySelector will fetch it based on ID.
+                  // However, onConfigChange might want the name. 
+                  // CustomVocabularySelector fetches details on mount if value is present.
+                  // So this should work.
+                  onConfigChange(newConfig);
+                }
+              }}
+              initialData={{
+                language: language
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -503,10 +409,12 @@ export default function CurriculumContentSelector({
 // Custom Vocabulary Selector Component
 function CustomVocabularySelector({
   value,
-  onChange
+  onChange,
+  onCreatenew
 }: {
   value: string;
   onChange: (customListId: string, customListName?: string) => void;
+  onCreatenew?: () => void;
 }) {
   const { user } = useAuth();
   const [customLists, setCustomLists] = useState<any[]>([]);
@@ -655,7 +563,7 @@ function CustomVocabularySelector({
                 <p className="text-sm font-medium text-green-900 mb-2">Sample Words:</p>
                 <div className="space-y-1">
                   {selectedListDetails.items.slice(0, 3).map((item: any, index: number) => (
-                    <div key={index} className="text-sm text-green-800">
+                    <div key={index} className="flex justify-between text-sm text-green-800">
                       <span className="font-medium">{item.term}</span> → {item.translation}
                     </div>
                   ))}
@@ -671,22 +579,16 @@ function CustomVocabularySelector({
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <Link
-          href="/dashboard/vocabulary"
-          className="flex items-center text-sm text-green-600 hover:text-green-700"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Manage Vocabulary Lists
-        </Link>
-
-        <Link
-          href="/vocabulary/new"
-          className="flex items-center text-sm text-blue-600 hover:text-blue-700"
+      {/* Manage Vocabulary link removed */}
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={onCreatenew}
+          className="flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium"
         >
           <Plus className="h-4 w-4 mr-1" />
           Create New List
-        </Link>
+        </button>
       </div>
     </div>
   );

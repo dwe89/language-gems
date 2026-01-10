@@ -21,7 +21,8 @@ export interface WordExposure {
   id: string;
   assignment_id: string;
   student_id: string;
-  centralized_vocabulary_id: string;
+  centralized_vocabulary_id?: string | null;
+  enhanced_vocabulary_item_id?: string | null;
   first_exposed_at: string;
   exposure_count: number;
   last_exposed_at: string;
@@ -50,23 +51,52 @@ export class AssignmentExposureService {
    * 
    * @param assignmentId - The assignment ID
    * @param studentId - The student's user ID
-   * @param exposedWordIds - Array of centralized_vocabulary_id values shown in this session
+   * @param exposedWordIds - Array of vocabulary ID values shown in this session
+   * @param isCustomVocabulary - If true, use enhanced_vocabulary_item_id column directly
    */
   async recordWordExposures(
     assignmentId: string,
     studentId: string,
-    exposedWordIds: string[]
+    exposedWordIds: string[],
+    isCustomVocabulary: boolean = false
   ): Promise<{ success: boolean; error?: string }> {
     const callId = Math.random().toString(36).substring(7);
     console.log(`📝 [EXPOSURE SERVICE] Recording exposures [${callId}]:`, {
       assignmentId,
       studentId,
       wordCount: exposedWordIds.length,
-      wordIds: exposedWordIds
+      wordIds: exposedWordIds,
+      isCustomVocabulary
     });
 
     try {
-      // Use upsert to handle both new exposures and updates
+      // ✅ OPTIMIZED: If we know it's custom vocabulary, use the correct column from the start
+      if (isCustomVocabulary) {
+        const customRecords = exposedWordIds.map(wordId => ({
+          assignment_id: assignmentId,
+          student_id: studentId,
+          enhanced_vocabulary_item_id: wordId,
+          last_exposed_at: new Date().toISOString()
+        }));
+
+        const { data, error } = await this.supabase
+          .from('assignment_word_exposure')
+          .upsert(customRecords, {
+            onConflict: 'assignment_id,student_id,enhanced_vocabulary_item_id',
+            ignoreDuplicates: false
+          })
+          .select();
+
+        if (error) {
+          console.error(`❌ [EXPOSURE SERVICE] Failed to record custom exposures [${callId}]:`, error);
+          return { success: false, error: error.message };
+        }
+
+        console.log(`✅ [EXPOSURE SERVICE] Recorded ${exposedWordIds.length} custom exposures [${callId}]`);
+        return { success: true };
+      }
+
+      // Default path: Try centralized vocabulary first
       const records = exposedWordIds.map(wordId => ({
         assignment_id: assignmentId,
         student_id: studentId,
@@ -83,8 +113,42 @@ export class AssignmentExposureService {
         .select();
 
       if (error) {
-        console.error(`❌ [EXPOSURE SERVICE] Failed to record exposures [${callId}]:`, error);
-        return { success: false, error: error.message };
+        // Check for Foreign Key Violation (Error 23503)
+        // This likely means the ID is NOT in centralized_vocabulary, 
+        // so it must be a custom vocabulary item (enhanced_vocabulary_items).
+        if (error.code === '23503' || error.message?.includes('foreign key constraint')) {
+          console.warn(`⚠️ [EXPOSURE SERVICE] FK violation on centralized_vocabulary_id [${callId}]. Retrying as custom vocabulary...`);
+          console.log(`⚠️ [EXPOSURE SERVICE] Note: This is expected for custom vocabulary items.`);
+
+          // 2. Retry treating them as custom vocabulary
+          const customRecords = exposedWordIds.map(wordId => ({
+            assignment_id: assignmentId,
+            student_id: studentId,
+            enhanced_vocabulary_item_id: wordId, // Use the custom column
+            last_exposed_at: new Date().toISOString()
+          }));
+
+          const { data: customData, error: customError } = await this.supabase
+            .from('assignment_word_exposure')
+            .upsert(customRecords, {
+              onConflict: 'assignment_id,student_id,enhanced_vocabulary_item_id',
+              ignoreDuplicates: false
+            })
+            .select();
+
+          if (customError) {
+            console.error(`❌ [EXPOSURE SERVICE] Failed to record custom exposures [${callId}]:`, customError);
+            return { success: false, error: customError.message };
+          }
+
+          console.log(`✅ [EXPOSURE SERVICE] Recorded ${exposedWordIds.length} custom exposures [${callId}]`);
+          return { success: true };
+
+        } else {
+          // Some other error
+          console.error(`❌ [EXPOSURE SERVICE] Failed to record exposures [${callId}]:`, error);
+          return { success: false, error: error.message };
+        }
       }
 
       console.log(`✅ [EXPOSURE SERVICE] Recorded ${exposedWordIds.length} exposures [${callId}]`);
@@ -152,7 +216,7 @@ export class AssignmentExposureService {
       // Get exposed words for this student
       const { data: exposures, error: exposuresError } = await this.supabase
         .from('assignment_word_exposure')
-        .select('centralized_vocabulary_id')
+        .select('centralized_vocabulary_id, enhanced_vocabulary_item_id')
         .eq('assignment_id', assignmentId)
         .eq('student_id', studentId);
 
@@ -161,7 +225,7 @@ export class AssignmentExposureService {
         return null;
       }
 
-      let exposedWordIds = (exposures || []).map(e => e.centralized_vocabulary_id);
+      let exposedWordIds = (exposures || []).map(e => e.centralized_vocabulary_id || e.enhanced_vocabulary_item_id).filter(Boolean) as string[];
       let exposedWords = exposedWordIds.length;
 
       // 🔧 SELF-REPAIR: If 0 exposures but we might have history (legacy data fix)

@@ -58,6 +58,7 @@ interface WordOption {
   translation: string;
   isCorrect: boolean;
   difficulty: number;
+  isCustomVocabulary?: boolean; // ✅ Track if from enhanced_vocabulary_items
 }
 
 interface ParticleEffect {
@@ -1051,7 +1052,9 @@ function ImprovedSentenceTowersGame({
       try {
         const sessionService = new EnhancedGameSessionService();
         await sessionService.recordSentenceAttempt(gameSessionId, 'sentence-towers', {
-          sentenceId: option.id || `sentence-${Date.now()}`,
+          // ✅ FIXED: Use correct ID field based on vocabulary source
+          sentenceId: option.isCustomVocabulary ? undefined : (option.id || `sentence-${Date.now()}`),
+          enhancedSentenceId: option.isCustomVocabulary ? option.id : undefined,
           sourceText: option.word, // The full sentence in target language
           targetText: option.translation, // The full sentence translation
           responseTimeMs: Math.round(responseTime * 1000),
@@ -1233,7 +1236,9 @@ function ImprovedSentenceTowersGame({
       try {
         const sessionService = new EnhancedGameSessionService();
         await sessionService.recordSentenceAttempt(gameSessionId, 'sentence-towers', {
-          sentenceId: currentTargetWord.id || `sentence-${Date.now()}`,
+          // ✅ FIXED: Use correct ID field based on vocabulary source
+          sentenceId: currentTargetWord.isCustomVocabulary ? undefined : (currentTargetWord.id || `sentence-${Date.now()}`),
+          enhancedSentenceId: currentTargetWord.isCustomVocabulary ? currentTargetWord.id : undefined,
           sourceText: currentTargetWord.word, // The correct sentence
           targetText: currentTargetWord.translation, // The correct translation
           responseTimeMs: Math.round(responseTime * 1000),

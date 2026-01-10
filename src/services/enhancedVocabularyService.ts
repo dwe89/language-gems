@@ -13,9 +13,13 @@ export interface EnhancedVocabularyItem {
   difficulty_level: 'beginner' | 'intermediate' | 'advanced';
   notes?: string;
   tags?: string[];
+  // Analytics and centralized vocabulary matching
+  centralized_match_id?: string; // Links to centralized_vocabulary.id for analytics
+  analytics_enabled?: boolean; // Whether to track this item in analytics
   created_at?: string;
   updated_at?: string;
 }
+
 
 export interface EnhancedVocabularyList {
   id: string;
@@ -207,8 +211,8 @@ export class EnhancedVocabularyService {
    */
   async updateVocabularyList(
     listId: string,
-  listData: Partial<Omit<EnhancedVocabularyList, 'id' | 'created_at' | 'updated_at'>>,
-  items?: Omit<EnhancedVocabularyItem, 'id' | 'created_at' | 'updated_at'>[]
+    listData: Partial<Omit<EnhancedVocabularyList, 'id' | 'created_at' | 'updated_at'>>,
+    items?: Omit<EnhancedVocabularyItem, 'id' | 'created_at' | 'updated_at'>[]
   ): Promise<EnhancedVocabularyList> {
     try {
       let existingItems: EnhancedVocabularyItem[] = [];
@@ -561,7 +565,7 @@ export class EnhancedVocabularyService {
       if (listError) throw listError;
 
       // Convert to enhanced format
-      const enhancedItems: Omit<EnhancedVocabularyItem, 'id' | 'created_at' | 'updated_at'>[] = 
+      const enhancedItems: Omit<EnhancedVocabularyItem, 'id' | 'created_at' | 'updated_at'>[] =
         legacyList.vocabulary_assignment_items?.map((item: any) => ({
           type: 'word' as const,
           term: item.vocabulary.spanish || item.vocabulary.french || '',

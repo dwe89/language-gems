@@ -9,7 +9,14 @@ export async function POST(request: NextRequest) {
       userType = 'teacher',
       rating,
       category,
-      email 
+      email,
+      screenshot_url,
+      browser_info,
+      page_url,
+      user_role,
+      expected_result,
+      actual_result,
+      steps_to_reproduce
     } = await request.json();
 
     if (!feedback || feedback.trim().length === 0) {
@@ -24,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Get user info if authenticated
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Insert feedback record
+    // Insert feedback record with enhanced fields
     const { error: insertError } = await supabase
       .from('beta_feedback')
       .insert({
@@ -35,6 +42,13 @@ export async function POST(request: NextRequest) {
         category,
         email,
         user_id: user?.id || null,
+        screenshot_url,
+        browser_info: browser_info || {},
+        page_url,
+        user_role: user_role || userType,
+        expected_result: expected_result?.trim() || null,
+        actual_result: actual_result?.trim() || null,
+        steps_to_reproduce: steps_to_reproduce || null,
         created_at: new Date().toISOString(),
       });
 

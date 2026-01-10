@@ -19,6 +19,8 @@ export interface UnifiedVocabularyItem {
   example_sentence_translation?: string;
   difficulty_level?: string;
   audio_url?: string;
+  enhancedVocabularyItemId?: string; // For custom vocabulary - tracks to enhanced_vocabulary_items
+  isCustomVocabulary?: boolean; // TRUE if from enhanced_vocabulary_items (custom/teacher vocabulary)
 }
 
 export interface UseUnifiedVocabularyOptions {
@@ -61,8 +63,8 @@ export function useUnifiedVocabulary({
         setLoading(true);
         try {
           const supabase = supabaseBrowser;
-          
-          // Load vocabulary items from the custom list
+
+          // Load vocabulary items from the custom list (including audio_url)
           const { data: items, error } = await supabase
             .from('enhanced_vocabulary_items')
             .select(`
@@ -72,7 +74,8 @@ export function useUnifiedVocabulary({
               part_of_speech,
               context_sentence,
               context_translation,
-              difficulty_level
+              difficulty_level,
+              audio_url
             `)
             .eq('list_id', config.customListId);
 
@@ -84,7 +87,7 @@ export function useUnifiedVocabulary({
             return;
           }
 
-          // Transform to unified format
+          // Transform to unified format - include enhancedVocabularyItemId for progress tracking
           const transformedVocabulary: UnifiedVocabularyItem[] = items.map(item => ({
             id: item.id,
             word: item.term,
@@ -96,8 +99,10 @@ export function useUnifiedVocabulary({
             example_sentence_original: item.context_sentence,
             example_sentence_translation: item.context_translation,
             difficulty_level: item.difficulty_level,
-            audio_url: undefined
+            audio_url: item.audio_url,
+            enhancedVocabularyItemId: item.id // Set this so games can track progress to enhanced_vocabulary_items
           }));
+
 
           setVocabulary(transformedVocabulary);
           setLoading(false);
@@ -111,7 +116,7 @@ export function useUnifiedVocabulary({
           return;
         }
       }
-      
+
       // If custom vocabulary array is provided
       if (customVocabulary && customVocabulary.length > 0) {
         setVocabulary(customVocabulary);
@@ -140,7 +145,7 @@ export function useUnifiedVocabulary({
 
     try {
       const supabase = supabaseBrowser;
-      
+
       // Build the query
       let query = supabase
         .from('centralized_vocabulary')
@@ -315,10 +320,10 @@ function mapLanguageCodes(languageCode: string): string[] {
   const languageVariantsMap: Record<string, string[]> = {
     'es': ['es', 'ES', 'spanish'], // Spanish has multiple variants in the database
     'fr': ['fr', 'french'],
-    'de': ['de', 'german'], 
+    'de': ['de', 'german'],
     'en': ['en', 'english']
   };
-  
+
   return languageVariantsMap[languageCode] || [languageCode];
 }
 
@@ -345,9 +350,9 @@ export function useVocabularyWithLoadingGate(
     isEmpty,
     canStartGame,
     shouldShowLoadingGate,
-    loadingMessage: loading 
-      ? 'Loading vocabulary...' 
-      : isEmpty 
+    loadingMessage: loading
+      ? 'Loading vocabulary...'
+      : isEmpty
         ? 'No vocabulary found for selected criteria'
         : ''
   };

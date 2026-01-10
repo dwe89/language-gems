@@ -112,7 +112,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
     if (props.categoryVocabulary && props.categoryVocabulary.length > 0) {
       console.log('VocabBlast: Using assignment vocabulary:', props.categoryVocabulary.length, 'words');
 
-      // Transform assignment vocabulary to game format
+      // Transform assignment vocabulary to game format, preserving isCustomVocabulary flag
       const transformedVocabulary = props.categoryVocabulary.map((item: any) => ({
         id: item.id,
         word: item.word,
@@ -120,7 +120,8 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
         category: item.category,
         subcategory: item.subcategory,
         part_of_speech: item.part_of_speech,
-        language: item.language
+        language: item.language,
+        isCustomVocabulary: item.isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
       }));
 
       setGameVocabulary(transformedVocabulary);
@@ -201,38 +202,9 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
     timeSpent?: number;
     detailedStats?: any;
   }) => {
-    // 🎯 NEW: Use recordWordAttempt instead of logWordPerformance for gems-first system
-    if (gameService && effectiveGameSessionId && result.detailedStats?.wordAttempts) {
-      try {
-        for (const wordAttempt of result.detailedStats.wordAttempts) {
-          const vocabularyItem = gameVocabulary.find(v => v.word.toLowerCase() === wordAttempt.word.toLowerCase());
-
-          await gameService.recordWordAttempt(effectiveGameSessionId!, 'vocab-blast', {
-            vocabularyId: vocabularyItem?.id,
-            wordText: wordAttempt.word,
-            translationText: wordAttempt.translation,
-            responseTimeMs: Math.round(wordAttempt.responseTime * 1000),
-            wasCorrect: wordAttempt.isCorrect,
-            hintUsed: false,
-            streakCount: wordAttempt.isCorrect ? 1 : 0,
-            difficultyLevel: props.settings.difficulty,
-            gameMode: 'speed_recall',
-            contextData: {
-              gameType: 'vocab-blast',
-              theme: props.settings.theme,
-              timeLimit: props.settings.timeLimit || 60,
-              gameOutcome: result.outcome,
-              clickAccuracy: wordAttempt.isCorrect,
-              responseTime: wordAttempt.responseTime
-            }
-          });
-        }
-
-        console.log('Vocab blast word performance logged for', result.detailedStats.wordAttempts.length, 'words');
-      } catch (error) {
-        console.error('Failed to log vocab blast word performance:', error);
-      }
-    }
+    // 🎯 REMOVED: Redundant recordWordAttempt loop.
+    // VocabBlastGame already records attempts in real-time via recordWordAttempt.
+    // Processing them again here causes double-counting of stats.
 
     // End game session - this will call updateGameCompletionStatus automatically
     if (gameService && effectiveGameSessionId && props.userId) {

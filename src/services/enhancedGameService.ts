@@ -378,9 +378,37 @@ export class EnhancedGameService {
   }
 
   async endGameSession(sessionId: string, finalData: Partial<EnhancedGameSession>): Promise<void> {
+    // First, fetch the session to get started_at for duration calculation
+    const { data: session, error: fetchError } = await this.supabase
+      .from('enhanced_game_sessions')
+      .select('started_at')
+      .eq('id', sessionId)
+      .single();
+
+    if (fetchError) {
+      console.error('Failed to fetch session for duration calculation:', fetchError);
+    }
+
+    const endedAt = new Date();
+    let durationSeconds = 0;
+
+    // Calculate duration from started_at
+    if (session?.started_at) {
+      const startTime = new Date(session.started_at).getTime();
+      const endTime = endedAt.getTime();
+      durationSeconds = Math.round((endTime - startTime) / 1000);
+
+      // Sanity check: duration should be positive and less than 4 hours
+      if (durationSeconds < 0 || durationSeconds > 14400) {
+        console.warn(`Invalid duration calculated: ${durationSeconds}s, setting to 0`);
+        durationSeconds = 0;
+      }
+    }
+
     const endData = {
       ...finalData,
-      ended_at: new Date()
+      ended_at: endedAt,
+      duration_seconds: durationSeconds
     };
 
     await this.updateGameSession(sessionId, endData);

@@ -13,6 +13,7 @@ export interface VocabularyWord {
   word: string;
   translation: string;
   language?: string;
+  isCustomVocabulary?: boolean; // TRUE if from enhanced_vocabulary_items (custom/teacher vocabulary)
 }
 
 export interface VocabularyTrackingResult {
@@ -42,7 +43,9 @@ export const useVocabularyTracking = (gameSessionId: string, gameType: string) =
 
       const sessionService = new EnhancedGameSessionService();
       const gemEvent = await sessionService.recordWordAttempt(gameSessionId, gameType, {
-        vocabularyId: word.id,
+        // ✅ FIXED: Use correct ID field based on vocabulary source
+        vocabularyId: word.isCustomVocabulary ? undefined : word.id,
+        enhancedVocabularyItemId: word.isCustomVocabulary ? word.id : undefined,
         wordText: word.word,
         translationText: word.translation,
         responseTimeMs,

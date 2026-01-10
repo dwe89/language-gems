@@ -84,7 +84,8 @@ export default function UnifiedDetectiveListeningPage() {
       part_of_speech: item.part_of_speech,
       example_sentence_original: item.example_sentence_original,
       example_sentence_translation: item.example_sentence_translation,
-      audio_url: item.audio_url
+      audio_url: item.audio_url,
+      isCustomVocabulary: (item as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
     }));
   };
 

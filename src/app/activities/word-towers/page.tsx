@@ -60,6 +60,7 @@ interface WordOption {
   translation: string;
   isCorrect: boolean;
   difficulty: number;
+  isCustomVocabulary?: boolean; // ✅ Track if from enhanced_vocabulary_items
 }
 
 interface ParticleEffect {
@@ -404,7 +405,8 @@ export default function SentenceTowersPage() {
             part_of_speech: item.part_of_speech || 'noun',
             example_sentence_original: '', // Not available in StandardVocabularyItem
             example_sentence_translation: '', // Not available in StandardVocabularyItem
-            difficulty_level: 'beginner' // Default difficulty for assignment mode
+            difficulty_level: 'beginner', // Default difficulty for assignment mode
+            isCustomVocabulary: item.isCustomVocabulary // ✅ Preserve custom vocabulary flag for tracking
           }));
 
           console.log('🎮 [WORD TOWERS] Using vocabulary words only:', {
@@ -667,7 +669,8 @@ function ImprovedSentenceTowersGame({
         word: word.word,
         translation: word.translation,
         difficulty: 2, // Default difficulty for unified vocabulary
-        correct: false
+        correct: false,
+        isCustomVocabulary: word.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       }));
       setVocabulary(transformedVocabulary);
 
@@ -909,7 +912,8 @@ function ImprovedSentenceTowersGame({
         word: targetWord.word,
         translation: targetWord.translation,
         isCorrect: true,
-        difficulty: targetWord.difficulty
+        difficulty: targetWord.difficulty,
+        isCustomVocabulary: targetWord.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       });
 
       // Record question start time for speed bonuses
@@ -924,7 +928,8 @@ function ImprovedSentenceTowersGame({
         word: word.word,
         translation: word.translation,
         isCorrect: word.id === targetWord.id,
-        difficulty: word.difficulty
+        difficulty: word.difficulty,
+        isCustomVocabulary: word.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       })));
       return;
     }
@@ -949,7 +954,8 @@ function ImprovedSentenceTowersGame({
         difficulty: word.difficulty_level === 'beginner' ? 1 :
           word.difficulty_level === 'intermediate' ? 3 :
             word.difficulty_level === 'advanced' ? 5 : 2,
-        correct: false
+        correct: false,
+        isCustomVocabulary: word.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       }));
       const shuffledFullVocab = [...fullVocab].sort(() => Math.random() - 0.5);
       const targetWord = shuffledFullVocab[0];
@@ -959,7 +965,8 @@ function ImprovedSentenceTowersGame({
         word: targetWord.word,
         translation: targetWord.translation,
         isCorrect: true,
-        difficulty: targetWord.difficulty
+        difficulty: targetWord.difficulty,
+        isCustomVocabulary: targetWord.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       });
 
       // Record question start time for speed bonuses
@@ -974,7 +981,8 @@ function ImprovedSentenceTowersGame({
         word: word.word,
         translation: word.translation,
         isCorrect: word.id === targetWord.id,
-        difficulty: word.difficulty
+        difficulty: word.difficulty,
+        isCustomVocabulary: word.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       })));
       return;
     }
@@ -987,7 +995,8 @@ function ImprovedSentenceTowersGame({
       word: targetWord.word,
       translation: targetWord.translation,
       isCorrect: true,
-      difficulty: targetWord.difficulty
+      difficulty: targetWord.difficulty,
+      isCustomVocabulary: targetWord.isCustomVocabulary // ✅ Preserve custom vocabulary flag
     });
 
     // Record question start time for speed bonuses
@@ -1006,7 +1015,8 @@ function ImprovedSentenceTowersGame({
         difficulty: word.difficulty_level === 'beginner' ? 1 :
           word.difficulty_level === 'intermediate' ? 3 :
             word.difficulty_level === 'advanced' ? 5 : 2,
-        correct: false
+        correct: false,
+        isCustomVocabulary: word.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       }));
       const additionalCandidates = fullVocab.filter(word =>
         word.id !== targetWord.id &&
@@ -1023,7 +1033,8 @@ function ImprovedSentenceTowersGame({
       word: word.word,
       translation: word.translation,
       isCorrect: word.id === targetWord.id,
-      difficulty: word.difficulty
+      difficulty: word.difficulty,
+      isCustomVocabulary: word.isCustomVocabulary // ✅ Preserve custom vocabulary flag
     })));
   }, [vocabulary, gameState.currentLevel, gameState.accuracy]);
 
@@ -1120,7 +1131,9 @@ function ImprovedSentenceTowersGame({
         if (gameSessionId) {
           // For non-assignment mode, use direct session service
           await sessionService.recordWordAttempt(gameSessionId, 'word-towers', {
-            vocabularyId: option.id || `word-${Date.now()}`,
+            // ✅ FIXED: Use correct ID field based on vocabulary source
+            vocabularyId: option.isCustomVocabulary ? undefined : (option.id || `word-${Date.now()}`),
+            enhancedVocabularyItemId: option.isCustomVocabulary ? option.id : undefined,
             wordText: option.word, // Individual vocabulary word/phrase
             translationText: option.translation, // Word/phrase translation
             responseTimeMs: Math.round(responseTime * 1000),
@@ -1326,7 +1339,9 @@ function ImprovedSentenceTowersGame({
           // For incorrect answers, still record the vocabulary word attempt for analytics
           // but no gems will be awarded (only correct answers get gems)
           await sessionService.recordWordAttempt(gameSessionId, 'word-towers', {
-            vocabularyId: currentTargetWord.id || `word-${Date.now()}`,
+            // ✅ FIXED: Use correct ID field based on vocabulary source
+            vocabularyId: currentTargetWord.isCustomVocabulary ? undefined : (currentTargetWord.id || `word-${Date.now()}`),
+            enhancedVocabularyItemId: currentTargetWord.isCustomVocabulary ? currentTargetWord.id : undefined,
             wordText: currentTargetWord.word, // The correct vocabulary word
             translationText: currentTargetWord.translation, // The correct translation
             responseTimeMs: Math.round(responseTime * 1000),
@@ -1515,7 +1530,8 @@ function ImprovedSentenceTowersGame({
       difficulty: word.difficulty_level === 'beginner' ? 1 :
         word.difficulty_level === 'intermediate' ? 3 :
           word.difficulty_level === 'advanced' ? 5 : 2,
-      correct: false
+      correct: false,
+      isCustomVocabulary: word.isCustomVocabulary // ✅ Preserve custom vocabulary flag
     }));
     setVocabulary(resetVocabulary);
     generateWordOptions();
@@ -1616,7 +1632,8 @@ function ImprovedSentenceTowersGame({
         difficulty: word.difficulty_level === 'beginner' ? 1 :
           word.difficulty_level === 'intermediate' ? 3 :
             word.difficulty_level === 'advanced' ? 5 : 2,
-        correct: false
+        correct: false,
+        isCustomVocabulary: word.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       }));
       setVocabulary(resetVocabulary);
 

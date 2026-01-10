@@ -65,7 +65,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
 
   const exportToCSV = (type: 'students' | 'words') => {
     if (type === 'students') {
-      const headers = ['Student Name', 'Status', 'Success Score', 'Failure Rate', 'Time Spent (min)', 'Intervention'];
+      const headers = ['Student Name', 'Status', 'Success Score', 'Needs Review %', 'Time Spent (min)', 'Intervention'];
       const rows = studentRoster.map(s => [
         s.studentName,
         s.status,
@@ -78,7 +78,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
       const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       downloadCSV(csv, `${overview?.assignmentTitle}_students.csv`);
     } else {
-      const headers = ['Word', 'Translation', 'Attempts', 'Failure Rate', 'Insight'];
+      const headers = ['Word', 'Translation', 'Attempts', 'Needs Review %', 'Insight'];
       const rows = wordDifficulty.map(w => [
         w.wordText,
         w.translationText,
@@ -134,7 +134,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
     if (!flag) return null;
 
     const badges = {
-      high_failure: { icon: AlertTriangle, text: 'High Failure', color: 'bg-red-100 text-red-800 border-red-200' },
+      high_failure: { icon: AlertTriangle, text: 'Needs Extra Practice', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
       unusually_long: { icon: Clock, text: 'Taking Too Long', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
       stopped_midway: { icon: XCircle, text: 'Stopped Midway', color: 'bg-orange-100 text-orange-800 border-orange-200' }
     };
@@ -388,7 +388,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                       {overview.averageTimeMinutes > 0 ? `${overview.averageTimeMinutes}m` : 'No data yet'}
                     </div>
                     <div className="text-xs text-purple-600 mt-2">
-                      ⚠️ Time tracking currently unavailable
+                      Per student average
                     </div>
                   </div>
                   <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-200">
@@ -407,7 +407,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
               <CardHeader>
                 <CardTitle className="flex items-center text-xl">
                   <Brain className="h-5 w-5 mr-2 text-indigo-600" />
-                  Top 10 Most Difficult Words
+                  Top 10 Words Needing Review
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -420,16 +420,23 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                           {index + 1}
                         </div>
                         <div className="flex-1">
-                          <div className="font-semibold text-slate-900">{word.wordText}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900">{word.wordText}</span>
+                            {word.isCustomVocabulary && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full border border-purple-200">
+                                Custom
+                              </span>
+                            )}
+                          </div>
                           <div className="text-sm text-slate-600">{word.translationText}</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
-                          <div className="text-sm font-medium text-slate-600">Failure Rate</div>
-                          <div className={`text-lg font-bold ${word.failureRate >= 70 ? 'text-red-600' :
-                            word.failureRate >= 50 ? 'text-orange-600' :
-                              word.failureRate >= 30 ? 'text-yellow-600' :
+                          <div className="text-sm font-medium text-slate-600">Needs Review</div>
+                          <div className={`text-lg font-bold ${word.failureRate >= 70 ? 'text-orange-600' :
+                            word.failureRate >= 50 ? 'text-yellow-600' :
+                              word.failureRate >= 30 ? 'text-blue-600' :
                                 'text-green-600'
                             }`}>
                             {word.failureRate}%
@@ -466,7 +473,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                     <option value="score">Success Score</option>
                     <option value="name">Name</option>
                     <option value="time">Time Spent</option>
-                    <option value="accuracy">Failure Rate</option>
+                    <option value="accuracy">Needs Review %</option>
                   </select>
                   <button
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -485,7 +492,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                       <th className="text-left py-3 px-4 font-semibold text-slate-700">Student</th>
                       <th className="text-center py-3 px-4 font-semibold text-slate-700">Status</th>
                       <th className="text-center py-3 px-4 font-semibold text-slate-700">Success Score</th>
-                      <th className="text-center py-3 px-4 font-semibold text-slate-700">Failure Rate</th>
+                      <th className="text-center py-3 px-4 font-semibold text-slate-700">Needs Review</th>
                       <th className="text-center py-3 px-4 font-semibold text-slate-700">Time Spent</th>
                       <th className="text-center py-3 px-4 font-semibold text-slate-700">Intervention</th>
                       {overview?.isAssessmentAssignment && (
@@ -501,7 +508,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                           <div className="font-medium text-slate-900">{student.studentName}</div>
                           {student.keyStruggleWords.length > 0 && (
                             <div className="text-xs text-slate-500 mt-1">
-                              Struggling: {student.keyStruggleWords.slice(0, 2).join(', ')}
+                              Review: {student.keyStruggleWords.slice(0, 2).join(', ')}
                               {student.keyStruggleWords.length > 2 && ` +${student.keyStruggleWords.length - 2} more`}
                             </div>
                           )}
@@ -521,9 +528,9 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                           </div>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <div className={`text-lg font-bold ${student.failureRate >= 70 ? 'text-red-600' :
-                            student.failureRate >= 50 ? 'text-orange-600' :
-                              student.failureRate >= 30 ? 'text-yellow-600' :
+                          <div className={`text-lg font-bold ${student.failureRate >= 70 ? 'text-orange-600' :
+                            student.failureRate >= 50 ? 'text-yellow-600' :
+                              student.failureRate >= 30 ? 'text-blue-600' :
                                 'text-green-600'
                             }`}>
                             {student.failureRate}%
@@ -575,7 +582,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                     High Confidence Problems ({wordDifficulty.filter(w => w.totalAttempts >= 5).length} words, ≥5 attempts)
                   </CardTitle>
                   <p className="text-sm text-slate-600 mt-2">
-                    These words have enough data to confidently identify as problematic. Sorted by failure rate, then by number of attempts.
+                    These words have enough data to confidently identify as needing review. Sorted by weak retention rate, then by number of attempts.
                   </p>
                 </CardHeader>
                 <CardContent className="pt-6">
@@ -596,7 +603,14 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                               {word.rank}
                             </div>
                             <div className="flex-1">
-                              <div className="font-bold text-slate-900 text-lg">{word.wordText}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 text-lg">{word.wordText}</span>
+                                {word.isCustomVocabulary && (
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full border border-purple-200">
+                                    Custom
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-sm text-slate-600">{word.translationText}</div>
                               <div className="text-xs text-slate-500 mt-1">{word.actionableInsight}</div>
                             </div>
@@ -607,14 +621,14 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                               <div className="text-xl font-bold text-slate-900">{word.totalAttempts}</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-xs font-medium text-slate-600">Failures</div>
-                              <div className="text-xl font-bold text-red-600">{word.failureCount}</div>
+                              <div className="text-xs font-medium text-slate-600">Weak Retention</div>
+                              <div className="text-xl font-bold text-amber-600">{word.failureCount}</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-xs font-medium text-slate-600">Failure Rate</div>
-                              <div className={`text-2xl font-bold ${word.failureRate >= 70 ? 'text-red-600' :
-                                word.failureRate >= 50 ? 'text-orange-600' :
-                                  word.failureRate >= 30 ? 'text-yellow-600' :
+                              <div className="text-xs font-medium text-slate-600">Needs Review</div>
+                              <div className={`text-2xl font-bold ${word.failureRate >= 70 ? 'text-orange-600' :
+                                word.failureRate >= 50 ? 'text-yellow-600' :
+                                  word.failureRate >= 30 ? 'text-blue-600' :
                                     'text-green-600'
                                 }`}>
                                 {word.failureRate}%
@@ -635,10 +649,10 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                 <CardHeader className="bg-yellow-50">
                   <CardTitle className="flex items-center text-xl">
                     <AlertCircle className="h-5 w-5 mr-2 text-yellow-600" />
-                    Emerging Problems ({wordDifficulty.filter(w => w.totalAttempts < 5 && w.failureRate >= 50).length} words, {'<'}5 attempts, ≥50% failure)
+                    Emerging Concerns ({wordDifficulty.filter(w => w.totalAttempts < 5 && w.failureRate >= 50).length} words, {'<'}5 attempts, ≥50% weak retention)
                   </CardTitle>
                   <p className="text-sm text-slate-600 mt-2">
-                    Limited data, but showing high failure rates. Sorted by number of attempts (more attempts = more reliable), then by failure rate.
+                    Limited data, but showing high weak retention rates. Sorted by number of attempts (more attempts = more reliable), then by needs review %.
                   </p>
                 </CardHeader>
                 <CardContent className="pt-6">
@@ -651,7 +665,14 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                               {word.rank}
                             </div>
                             <div className="flex-1">
-                              <div className="font-bold text-slate-900 text-lg">{word.wordText}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 text-lg">{word.wordText}</span>
+                                {word.isCustomVocabulary && (
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full border border-purple-200">
+                                    Custom
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-sm text-slate-600">{word.translationText}</div>
                               <div className="text-xs text-slate-500 mt-1">{word.actionableInsight}</div>
                             </div>
@@ -662,11 +683,11 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                               <div className="text-xl font-bold text-slate-900">{word.totalAttempts}</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-xs font-medium text-slate-600">Failures</div>
-                              <div className="text-xl font-bold text-red-600">{word.failureCount}</div>
+                              <div className="text-xs font-medium text-slate-600">Weak Retention</div>
+                              <div className="text-xl font-bold text-amber-600">{word.failureCount}</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-xs font-medium text-slate-600">Failure Rate</div>
+                              <div className="text-xs font-medium text-slate-600">Needs Review</div>
                               <div className="text-2xl font-bold text-orange-600">
                                 {word.failureRate}%
                               </div>
@@ -686,7 +707,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                 <CardHeader className="bg-slate-50">
                   <CardTitle className="flex items-center text-xl">
                     <BookOpen className="h-5 w-5 mr-2 text-slate-600" />
-                    Insufficient Data ({wordDifficulty.filter(w => w.totalAttempts < 5 && w.failureRate < 50).length} words, {'<'}5 attempts, {'<'}50% failure)
+                    Insufficient Data ({wordDifficulty.filter(w => w.totalAttempts < 5 && w.failureRate < 50).length} words, {'<'}5 attempts, {'<'}50% weak retention)
                   </CardTitle>
                   <p className="text-sm text-slate-600 mt-2">
                     Not enough attempts to draw conclusions. Monitor as more data comes in.
@@ -702,7 +723,14 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                               {word.rank}
                             </div>
                             <div className="flex-1">
-                              <div className="font-bold text-slate-900 text-lg">{word.wordText}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 text-lg">{word.wordText}</span>
+                                {word.isCustomVocabulary && (
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full border border-purple-200">
+                                    Custom
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-sm text-slate-600">{word.translationText}</div>
                               <div className="text-xs text-slate-500 mt-1">{word.actionableInsight}</div>
                             </div>
@@ -713,11 +741,11 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
                               <div className="text-xl font-bold text-slate-900">{word.totalAttempts}</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-xs font-medium text-slate-600">Failures</div>
-                              <div className="text-xl font-bold text-red-600">{word.failureCount}</div>
+                              <div className="text-xs font-medium text-slate-600">Weak Retention</div>
+                              <div className="text-xl font-bold text-slate-500">{word.failureCount}</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-xs font-medium text-slate-600">Failure Rate</div>
+                              <div className="text-xs font-medium text-slate-600">Needs Review</div>
                               <div className="text-2xl font-bold text-slate-600">
                                 {word.failureRate}%
                               </div>

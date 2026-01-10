@@ -180,7 +180,8 @@ export default function DetectiveRoom({
           options: [item.translation, ...distractors].sort(() => Math.random() - 0.5),
           answered: false,
           attempts: 0,
-          word: item.word
+          word: item.word,
+          isCustomVocabulary: (item as any).isCustomVocabulary // ✅ Preserve custom vocabulary flag
         };
       });
 
@@ -405,13 +406,16 @@ export default function DetectiveRoom({
           vocabularyId: currentEvidence.vocabularyId,
           wasCorrect: isCorrect,
           answer: answer,
-          correctAnswer: currentEvidence.correct
+          correctAnswer: currentEvidence.correct,
+          isCustomVocabulary: currentEvidence.isCustomVocabulary
         });
 
         // Use EnhancedGameSessionService for gems-first vocabulary tracking (non-blocking)
         const sessionService = new EnhancedGameSessionService();
         sessionService.recordWordAttempt(gameSessionId, 'detective-listening', {
-          vocabularyId: currentEvidence.vocabularyId, // ✅ FIXED: Use evidence vocabulary ID
+          // ✅ FIXED: Use correct ID field based on vocabulary source
+          vocabularyId: currentEvidence.isCustomVocabulary ? undefined : currentEvidence.vocabularyId,
+          enhancedVocabularyItemId: currentEvidence.isCustomVocabulary ? currentEvidence.vocabularyId : undefined,
           wordText: currentEvidence.word || currentEvidence.correct,
           translationText: currentEvidence.correct,
           responseTimeMs: responseTime,

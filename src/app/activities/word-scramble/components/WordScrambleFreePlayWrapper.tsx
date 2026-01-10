@@ -129,7 +129,8 @@ export default function WordScrambleFreePlayWrapper({
     subcategory: item.subcategory,
     language: item.language,
     part_of_speech: item.part_of_speech,
-    audio_url: item.audio_url
+    audio_url: item.audio_url,
+    isCustomVocabulary: (item as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
   }));
 
   return (

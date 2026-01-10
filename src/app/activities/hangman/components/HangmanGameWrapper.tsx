@@ -220,7 +220,8 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
       translation: item.translation,
       category: item.category || 'general',
       subcategory: item.subcategory || '',
-      difficulty_level: item.difficulty_level || 'beginner'
+      difficulty_level: item.difficulty_level || 'beginner',
+      isCustomVocabulary: (item as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
     }));
 
     // Organize by difficulty
@@ -323,7 +324,8 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
         translation: item.translation || item.english || '',
         category: item.category || props.settings.category,
         subcategory: item.subcategory || props.settings.subcategory,
-        difficulty_level: item.difficulty_level || 'beginner'
+        difficulty_level: item.difficulty_level || 'beginner',
+        isCustomVocabulary: (item as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
       })) || [];
     }
     // Priority 2: Use vocabulary from hook
@@ -334,7 +336,8 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
         translation: item.translation,
         category: item.category,
         subcategory: item.subcategory,
-        difficulty_level: item.difficulty_level || 'beginner'
+        difficulty_level: item.difficulty_level || 'beginner',
+        isCustomVocabulary: (item as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
       }));
     }
     // Priority 3: Fallback words for testing
@@ -447,6 +450,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     currentWord?: string;
     vocabularyId?: string;
     wrongGuesses?: number;
+    isCustomVocabulary?: boolean; // TRUE if from enhanced_vocabulary_items
   }) => {
     // Update session stats for this word
     const newStats = {
@@ -467,7 +471,9 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
         // Record word attempt using new gems system (exposure-based for hangman)
         const sessionService = new EnhancedGameSessionService();
         await sessionService.recordWordAttempt(effectiveGameSessionId!, 'hangman', {
-          vocabularyId: gameStats.vocabularyId,
+          // ✅ FIXED: Use correct ID field based on vocabulary source
+          vocabularyId: gameStats.isCustomVocabulary ? undefined : gameStats.vocabularyId,
+          enhancedVocabularyItemId: gameStats.isCustomVocabulary ? gameStats.vocabularyId : undefined,
           wordText: gameStats.currentWord,
           translationText: '', // Translation not available in hangman context
           responseTimeMs: Math.round(responseTime * 1000),

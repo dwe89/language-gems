@@ -4,18 +4,25 @@ import React, { useEffect, useState } from 'react';
 import TeacherVocabularyAnalyticsDashboard from '../../../../components/teacher/TeacherVocabularyAnalyticsDashboard';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
-import { Info } from 'lucide-react';
+import { Info, BookOpen, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 interface ClassOption { id: string; name: string }
 
 type TimeRange = 'all_time' | 'last_7_days' | 'last_30_days' | 'current_term';
+type VocabularySource = 'all' | 'centralized' | 'custom';
 
 const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: 'all_time', label: 'All Time' },
   { value: 'last_7_days', label: 'Last 7 Days' },
   { value: 'last_30_days', label: 'Last 30 Days' },
   { value: 'current_term', label: 'This Term' },
+];
+
+const VOCABULARY_SOURCE_OPTIONS: { value: VocabularySource; label: string; icon: React.ReactNode }[] = [
+  { value: 'all', label: 'All Vocabulary', icon: <BookOpen className="h-4 w-4" /> },
+  { value: 'centralized', label: 'Curriculum', icon: <BookOpen className="h-4 w-4" /> },
+  { value: 'custom', label: 'My Custom Lists', icon: <Sparkles className="h-4 w-4" /> },
 ];
 
 function getDateRangeFromTimeRange(timeRange: TimeRange): { from: string; to: string } | undefined {
@@ -45,6 +52,7 @@ export default function VocabularyAnalyticsPage() {
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('all_time');
+  const [vocabularySource, setVocabularySource] = useState<VocabularySource>('all');
 
   useEffect(() => {
     const load = async () => {
@@ -84,39 +92,77 @@ export default function VocabularyAnalyticsPage() {
           </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Filter by class</label>
-            <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="border rounded-lg px-3 py-2 bg-white"
-            >
-              <option value="all">All classes</option>
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+        {/* Filter Controls */}
+        <div className="mb-6 bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <div className="flex flex-wrap items-center gap-6">
+            {/* Class Filter */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Class</label>
+              <select
+                value={selectedClassId}
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All classes</option>
+                {classes.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Time Range Filter */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Time period</label>
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value as TimeRange)}
+                className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {TIME_RANGE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Vocabulary Source Filter - NEW */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Vocabulary</label>
+              <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                {VOCABULARY_SOURCE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setVocabularySource(opt.value)}
+                    className={`px-3 py-2 text-sm flex items-center gap-1.5 transition-colors ${vocabularySource === opt.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                      } ${opt.value !== 'all' ? 'border-l border-gray-300' : ''}`}
+                  >
+                    {opt.icon}
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Time period</label>
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-              className="border rounded-lg px-3 py-2 bg-white"
-            >
-              {TIME_RANGE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
+
+          {/* Custom Vocabulary Info */}
+          {vocabularySource === 'custom' && (
+            <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-purple-800 text-sm">
+                <Sparkles className="h-4 w-4" />
+                <span>Showing progress for vocabulary from your custom lists created in <Link href="/vocabulary/new" className="underline font-semibold">My Vocabulary</Link></span>
+              </div>
+            </div>
+          )}
         </div>
 
-        <TeacherVocabularyAnalyticsDashboard 
-          classId={selectedClassId} 
+        <TeacherVocabularyAnalyticsDashboard
+          classId={selectedClassId}
           dateRange={getDateRangeFromTimeRange(timeRange)}
+          vocabularySource={vocabularySource}
         />
       </div>
     </div>
   );
 }
+

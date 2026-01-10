@@ -30,21 +30,21 @@ export default function NewVocabularyPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Vocabulary
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Create New Vocabulary Collection</h1>
-          <p className="text-gray-600 mt-2">Build an interactive vocabulary collection for your students</p>
+          <h1 className="text-3xl font-bold text-gray-900">Create New Content Collection</h1>
+          <p className="text-gray-600 mt-2">Build interactive vocabulary or sentence collections for your students</p>
         </div>
 
-        {/* Vocabulary Creation Info */}
+        {/* Content Creation Info */}
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6 mb-6">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-2xl">✨</span>
             <h3 className="text-lg font-semibold text-gray-900">
-              Create Custom Vocabulary Collections
+              Create Custom Vocabulary &amp; Sentence Collections
             </h3>
           </div>
           <p className="text-gray-700">
-            Build personalized vocabulary collections for your students. Add words manually with full control over
-            the content and structure. Perfect for creating targeted learning materials.
+            Build personalized vocabulary or sentence collections for your students. Add words or sentences manually 
+            with full control over the content and structure. Perfect for creating targeted learning materials.
           </p>
         </div>
 

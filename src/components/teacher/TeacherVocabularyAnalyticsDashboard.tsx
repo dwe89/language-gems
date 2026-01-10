@@ -32,6 +32,7 @@ import ExcelJS from 'exceljs';
 interface TeacherVocabularyAnalyticsDashboardProps {
   classId?: string;
   dateRange?: { from: string; to: string };
+  vocabularySource?: 'all' | 'centralized' | 'custom';
 }
 
 interface StatCardProps {
@@ -86,7 +87,8 @@ const StatCard: React.FC<StatCardProps> = ({
 
 export default function TeacherVocabularyAnalyticsDashboard({
   classId,
-  dateRange
+  dateRange,
+  vocabularySource = 'all'
 }: TeacherVocabularyAnalyticsDashboardProps) {
   const { user } = useAuth();
   const { supabase } = useSupabase();
@@ -117,13 +119,13 @@ export default function TeacherVocabularyAnalyticsDashboard({
       .join(' & ');
   };
 
-  // Load analytics data whenever user, classId, or date range changes
+  // Load analytics data whenever user, classId, date range, or vocabularySource changes
   useEffect(() => {
     if (user) {
       // If we are on a specific view, we want to load that data immediately with the stats
       loadAnalytics(selectedView);
     }
-  }, [user, classId, dateRange]); // We don't include selectedView here to avoid double-loading on tab switch (handleTabChange handles that)
+  }, [user, classId, dateRange, vocabularySource]); // Include vocabularySource to reload when filter changes
 
   const loadAnalytics = async (currentView: typeof selectedView = 'overview') => {
     if (!user) return;
@@ -165,6 +167,11 @@ export default function TeacherVocabularyAnalyticsDashboard({
       if (dateRange?.from && dateRange?.to) {
         params.set('from', dateRange.from);
         params.set('to', dateRange.to);
+      }
+
+      // Add vocabulary source filter
+      if (vocabularySource && vocabularySource !== 'all') {
+        params.set('vocabularySource', vocabularySource);
       }
 
       const response = await fetch(`/api/dashboard/vocabulary/analytics?${params.toString()}`, {
@@ -691,19 +698,42 @@ export default function TeacherVocabularyAnalyticsDashboard({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {analytics.insights.weakestTopics.map((topic, index) => (
-                <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 bg-red-50 rounded-lg border border-red-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">{formatTopicName(topic.category)}</h4>
-                    <span className="text-sm font-semibold text-red-600">{topic.averageAccuracy}%</span>
+                <div key={`${topic.category}-${topic.subcategory}-${index}`} className="group relative p-5 bg-white rounded-xl border border-red-100 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="absolute top-0 left-0 w-1.5 h-full bg-red-500 rounded-l-xl" />
+
+                  <div className="pl-2">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                          {topic.subcategory ? formatTopicName(topic.category) : 'Topic'}
+                        </h4>
+                        <h3 className="text-xl font-bold text-gray-900 leading-tight">
+                          {topic.subcategory ? formatTopicName(topic.subcategory) : formatTopicName(topic.category)}
+                        </h3>
+                      </div>
+                      <div className="flex items-center justify-center bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm font-bold shadow-sm border border-red-100">
+                        {topic.averageAccuracy}%
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 mt-4 mb-4">
+                      <div className="flex items-center text-sm text-gray-600 font-medium bg-gray-50 px-2 py-1 rounded-md">
+                        <Users className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                        <span>{topic.studentsEngaged}/{topic.totalStudents}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600 font-medium bg-gray-50 px-2 py-1 rounded-md">
+                        <BookOpen className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                        <span>{topic.totalWords} words</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100 flex items-start">
+                      <AlertCircle className="w-4 h-4 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-gray-600 italic leading-relaxed">
+                        {topic.recommendedAction}
+                      </p>
+                    </div>
                   </div>
-                  {topic.subcategory && (
-                    <p className="text-sm text-gray-600 mb-1">{formatTopicName(topic.subcategory)}</p>
-                  )}
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>{topic.studentsEngaged}/{topic.totalStudents} students</span>
-                    <span>{topic.totalWords} words</span>
-                  </div>
-                  <p className="text-xs text-red-700 mt-2">{topic.recommendedAction}</p>
                 </div>
               ))}
             </div>
@@ -719,19 +749,42 @@ export default function TeacherVocabularyAnalyticsDashboard({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {analytics.insights.strongestTopics.map((topic, index) => (
-                <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">{formatTopicName(topic.category)}</h4>
-                    <span className="text-sm font-semibold text-green-600">{topic.averageAccuracy}%</span>
+                <div key={`${topic.category}-${topic.subcategory}-${index}`} className="group relative p-5 bg-white rounded-xl border border-green-100 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="absolute top-0 left-0 w-1.5 h-full bg-green-500 rounded-l-xl" />
+
+                  <div className="pl-2">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                          {topic.subcategory ? formatTopicName(topic.category) : 'Topic'}
+                        </h4>
+                        <h3 className="text-xl font-bold text-gray-900 leading-tight">
+                          {topic.subcategory ? formatTopicName(topic.subcategory) : formatTopicName(topic.category)}
+                        </h3>
+                      </div>
+                      <div className="flex items-center justify-center bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-bold shadow-sm border border-green-100">
+                        {topic.averageAccuracy}%
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 mt-4 mb-4">
+                      <div className="flex items-center text-sm text-gray-600 font-medium bg-gray-50 px-2 py-1 rounded-md">
+                        <Users className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                        <span>{topic.studentsEngaged}/{topic.totalStudents}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600 font-medium bg-gray-50 px-2 py-1 rounded-md">
+                        <BookOpen className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                        <span>{topic.totalWords} words</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100 flex items-start">
+                      <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-gray-600 italic leading-relaxed">
+                        {topic.recommendedAction}
+                      </p>
+                    </div>
                   </div>
-                  {topic.subcategory && (
-                    <p className="text-sm text-gray-600 mb-1">{formatTopicName(topic.subcategory)}</p>
-                  )}
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>{topic.studentsEngaged}/{topic.totalStudents} students</span>
-                    <span>{topic.totalWords} words</span>
-                  </div>
-                  <p className="text-xs text-green-700 mt-2">{topic.recommendedAction}</p>
                 </div>
               ))}
             </div>
@@ -748,26 +801,31 @@ export default function TeacherVocabularyAnalyticsDashboard({
             {analytics.topicAnalysis
               .filter(topic => topic.studentsEngaged >= 3) // Only show topics with meaningful engagement
               .map((topic, index) => (
-                <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 border border-gray-200 rounded-lg">
+                <div key={`${topic.category}-${topic.subcategory}-${index}`} className="group p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition-colors bg-white">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-gray-900">{formatTopicName(topic.category)}</h4>
-                      {topic.subcategory && (
-                        <p className="text-sm text-gray-600">{formatTopicName(topic.subcategory)}</p>
-                      )}
-                      <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                        <span>{topic.language.toUpperCase()}</span>
-                        <span>{topic.curriculumLevel}</span>
-                        <span>{topic.studentsEngaged}/{topic.totalStudents} students</span>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+                        {topic.subcategory ? formatTopicName(topic.category) : 'Topic'}
+                      </p>
+                      <h4 className="text-lg font-bold text-gray-900 leading-tight">
+                        {topic.subcategory ? formatTopicName(topic.subcategory) : formatTopicName(topic.category)}
+                      </h4>
+                      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 mt-2">
+                        <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium text-gray-600">{topic.language.toUpperCase()}</span>
+                        <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium text-gray-600">{topic.curriculumLevel}</span>
+                        <div className="flex items-center">
+                          <Users className="w-3.5 h-3.5 mr-1" />
+                          <span>{topic.studentsEngaged}/{topic.totalStudents}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-lg font-semibold ${topic.averageAccuracy >= 80 ? 'text-green-600' :
+                      <div className={`text-xl font-bold ${topic.averageAccuracy >= 80 ? 'text-green-600' :
                         topic.averageAccuracy >= 60 ? 'text-yellow-600' : 'text-red-600'
                         }`}>
                         {topic.averageAccuracy}%
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-500 font-medium">
                         {topic.proficientWords}/{topic.totalWords} proficient
                       </div>
                     </div>

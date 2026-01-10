@@ -52,6 +52,7 @@ interface VocabularyItem {
   subcategory?: string;
   difficulty_level?: string;
   audio_url?: string;
+  isCustomVocabulary?: boolean; // TRUE if from enhanced_vocabulary_items (custom/teacher vocabulary)
 }
 
 interface HangmanGameProps {
@@ -75,6 +76,7 @@ interface HangmanGameProps {
     currentWord?: string;
     vocabularyId?: string; // Changed from number to string for UUID support
     wrongGuesses?: number;
+    isCustomVocabulary?: boolean; // TRUE if from enhanced_vocabulary_items
   }) => void;
   isFullscreen?: boolean;
   isAssignmentMode?: boolean;
@@ -252,6 +254,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
               console.log('🎮 [HANGMAN] Recording successful word completion:', {
                 word,
                 vocabularyId: currentVocabItem.id,
+                isCustomVocabulary: currentVocabItem.isCustomVocabulary,
                 gameSessionId,
                 wrongGuesses,
                 timer
@@ -259,7 +262,9 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
 
               const sessionService = new EnhancedGameSessionService();
               const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
-                vocabularyId: currentVocabItem.id,
+                // ✅ FIXED: Use correct ID field based on vocabulary source
+                vocabularyId: currentVocabItem.isCustomVocabulary ? undefined : currentVocabItem.id,
+                enhancedVocabularyItemId: currentVocabItem.isCustomVocabulary ? currentVocabItem.id : undefined,
                 wordText: word,
                 translationText: currentVocabItem.translation || word,
                 responseTimeMs: timer * 1000,
@@ -323,7 +328,8 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           timeSpent: timer,
           currentWord: word,
           vocabularyId: currentVocabItem?.id, // Use UUID directly, not parseInt
-          wrongGuesses: wrongGuesses
+          wrongGuesses: wrongGuesses,
+          isCustomVocabulary: currentVocabItem?.isCustomVocabulary // Pass custom vocab flag
         });
       }
     } else if (wrongGuesses >= MAX_ATTEMPTS) {
@@ -351,7 +357,8 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           timeSpent: timer,
           currentWord: word,
           vocabularyId: currentVocabItem?.id, // Use UUID directly, not parseInt
-          wrongGuesses: wrongGuesses
+          wrongGuesses: wrongGuesses,
+          isCustomVocabulary: currentVocabItem?.isCustomVocabulary // Pass custom vocab flag
         });
       }
     }
@@ -453,6 +460,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
                 console.log('🎮 [HANGMAN] Recording successful word completion:', {
                   word,
                   vocabularyId: currentVocabItem.id,
+                  isCustomVocabulary: currentVocabItem.isCustomVocabulary,
                   gameSessionId,
                   wrongGuesses,
                   timer
@@ -460,7 +468,9 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
 
                 const sessionService = new EnhancedGameSessionService();
                 const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
-                  vocabularyId: currentVocabItem.id,
+                  // ✅ FIXED: Use correct ID field based on vocabulary source
+                  vocabularyId: currentVocabItem.isCustomVocabulary ? undefined : currentVocabItem.id,
+                  enhancedVocabularyItemId: currentVocabItem.isCustomVocabulary ? currentVocabItem.id : undefined,
                   wordText: word,
                   translationText: currentVocabItem.translation || word,
                   responseTimeMs: timer * 1000,

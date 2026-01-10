@@ -51,6 +51,7 @@ interface TicTacToeGameProps {
     difficulty: string;
     audio_url?: string;
     playAudio?: () => void;
+    isCustomVocabulary?: boolean; // ✅ Track if from enhanced_vocabulary_items
   }>;
   gameSessionId?: string | null;
   isAssignmentMode?: boolean;
@@ -357,7 +358,8 @@ export default function TicTacToeGame({
             vocabularyId,
             gameSessionId,
             word: currentQuestion.word,
-            isCorrect
+            isCorrect,
+            isCustomVocabulary: (currentQuestion as any).isCustomVocabulary
           });
 
           try {
@@ -365,7 +367,9 @@ export default function TicTacToeGame({
             // Record gem with minimal processing - skip FSRS to avoid delays
             // Don't await - let this run in background to avoid blocking UI
             sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
-              vocabularyId: vocabularyId,
+              // ✅ FIXED: Use correct ID field based on vocabulary source
+              vocabularyId: (currentQuestion as any).isCustomVocabulary ? undefined : vocabularyId,
+              enhancedVocabularyItemId: (currentQuestion as any).isCustomVocabulary ? vocabularyId : undefined,
               wordText: currentQuestion.word,
               translationText: currentQuestion.translation,
               responseTimeMs: Math.round(responseTime * 1000),
@@ -474,13 +478,16 @@ export default function TicTacToeGame({
         console.log('🎮 [NOUGHTS] Recording wrong answer:', {
           vocabularyId: currentQuestion.id,
           gameSessionId,
-          word: currentQuestion.word
+          word: currentQuestion.word,
+          isCustomVocabulary: (currentQuestion as any).isCustomVocabulary
         });
 
         try {
           const sessionService = new EnhancedGameSessionService();
           sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
-            vocabularyId: currentQuestion.id,
+            // ✅ FIXED: Use correct ID field based on vocabulary source
+            vocabularyId: (currentQuestion as any).isCustomVocabulary ? undefined : currentQuestion.id,
+            enhancedVocabularyItemId: (currentQuestion as any).isCustomVocabulary ? currentQuestion.id : undefined,
             wordText: currentQuestion.word,
             translationText: currentQuestion.translation,
             wasCorrect: false,

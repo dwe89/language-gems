@@ -9,7 +9,7 @@ import { useSupabase } from '../supabase/SupabaseProvider';
 
 interface InlineVocabularyCreatorProps {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (listId?: string) => void;
   initialData?: {
     id?: string;
     name?: string;
@@ -48,10 +48,93 @@ export default function InlineVocabularyCreator({
   const { supabase } = useSupabase();
   const [uploadService] = useState(() => new VocabularyUploadService(supabase));
 
+  // Theme and Unit constants for organization
+  const THEMES = [
+    { value: '', label: 'Select a theme (optional)' },
+    { value: 'My personal world', label: '👤 My personal world' },
+    { value: 'People and lifestyle', label: '🏠 People and lifestyle' },
+    { value: 'Popular culture', label: '🎭 Popular culture' },
+    { value: 'Communication and the world around us', label: '🌍 Communication and the world around us' },
+    { value: 'Studying and my future', label: '📚 Studying and my future' },
+    { value: 'Travel and tourism', label: '✈️ Travel and tourism' },
+    { value: 'Media and technology', label: '📱 Media and technology' },
+    { value: 'Cultural', label: '🎨 Cultural items' },
+    { value: 'General', label: '📝 General vocabulary' },
+  ];
+
+  const UNITS_BY_THEME: Record<string, { value: string; label: string }[]> = {
+    'My personal world': [
+      { value: '', label: 'Select a unit (optional)' },
+      { value: 'Family and friends', label: 'Family and friends' },
+      { value: 'Describing people', label: 'Describing people' },
+      { value: 'House and home', label: 'House and home' },
+      { value: 'Daily routine', label: 'Daily routine' },
+    ],
+    'People and lifestyle': [
+      { value: '', label: 'Select a unit (optional)' },
+      { value: 'Healthy living', label: 'Healthy living' },
+      { value: 'Food and drink', label: 'Food and drink' },
+      { value: 'Sports and hobbies', label: 'Sports and hobbies' },
+      { value: 'Relationships', label: 'Relationships' },
+    ],
+    'Popular culture': [
+      { value: '', label: 'Select a unit (optional)' },
+      { value: 'Free time activities', label: 'Free time activities' },
+      { value: 'Music and entertainment', label: 'Music and entertainment' },
+      { value: 'Celebrity culture', label: 'Celebrity culture' },
+      { value: 'Customs, festivals and celebrations', label: 'Customs, festivals and celebrations' },
+    ],
+    'Communication and the world around us': [
+      { value: '', label: 'Select a unit (optional)' },
+      { value: 'Environment and where people live', label: 'Environment and where people live' },
+      { value: 'Media and technology', label: 'Media and technology' },
+      { value: 'Travel and tourism', label: 'Travel and tourism' },
+    ],
+    'Studying and my future': [
+      { value: '', label: 'Select a unit (optional)' },
+      { value: 'School', label: 'School' },
+      { value: 'Future opportunities', label: 'Future opportunities' },
+      { value: 'Jobs and careers', label: 'Jobs and careers' },
+    ],
+    'Travel and tourism': [
+      { value: '', label: 'Select a unit (optional)' },
+      { value: 'Accommodation', label: 'Accommodation' },
+      { value: 'Tourist attractions', label: 'Tourist attractions' },
+      { value: 'Directions and transport', label: 'Directions and transport' },
+    ],
+    'Media and technology': [
+      { value: '', label: 'Select a unit (optional)' },
+      { value: 'Social media', label: 'Social media' },
+      { value: 'Online communication', label: 'Online communication' },
+      { value: 'Digital devices', label: 'Digital devices' },
+    ],
+    'Cultural': [
+      { value: '', label: 'Select a unit (optional)' },
+      { value: 'Cultural items', label: 'Cultural items' },
+      { value: 'Traditions', label: 'Traditions' },
+    ],
+    'General': [
+      { value: '', label: 'Select a unit (optional)' },
+      { value: 'Numbers and time', label: 'Numbers and time' },
+      { value: 'Colors and shapes', label: 'Colors and shapes' },
+      { value: 'Common phrases', label: 'Common phrases' },
+    ],
+  };
+
+  const CURRICULUM_LEVELS = [
+    { value: 'KS2', label: '🌱 KS2 (Primary)' },
+    { value: 'KS3', label: '📖 KS3 (Years 7-9)' },
+    { value: 'KS4', label: '📚 KS4/GCSE (Years 10-11)' },
+  ];
+
   // Form state
   const [title, setTitle] = useState(initialData?.name || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [language, setLanguage] = useState(initialData?.language || 'french');
+  const [theme, setTheme] = useState(initialData?.theme || '');
+  const [unit, setUnit] = useState(initialData?.topic || '');
+  const [curriculumLevel, setCurriculumLevel] = useState<'KS2' | 'KS3' | 'KS4'>('KS3');
+  const [contentType, setContentType] = useState<'words' | 'sentences' | 'mixed'>(initialData?.content_type || 'words');
   const [isPublic, setIsPublic] = useState(initialData?.is_public || false);
   const [vocabularyPairs, setVocabularyPairs] = useState<VocabularyPair[]>(
     initialData?.items && initialData.items.length > 0
@@ -64,6 +147,7 @@ export default function InlineVocabularyCreator({
   const [generatingAudio, setGeneratingAudio] = useState<Set<string>>(new Set());
   const [audioCache, setAudioCache] = useState<Map<string, string>>(new Map());
   const [debounceTimers, setDebounceTimers] = useState<Map<string, NodeJS.Timeout>>(new Map());
+  const [centralizedMatches, setCentralizedMatches] = useState<Map<string, { id: string; audio_url: string | null }>>(new Map());
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -81,6 +165,44 @@ export default function InlineVocabularyCreator({
     setVocabularyPairs([...vocabularyPairs, newPair]);
   };
 
+  // Check if word exists in centralized_vocabulary and get its audio
+  const checkCentralizedVocabulary = async (text: string, lang: string): Promise<{ id: string; audio_url: string | null } | null> => {
+    const matchKey = `${text.toLowerCase()}_${lang}`;
+
+    // Check local cache first
+    if (centralizedMatches.has(matchKey)) {
+      return centralizedMatches.get(matchKey)!;
+    }
+
+    try {
+      const languageMap: Record<string, string> = {
+        'spanish': 'es',
+        'french': 'fr',
+        'german': 'de',
+      };
+      const dbLanguage = languageMap[lang] || 'es';
+
+      const { data, error } = await supabase
+        .from('centralized_vocabulary')
+        .select('id, audio_url')
+        .eq('language', dbLanguage)
+        .ilike('word', text.trim())
+        .limit(1)
+        .single();
+
+      if (!error && data) {
+        console.log(`✅ Found centralized match for "${text}":`, data.id);
+        setCentralizedMatches(prev => new Map(prev).set(matchKey, { id: data.id, audio_url: data.audio_url }));
+        return { id: data.id, audio_url: data.audio_url };
+      }
+
+      return null;
+    } catch (error) {
+      console.log('No centralized match for:', text);
+      return null;
+    }
+  };
+
   const checkExistingAudio = async (text: string, language: string): Promise<string | null> => {
     const audioKey = `${text.toLowerCase()}_${language}`;
 
@@ -90,6 +212,14 @@ export default function InlineVocabularyCreator({
     }
 
     try {
+      // First, check if the word exists in centralized_vocabulary
+      const centralizedMatch = await checkCentralizedVocabulary(text, language);
+      if (centralizedMatch?.audio_url) {
+        setAudioCache(prev => new Map(prev).set(audioKey, centralizedMatch.audio_url!));
+        console.log(`🎵 Using centralized audio for "${text}":`, centralizedMatch.audio_url);
+        return centralizedMatch.audio_url;
+      }
+
       // Map language codes for the API
       const languageMap: Record<string, string> = {
         'spanish': 'es',
@@ -312,7 +442,7 @@ export default function InlineVocabularyCreator({
       return;
     }
 
-    const validPairs = vocabularyPairs.filter(pair => 
+    const validPairs = vocabularyPairs.filter(pair =>
       pair.learningWord.trim() && pair.supportWord.trim()
     );
 
@@ -324,6 +454,26 @@ export default function InlineVocabularyCreator({
     setUploading(true);
 
     try {
+      // Get centralized matches for all words (for analytics linking)
+      const languageMap: Record<string, string> = {
+        'spanish': 'es',
+        'french': 'fr',
+        'german': 'de',
+      };
+      const dbLanguage = languageMap[language] || 'es';
+
+      // Batch check for centralized matches
+      const wordsToCheck = validPairs.map(p => p.learningWord.trim().toLowerCase());
+      const { data: centralizedData } = await supabase
+        .from('centralized_vocabulary')
+        .select('id, word, audio_url')
+        .eq('language', dbLanguage)
+        .in('word', wordsToCheck);
+
+      const centralizedMap = new Map(
+        centralizedData?.map(item => [item.word.toLowerCase(), { id: item.id, audio_url: item.audio_url }]) || []
+      );
+
       if (mode === 'edit' && initialData?.id) {
         const enhancedService = new EnhancedVocabularyService(supabase);
 
@@ -331,45 +481,69 @@ export default function InlineVocabularyCreator({
           name: title,
           description: description || '',
           language: language as 'spanish' | 'french' | 'german',
+          theme: theme || undefined,
+          topic: unit || undefined,
           is_public: isPublic,
           word_count: validPairs.length
         };
 
-        const updateItems = validPairs.map(pair => ({
-          type: 'word' as const,
-          term: pair.learningWord.trim(),
-          translation: pair.supportWord.trim(),
-          part_of_speech: pair.partOfSpeech || 'noun',
-          context_sentence: pair.contextSentence,
-          context_translation: pair.contextTranslation,
-          difficulty_level: pair.difficultyLevel || 'intermediate',
-          notes: pair.notes,
-          tags: pair.tags || []
-        }));
+        const updateItems = validPairs.map(pair => {
+          const matchKey = pair.learningWord.trim().toLowerCase();
+          const match = centralizedMap.get(matchKey) || centralizedMatches.get(`${matchKey}_${language}`);
+          const audioKey = `${matchKey}_${language}`;
+
+          return {
+            type: 'word' as const,
+            term: pair.learningWord.trim(),
+            translation: pair.supportWord.trim(),
+            part_of_speech: pair.partOfSpeech || 'noun',
+            context_sentence: pair.contextSentence,
+            context_translation: pair.contextTranslation,
+            audio_url: match?.audio_url || audioCache.get(audioKey) || undefined,
+            difficulty_level: pair.difficultyLevel || 'intermediate',
+            notes: pair.notes,
+            tags: pair.tags || [],
+            centralized_match_id: match?.id || undefined,
+            analytics_enabled: true,
+          };
+        });
 
         await enhancedService.updateVocabularyList(initialData.id, updateData, updateItems);
+        onSuccess(initialData.id);
       } else {
-        // Create new vocabulary list
+        // Create new vocabulary list with theme and topic
         const uploadData: UploadedVocabularyList = {
           name: title,
           description: description || '',
           language: language as 'spanish' | 'french' | 'german',
+          theme: theme || undefined,
+          topic: unit || undefined,
           difficulty_level: 'intermediate',
-          content_type: 'words',
+          content_type: contentType,
           is_public: isPublic,
-          items: validPairs.map(pair => ({
-            type: 'word' as const,
-            term: pair.learningWord.trim(),
-            translation: pair.supportWord.trim(),
-            difficulty_level: 'intermediate' as const
-          }))
+          items: validPairs.map(pair => {
+            const matchKey = pair.learningWord.trim().toLowerCase();
+            const match = centralizedMap.get(matchKey) || centralizedMatches.get(`${matchKey}_${language}`);
+            const audioKey = `${matchKey}_${language}`;
+            
+            // Determine item type based on content type selection
+            const itemType = contentType === 'sentences' ? 'sentence' : 'word';
+
+            return {
+              type: itemType as 'word' | 'sentence',
+              term: pair.learningWord.trim(),
+              translation: pair.supportWord.trim(),
+              audio_url: match?.audio_url || audioCache.get(audioKey) || undefined,
+              difficulty_level: 'intermediate' as const,
+            };
+          })
         };
 
         // Upload vocabulary list (audio already generated in real-time)
-        await uploadService.uploadVocabularyList(uploadData, user.id, false);
+        const newListId = await uploadService.uploadVocabularyList(uploadData, user.id, false);
+        onSuccess(newListId);
       }
 
-      onSuccess();
       onClose();
     } catch (error) {
       console.error('Error saving vocabulary:', error);
@@ -379,7 +553,7 @@ export default function InlineVocabularyCreator({
     }
   };
 
-  const validPairCount = vocabularyPairs.filter(pair => 
+  const validPairCount = vocabularyPairs.filter(pair =>
     pair.learningWord.trim() && pair.supportWord.trim()
   ).length;
 
@@ -430,6 +604,94 @@ export default function InlineVocabularyCreator({
               </select>
             </div>
 
+            {/* Curriculum Level Selector */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Curriculum Level
+              </label>
+              <select
+                value={curriculumLevel}
+                onChange={(e) => setCurriculumLevel(e.target.value as 'KS2' | 'KS3' | 'KS4')}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+              >
+                {CURRICULUM_LEVELS.map(level => (
+                  <option key={level.value} value={level.value}>
+                    {level.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Content Type Selector */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Content Type
+              </label>
+              <select
+                value={contentType}
+                onChange={(e) => setContentType(e.target.value as 'words' | 'sentences' | 'mixed')}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+              >
+                <option value="words">📝 Words Only</option>
+                <option value="sentences">💬 Sentences Only</option>
+                <option value="mixed">🔄 Mixed (Words & Sentences)</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {contentType === 'sentences' 
+                  ? 'Perfect for sentence translation games and practice' 
+                  : contentType === 'mixed'
+                    ? 'Combine vocabulary words and full sentences'
+                    : 'Standard vocabulary word pairs'}
+              </p>
+            </div>
+
+            {/* Theme Selector */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Theme / Category <span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                list="theme-options"
+                value={theme}
+                onChange={(e) => {
+                  setTheme(e.target.value);
+                  // We don't auto-clear unit anymore to allow flexible editing
+                }}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                placeholder="Select or type a theme..."
+              />
+              <datalist id="theme-options">
+                {THEMES.filter(t => t.value).map(t => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </datalist>
+              <p className="text-xs text-gray-500 mt-1">Create your own theme or select from the list</p>
+            </div>
+
+            {/* Unit Selector (dependent on Theme) */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Unit / Topic <span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                list="unit-options"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                disabled={!theme}
+                className={`w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${theme ? 'bg-gray-50 focus:bg-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  }`}
+                placeholder={theme ? "Select or type a unit..." : "Select a theme first"}
+              />
+              <datalist id="unit-options">
+                {theme && UNITS_BY_THEME[theme] && UNITS_BY_THEME[theme].filter(u => u.value).map(u => (
+                  <option key={u.value} value={u.value}>{u.label}</option>
+                ))}
+              </datalist>
+              <p className="text-xs text-gray-500 mt-1">Create your own unit or select from the list</p>
+            </div>
+
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Description (Optional)
@@ -442,6 +704,7 @@ export default function InlineVocabularyCreator({
                 placeholder="Brief description of this vocabulary collection"
               />
             </div>
+
 
             <div className="md:col-span-2">
               <label className="flex items-center gap-3 cursor-pointer">
@@ -480,37 +743,141 @@ export default function InlineVocabularyCreator({
           </div>
 
           {showBulkUpload ? (
-            <div className="space-y-4">
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h5 className="font-medium text-blue-900 mb-2">Bulk Upload Instructions</h5>
-                <p className="text-sm text-blue-700 mb-2">
-                  Paste your vocabulary pairs below. Each line should contain one pair.
-                </p>
-                <p className="text-sm text-blue-600">
-                  Format: <code className="bg-blue-100 px-1 rounded">spanish_word	english_translation</code> (tab-separated) or <code className="bg-blue-100 px-1 rounded">spanish_word, english_translation</code> (comma-separated)
-                </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column: Input */}
+              <div className="space-y-4">
+                <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+                  <h5 className="font-semibold text-indigo-900 mb-2 flex items-center gap-2">
+                    <span className="text-xl">📋</span> Paste Vocabulary
+                  </h5>
+                  <p className="text-sm text-indigo-700 mb-3">
+                    Copy from <strong>Excel</strong>, <strong>Google Sheets</strong>, <strong>Word</strong>, or <strong>Quizlet</strong> and paste below.
+                    <br />
+                    <span className="text-xs opacity-75 mt-1 block">
+                      We'll automatically detect lines with words and translations.
+                    </span>
+                  </p>
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    value={bulkText}
+                    onChange={(e) => {
+                      setBulkText(e.target.value);
+                      // Auto-parse on change for preview
+                      // Simple inline parsing logic for preview only
+                      // real parsing happens on "Add Pairs"
+                    }}
+                    placeholder={contentType === 'sentences' 
+                      ? `e.g.\n¿Cómo te llamas?\tWhat is your name?\nMe gusta mucho.\tI like it a lot.\n\nOr paste from Excel!`
+                      : `e.g.\nhola\thello\nadios\tgoodbye\n\nOr paste straightforward from Excel!`}
+                    className="w-full h-80 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white font-mono text-sm resize-none shadow-sm"
+                  />
+                  {bulkText && (
+                    <button
+                      onClick={() => setBulkText('')}
+                      className="absolute top-3 right-3 text-xs bg-gray-100 hover:bg-gray-200 text-gray-500 px-2 py-1 rounded transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
-              
-              <textarea
-                value={bulkText}
-                onChange={(e) => setBulkText(e.target.value)}
-                placeholder={`Example:\nhola	hello\nadios	goodbye\ngracias	thank you`}
-                className="w-full h-40 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white resize-none"
-              />
-              
-              <div className="flex gap-3">
+
+              {/* Right Column: Preview */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between h-[88px]"> {/* Align with top box */}
+                  <div>
+                    <h5 className="font-semibold text-gray-900">Preview</h5>
+                    <p className="text-sm text-gray-500">
+                      {bulkText.trim() ? (
+                        <>Found <span className="font-bold text-indigo-600">{
+                          (() => {
+                            const lines = bulkText.trim().split('\n');
+                            return lines.filter(l => (l.includes('\t') || l.includes(',')) && l.split(/[\t,]/).length >= 2).length;
+                          })()
+                        }</span> valid {contentType === 'sentences' ? 'sentences' : 'pairs'}</>
+                      ) : (
+                        "Preview your pairs here before adding"
+                      )}
+                    </p>
+                  </div>
+                  {bulkText.trim() && (
+                    <button
+                      onClick={() => {
+                        // Swap logic
+                        const lines = bulkText.split('\n');
+                        const swapped = lines.map(line => {
+                          if (line.includes('\t')) {
+                            const [a, b, ...rest] = line.split('\t');
+                            return b && a ? `${b.trim()}\t${a.trim()}${rest.length ? '\t' + rest.join('\t') : ''}` : line;
+                          }
+                          if (line.includes(',')) {
+                            const [a, b, ...rest] = line.split(',');
+                            return b && a ? `${b.trim()}, ${a.trim()}${rest.length ? ',' + rest.join(',') : ''}` : line;
+                          }
+                          return line;
+                        });
+                        setBulkText(swapped.join('\n'));
+                      }}
+                      className="text-sm flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                      Swap Columns
+                    </button>
+                  )}
+                </div>
+
+                <div className="border border-gray-200 rounded-xl overflow-hidden bg-white h-80 flex flex-col shadow-sm">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-2 bg-gray-50 border-b border-gray-200 px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <div>{contentType === 'sentences' ? 'Sentence' : 'Term'} ({language === 'french' ? 'Fr' : language === 'spanish' ? 'Es' : language === 'german' ? 'De' : 'Target'})</div>
+                    <div>Translation (En)</div>
+                  </div>
+
+                  {/* Table Content */}
+                  <div className="overflow-y-auto flex-1 p-0">
+                    {!bulkText.trim() ? (
+                      <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center space-y-2">
+                        <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-2">
+                          <span className="text-2xl opacity-50">👀</span>
+                        </div>
+                        <p>Pairs will appear here...</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-100">
+                        {bulkText.trim().split('\n').map((line, idx) => {
+                          const parts = line.includes('\t') ? line.split('\t') : line.includes(',') ? line.split(',') : [line];
+                          const isValid = parts.length >= 2 && parts[0].trim() && parts[1].trim();
+
+                          if (!line.trim()) return null;
+
+                          return (
+                            <div key={idx} className={`grid grid-cols-2 px-4 py-2 text-sm ${!isValid ? 'bg-red-50 text-red-600 opacity-60' : 'hover:bg-gray-50'}`}>
+                              <div className="truncate pr-2 font-medium">{parts[0]?.trim() || '-'}</div>
+                              <div className="truncate pl-2 text-gray-600">{parts[1]?.trim() || (isValid ? '' : '(No translation)')}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <button
                   onClick={parseBulkText}
                   disabled={!bulkText.trim()}
-                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow-md active:scale-[0.98]"
                 >
-                  Parse & Add Pairs
-                </button>
-                <button
-                  onClick={() => setBulkText('')}
-                  className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                >
-                  Clear
+                  Import {
+                    (() => {
+                      const count = bulkText.trim().split('\n').filter(l => (l.includes('\t') || l.includes(',')) && l.split(/[\t,]/).length >= 2).length;
+                      const label = contentType === 'sentences' ? 'Sentences' : 'Pairs';
+                      return count > 0 ? `${count} ${label}` : label;
+                    })()
+                  }
                 </button>
               </div>
             </div>
@@ -519,9 +886,9 @@ export default function InlineVocabularyCreator({
               {vocabularyPairs.map((pair, index) => (
                 <div key={pair.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-indigo-300 transition-all">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-600">Pair #{index + 1}</span>
+                    <span className="text-sm font-medium text-gray-600">{contentType === 'sentences' ? 'Sentence' : 'Pair'} #{index + 1}</span>
                     {vocabularyPairs.length > 1 && (
-                      <button 
+                      <button
                         onClick={() => removeVocabularyPair(pair.id)}
                         className="text-gray-400 hover:text-red-500 p-1 hover:bg-red-50 rounded-lg transition-all"
                         title="Remove this pair"
@@ -530,11 +897,11 @@ export default function InlineVocabularyCreator({
                       </button>
                     )}
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">
-                        {language === 'french' ? '🇫🇷 French' : language === 'spanish' ? '🇪🇸 Spanish' : '🇩🇪 German'} Word
+                        {language === 'french' ? '🇫🇷 French' : language === 'spanish' ? '🇪🇸 Spanish' : '🇩🇪 German'} {contentType === 'sentences' ? 'Sentence' : 'Word'}
                       </label>
                       <div className="flex">
                         <input
@@ -542,7 +909,7 @@ export default function InlineVocabularyCreator({
                           value={pair.learningWord}
                           onChange={(e) => updateVocabularyPair(pair.id, 'learningWord', e.target.value)}
                           onFocus={() => handleFieldFocus(pair.id, 'learningWord')}
-                          placeholder={`Enter ${language} word`}
+                          placeholder={contentType === 'sentences' ? `Enter ${language} sentence` : `Enter ${language} word`}
                           className="flex-1 px-4 py-3 border border-gray-200 rounded-l-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                         />
                         <button
@@ -558,11 +925,10 @@ export default function InlineVocabularyCreator({
                               generateAudioForWord(pair.learningWord.trim(), language, pair.id);
                             }
                           }}
-                          className={`px-3 py-3 text-white border rounded-r-xl transition-colors ${
-                            generatingAudio.has(pair.id)
-                              ? 'bg-yellow-500 border-yellow-500'
-                              : 'bg-green-500 border-green-500 hover:bg-green-600'
-                          }`}
+                          className={`px-3 py-3 text-white border rounded-r-xl transition-colors ${generatingAudio.has(pair.id)
+                            ? 'bg-yellow-500 border-yellow-500'
+                            : 'bg-green-500 border-green-500 hover:bg-green-600'
+                            }`}
                           disabled={generatingAudio.has(pair.id) || !pair.learningWord.trim()}
                           title={(() => {
                             if (generatingAudio.has(pair.id)) return 'Generating audio...';
@@ -606,7 +972,7 @@ export default function InlineVocabularyCreator({
                   </div>
                 </div>
               ))}
-              
+
               <div className="flex justify-center gap-4 pt-4">
                 <button
                   onClick={addVocabularyPair}

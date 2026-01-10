@@ -30,4 +30,5 @@ export interface Card {
   firstAttemptTime?: Date;
   word?: string;
   translation?: string;
+  isCustomVocabulary?: boolean; // ✅ Track if from enhanced_vocabulary_items
 }

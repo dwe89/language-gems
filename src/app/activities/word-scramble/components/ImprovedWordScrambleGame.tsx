@@ -87,6 +87,7 @@ interface GameVocabularyWord {
   language?: string;
   part_of_speech?: string;
   audio_url?: string;
+  isCustomVocabulary?: boolean; // ✅ Track if from enhanced_vocabulary_items
 }
 
 interface WordScrambleGameProps {
@@ -551,12 +552,15 @@ export default function WordScrambleGame({
             vocabularyId: currentWordData.id,
             gameSessionId,
             isCorrect,
-            solveTime
+            solveTime,
+            isCustomVocabulary: currentWordData.isCustomVocabulary
           });
 
           const sessionService = new EnhancedGameSessionService();
           const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
-            vocabularyId: currentWordData.id,
+            // ✅ FIXED: Use correct ID field based on vocabulary source
+            vocabularyId: currentWordData.isCustomVocabulary ? undefined : currentWordData.id,
+            enhancedVocabularyItemId: currentWordData.isCustomVocabulary ? currentWordData.id : undefined,
             wordText: currentWordData.word,
             translationText: currentWordData.translation,
             responseTimeMs: Math.round(solveTime * 1000),
@@ -706,12 +710,15 @@ export default function WordScrambleGame({
           word: currentWordData.word,
           vocabularyId: currentWordData.id,
           gameSessionId,
-          solveTime
+          solveTime,
+          isCustomVocabulary: currentWordData.isCustomVocabulary
         });
 
         const sessionService = new EnhancedGameSessionService();
         const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
-          vocabularyId: currentWordData.id,
+          // ✅ FIXED: Use correct ID field based on vocabulary source
+          vocabularyId: currentWordData.isCustomVocabulary ? undefined : currentWordData.id,
+          enhancedVocabularyItemId: currentWordData.isCustomVocabulary ? currentWordData.id : undefined,
           wordText: currentWordData.word,
           translationText: currentWordData.translation,
           responseTimeMs: Math.round(solveTime * 1000),

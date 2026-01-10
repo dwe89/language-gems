@@ -79,9 +79,38 @@ function VocabularyCard({
     }
   };
 
+  // Enhanced content type styling for cards
+  const getContentTypeCardStyle = (contentType: string) => {
+    switch (contentType) {
+      case 'words': 
+        return {
+          border: 'border-blue-200 hover:border-blue-300',
+          shadow: 'hover:shadow-blue-100/50',
+          accent: 'from-blue-400 to-blue-600',
+          bg: 'bg-gradient-to-br from-white to-blue-50/30'
+        };
+      case 'sentences': 
+        return {
+          border: 'border-green-200 hover:border-green-300',
+          shadow: 'hover:shadow-green-100/50',
+          accent: 'from-green-400 to-green-600',
+          bg: 'bg-gradient-to-br from-white to-green-50/30'
+        };
+      default: 
+        return {
+          border: 'border-gray-100 hover:border-indigo-200',
+          shadow: 'hover:shadow-indigo-100/50',
+          accent: 'from-purple-400 to-pink-500',
+          bg: 'bg-white'
+        };
+    }
+  };
+
+  const cardStyle = getContentTypeCardStyle(list.content_type);
+
   return (
     <div
-      className="group bg-white rounded-xl border border-gray-100 p-6 hover:shadow-2xl hover:shadow-indigo-100/50 transition-all duration-300 cursor-move transform hover:-translate-y-1 hover:border-indigo-200"
+      className={`group ${cardStyle.bg} rounded-xl border-2 ${cardStyle.border} p-6 hover:shadow-2xl ${cardStyle.shadow} transition-all duration-300 cursor-move transform hover:-translate-y-1`}
       draggable={showActions}
       onDragStart={(e) => {
         if (!showActions) return;
@@ -93,18 +122,28 @@ function VocabularyCard({
         onDragEnd?.();
       }}
     >
-      {/* Color accent bar */}
-      <div className={`h-1 bg-gradient-to-r ${getLanguageColor(list.language)} rounded-full mb-4`}></div>
+      {/* Content type accent bar - different for vocab vs sentences */}
+      <div className={`h-1.5 bg-gradient-to-r ${cardStyle.accent} rounded-full mb-4`}></div>
 
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <div className={`w-8 h-8 bg-gradient-to-r ${getLanguageColor(list.language)} rounded-lg flex items-center justify-center`}>
-              <BookOpen className="h-4 w-4 text-white" />
+          <div className="flex items-center gap-3 mb-2">
+            {/* Content-type specific icon */}
+            <div className={`w-10 h-10 bg-gradient-to-r ${cardStyle.accent} rounded-xl flex items-center justify-center shadow-sm`}>
+              {list.content_type === 'sentences' ? (
+                <MessageSquare className="h-5 w-5 text-white" />
+              ) : (
+                <BookOpen className="h-5 w-5 text-white" />
+              )}
             </div>
-            <h3 className="font-bold text-gray-900 text-lg truncate group-hover:text-indigo-700 transition-colors">
-              {list.name}
-            </h3>
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg truncate group-hover:text-indigo-700 transition-colors">
+                {list.name}
+              </h3>
+              <span className={`text-xs font-medium ${list.content_type === 'sentences' ? 'text-green-600' : 'text-blue-600'}`}>
+                {list.content_type === 'sentences' ? '📝 Sentence Practice' : '📚 Vocabulary Words'}
+              </span>
+            </div>
           </div>
 
           <p className="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">{list.description}</p>
@@ -559,7 +598,7 @@ export default function VocabularyPage() {
       }
 
       const matchesSearch = list.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           list.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        list.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesLanguage = languageFilter === 'all' || list.language === languageFilter;
       const matchesContentType = contentTypeFilter === 'all' || list.content_type === contentTypeFilter;
 
@@ -653,11 +692,10 @@ export default function VocabularyPage() {
         <div className="fixed inset-0 z-40 pointer-events-none">
           <div className="absolute inset-0 bg-slate-900/10 backdrop-blur-sm"></div>
           <div
-            className={`pointer-events-auto fixed top-6 left-1/2 -translate-x-1/2 w-[92vw] max-w-3xl rounded-3xl border-2 ${
-              isRootDropHover
+            className={`pointer-events-auto fixed top-6 left-1/2 -translate-x-1/2 w-[92vw] max-w-3xl rounded-3xl border-2 ${isRootDropHover
                 ? 'border-green-400 bg-green-100 shadow-2xl scale-105'
                 : 'border-indigo-200 bg-white/90 shadow-xl'
-            } transition-all duration-300 p-6 flex flex-col items-center gap-3`}
+              } transition-all duration-300 p-6 flex flex-col items-center gap-3`}
             onDragOver={(e) => {
               e.preventDefault();
               e.dataTransfer.dropEffect = 'move';
@@ -673,9 +711,8 @@ export default function VocabularyPage() {
               await handleRootDrop(listId);
             }}
           >
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-              isRootDropHover ? 'bg-green-500 text-white' : 'bg-indigo-100 text-indigo-600'
-            } transition-colors duration-300`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isRootDropHover ? 'bg-green-500 text-white' : 'bg-indigo-100 text-indigo-600'
+              } transition-colors duration-300`}>
               <ArrowLeft className="h-6 w-6" />
             </div>
             <div className="text-center">
@@ -714,9 +751,9 @@ export default function VocabularyPage() {
                   </div>
                   <div>
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 via-indigo-700 to-purple-700 bg-clip-text text-transparent mb-2">
-                      Vocabulary Studio
+                      Content Studio
                     </h1>
-                    <p className="text-gray-600 text-lg">Create, organize, and manage your language learning collections</p>
+                    <p className="text-gray-600 text-lg">Create and manage vocabulary lists and sentence collections</p>
                     <div className="flex items-center gap-4 mt-3">
                       <div className="flex items-center gap-1 text-sm text-gray-500">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -724,13 +761,20 @@ export default function VocabularyPage() {
                       </div>
                       <div className="flex items-center gap-1 text-sm text-gray-500">
                         <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span>{myLists.reduce((acc, list) => acc + list.word_count, 0)} total pairs</span>
+                        <span>{myLists.reduce((acc, list) => acc + list.word_count, 0)} total items</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
+                  <Link
+                    href="/dashboard/vocabulary/school-lists"
+                    className="flex items-center gap-2 px-4 py-3 text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                  >
+                    <Users className="h-5 w-5" />
+                    Discover Lists
+                  </Link>
                   <button
                     onClick={() => setShowFolderModal(true)}
                     className="flex items-center gap-2 px-4 py-3 text-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl hover:from-gray-100 hover:to-gray-200 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
@@ -780,11 +824,10 @@ export default function VocabularyPage() {
             <button
               onClick={() => setActiveTab('my-content')}
               disabled={tabLoading}
-              className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${
-                activeTab === 'my-content'
+              className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${activeTab === 'my-content'
                   ? 'text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/50'
-              } ${tabLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${tabLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {activeTab === 'my-content' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600"></div>
@@ -793,11 +836,10 @@ export default function VocabularyPage() {
                 <FileText className="h-5 w-5" />
                 My Collections
                 {myLists.length > 0 && (
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    activeTab === 'my-content'
+                  <span className={`px-2 py-1 text-xs rounded-full ${activeTab === 'my-content'
                       ? 'bg-white/20 text-white'
                       : 'bg-indigo-100 text-indigo-700'
-                  }`}>
+                    }`}>
                     {myLists.length}
                   </span>
                 )}
@@ -807,11 +849,10 @@ export default function VocabularyPage() {
               <button
                 onClick={() => setActiveTab('school-content')}
                 disabled={tabLoading}
-                className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${
-                  activeTab === 'school-content'
+                className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${activeTab === 'school-content'
                     ? 'text-white'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/50'
-                } ${tabLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${tabLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {activeTab === 'school-content' && (
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600"></div>
@@ -820,11 +861,10 @@ export default function VocabularyPage() {
                   <Users className="h-5 w-5" />
                   School Collections
                   {schoolLists.length > 0 && (
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      activeTab === 'school-content'
+                    <span className={`px-2 py-1 text-xs rounded-full ${activeTab === 'school-content'
                         ? 'bg-white/20 text-white'
                         : 'bg-emerald-100 text-emerald-700'
-                    }`}>
+                      }`}>
                       {schoolLists.length}
                     </span>
                   )}
@@ -834,11 +874,10 @@ export default function VocabularyPage() {
             <button
               onClick={() => setActiveTab('content-library')}
               disabled={tabLoading}
-              className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${
-                activeTab === 'content-library'
+              className={`flex-1 px-8 py-5 text-center font-semibold transition-all duration-300 relative ${activeTab === 'content-library'
                   ? 'text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/50'
-              } ${tabLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${tabLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {activeTab === 'content-library' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600"></div>
@@ -847,11 +886,10 @@ export default function VocabularyPage() {
                 <Globe className="h-5 w-5" />
                 Public Library
                 {publicLists.length > 0 && (
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    activeTab === 'content-library'
+                  <span className={`px-2 py-1 text-xs rounded-full ${activeTab === 'content-library'
                       ? 'bg-white/20 text-white'
                       : 'bg-teal-100 text-teal-700'
-                  }`}>
+                    }`}>
                     {publicLists.length}
                   </span>
                 )}
@@ -859,9 +897,66 @@ export default function VocabularyPage() {
             </button>
           </div>
 
+          {/* Content Type Toggle - PROMINENT */}
+          <div className="px-6 pt-6 pb-2 border-t border-gray-100">
+            <div className="flex items-center justify-center">
+              <div className="inline-flex rounded-2xl bg-gray-100 p-1.5 shadow-inner">
+                <button
+                  onClick={() => setContentTypeFilter('all')}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    contentTypeFilter === 'all'
+                      ? 'bg-white text-gray-900 shadow-md'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                  }`}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                  All Content
+                </button>
+                <button
+                  onClick={() => setContentTypeFilter('words')}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    contentTypeFilter === 'words'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-200'
+                      : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
+                  }`}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Vocabulary
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${
+                    contentTypeFilter === 'words' 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {(activeTab === 'my-content' ? myLists : activeTab === 'school-content' ? schoolLists : publicLists)
+                      .filter(l => l.content_type === 'words').length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setContentTypeFilter('sentences')}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    contentTypeFilter === 'sentences'
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md shadow-green-200'
+                      : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
+                  }`}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Sentences
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${
+                    contentTypeFilter === 'sentences' 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {(activeTab === 'my-content' ? myLists : activeTab === 'school-content' ? schoolLists : publicLists)
+                      .filter(l => l.content_type === 'sentences').length}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Enhanced Filters */}
-          <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-gray-50/50 to-white/50">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="px-6 pb-6 pt-4 bg-gradient-to-r from-gray-50/50 to-white/50">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
                 <select
@@ -873,19 +968,6 @@ export default function VocabularyPage() {
                   <option value="french">🇫🇷 French</option>
                   <option value="spanish">🇪🇸 Spanish</option>
                   <option value="german">🇩🇪 German</option>
-                </select>
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
-                <select
-                  value={contentTypeFilter}
-                  onChange={(e) => setContentTypeFilter(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  <option value="all">All Types</option>
-                  <option value="words">Vocabulary</option>
-                  <option value="sentences">Sentences</option>
                 </select>
               </div>
 
@@ -947,11 +1029,10 @@ export default function VocabularyPage() {
                           return (
                             <div key={folder.id} className="group">
                               <div
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                                  isDragHover
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${isDragHover
                                     ? 'bg-green-50 border-2 border-green-300'
                                     : 'hover:bg-gray-50 border-2 border-transparent'
-                                }`}
+                                  }`}
                                 onDragOver={(e) => {
                                   e.preventDefault();
                                   e.dataTransfer.dropEffect = 'move';
@@ -1067,123 +1148,123 @@ export default function VocabularyPage() {
                       </p>
                     </div>
                   ) : activeTab === 'my-content' ? (
-                  filteredMyLists.length === 0 && myLists.length === 0 ? (
-                    <div className="text-center py-16">
-                      <div className="relative mb-8">
-                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                          <BookOpen className="h-12 w-12 text-indigo-600" />
+                    filteredMyLists.length === 0 && myLists.length === 0 ? (
+                      <div className="text-center py-16">
+                        <div className="relative mb-8">
+                          <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <BookOpen className="h-12 w-12 text-indigo-600" />
+                          </div>
+                          <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                            <Sparkles className="h-4 w-4 text-white" />
+                          </div>
                         </div>
-                        <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                          <Sparkles className="h-4 w-4 text-white" />
-                        </div>
-                      </div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-3">Start Your Vocabulary Journey</h3>
-                      <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
-                        Create your first vocabulary collection and begin building personalized learning materials for your students
-                      </p>
-                      <Link
-                        href="/vocabulary/new"
-                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-300 font-semibold shadow-xl hover:shadow-2xl hover:scale-105"
-                      >
-                        <Plus className="h-6 w-6" />
-                        Create Your First Collection
-                      </Link>
-                    </div>
-                  ) : filteredMyLists.length === 0 ? (
-                    <div className="text-center py-16">
-                      <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                        <Folder className="h-10 w-10 text-gray-500" />
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-3">No Collections Found</h3>
-                      <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-                        {currentFolder ? 'This folder is empty. Try creating a new collection or moving items here.' : 'All your collections are organized in folders. Try adjusting your filters.'}
-                      </p>
-                      {!currentFolder && (
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3">Start Your Vocabulary Journey</h3>
+                        <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                          Create your first vocabulary collection and begin building personalized learning materials for your students
+                        </p>
                         <Link
                           href="/vocabulary/new"
-                          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                          className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-300 font-semibold shadow-xl hover:shadow-2xl hover:scale-105"
                         >
-                          <Plus className="h-5 w-5" />
-                          Create New Collection
+                          <Plus className="h-6 w-6" />
+                          Create Your First Collection
                         </Link>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {filteredMyLists.map(list => (
-                        <VocabularyCard
-                          key={list.id}
-                          list={list}
-                          onView={() => setSelectedList(list)}
-                          onEdit={() => handleEditList(list)}
-                          onDelete={() => handleDeleteList(list.id)}
-                          onMoveToRoot={() => handleMoveToRoot(list)}
-                          onDragStart={handleCardDragStart}
-                          onDragEnd={handleCardDragEnd}
-                          showActions={true}
-                        />
-                      ))}
-                    </div>
-                  )
-                ) : activeTab === 'school-content' ? (
-                  filteredSchoolLists.length === 0 ? (
-                    <div className="text-center py-16">
-                      <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                        <Users className="h-10 w-10 text-emerald-600" />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-3">No School Collections Found</h3>
-                      <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-                        {searchTerm || languageFilter !== 'all' || contentTypeFilter !== 'all'
-                          ? 'No collections match your current filters. Try adjusting your search.'
-                          : 'No vocabulary collections have been created by teachers in your school yet.'}
-                      </p>
-                      {schoolCode && (
-                        <div className="mt-4 inline-flex items-center px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                          <span className="text-sm font-medium text-emerald-900">School: </span>
-                          <span className="ml-2 text-sm font-bold text-emerald-700">{schoolCode}</span>
+                    ) : filteredMyLists.length === 0 ? (
+                      <div className="text-center py-16">
+                        <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                          <Folder className="h-10 w-10 text-gray-500" />
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {filteredSchoolLists.map(list => (
-                        <VocabularyCard
-                          key={list.id}
-                          list={list}
-                          onView={() => setSelectedList(list)}
-                          onDuplicate={() => handleDuplicateList(list)}
-                          showActions={false}
-                          isPublic={false}
-                        />
-                      ))}
-                    </div>
-                  )
-                ) : (
-                  filteredPublicLists.length === 0 ? (
-                    <div className="text-center py-16">
-                      <div className="w-20 h-20 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                        <Globe className="h-10 w-10 text-teal-600" />
+                        <h3 className="text-xl font-bold text-gray-900 mb-3">No Collections Found</h3>
+                        <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+                          {currentFolder ? 'This folder is empty. Try creating a new collection or moving items here.' : 'All your collections are organized in folders. Try adjusting your filters.'}
+                        </p>
+                        {!currentFolder && (
+                          <Link
+                            href="/vocabulary/new"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                          >
+                            <Plus className="h-5 w-5" />
+                            Create New Collection
+                          </Link>
+                        )}
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-3">No Public Collections Found</h3>
-                      <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-                        Try adjusting your search terms or filters to discover more public vocabulary collections
-                      </p>
-                    </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredMyLists.map(list => (
+                          <VocabularyCard
+                            key={list.id}
+                            list={list}
+                            onView={() => setSelectedList(list)}
+                            onEdit={() => handleEditList(list)}
+                            onDelete={() => handleDeleteList(list.id)}
+                            onMoveToRoot={() => handleMoveToRoot(list)}
+                            onDragStart={handleCardDragStart}
+                            onDragEnd={handleCardDragEnd}
+                            showActions={true}
+                          />
+                        ))}
+                      </div>
+                    )
+                  ) : activeTab === 'school-content' ? (
+                    filteredSchoolLists.length === 0 ? (
+                      <div className="text-center py-16">
+                        <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                          <Users className="h-10 w-10 text-emerald-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-3">No School Collections Found</h3>
+                        <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+                          {searchTerm || languageFilter !== 'all' || contentTypeFilter !== 'all'
+                            ? 'No collections match your current filters. Try adjusting your search.'
+                            : 'No vocabulary collections have been created by teachers in your school yet.'}
+                        </p>
+                        {schoolCode && (
+                          <div className="mt-4 inline-flex items-center px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                            <span className="text-sm font-medium text-emerald-900">School: </span>
+                            <span className="ml-2 text-sm font-bold text-emerald-700">{schoolCode}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredSchoolLists.map(list => (
+                          <VocabularyCard
+                            key={list.id}
+                            list={list}
+                            onView={() => setSelectedList(list)}
+                            onDuplicate={() => handleDuplicateList(list)}
+                            showActions={false}
+                            isPublic={false}
+                          />
+                        ))}
+                      </div>
+                    )
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {filteredPublicLists.map(list => (
-                        <VocabularyCard
-                          key={list.id}
-                          list={list}
-                          onView={() => setSelectedList(list)}
-                          onDuplicate={() => handleDuplicateList(list)}
-                          showActions={false}
-                          isPublic={true}
-                        />
-                      ))}
-                    </div>
-                  )
-                )}
+                    filteredPublicLists.length === 0 ? (
+                      <div className="text-center py-16">
+                        <div className="w-20 h-20 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                          <Globe className="h-10 w-10 text-teal-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-3">No Public Collections Found</h3>
+                        <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+                          Try adjusting your search terms or filters to discover more public vocabulary collections
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredPublicLists.map(list => (
+                          <VocabularyCard
+                            key={list.id}
+                            list={list}
+                            onView={() => setSelectedList(list)}
+                            onDuplicate={() => handleDuplicateList(list)}
+                            showActions={false}
+                            isPublic={true}
+                          />
+                        ))}
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             )}

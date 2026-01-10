@@ -530,7 +530,8 @@ export default function MemoryGameMain({
             translation: pair.translation,
             isImage: true,
             id: pair.id, // ✅ Preserve vocabulary ID for FSRS
-            vocabulary_id: pair.id // ✅ Legacy compatibility
+            vocabulary_id: pair.id, // ✅ Legacy compatibility
+            isCustomVocabulary: (pair as any).isCustomVocabulary // ✅ Preserve custom vocabulary flag
           };
         } else {
           return {
@@ -538,7 +539,8 @@ export default function MemoryGameMain({
             translation: pair.translation,
             isImage: false,
             id: pair.id, // ✅ Preserve vocabulary ID for FSRS
-            vocabulary_id: pair.id // ✅ Legacy compatibility
+            vocabulary_id: pair.id, // ✅ Legacy compatibility
+            isCustomVocabulary: (pair as any).isCustomVocabulary // ✅ Preserve custom vocabulary flag
           };
         }
       });
@@ -562,7 +564,8 @@ export default function MemoryGameMain({
           isImage: false,
           id: item.id,
           vocabulary_id: item.id,
-          audio_url: item.audio_url
+          audio_url: item.audio_url,
+          isCustomVocabulary: item.isCustomVocabulary // ✅ Preserve custom vocabulary flag
         }));
         wordPairs = vocabList.slice(0, totalPairs);
 
@@ -581,7 +584,8 @@ export default function MemoryGameMain({
           isImage: false,
           id: item.id,
           vocabulary_id: item.id,
-          audio_url: item.audio_url
+          audio_url: item.audio_url,
+          isCustomVocabulary: item.isCustomVocabulary // ✅ Preserve custom vocabulary flag
         }));
         wordPairs = vocabList.slice(0, totalPairs);
 
@@ -640,7 +644,8 @@ export default function MemoryGameMain({
         flipped: false,
         matched: false,
         pairId: index,
-        vocabularyId: pair.id || pair.vocabulary_id // For assignment mode
+        vocabularyId: pair.id || pair.vocabulary_id, // For assignment mode
+        isCustomVocabulary: pair.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       });
 
       // Second card (translation)
@@ -651,7 +656,8 @@ export default function MemoryGameMain({
         flipped: false,
         matched: false,
         pairId: index,
-        vocabularyId: pair.id || pair.vocabulary_id // For assignment mode
+        vocabularyId: pair.id || pair.vocabulary_id, // For assignment mode
+        isCustomVocabulary: pair.isCustomVocabulary // ✅ Preserve custom vocabulary flag
       });
     });
 
@@ -811,14 +817,17 @@ export default function MemoryGameMain({
                 translation: cardTranslation,
                 wasCorrect: true,
                 gameMode: 'memory_match',
-                isAssignmentMode
+                isAssignmentMode,
+                isCustomVocabulary: firstCard.isCustomVocabulary
               });
 
               // 🎯 Always use EnhancedGameSessionService for vocabulary tracking
               if (effectiveGameSessionId) {
                 const sessionService = new EnhancedGameSessionService();
                 const gemEvent = await sessionService.recordWordAttempt(effectiveGameSessionId, 'memory-game', {
-                  vocabularyId: firstCard.vocabularyId,
+                  // ✅ FIXED: Use correct ID field based on vocabulary source
+                  vocabularyId: firstCard.isCustomVocabulary ? undefined : firstCard.vocabularyId,
+                  enhancedVocabularyItemId: firstCard.isCustomVocabulary ? firstCard.vocabularyId : undefined,
                   wordText: cardWord,
                   translationText: cardTranslation,
                   responseTimeMs: Math.round(responseTime * 1000),

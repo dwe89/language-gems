@@ -128,6 +128,7 @@ export interface WordDifficulty {
   weakRetrievalCount: number; // uncommon, common
   actionableInsight: string;
   insightLevel: 'success' | 'monitor' | 'review' | 'problem';
+  isCustomVocabulary?: boolean; // ✅ NEW: true if from enhanced_vocabulary_items
 }
 
 export interface StudentWordStruggle {
@@ -367,10 +368,9 @@ export class TeacherAssignmentAnalyticsService {
         let vocabSessions: any[] = [];
         if (assignment?.game_type === 'mixed-mode') {
           console.log('🔍 [MIXED-MODE] Also fetching vocabulary game sessions');
+          // 🔧 FIX: Use RPC function with SECURITY DEFINER to bypass RLS
           const { data: vocabData, error: vocabError } = await this.supabase
-            .from('enhanced_game_sessions')
-            .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage, words_attempted, words_correct')
-            .eq('assignment_id', assignmentId);
+            .rpc('get_game_sessions_admin', { p_assignment_id: assignmentId });
 
           if (!vocabError && vocabData) {
             vocabSessions = vocabData;
@@ -459,17 +459,16 @@ export class TeacherAssignmentAnalyticsService {
 
         console.log('📊 [MIXED-MODE] Students needing help:', studentsNeedingHelp);
       } else {
-        console.log('�🔥🔥 [OVERVIEW] VOCABULARY ASSIGNMENT - Fetching sessions for:', assignmentId);
-        console.log('�🔍 [DEBUG] Fetching sessions for assignment:', assignmentId);
+        console.log('🔥🔥 [OVERVIEW] VOCABULARY ASSIGNMENT - Fetching sessions for:', assignmentId);
+        console.log('🔍 [DEBUG] Fetching sessions for assignment:', assignmentId);
         console.log('🔍 [DEBUG] Is assessment type:', assignment?.game_type === 'assessment');
 
-        // 🔧 FIX: Query enhanced_game_sessions directly instead of using RPC
-        // The service role client should bypass RLS automatically
-        // 🔥 DEBUG: Use same pattern as test query to see if it works
+        // 🔧 FIX: Use RPC function with SECURITY DEFINER to bypass RLS
+        // This is more reliable than relying on service role key alone
         let { data: sessions, error: sessionError } = await this.supabase
-          .from('enhanced_game_sessions')
-          .select('*')
-          .eq('assignment_id', assignmentId);
+          .rpc('get_game_sessions_admin', { p_assignment_id: assignmentId });
+
+        console.log('🔍 [DEBUG] Sessions from RPC:', sessions?.length, 'error:', sessionError?.message);
 
         // 🔥 CRITICAL DEBUG: Store immediately after query
         (this as any)._vocabQueryError = sessionError?.message || null;
@@ -512,12 +511,12 @@ export class TeacherAssignmentAnalyticsService {
           }
         }
 
-        const studentsWithSessions = new Set(sessions?.map(s => s.student_id) || []);
-        const completedSessions = sessions?.filter(s => s.completion_status === 'completed' || s.ended_at) || [];
+        const studentsWithSessions = new Set(sessions?.map((s: any) => s.student_id) || []);
+        const completedSessions = sessions?.filter((s: any) => s.completion_status === 'completed' || s.ended_at) || [];
         console.log('🔍 [DEBUG] Completed sessions count:', completedSessions.length);
         console.log('🔍 [DEBUG] Completed sessions:', JSON.stringify(completedSessions.slice(0, 2), null, 2));
 
-        const studentsCompleted = new Set(completedSessions.map(s => s.student_id));
+        const studentsCompleted = new Set(completedSessions.map((s: any) => s.student_id));
 
         completedStudents = studentsCompleted.size;
         inProgressStudents = studentsWithSessions.size - studentsCompleted.size;
@@ -527,7 +526,7 @@ export class TeacherAssignmentAnalyticsService {
 
         const studentTimeMap = new Map<string, number>();
 
-        completedSessions.forEach(s => {
+        completedSessions.forEach((s: any) => {
           const sessionData = s as any;
           let sessionSeconds = 0;
 
@@ -548,27 +547,27 @@ export class TeacherAssignmentAnalyticsService {
           ? totalStudentTimeSeconds / studentTimeMap.size
           : 0;
 
-        const sessionIds = sessions?.map(s => s.id) || [];
+        const sessionIds = sessions?.map((s: any) => s.id) || [];
 
         if (sessionIds.length > 0) {
           if (isAssessmentType) {
             console.log('📊 [ASSESSMENT] Calculating success from session accuracy');
 
             // Include completed sessions AND in-progress sessions that have actual attempts
-            const sessionsWithAccuracy = sessions?.filter(s =>
+            const sessionsWithAccuracy = sessions?.filter((s: any) =>
               s.ended_at ||
               (s.words_attempted && s.words_attempted > 0)
             ) || [];
 
             if (sessionsWithAccuracy.length > 0) {
-              const totalAccuracy = sessionsWithAccuracy.reduce((sum, s) => {
+              const totalAccuracy = sessionsWithAccuracy.reduce((sum: number, s: any) => {
                 const sessionData = s as any;
                 return sum + (sessionData.accuracy_percentage || 0);
               }, 0);
               classSuccessScore = Math.round(totalAccuracy / sessionsWithAccuracy.length);
 
               const studentAccuracyMap = new Map<string, number[]>();
-              sessionsWithAccuracy.forEach(s => {
+              sessionsWithAccuracy.forEach((s: any) => {
                 const sessionData = s as any;
                 const accuracies = studentAccuracyMap.get(s.student_id) || [];
                 accuracies.push(sessionData.accuracy_percentage || 0);
@@ -1526,28 +1525,31 @@ export class TeacherAssignmentAnalyticsService {
    * Uses two-tier system: High Confidence (≥5 attempts) and Emerging Problems (<5 attempts)
    */
   private async getWordDifficultyManual(assignmentId: string): Promise<WordDifficulty[]> {
-    // Get all gem events for this assignment
-    const { data: sessions } = await this.supabase
-      .from('enhanced_game_sessions')
-      .select('id')
-      .eq('assignment_id', assignmentId);
+    // 🔧 FIX: Use RPC function with SECURITY DEFINER to bypass RLS
+    const { data: sessions, error: sessionsError } = await this.supabase
+      .rpc('get_game_sessions_admin', { p_assignment_id: assignmentId });
 
-    const sessionIds = sessions?.map(s => s.id) || [];
+    if (sessionsError) {
+      console.error('❌ [WORD DIFFICULTY] Error fetching sessions:', sessionsError);
+    }
+
+    const sessionIds = sessions?.map((s: any) => s.id) || [];
 
     if (sessionIds.length === 0) return [];
 
     const gemEvents = await this.fetchGemEvents<{
       session_id: string;
       centralized_vocabulary_id: string | null;
+      enhanced_vocabulary_item_id: string | null; // ✅ Support custom vocabulary
       gem_rarity: string;
       word_text: string | null;
       translation_text: string | null;
     }>(
       sessionIds,
-      'session_id, centralized_vocabulary_id, gem_rarity, word_text, translation_text'
+      'session_id, centralized_vocabulary_id, enhanced_vocabulary_item_id, gem_rarity, word_text, translation_text'
     );
 
-    // Group by vocabulary
+    // Group by vocabulary (supports both centralized and custom vocabulary)
     const wordMap = new Map<string, {
       wordText: string;
       translationText: string;
@@ -1555,19 +1557,24 @@ export class TeacherAssignmentAnalyticsService {
       failures: number;
       strongRetrieval: number;
       weakRetrieval: number;
+      isCustomVocabulary: boolean; // ✅ Track source
     }>();
 
     gemEvents?.forEach(gem => {
-      if (!gem.centralized_vocabulary_id) return;
+      // ✅ Support both centralized and enhanced vocabulary IDs
+      const vocabId = gem.centralized_vocabulary_id || gem.enhanced_vocabulary_item_id;
+      if (!vocabId) return;
 
-      const key = gem.centralized_vocabulary_id;
+      const isCustom = !gem.centralized_vocabulary_id && !!gem.enhanced_vocabulary_item_id;
+      const key = vocabId;
       const current = wordMap.get(key) || {
         wordText: gem.word_text || '',
         translationText: gem.translation_text || '',
         total: 0,
         failures: 0,
         strongRetrieval: 0,
-        weakRetrieval: 0
+        weakRetrieval: 0,
+        isCustomVocabulary: isCustom
       };
 
       current.total++;
@@ -1635,7 +1642,8 @@ export class TeacherAssignmentAnalyticsService {
       strongRetrievalCount: word.strongRetrieval,
       weakRetrievalCount: word.weakRetrieval,
       actionableInsight: this.getActionableInsight(word.failureRate, word.total),
-      insightLevel: this.getInsightLevel(word.failureRate, word.total)
+      insightLevel: this.getInsightLevel(word.failureRate, word.total),
+      isCustomVocabulary: word.isCustomVocabulary // ✅ Include source type
     }));
   }
 
@@ -1745,13 +1753,11 @@ export class TeacherAssignmentAnalyticsService {
       const nameMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
 
       // Fetch all sessions for this assignment at once
-      // 🔧 FIX: Use direct query with select('*') instead of RPC - the column select issue was causing 0 results
+      // 🔧 FIX: Use RPC function with SECURITY DEFINER to bypass RLS
       console.log('🔍 [STUDENT ROSTER] Fetching sessions for assignment:', assignmentId);
 
       const { data: allSessions, error: sessionsError } = await this.supabase
-        .from('enhanced_game_sessions')
-        .select('*')
-        .eq('assignment_id', assignmentId);
+        .rpc('get_game_sessions_admin', { p_assignment_id: assignmentId });
 
       if (sessionsError) {
         console.error('❌ Error fetching sessions:', sessionsError);
@@ -1765,7 +1771,7 @@ export class TeacherAssignmentAnalyticsService {
 
       // Group sessions by student
       const sessionsByStudent = new Map<string, any[]>();
-      allSessions?.forEach(session => {
+      allSessions?.forEach((session: any) => {
         const existing = sessionsByStudent.get(session.student_id) || [];
         existing.push(session);
         sessionsByStudent.set(session.student_id, existing);
@@ -2188,14 +2194,17 @@ export class TeacherAssignmentAnalyticsService {
     console.log('🔍 [WORD STRUGGLES] Getting struggles for word:', vocabularyId);
 
     try {
-      const { data: sessions } = await this.supabase
-        .from('enhanced_game_sessions')
-        .select('id, student_id')
-        .eq('assignment_id', assignmentId);
+      // 🔧 FIX: Use RPC function with SECURITY DEFINER to bypass RLS
+      const { data: sessions, error: sessionsError } = await this.supabase
+        .rpc('get_game_sessions_admin', { p_assignment_id: assignmentId });
+
+      if (sessionsError) {
+        console.error('❌ [WORD STRUGGLES] Error fetching sessions:', sessionsError);
+      }
 
       if (!sessions) return [];
 
-      const sessionIds = sessions.map(s => s.id);
+      const sessionIds = sessions.map((s: any) => s.id);
 
       const { data: gems } = await this.supabase
         .from('gem_events')

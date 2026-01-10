@@ -153,7 +153,8 @@ export default function UnifiedMemoryGamePage() {
       translation: vocab.translation,
       type: 'word' as const,
       category: vocab.category || 'general',
-      subcategory: vocab.subcategory
+      subcategory: vocab.subcategory,
+      isCustomVocabulary: (vocab as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
     }));
   };
 

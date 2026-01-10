@@ -38,6 +38,7 @@ export interface GameSessionData {
 
 export interface WordAttempt {
   vocabularyId?: string | number; // Support both UUID (string) and legacy integer IDs
+  enhancedVocabularyItemId?: string; // UUID for teacher custom vocabulary (enhanced_vocabulary_items table)
   wordText: string;
   translationText: string;
   responseTimeMs: number;
@@ -179,7 +180,8 @@ export class EnhancedGameSessionService {
     sessionId: string,
     gameType: string,
     attempt: {
-      sentenceId: string;
+      sentenceId?: string; // For standard sentences from centralized_vocabulary
+      enhancedSentenceId?: string; // For custom sentences from enhanced_vocabulary_items
       sourceText: string;
       targetText: string;
       responseTimeMs: number;
@@ -200,9 +202,13 @@ export class EnhancedGameSessionService {
       // Update session word counts in real-time
       await this.incrementSessionWordCounts(sessionId, attempt.wasCorrect);
 
+      // ✅ FIXED: Use correct ID based on vocabulary source
+      const effectiveSentenceId = attempt.enhancedSentenceId || attempt.sentenceId;
+
       // Log sentence performance (using sentenceId as vocabularyId for compatibility) - non-blocking
       this.logWordPerformance(sessionId, {
-        vocabularyId: attempt.sentenceId,
+        vocabularyId: attempt.enhancedSentenceId ? undefined : attempt.sentenceId,
+        enhancedVocabularyItemId: attempt.enhancedSentenceId || undefined,
         wordText: attempt.sourceText,
         translationText: attempt.targetText,
         responseTimeMs: attempt.responseTimeMs,
@@ -240,7 +246,7 @@ export class EnhancedGameSessionService {
           maxGemRarity: attempt.maxGemRarity || 'rare'
         },
         {
-          id: attempt.sentenceId,
+          id: effectiveSentenceId || `sentence-${Date.now()}`,
           word: attempt.sourceText,
           translation: attempt.targetText
         },
@@ -344,13 +350,16 @@ export class EnhancedGameSessionService {
       });
 
       // ✅ UPDATE FSRS FOR ALL ANSWERS (both correct and incorrect)
-      if (attempt.vocabularyId && !skipSpacedRepetition) {
+      // Supports both centralized vocabulary (vocabularyId) and custom vocabulary (enhancedVocabularyItemId)
+      const hasVocabularyId = attempt.vocabularyId || attempt.enhancedVocabularyItemId;
+      if (hasVocabularyId && !skipSpacedRepetition) {
         try {
           const studentId = await this.getSessionStudentId(sessionId);
 
           // Update FSRS for vocabulary tracking
           console.log('🔍 [ENHANCED SESSION] FSRS update:', {
             vocabularyId: attempt.vocabularyId,
+            enhancedVocabularyItemId: attempt.enhancedVocabularyItemId,
             wasCorrect: attempt.wasCorrect,
             callId
           });
@@ -359,7 +368,8 @@ export class EnhancedGameSessionService {
             studentId,
             attempt.vocabularyId,
             attempt.wasCorrect,
-            attempt.responseTimeMs
+            attempt.responseTimeMs,
+            attempt.enhancedVocabularyItemId // Pass enhanced vocabulary item ID for custom lists
           );
 
           console.log('✅ [ENHANCED SESSION] FSRS update completed successfully');
@@ -408,12 +418,13 @@ export class EnhancedGameSessionService {
       console.log(`🔮 [SESSION SERVICE] Student ID: ${studentId}, Assignment ID: ${assignmentId} [${callId}]`);
 
       // 🎯 LAYER 2: Record assignment exposure for this word (Non-blocking)
-      if (assignmentId && attempt.vocabularyId) {
-        const vocabId = String(attempt.vocabularyId);
-        // Only record if it looks like a valid UUID (centralized_vocabulary_id)
+      // Supports both centralized and enhanced/custom vocabulary
+      const vocabId = attempt.enhancedVocabularyItemId || (attempt.vocabularyId ? String(attempt.vocabularyId) : null);
+      if (assignmentId && vocabId) {
+        // Only record if it looks like a valid UUID
         if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(vocabId)) {
-          console.log(`📝 [LAYER 2] Recording exposure for word ${vocabId} in assignment ${assignmentId}`);
-          assignmentExposureService.recordWordExposures(assignmentId, studentId, [vocabId])
+          console.log(`📝 [LAYER 2] Recording exposure for word ${vocabId} in assignment ${assignmentId} (isCustom: ${!!attempt.enhancedVocabularyItemId})`);
+          assignmentExposureService.recordWordExposures(assignmentId, studentId, [vocabId], !!attempt.enhancedVocabularyItemId)
             .catch(e => console.warn('⚠️ [LAYER 2] Failed to record exposure:', e));
         }
       }
@@ -450,7 +461,7 @@ export class EnhancedGameSessionService {
 
       // Store Activity Gem in database
       console.log(`🔮 [SESSION SERVICE] Storing Activity Gem in database [${callId}]...`);
-      await this.storeGemEvent(sessionId, studentId, activityGemEvent, 'activity');
+      await this.storeGemEvent(sessionId, studentId, activityGemEvent, 'activity', attempt.enhancedVocabularyItemId);
       lastGemEvent = activityGemEvent;
 
       // 💎 DUAL-TRACK SYSTEM: Conditionally award Mastery Gem based on FSRS progression
@@ -505,7 +516,7 @@ export class EnhancedGameSessionService {
           );
 
           // Store Mastery Gem in database
-          await this.storeGemEvent(sessionId, studentId, masteryGemEvent, 'mastery');
+          await this.storeGemEvent(sessionId, studentId, masteryGemEvent, 'mastery', attempt.enhancedVocabularyItemId);
 
           // Return the Mastery Gem as the primary event (for backward compatibility)
           lastGemEvent = masteryGemEvent;
@@ -543,7 +554,8 @@ export class EnhancedGameSessionService {
     sessionId: string,
     studentId: string,
     gemEvent: GemEvent,
-    gemType: 'mastery' | 'activity'
+    gemType: 'mastery' | 'activity',
+    enhancedVocabularyItemId?: string
   ): Promise<void> {
     const storeId = Math.random().toString(36).substr(2, 9);
     console.log(`💎 [STORE GEM] Starting to store gem event [${storeId}]:`, {
@@ -580,9 +592,20 @@ export class EnhancedGameSessionService {
     const sentenceBasedGames = ['sentence-towers', 'speed-builder', 'case-file-translator', 'lava-temple-word-restore'];
     const isSentenceGame = sentenceBasedGames.includes(gemEvent.gameType);
 
-    if (gemEvent.vocabularyId && !isSentenceGame) {
+    if (enhancedVocabularyItemId) {
+      // ✅ PRIORITY 1: Handle enhanced vocabulary item (custom)
+      // This must come first to prevent the UUID check below from treating it as centralized
+      insertData.enhanced_vocabulary_item_id = enhancedVocabularyItemId;
+      console.log(`💎 [CUSTOM VOCAB] Storing gem for enhanced item: ${enhancedVocabularyItemId}`);
+
+    } else if (isSentenceGame) {
+      console.log(`💎 [SENTENCE GAME] Skipping centralized_vocabulary_id for sentence-based game: ${gemEvent.gameType}`);
+      // Don't set centralized_vocabulary_id for sentence games
+
+    } else if (gemEvent.vocabularyId) {
+      // Handle standard/centralized vocabulary
       if (typeof gemEvent.vocabularyId === 'string') {
-        // Check if it's a valid UUID format (contains hyphens and is 36 chars)
+        // Check if it's a valid UUID format
         const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gemEvent.vocabularyId);
 
         if (isValidUUID) {
@@ -590,30 +613,47 @@ export class EnhancedGameSessionService {
           insertData.centralized_vocabulary_id = gemEvent.vocabularyId;
         } else {
           console.warn('🚨 Invalid vocabulary ID format (not a valid UUID):', gemEvent.vocabularyId);
-          // Don't include vocabulary ID to avoid foreign key errors
         }
       } else if (!isNaN(Number(gemEvent.vocabularyId))) {
         // Integer format - use legacy vocabulary_id
         insertData.vocabulary_id = parseInt(gemEvent.vocabularyId.toString());
       } else {
         console.warn('🚨 Invalid vocabulary ID format (not UUID or integer):', gemEvent.vocabularyId);
-        // Don't include vocabulary ID to avoid foreign key errors
       }
-    } else if (isSentenceGame) {
-      console.log(`💎 [SENTENCE GAME] Skipping centralized_vocabulary_id for sentence-based game: ${gemEvent.gameType}`);
-      // Don't set centralized_vocabulary_id for sentence games - sentences table IDs don't exist in centralized_vocabulary
     } else {
       console.log('💎 No vocabulary ID provided - storing gem without vocabulary reference');
-      // This is fine - we can store gems without vocabulary references
     }
 
     console.log(`💎 [STORE GEM] Inserting into gem_events table [${storeId}]:`, insertData);
 
     // Try insert into gem_events table
-    const { data, error: insertError } = await this.supabase
+    let { data, error: insertError } = await this.supabase
       .from('gem_events')
       .insert(insertData)
       .select();
+
+    // 🔄 RETRY LOGIC: If FK violation on centralized_vocabulary_id, retry as enhanced_vocabulary_item_id
+    if ((insertError?.code === '23503' || insertError?.message?.includes('foreign key')) && insertData.centralized_vocabulary_id) {
+      console.warn(`⚠️ [STORE GEM] FK violation detected. Code: ${insertError.code}. Retrying as Custom Vocabulary...`);
+
+      // Move ID to enhanced column
+      insertData.enhanced_vocabulary_item_id = insertData.centralized_vocabulary_id;
+      delete insertData['centralized_vocabulary_id']; // Remove invalid ref explicitly
+
+      const retryResult = await this.supabase
+        .from('gem_events')
+        .insert(insertData)
+        .select();
+
+      data = retryResult.data;
+      insertError = retryResult.error;
+
+      if (!insertError) {
+        console.log(`✅ [STORE GEM] Successfully stored custom vocabulary gem after retry. ID: ${insertData.enhanced_vocabulary_item_id}`);
+      } else {
+        console.error(`❌ [STORE GEM] Retry failed. Error:`, insertError);
+      }
+    }
 
     console.log(`💎 [STORE GEM] Database insert result [${storeId}]:`, {
       success: !insertError,
@@ -638,12 +678,28 @@ export class EnhancedGameSessionService {
     finalData: GameSessionData
   ): Promise<void> {
     try {
-      // Get current gem totals from database (updated by triggers)
+      // Get current gem totals and started_at from database for duration calculation
       const { data: sessionData } = await this.supabase
         .from('enhanced_game_sessions')
-        .select('gems_total, gems_by_rarity, gem_events_count, assignment_id, student_id, game_type')
+        .select('gems_total, gems_by_rarity, gem_events_count, assignment_id, student_id, game_type, started_at')
         .eq('id', sessionId)
         .single();
+
+      // Calculate duration if not provided
+      const endedAt = new Date();
+      let durationSeconds = finalData.duration_seconds || 0;
+      
+      if (!durationSeconds && sessionData?.started_at) {
+        const startTime = new Date(sessionData.started_at).getTime();
+        const endTime = endedAt.getTime();
+        durationSeconds = Math.round((endTime - startTime) / 1000);
+        
+        // Sanity check: duration should be positive and less than 4 hours
+        if (durationSeconds < 0 || durationSeconds > 14400) {
+          console.warn(`Invalid duration calculated: ${durationSeconds}s, setting to 0`);
+          durationSeconds = 0;
+        }
+      }
 
       // Calculate XP from gems (overrides any passed XP)
       const totalXP = sessionData?.gems_total ?
@@ -661,9 +717,9 @@ export class EnhancedGameSessionService {
       const { error } = await this.supabase
         .from('enhanced_game_sessions')
         .update({
-          ended_at: new Date().toISOString(),
+          ended_at: endedAt.toISOString(),
           completion_status: finalData.completion_percentage >= 100 ? 'completed' : 'in_progress',
-          duration_seconds: finalData.duration_seconds,
+          duration_seconds: durationSeconds,
           final_score: finalData.final_score,
           max_score_possible: finalData.max_score_possible,
           accuracy_percentage: accuracyToStore,
@@ -832,8 +888,12 @@ export class EnhancedGameSessionService {
       // Handle both UUID and integer vocabulary IDs
       let legacyVocabularyId = null;
       let centralizedVocabularyId = null;
+      let enhancedVocabularyItemId = attempt.enhancedVocabularyItemId; // ✅ Support custom vocab
 
-      if (attempt.vocabularyId) {
+      if (enhancedVocabularyItemId) {
+        // ✅ PRIORITY 1: Custom vocabulary - do not attempt to set centralized ID
+        console.log(`📝 [PERFORMANCE] Logging enhanced item: ${enhancedVocabularyItemId}`);
+      } else if (attempt.vocabularyId) {
         if (typeof attempt.vocabularyId === 'string') {
           // Validate UUID format
           const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(attempt.vocabularyId);
@@ -882,10 +942,31 @@ export class EnhancedGameSessionService {
       if (centralizedVocabularyId) {
         logData.centralized_vocabulary_id = centralizedVocabularyId;
       }
+      if (enhancedVocabularyItemId) {
+        logData.enhanced_vocabulary_item_id = enhancedVocabularyItemId;
+      }
 
-      const { error: logError } = await this.supabase
+      let { error: logError } = await this.supabase
         .from('word_performance_logs')
         .insert(logData);
+
+      // 🔄 RETRY LOGIC: If FK violation on centralized_vocabulary_id, retry as enhanced_vocabulary_item_id
+      if ((logError?.code === '23503' || logError?.message?.includes('foreign key')) && logData.centralized_vocabulary_id) {
+        console.warn(`⚠️ [PERFORMANCE LOG] FK violation detected. Retrying as Custom Vocabulary...`);
+
+        logData.enhanced_vocabulary_item_id = logData.centralized_vocabulary_id;
+        delete logData['centralized_vocabulary_id'];
+
+        const retryResult = await this.supabase
+          .from('word_performance_logs')
+          .insert(logData);
+
+        logError = retryResult.error;
+
+        if (!logError) {
+          console.log(`✅ [PERFORMANCE LOG] Successfully logged custom vocabulary performance after retry.`);
+        }
+      }
 
       if (logError) {
         // If it's a conflict error, try upsert
@@ -893,7 +974,11 @@ export class EnhancedGameSessionService {
           console.log('🔄 Word performance log conflict detected, attempting upsert...');
           const { error: upsertError } = await this.supabase
             .from('word_performance_logs')
-            .upsert(logData, { onConflict: 'session_id,centralized_vocabulary_id,word_text' });
+            .upsert(logData, {
+              // We can't easily rely on centralized_vocabulary_id here if it's custom.
+              // Just try to upsert based on safe defaults.
+              onConflict: undefined // Let Supabase handle PK conflict if any, or rely on insert failing.
+            });
 
           if (upsertError) {
             console.warn('🚨 Word performance log upsert also failed:', upsertError);
@@ -910,14 +995,50 @@ export class EnhancedGameSessionService {
   /**
    * ✅ FSRS-AWARE: Direct vocabulary update with time-gated progression
    * This ensures wasCorrect value reaches the database unchanged AND respects FSRS learning/review phases
+   * Now supports enhanced_vocabulary_item_id for teacher custom vocabulary tracking
    */
   private async updateVocabularyDirectly(
     studentId: string,
-    vocabularyId: string | number,
+    vocabularyId: string | number | undefined,
     wasCorrect: boolean,
-    responseTimeMs: number
+    responseTimeMs: number,
+    enhancedVocabularyItemId?: string // NEW: For custom vocabulary tracking
   ): Promise<void> {
     try {
+      // Handle enhanced vocabulary items (teacher custom vocabulary)
+      if (enhancedVocabularyItemId) {
+        console.log('📚 [CUSTOM VOCAB] Tracking progress for enhanced vocabulary item:', {
+          enhancedVocabularyItemId,
+          studentId,
+          wasCorrect
+        });
+
+        const { error } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
+          p_student_id: studentId,
+          p_was_correct: wasCorrect,
+          p_enhanced_vocabulary_item_id: enhancedVocabularyItemId,
+          p_centralized_vocabulary_id: null,
+          p_vocabulary_item_id: null,
+          p_response_time_ms: Math.round(responseTimeMs),
+          p_hint_used: false,
+          p_streak_count: 0
+        });
+
+        if (error) {
+          console.error('🚨 [CUSTOM VOCAB] Failed to track enhanced vocabulary progress:', error);
+          // Don't throw - non-critical for gameplay
+        } else {
+          console.log('✅ [CUSTOM VOCAB] Enhanced vocabulary progress tracked successfully');
+        }
+        return;
+      }
+
+      // Handle standard vocabulary IDs (centralized or legacy)
+      if (!vocabularyId) {
+        console.log('📝 [VOCABULARY UPDATE] No vocabulary ID provided, skipping update');
+        return;
+      }
+
       const identifiers = parseVocabularyIdentifier(vocabularyId as any);
 
       if (!identifiers.isValid || !identifiers.raw) {
@@ -959,13 +1080,13 @@ export class EnhancedGameSessionService {
       });
 
       // Call atomic function directly with correct parameter mapping
-      // The atomic function expects p_vocabulary_item_id as UUID, not integer
       const { error } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
         p_student_id: studentId,
         p_was_correct: wasCorrect,
         p_centralized_vocabulary_id: identifiers.centralizedVocabularyId,
-        p_vocabulary_item_id: identifiers.isUUID ? identifiers.centralizedVocabularyId : null,
-        p_response_time_ms: Math.round(responseTimeMs), // 🔧 FIX: Round to prevent floating-point errors
+        p_vocabulary_item_id: identifiers.isUUID ? null : identifiers.vocabularyItemId,
+        p_enhanced_vocabulary_item_id: null, // Not using enhanced vocab in this path
+        p_response_time_ms: Math.round(responseTimeMs),
         p_hint_used: false,
         p_streak_count: 0
       });

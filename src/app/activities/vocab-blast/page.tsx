@@ -167,7 +167,8 @@ export default function VocabBlastPage() {
       category: item.category,
       subcategory: item.subcategory,
       part_of_speech: item.part_of_speech,
-      difficulty_level: item.difficulty_level || 'intermediate'
+      difficulty_level: item.difficulty_level || 'intermediate',
+      isCustomVocabulary: (item as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
     }));
   };
 

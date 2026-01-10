@@ -35,6 +35,7 @@ interface WordItem {
   vocabularyId?: string | null; // UUID from centralized vocabulary
   correct?: boolean;
   gemType?: 'ruby' | 'sapphire' | 'emerald' | 'diamond' | 'amethyst' | 'topaz';
+  isCustomVocabulary?: boolean; // ✅ Track if from enhanced_vocabulary_items
 }
 
 interface SentenceData {
@@ -950,7 +951,9 @@ const GemSpeedBuilderInternal: React.FC<{
             }
 
             const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'speed-builder', {
-              vocabularyId: word.vocabularyId, // Use the actual vocabulary UUID
+              // ✅ FIXED: Use correct ID field based on vocabulary source
+              vocabularyId: word.isCustomVocabulary ? undefined : word.vocabularyId,
+              enhancedVocabularyItemId: word.isCustomVocabulary ? word.vocabularyId : undefined,
               wordText: word.text,
               translationText: word.translation || word.text,
               responseTimeMs: Math.round(responseTime || 0), // 🔧 FIX: Ensure integer value

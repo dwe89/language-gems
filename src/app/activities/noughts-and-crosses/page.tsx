@@ -197,7 +197,8 @@ function UnifiedNoughtsAndCrossesPage() {
         subcategory: item.subcategory,
         part_of_speech: item.part_of_speech,
         example_sentence_original: '',
-        example_sentence_translation: ''
+        example_sentence_translation: '',
+        isCustomVocabulary: (item as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
       }));
 
       // Legacy settings format for TicTacToeGameWrapper
@@ -344,7 +345,8 @@ function UnifiedNoughtsAndCrossesPage() {
       subcategory: item.subcategory,
       part_of_speech: item.part_of_speech,
       example_sentence_original: item.example_sentence_original,
-      example_sentence_translation: item.example_sentence_translation
+      example_sentence_translation: item.example_sentence_translation,
+      isCustomVocabulary: (item as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
     }));
   };
 

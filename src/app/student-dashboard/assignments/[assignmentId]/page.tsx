@@ -578,13 +578,13 @@ export default function StudentAssignmentDetailPage() {
           // Overall progress is based on EXPOSURE, not average of game progress
           // This shows: "How many words have been exposed out of the total?"
           overallProgress = vocabularyCount > 0
-            ? Math.round((exposureProgress.exposedWords / vocabularyCount) * 100)
+            ? Math.round(((exposureProgress?.exposedWords || 0) / vocabularyCount) * 100)
             : 0;
         }
 
         console.log('📊 [ASSIGNMENT PROGRESS] Exposure-based calculation:', {
           vocabularyCount,
-          exposedWords: exposureProgress.exposedWords,
+          exposedWords: exposureProgress?.exposedWords || 0,
           exposurePercentage: overallProgress,
           totalGames: games.length,
           totalAssessments: assessments.length,

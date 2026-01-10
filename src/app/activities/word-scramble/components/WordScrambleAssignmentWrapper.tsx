@@ -81,7 +81,8 @@ export default function WordScrambleAssignmentWrapper({
           word_type: vocab.word_type,
           gender: vocab.gender,
           article: vocab.article,
-          display_word: vocab.display_word
+          display_word: vocab.display_word,
+          isCustomVocabulary: (vocab as any).isCustomVocabulary ?? false // ✅ Preserve custom vocab flag
         }));
 
         console.log('Word Scramble Assignment - Vocabulary loaded:', vocabulary.length, 'items');
