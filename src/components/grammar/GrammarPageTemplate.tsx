@@ -58,6 +58,8 @@ interface GrammarPageProps {
     url: string;
     difficulty: string;
   }[];
+  isAssignmentMode?: boolean;
+  onComplete?: () => void;
 }
 
 const LANGUAGE_INFO = {
@@ -86,7 +88,9 @@ export default function GrammarPageTemplate({
   quizUrl,
   songUrl,
   youtubeVideoId,
-  relatedTopics = []
+  relatedTopics = [],
+  isAssignmentMode = false,
+  onComplete
 }: GrammarPageProps) {
   const { user } = useAuth();
   const languageInfo = LANGUAGE_INFO[language];
@@ -290,43 +294,45 @@ export default function GrammarPageTemplate({
             {sections.map(renderSection)}
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-12">
-            {practiceUrl && (
-              <GemButton
-                variant="gem"
-                gemType={user ? "rare" : "common"}
-                onClick={() => window.location.href = practiceUrl}
-                className="w-full text-sm sm:text-base"
-              >
-                <Target className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                {user ? 'Practice Exercises' : 'Free Practice'}
-              </GemButton>
-            )}
-            {quizUrl && (
-              <GemButton
-                variant="gem"
-                gemType={user ? "epic" : "common"}
-                onClick={() => window.location.href = quizUrl}
-                className="w-full text-sm sm:text-base"
-              >
-                <Award className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                {user ? 'Take Test' : 'Free Test'}
-              </GemButton>
-            )}
+          {/* Action Buttons - Hidden in assignment mode, use wrapper's navigation instead */}
+          {!isAssignmentMode && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-12">
+              {practiceUrl && (
+                <GemButton
+                  variant="gem"
+                  gemType={user ? "rare" : "common"}
+                  onClick={() => window.location.href = practiceUrl}
+                  className="w-full text-sm sm:text-base"
+                >
+                  <Target className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  {user ? 'Practice Exercises' : 'Free Practice'}
+                </GemButton>
+              )}
+              {quizUrl && (
+                <GemButton
+                  variant="gem"
+                  gemType={user ? "epic" : "common"}
+                  onClick={() => window.location.href = quizUrl}
+                  className="w-full text-sm sm:text-base"
+                >
+                  <Award className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  {user ? 'Take Test' : 'Free Test'}
+                </GemButton>
+              )}
 
-            {songUrl && (
-              <GemButton
-                variant="gem"
-                gemType="legendary"
-                onClick={() => window.location.href = songUrl}
-                className="w-full text-sm sm:text-base"
-              >
-                <Music className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Learn with Song
-              </GemButton>
-            )}
-          </div>
+              {songUrl && (
+                <GemButton
+                  variant="gem"
+                  gemType="legendary"
+                  onClick={() => window.location.href = songUrl}
+                  className="w-full text-sm sm:text-base"
+                >
+                  <Music className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  Learn with Song
+                </GemButton>
+              )}
+            </div>
+          )}
 
           {/* Related Topics */}
           {relatedTopics.length > 0 && (

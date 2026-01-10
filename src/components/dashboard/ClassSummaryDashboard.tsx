@@ -9,7 +9,6 @@ import { Users, Target, TrendingUp, Calendar, RefreshCw, Filter, AlertTriangle, 
 import { MetricCard } from './shared/MetricCard';
 import { RiskCard } from './shared/RiskCard';
 import { WeaknessBanner } from './shared/WeaknessBanner';
-import { AssignmentStatusRow } from './shared/AssignmentStatusRow';
 import type { ClassSummaryData, TimeRange } from '@/types/teacherAnalytics';
 
 interface ClassSummaryDashboardProps {
@@ -18,7 +17,6 @@ interface ClassSummaryDashboardProps {
   viewScope?: 'my' | 'school';
   schoolCode?: string;
   onStudentClick?: (studentId: string) => void;
-  onAssignmentClick?: (assignmentId: string) => void;
 }
 
 export function ClassSummaryDashboard({
@@ -27,11 +25,10 @@ export function ClassSummaryDashboard({
   viewScope = 'my',
   schoolCode,
   onStudentClick,
-  onAssignmentClick,
 }: ClassSummaryDashboardProps) {
   const [data, setData] = useState<ClassSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<TimeRange>('all_time');
+  const [timeRange, setTimeRange] = useState<TimeRange>('last_30_days');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -113,24 +110,22 @@ export function ClassSummaryDashboard({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Time Range Filter */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Teacher Intelligence Dashboard
-          </h1>
-          <p className="text-gray-600 mt-1">
-            60-second health check for your class
+          <h2 className="text-xl font-semibold text-gray-900">
+            Class Performance Overview
+          </h2>
+          <p className="text-gray-500 text-sm">
+            Quick health check for your students
           </p>
         </div>
-
-        {/* Time Range Filter */}
         <div className="flex items-center gap-3">
-          <Filter className="w-5 h-5 text-gray-600" />
+          <Filter className="w-4 h-4 text-gray-500" />
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-            className="px-4 py-2 border-2 border-gray-300 rounded-lg font-medium focus:outline-none focus:border-blue-500"
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:border-blue-500"
           >
             <option value="last_7_days">Last 7 Days</option>
             <option value="last_30_days">Last 30 Days</option>
@@ -139,9 +134,10 @@ export function ClassSummaryDashboard({
           </select>
           <button
             onClick={loadData}
-            className="p-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50"
+            className="p-1.5 border border-gray-300 rounded-lg hover:bg-gray-50"
+            title="Refresh data"
           >
-            <RefreshCw className="w-5 h-5 text-gray-600" />
+            <RefreshCw className="w-4 h-4 text-gray-600" />
           </button>
         </div>
       </div>
@@ -254,22 +250,6 @@ export function ClassSummaryDashboard({
           />
         </div>
       )}
-
-      {/* Recent Assignments */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          📝 Recent Assignments
-        </h2>
-        <div className="space-y-3">
-          {data.recentAssignments.map((assignment) => (
-            <AssignmentStatusRow
-              key={assignment.assignmentId}
-              assignment={assignment}
-              onClick={() => onAssignmentClick?.(assignment.assignmentId)}
-            />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

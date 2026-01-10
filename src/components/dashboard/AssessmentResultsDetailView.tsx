@@ -56,7 +56,7 @@ interface AssessmentResultsDetailViewProps {
 
 const formatAnswer = (answer: string | string[] | undefined | null) => {
     if (answer === undefined || answer === null || answer === '') return '(No answer)';
-    
+
     if (Array.isArray(answer)) {
         return answer.join(', ');
     }
@@ -69,12 +69,12 @@ const formatAnswer = (answer: string | string[] | undefined | null) => {
                 // Check if it's a simple key-value map
                 const entries = Object.entries(parsed);
                 if (entries.length > 0) {
-                     return (
+                    return (
                         <div className="flex flex-col gap-1 mt-1 pl-2 border-l-2 border-slate-200">
                             {entries.map(([key, value]) => {
                                 // Check if key is a number (index)
-                                const displayKey = !isNaN(Number(key)) 
-                                    ? `Q${Number(key) + 1}` 
+                                const displayKey = !isNaN(Number(key))
+                                    ? `Q${Number(key) + 1}`
                                     : key;
                                 return (
                                     <div key={key} className="flex items-center text-sm">
@@ -304,6 +304,16 @@ export function AssessmentResultsDetailView({
                         console.log('📊 [GW RESULTS]', gwResults.length, 'results found');
                         allResults.push(...gwResults);
                         break;
+                    case 'gcse-speaking':
+                        const gsResults = await fetchGcseSpeakingResults(supabase, assignmentId, studentId);
+                        console.log('📊 [GS RESULTS]', gsResults.length, 'results found');
+                        allResults.push(...gsResults);
+                        break;
+                    case 'dictation':
+                        const dictResults = await fetchDictationResults(supabase, assignmentId, studentId);
+                        console.log('📊 [DICT RESULTS]', dictResults.length, 'results found');
+                        allResults.push(...dictResults);
+                        break;
                 }
             }
 
@@ -319,33 +329,68 @@ export function AssessmentResultsDetailView({
 
     const fetchReadingComprehensionResults = async (supabase: any, assignmentId: string, studentId?: string) => {
         console.log('🔍 [RC FETCH] Query params:', { assignmentId, studentId });
+        console.log('🔍 [RC FETCH] SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
 
-        let query = supabase
-            .from('reading_comprehension_results')
-            .select('*')
-            .eq('assignment_id', assignmentId)
-            .order('created_at', { ascending: false });
+        // Use REST API to bypass caching
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-        if (studentId) {
-            query = query.eq('user_id', studentId);
-        }
-
-        const { data, error } = await query;
-
-        console.log('📊 [RC FETCH] Result:', {
-            dataCount: data?.length || 0,
-            error: error,
-            firstRow: data?.[0]
-        });
-
-        if (error) {
-            console.error('❌ [RC FETCH] Error fetching reading comprehension results:', error);
+        if (!supabaseUrl || !supabaseAnonKey) {
+            console.error('❌ Missing Supabase credentials', { supabaseUrl, hasKey: !!supabaseAnonKey });
             return [];
         }
 
-        // Fetch task titles separately if we have results
-        let taskTitles = new Map<string, string>();
-        if (data && data.length > 0) {
+        try {
+            // Get the current session token
+            const { data: { session } } = await supabase.auth.getSession();
+            const accessToken = session?.access_token;
+
+            if (!accessToken) {
+                console.error('❌ No access token available');
+                return [];
+            }
+
+            // Build query
+            let url = `${supabaseUrl}/rest/v1/reading_comprehension_results?assignment_id=eq.${assignmentId}&order=created_at.desc&select=*`;
+
+            if (studentId) {
+                url += `&user_id=eq.${studentId}`;
+            }
+
+            console.log('📡 [RC FETCH] Making request to:', url.substring(0, 100) + '...');
+
+            const response = await fetch(url, {
+                headers: {
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                cache: 'no-store'
+            });
+
+            console.log('📡 [RC FETCH] Response status:', response.status, response.statusText);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ [RC FETCH] API error:', response.status, response.statusText, errorText);
+                return [];
+            }
+
+            const data = await response.json();
+
+            console.log('📊 [RC FETCH] Result:', {
+                dataCount: data?.length || 0,
+                firstRow: data?.[0],
+                fullData: data
+            });
+
+            if (!data || data.length === 0) {
+                console.warn('⚠️ [RC FETCH] Empty result - Check if logged in as teacher!');
+                return [];
+            }
+
+            // Fetch task titles separately
+            let taskTitles = new Map<string, string>();
             const textIds = [...new Set(data.map((row: any) => row.text_id).filter(Boolean))];
             if (textIds.length > 0) {
                 const { data: tasks } = await supabase
@@ -359,21 +404,24 @@ export function AssessmentResultsDetailView({
                     });
                 }
             }
-        }
 
-        return (data || []).map((row: any) => ({
-            resultId: row.id,
-            assessmentType: 'Reading Comprehension',
-            score: row.score || 0,
-            totalQuestions: row.total_questions || 0,
-            correctAnswers: row.correct_answers || 0,
-            timeSpent: row.time_spent || 0,
-            passed: row.passed || false,
-            completedAt: row.completed_at || row.created_at,
-            questionResults: row.question_results || [],
-            textId: row.text_id,
-            textTitle: taskTitles.get(row.text_id) || 'Reading Comprehension Text'
-        }));
+            return (data || []).map((row: any) => ({
+                resultId: row.id,
+                assessmentType: 'Reading Comprehension',
+                score: row.score || 0,
+                totalQuestions: row.total_questions || 0,
+                correctAnswers: row.correct_answers || 0,
+                timeSpent: row.time_spent || 0,
+                passed: row.passed || false,
+                completedAt: row.completed_at || row.created_at,
+                questionResults: row.question_results || [],
+                textId: row.text_id,
+                textTitle: taskTitles.get(row.text_id) || 'Reading Comprehension Text'
+            }));
+        } catch (error) {
+            console.error('❌ [RC FETCH] Error:', error);
+            return [];
+        }
     };
 
     const fetchGcseReadingResults = async (supabase: any, assignmentId: string, studentId?: string) => {
@@ -436,29 +484,152 @@ export function AssessmentResultsDetailView({
                 console.error('Error fetching question responses:', responsesError);
             }
 
-            // Fetch question details to get question text
+            // Fetch question details to get question text AND question_data for correct answers
             let questionDetails = new Map();
             if (responses && responses.length > 0) {
                 const questionIds = [...new Set(responses.map((r: any) => r.question_id))];
                 const { data: questions } = await supabase
                     .from('aqa_reading_questions')
-                    .select('id, title, instructions')
+                    .select('id, title, instructions, question_data, question_type')
                     .in('id', questionIds);
 
                 if (questions) {
                     questions.forEach((q: any) => {
-                        questionDetails.set(q.id, { title: q.title, instructions: q.instructions });
+                        questionDetails.set(q.id, {
+                            title: q.title,
+                            instructions: q.instructions,
+                            questionData: q.question_data,
+                            questionType: q.question_type
+                        });
                     });
                 }
             }
 
+            // Helper function to extract correct answers from question_data based on question type
+            const extractCorrectAnswers = (questionData: any, questionType: string): string => {
+                if (!questionData) return 'Answer not available';
+
+                try {
+                    switch (questionType) {
+                        case 'letter-matching':
+                            // data.students[] has correctLetter
+                            if (questionData.students && Array.isArray(questionData.students)) {
+                                const answers = questionData.students
+                                    .filter((s: any) => s.correctLetter || s.correct)
+                                    .map((s: any) => `${s.name}: ${s.correctLetter || s.correct}`);
+                                return answers.length > 0 ? answers.join(', ') : 'See mark scheme';
+                            }
+                            break;
+
+                        case 'multiple-choice':
+                            // data.questions[] has correctAnswer
+                            if (questionData.questions && Array.isArray(questionData.questions)) {
+                                const answers = questionData.questions
+                                    .map((q: any, i: number) => {
+                                        const correct = q.correctAnswer || q.correct;
+                                        return correct ? `Q${i + 1}: ${correct}` : null;
+                                    })
+                                    .filter(Boolean);
+                                return answers.length > 0 ? answers.join(', ') : 'See mark scheme';
+                            }
+                            break;
+
+                        case 'student-grid':
+                            // data.questions[] has correctStudent
+                            if (questionData.questions && Array.isArray(questionData.questions)) {
+                                const answers = questionData.questions
+                                    .map((q: any, i: number) => {
+                                        const correct = q.correctStudent || q.correct;
+                                        return correct ? `Q${i + 1}: ${correct}` : null;
+                                    })
+                                    .filter(Boolean);
+                                return answers.length > 0 ? answers.join(', ') : 'See mark scheme';
+                            }
+                            break;
+
+                        case 'time-sequence':
+                            // data.events[] has correctSequence (P/N/F)
+                            if (questionData.events && Array.isArray(questionData.events)) {
+                                const answers = questionData.events
+                                    .map((e: any, i: number) => {
+                                        const correct = e.correctSequence || e.correct;
+                                        return correct ? `Q${i + 1}: ${correct}` : null;
+                                    })
+                                    .filter(Boolean);
+                                return answers.length > 0 ? answers.join(', ') : 'See mark scheme';
+                            }
+                            break;
+
+                        case 'sentence-completion':
+                            // data.sentences[] has correctCompletion
+                            if (questionData.sentences && Array.isArray(questionData.sentences)) {
+                                const answers = questionData.sentences
+                                    .map((s: any, i: number) => {
+                                        const correct = s.correctCompletion || s.correct;
+                                        return correct ? `${i + 1}: ${correct}` : null;
+                                    })
+                                    .filter(Boolean);
+                                return answers.length > 0 ? answers.join('; ') : 'See mark scheme';
+                            }
+                            break;
+
+                        case 'headline-matching':
+                            // data.articles[] has correctHeadline
+                            if (questionData.articles && Array.isArray(questionData.articles)) {
+                                const answers = questionData.articles
+                                    .map((a: any, i: number) => {
+                                        const correct = a.correctHeadline || a.correct;
+                                        return correct ? `Q${i + 1}: ${correct}` : null;
+                                    })
+                                    .filter(Boolean);
+                                return answers.length > 0 ? answers.join(', ') : 'See mark scheme';
+                            }
+                            break;
+
+                        case 'open-response':
+                            // May have expectedAnswers or acceptableAnswers
+                            if (questionData.questions && Array.isArray(questionData.questions)) {
+                                const answers = questionData.questions
+                                    .map((q: any, i: number) => {
+                                        const correct = q.expectedAnswer || q.acceptableAnswers?.join(' / ') || q.correct;
+                                        return correct ? `Q${i + 1}: ${correct}` : null;
+                                    })
+                                    .filter(Boolean);
+                                return answers.length > 0 ? answers.join('; ') : 'Requires manual marking';
+                            }
+                            break;
+
+                        case 'translation':
+                            // May have expectedTranslation or acceptableTranslations
+                            if (questionData.sentences && Array.isArray(questionData.sentences)) {
+                                const answers = questionData.sentences
+                                    .map((s: any, i: number) => {
+                                        const correct = s.expectedTranslation || s.acceptableTranslations?.[0] || s.english;
+                                        return correct ? `${i + 1}: ${correct}` : null;
+                                    })
+                                    .filter(Boolean);
+                                return answers.length > 0 ? answers.join('; ') : 'Requires manual marking';
+                            }
+                            break;
+                    }
+                } catch (e) {
+                    console.error('Error extracting correct answers:', e);
+                }
+
+                return 'See mark scheme';
+            };
+
             const questionResults = (responses || []).map((r: any) => {
                 const qDetails = questionDetails.get(r.question_id);
+                const correctAnswer = qDetails?.questionData
+                    ? extractCorrectAnswers(qDetails.questionData, r.question_type || qDetails.questionType)
+                    : 'See mark scheme';
+
                 return {
                     questionId: r.question_id,
                     questionText: qDetails?.title || `Question ${r.question_number}`,
                     userAnswer: r.student_answer,
-                    correctAnswer: 'See mark scheme', // AQA doesn't provide correct answers
+                    correctAnswer: correctAnswer,
                     isCorrect: r.is_correct,
                     points: r.points_awarded,
                     maxPoints: r.marks_possible,
@@ -528,32 +699,150 @@ export function AssessmentResultsDetailView({
             }
         }
 
-        return (data || []).map((row: any) => ({
-            resultId: row.id,
-            assessmentType: 'GCSE Listening',
-            score: row.percentage_score || 0,
-            totalQuestions: row.total_possible_score || 0,
-            correctAnswers: row.raw_score || 0,
-            timeSpent: row.total_time_seconds || 0,
-            passed: (row.percentage_score || 0) >= 60,
-            completedAt: row.completion_time || row.created_at,
-            rawScore: row.raw_score,
-            maxScore: row.total_possible_score,
-            gcseGrade: row.gcse_grade,
-            textTitle: assessmentTitles.get(row.assessment_id) || 'GCSE Listening Paper',
-            questionResults: (row.responses || []).map((r: any) => ({
-                questionId: r.question_id,
-                isCorrect: r.is_correct,
-                userAnswer: r.student_answer,
-                correctAnswer: 'See mark scheme',
-                points: r.points_awarded,
-                maxPoints: r.marks_possible,
-                questionText: `Question ${r.question_number}${r.sub_question_number ? r.sub_question_number : ''}`
-            })),
-            performanceByQuestionType: row.performance_by_question_type,
-            performanceByTheme: row.performance_by_theme,
-            performanceByTopic: row.performance_by_topic
+        // Helper function to extract correct answers from listening question_data
+        const extractListeningCorrectAnswer = (questionData: any, questionType: string): string => {
+            if (!questionData) return 'See mark scheme';
+
+            try {
+                switch (questionType) {
+                    case 'letter-matching':
+                        if (questionData.questions && Array.isArray(questionData.questions)) {
+                            return questionData.questions
+                                .map((q: any, i: number) => {
+                                    const correct = q.correctAnswer || q.correct;
+                                    return correct ? `${q.label || `Q${i + 1}`}: ${correct}` : null;
+                                })
+                                .filter(Boolean)
+                                .join(', ') || 'See mark scheme';
+                        }
+                        break;
+                    case 'multiple-choice':
+                        if (questionData.questions && Array.isArray(questionData.questions)) {
+                            return questionData.questions
+                                .map((q: any, i: number) => {
+                                    const correct = q.correctAnswer || q.correct;
+                                    return correct ? `Q${i + 1}: ${correct}` : null;
+                                })
+                                .filter(Boolean)
+                                .join(', ') || 'See mark scheme';
+                        }
+                        break;
+                    case 'lifestyle-grid':
+                        if (questionData.speakers && Array.isArray(questionData.speakers)) {
+                            return questionData.speakers
+                                .map((s: any) => {
+                                    const goods = s.correctGood || s.good;
+                                    const needs = s.correctNeedsImprovement || s.needsImprovement;
+                                    return `${s.name}: Good=${goods || '?'}, Needs=${needs || '?'}`;
+                                })
+                                .join('; ') || 'See mark scheme';
+                        }
+                        break;
+                    case 'opinion-rating':
+                        if (questionData.aspects && Array.isArray(questionData.aspects)) {
+                            return questionData.aspects
+                                .map((a: any) => {
+                                    const correct = a.correctRating || a.correct;
+                                    return correct ? `${a.aspect}: ${correct}` : null;
+                                })
+                                .filter(Boolean)
+                                .join(', ') || 'See mark scheme';
+                        }
+                        break;
+                    case 'open-response':
+                        if (questionData.questions && Array.isArray(questionData.questions)) {
+                            return questionData.questions
+                                .map((q: any, i: number) => {
+                                    const correct = q.expectedAnswer || q.acceptableAnswers?.join(' / ') || q.correct;
+                                    return correct ? `Q${i + 1}: ${correct}` : null;
+                                })
+                                .filter(Boolean)
+                                .join('; ') || 'Requires manual marking';
+                        }
+                        break;
+                    case 'activity-timing':
+                        if (questionData.questions && Array.isArray(questionData.questions)) {
+                            return questionData.questions
+                                .map((q: any, i: number) => {
+                                    const activity = q.correctActivity || q.activity;
+                                    const timing = q.correctTiming || q.timing;
+                                    return `Q${i + 1}: ${activity || '?'} - ${timing || '?'}`;
+                                })
+                                .join('; ') || 'See mark scheme';
+                        }
+                        break;
+                    case 'dictation':
+                        if (questionData.sentences && Array.isArray(questionData.sentences)) {
+                            return questionData.sentences
+                                .map((s: any, i: number) => `${i + 1}: ${s.text || s.sentence || s}`)
+                                .join('; ') || 'See mark scheme';
+                        }
+                        break;
+                }
+            } catch (e) {
+                console.error('Error extracting listening correct answer:', e);
+            }
+            return 'See mark scheme';
+        };
+
+        // Process each result to fetch question details
+        const processedResults = await Promise.all((data || []).map(async (row: any) => {
+            // Get unique question IDs from responses
+            const responses = row.responses || [];
+            const questionIds = [...new Set(responses.map((r: any) => r.question_id).filter(Boolean))];
+
+            // Fetch question details if we have question IDs
+            let questionDetailsMap = new Map<string, any>();
+            if (questionIds.length > 0) {
+                const { data: questions } = await supabase
+                    .from('aqa_listening_questions')
+                    .select('id, title, question_type, question_data')
+                    .in('id', questionIds);
+
+                if (questions) {
+                    questions.forEach((q: any) => questionDetailsMap.set(q.id, q));
+                }
+            }
+
+            const questionResults = responses.map((r: any) => {
+                const qDetails = questionDetailsMap.get(r.question_id);
+                const correctAnswer = qDetails?.question_data
+                    ? extractListeningCorrectAnswer(qDetails.question_data, r.question_type || qDetails.question_type)
+                    : 'See mark scheme';
+
+                return {
+                    questionId: r.question_id,
+                    isCorrect: r.is_correct,
+                    userAnswer: r.student_answer,
+                    correctAnswer: correctAnswer,
+                    points: r.points_awarded,
+                    maxPoints: r.marks_possible,
+                    questionText: qDetails?.title || `Question ${r.question_number}${r.sub_question_number ? r.sub_question_number : ''}`,
+                    questionType: r.question_type
+                };
+            });
+
+            return {
+                resultId: row.id,
+                assessmentType: 'GCSE Listening',
+                score: row.percentage_score || 0,
+                totalQuestions: row.total_possible_score || 0,
+                correctAnswers: row.raw_score || 0,
+                timeSpent: row.total_time_seconds || 0,
+                passed: (row.percentage_score || 0) >= 60,
+                completedAt: row.completion_time || row.created_at,
+                rawScore: row.raw_score,
+                maxScore: row.total_possible_score,
+                gcseGrade: row.gcse_grade,
+                textTitle: assessmentTitles.get(row.assessment_id) || 'GCSE Listening Paper',
+                questionResults,
+                performanceByQuestionType: row.performance_by_question_type,
+                performanceByTheme: row.performance_by_theme,
+                performanceByTopic: row.performance_by_topic
+            };
         }));
+
+        return processedResults;
     };
 
     const fetchGcseWritingResults = async (supabase: any, assignmentId: string, studentId?: string) => {
@@ -606,6 +895,128 @@ export function AssessmentResultsDetailView({
             gcseGrade: row.gcse_grade,
             textTitle: assessmentTitles.get(row.assessment_id) || 'GCSE Writing Paper'
         }));
+    };
+
+    const fetchGcseSpeakingResults = async (supabase: any, assignmentId: string, studentId?: string) => {
+        let query = supabase
+            .from('aqa_speaking_results')
+            .select('*')
+            .eq('assignment_id', assignmentId)
+            .order('created_at', { ascending: false });
+
+        if (studentId) {
+            query = query.eq('student_id', studentId);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('Error fetching GCSE speaking results:', error);
+            return [];
+        }
+
+        // Fetch assessment titles
+        let assessmentTitles = new Map<string, string>();
+        if (data && data.length > 0) {
+            const assessmentIds = [...new Set(data.map((row: any) => row.assessment_id).filter(Boolean))];
+            if (assessmentIds.length > 0) {
+                const { data: assessments } = await supabase
+                    .from('aqa_speaking_assessments')
+                    .select('id, title')
+                    .in('id', assessmentIds);
+
+                if (assessments) {
+                    assessments.forEach((assessment: any) => {
+                        assessmentTitles.set(assessment.id, assessment.title);
+                    });
+                }
+            }
+        }
+
+        return (data || []).map((row: any) => ({
+            resultId: row.id,
+            assessmentType: 'GCSE Speaking',
+            score: row.percentage_score || 0,
+            totalQuestions: row.max_score || 0,
+            correctAnswers: row.total_score || 0,
+            timeSpent: row.time_spent_seconds || 0,
+            passed: (row.percentage_score || 0) >= 60,
+            completedAt: row.completed_at || row.created_at,
+            rawScore: row.total_score,
+            maxScore: row.max_score,
+            gcseGrade: row.gcse_grade,
+            textTitle: assessmentTitles.get(row.assessment_id) || 'GCSE Speaking Assessment',
+            // Speaking assessments are manually graded - no auto-gradeable question results
+            questionResults: []
+        }));
+    };
+
+    const fetchDictationResults = async (supabase: any, assignmentId: string, studentId?: string) => {
+        let query = supabase
+            .from('aqa_dictation_results')
+            .select('*')
+            .eq('assignment_id', assignmentId)
+            .order('created_at', { ascending: false });
+
+        if (studentId) {
+            query = query.eq('student_id', studentId);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('Error fetching dictation results:', error);
+            return [];
+        }
+
+        // Fetch assessment titles
+        let assessmentTitles = new Map<string, string>();
+        if (data && data.length > 0) {
+            const assessmentIds = [...new Set(data.map((row: any) => row.assessment_id).filter(Boolean))];
+            if (assessmentIds.length > 0) {
+                const { data: assessments } = await supabase
+                    .from('aqa_dictation_assessments')
+                    .select('id, title')
+                    .in('id', assessmentIds);
+
+                if (assessments) {
+                    assessments.forEach((assessment: any) => {
+                        assessmentTitles.set(assessment.id, assessment.title);
+                    });
+                }
+            }
+        }
+
+        return (data || []).map((row: any) => {
+            // Dictation responses have the correct answer as the original sentence
+            const questionResults = (row.responses || []).map((r: any) => ({
+                questionId: r.question_id,
+                questionText: `Sentence ${r.question_number}`,
+                userAnswer: r.student_answer || '',
+                correctAnswer: r.correct_answer || 'See original sentence',
+                isCorrect: r.is_correct,
+                points: r.points_awarded,
+                maxPoints: r.marks_possible
+            }));
+
+            return {
+                resultId: row.id,
+                assessmentType: 'Dictation',
+                score: row.percentage_score || 0,
+                totalQuestions: row.total_possible_score || 0,
+                correctAnswers: row.raw_score || 0,
+                timeSpent: row.total_time_seconds || 0,
+                passed: (row.percentage_score || 0) >= 60,
+                completedAt: row.completion_time || row.created_at,
+                rawScore: row.raw_score,
+                maxScore: row.total_possible_score,
+                gcseGrade: row.gcse_grade,
+                textTitle: assessmentTitles.get(row.assessment_id) || 'Dictation Assessment',
+                questionResults,
+                performanceByTheme: row.performance_by_theme,
+                performanceByTopic: row.performance_by_topic
+            };
+        });
     };
 
     const formatTime = (seconds: number): string => {
@@ -841,10 +1252,13 @@ export function AssessmentResultsDetailView({
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {Object.entries(result.performanceByQuestionType).map(([type, perf]: [string, any]) => {
-                                            const accuracy = perf.accuracy || perf.percentage || 0;
+                                            // Handle various data structures
+                                            const correct = perf.correct ?? perf.correctCount ?? 0;
+                                            const total = perf.total ?? perf.totalQuestions ?? perf.totalCount ?? 1;
+                                            const accuracy = perf.accuracy ?? perf.percentage ?? (total > 0 ? Math.round((correct / total) * 100) : 0);
                                             const IconComponent = getQuestionTypeIcon(type);
                                             const colorClass = getAccuracyColor(accuracy);
-                                            
+
                                             return (
                                                 <div key={type} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                                                     <div className="flex items-center mb-3">
@@ -856,14 +1270,14 @@ export function AssessmentResultsDetailView({
                                                                 {formatQuestionType(type)}
                                                             </div>
                                                             <div className="text-xs text-slate-500">
-                                                                {perf.correct !== undefined && perf.total !== undefined 
-                                                                    ? `${perf.correct}/${perf.total} correct`
-                                                                    : `${accuracy}% accuracy`
+                                                                {correct !== undefined && total !== undefined
+                                                                    ? `${correct}/${total} correct`
+                                                                    : `${Math.round(accuracy)}% accuracy`
                                                                 }
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     {/* Progress Bar */}
                                                     <div className="mb-2">
                                                         <div className="flex justify-between text-xs text-slate-600 mb-1">
@@ -871,20 +1285,19 @@ export function AssessmentResultsDetailView({
                                                             <span className="font-medium">{accuracy}%</span>
                                                         </div>
                                                         <div className="w-full bg-slate-200 rounded-full h-2">
-                                                            <div 
-                                                                className={`h-2 rounded-full transition-all duration-300 ${
-                                                                    accuracy >= 80 ? 'bg-green-500' :
+                                                            <div
+                                                                className={`h-2 rounded-full transition-all duration-300 ${accuracy >= 80 ? 'bg-green-500' :
                                                                     accuracy >= 60 ? 'bg-blue-500' :
-                                                                    accuracy >= 40 ? 'bg-yellow-500' : 'bg-red-500'
-                                                                }`}
+                                                                        accuracy >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                    }`}
                                                                 style={{ width: `${Math.min(accuracy, 100)}%` }}
                                                             ></div>
                                                         </div>
                                                     </div>
-                                                    
-                                                    {perf.correct !== undefined && perf.total !== undefined && (
+
+                                                    {correct !== undefined && total !== undefined && (
                                                         <div className="text-xs text-slate-500">
-                                                            {perf.correct} out of {perf.total} questions answered correctly
+                                                            {correct} out of {total} questions answered correctly
                                                         </div>
                                                     )}
                                                 </div>

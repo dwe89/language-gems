@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import GrammarTestEditModal from '@/components/admin/GrammarTestEditModal';
 import { GrammarSessionService } from '@/services/grammar/GrammarSessionService';
+import GrammarSkillWrapper from '@/components/grammar/GrammarSkillWrapper';
 
 interface PageProps {
   params: {
@@ -136,6 +137,14 @@ export default function GrammarPracticePage({ params }: PageProps) {
     fetchPracticeData();
   }, [params.language, params.category, params.topic]);
 
+  // Auto-start practice in assignment mode (skip mode selector)
+  useEffect(() => {
+    if (isAssignmentMode && practiceData && !showPractice) {
+      setQuestionCount(15); // Always use standard practice for assignments
+      setShowPractice(true);
+    }
+  }, [isAssignmentMode, practiceData, showPractice]);
+
   // Transform practice data to practice items format
   const transformPracticeData = (questions: any[], count: number) => {
     // Shuffle and take the specified number of questions
@@ -217,7 +226,7 @@ export default function GrammarPracticePage({ params }: PageProps) {
   }
 
   if (showPractice) {
-    return (
+    const practiceContent = (
       <GrammarPractice
         language={params.language}
         category={params.category}
@@ -237,9 +246,26 @@ export default function GrammarPracticePage({ params }: PageProps) {
         questionCount={questionCount}
       />
     );
+
+    if (isAssignmentMode && topicId && assignmentId) {
+      return (
+        <GrammarSkillWrapper
+          topicId={topicId}
+          assignmentId={assignmentId}
+          currentStep="practice"
+          language={params.language}
+          category={params.category}
+          topicSlug={params.topic}
+        >
+          {practiceContent}
+        </GrammarSkillWrapper>
+      );
+    }
+
+    return practiceContent;
   }
 
-  return (
+  const mainContent = (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
       {/* Practice Header */}
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 border-b border-green-300 shadow-lg">
@@ -409,5 +435,22 @@ export default function GrammarPracticePage({ params }: PageProps) {
       )}
     </div>
   );
+
+  if (isAssignmentMode && topicId && assignmentId) {
+    return (
+      <GrammarSkillWrapper
+        topicId={topicId}
+        assignmentId={assignmentId}
+        currentStep="practice"
+        language={params.language}
+        category={params.category}
+        topicSlug={params.topic}
+      >
+        {mainContent}
+      </GrammarSkillWrapper>
+    );
+  }
+
+  return mainContent;
 }
 

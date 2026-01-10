@@ -27,10 +27,8 @@ export type GameMode =
   | 'match'
   | 'mixed'
   | 'word_builder'
-  | 'pronunciation'
   | 'word_race'
-  | 'story'
-  | 'memory_palace';
+  | 'story';
 
 export interface GameState {
   currentWordIndex: number;

@@ -245,7 +245,15 @@ export class GameCompletionService {
       const selectedGames = assignment?.game_config?.selectedGames ||
         assignment?.game_config?.gameConfig?.selectedGames ||
         [];
-      const totalGames = selectedGames.length;
+      let totalGames = selectedGames.length;
+
+      // Add VocabMaster if enabled
+      const vocabMasterConfig = assignment?.game_config?.vocabMasterConfig;
+      if (vocabMasterConfig?.enabled) {
+        totalGames += 1; // VocabMaster counts as one activity
+      } else if (vocabMasterConfig?.selectedModes?.length > 0) {
+        totalGames += vocabMasterConfig.selectedModes.length;
+      }
 
       return {
         totalWords,
@@ -359,10 +367,30 @@ export class GameCompletionService {
         wordsRequired: this.getGameThreshold(gameId, sampledWords)
       }));
 
+      // Check for VocabMaster enabled (new simplified model)
+      const vocabMasterConfig = assignment?.game_config?.vocabMasterConfig;
+      if (vocabMasterConfig?.enabled) {
+        // Add VocabMaster as a single activity (students choose modes)
+        perGameThresholds.push({
+          gameId: 'vocab-master',
+          gameName: 'VocabMaster (13 Modes)',
+          wordsRequired: this.getGameThreshold('vocab-master', sampledWords)
+        });
+      } else if (vocabMasterConfig?.selectedModes?.length > 0) {
+        // Legacy: Add each selected VocabMaster mode
+        vocabMasterConfig.selectedModes.forEach((mode: any) => {
+          perGameThresholds.push({
+            gameId: `vocab-master-${mode.id}`,
+            gameName: `VocabMaster: ${mode.name || mode.id}`,
+            wordsRequired: this.getGameThreshold('vocab-master', sampledWords)
+          });
+        });
+      }
+
       const tips = [
         'Wrong answers don\'t count toward completion',
-        'Words you learn in one game count toward the whole assignment',
-        'You can play games in any order',
+        'Words you learn in one activity count toward the whole assignment',
+        'You can complete activities in any order',
         'Take your time - accuracy matters more than speed!'
       ];
 

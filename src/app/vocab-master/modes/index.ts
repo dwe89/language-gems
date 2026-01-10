@@ -12,7 +12,7 @@ import { LearnMode } from './LearnMode';
 import { RecallMode } from './RecallMode';
 import { MixedMode } from './MixedMode';
 import { WordBuilderMode } from './WordBuilderMode';
-import { PronunciationMode } from './PronunciationMode';
+
 import { WordRaceMode } from './WordRaceMode';
 
 /**
@@ -63,7 +63,7 @@ export const MODE_REGISTRY: Record<GameMode, ModeConfig> = {
     autoAdvance: false,
     hasTimer: false
   },
-  
+
   dictation: {
     id: 'dictation',
     name: 'Dictation',
@@ -72,7 +72,7 @@ export const MODE_REGISTRY: Record<GameMode, ModeConfig> = {
     autoAdvance: false,
     hasTimer: false
   },
-  
+
   listening: {
     id: 'listening',
     name: 'Listening',
@@ -81,7 +81,7 @@ export const MODE_REGISTRY: Record<GameMode, ModeConfig> = {
     autoAdvance: false,
     hasTimer: false
   },
-  
+
   cloze: {
     id: 'cloze',
     name: 'Context Practice',
@@ -90,7 +90,7 @@ export const MODE_REGISTRY: Record<GameMode, ModeConfig> = {
     autoAdvance: false,
     hasTimer: false
   },
-  
+
   match: {
     id: 'match',
     name: 'Word Matching',
@@ -99,7 +99,7 @@ export const MODE_REGISTRY: Record<GameMode, ModeConfig> = {
     autoAdvance: true,
     hasTimer: false
   },
-  
+
   speed: {
     id: 'speed',
     name: 'Speed Challenge',
@@ -127,14 +127,6 @@ export const MODE_REGISTRY: Record<GameMode, ModeConfig> = {
     hasTimer: false
   },
 
-  pronunciation: {
-    id: 'pronunciation',
-    name: 'Pronunciation Practice',
-    component: PronunciationMode as any,
-    requiresInput: false,
-    autoAdvance: true,
-    hasTimer: false
-  },
 
   word_race: {
     id: 'word_race',
@@ -152,14 +144,7 @@ export const MODE_REGISTRY: Record<GameMode, ModeConfig> = {
     autoAdvance: true,
     hasTimer: false
   },
-  memory_palace: {
-    id: 'memory_palace',
-    name: 'Memory Palace',
-    component: 'MemoryPalaceMode' as any, // Custom component handled in game engine
-    requiresInput: false,
-    autoAdvance: true,
-    hasTimer: false
-  }
+
 };
 
 /**
@@ -236,14 +221,12 @@ export function mapLauncherModeToGameMode(launcherMode: string): GameMode {
       return 'recall'; // Use recall mode for spaced repetition
     case 'word_builder':
       return 'word_builder';
-    case 'pronunciation_practice':
-      return 'pronunciation';
+
     case 'word_race':
       return 'word_race';
     case 'sentence_builder':
       return 'cloze'; // Use cloze mode for sentence context practice
-    case 'memory_palace':
-      return 'memory_palace';
+
     case 'story_mode':
       return 'story';
     default:

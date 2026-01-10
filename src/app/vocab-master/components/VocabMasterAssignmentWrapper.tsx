@@ -122,7 +122,7 @@ export default function VocabMasterAssignmentWrapper({
       onBackToAssignments={handleBackToAssignments}
       onBackToMenu={handleBackToMenu}
     >
-      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, onOpenSettings, toggleMusic, isMusicEnabled }) => {
+      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, toggleMusic, isMusicEnabled, gameService }) => {
         console.log('VocabMaster Assignment - Vocabulary loaded:', vocabulary.length, 'items');
 
         // Transform vocabulary to the format expected by VocabMasterGameEngine
@@ -153,19 +153,37 @@ export default function VocabMasterAssignmentWrapper({
           );
         }
 
+        // Show completion screen
+        if (gameState === 'complete' && gameResults) {
+          return (
+            <GameCompletionScreen
+              result={gameResults}
+              isAssignmentMode={true}
+              onPlayAgain={() => {
+                // Reset to launcher to start a new game
+                setGameState('launcher');
+                setGameResults(null);
+                setSelectedMode('');
+              }}
+              onBackToMenu={handleBackToAssignments}
+            />
+          );
+        }
+
         // Show the selected game mode
         return (
           <VocabMasterGameEngine
             config={{
               mode: selectedMode, // Use the selected mode instead of hardcoded 'learn_new'
               vocabulary: gameVocabulary,
-              audioEnabled: true,
+              audioEnabled: isMusicEnabled ?? true,
               assignmentMode: true,
               assignmentTitle: assignment.title,
               assignmentId: assignment.id,
               gameSessionId: gameSessionId,
               userId: user.id
             }}
+            gameService={gameService}
             onGameComplete={(results: GameResult) => {
               console.log('VocabMaster game completed with results:', results);
 
@@ -216,25 +234,6 @@ export default function VocabMasterAssignmentWrapper({
             onExit={handleBackToLauncher}
           />
         );
-
-        // Show completion screen
-        if (gameState === 'complete' && gameResults) {
-          return (
-            <GameCompletionScreen
-              result={gameResults}
-              isAssignmentMode={true}
-              onPlayAgain={() => {
-                // Reset to launcher to start a new game
-                setGameState('launcher');
-                setGameResults(null);
-                setSelectedMode('');
-              }}
-              onBackToMenu={handleBackToAssignments}
-            />
-          );
-        }
-
-        return null;
       }}
     </GameAssignmentWrapper>
   );

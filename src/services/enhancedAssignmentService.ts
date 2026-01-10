@@ -121,10 +121,10 @@ export class EnhancedAssignmentService {
   static readonly MAX_POOL = 75;
 
   constructor(supabaseClient?: SupabaseClient) {
-    this.supabase = supabaseClient || createBrowserClient(
+    this.supabase = supabaseClient || (createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-    );
+    ) as any);
     this.gameService = new EnhancedGameService(this.supabase);
   }
 
@@ -147,6 +147,15 @@ export class EnhancedAssignmentService {
     }
 
     return data.id;
+  }
+
+  private normalizeLanguage(lang: string | undefined): string {
+    if (!lang) return 'es';
+    const normalized = lang.toLowerCase();
+    if (normalized === 'spanish') return 'es';
+    if (normalized === 'french') return 'fr';
+    if (normalized === 'german') return 'de';
+    return normalized;
   }
 
   async getAssignmentTemplates(teacherId: string, includePublic: boolean = true): Promise<AssignmentTemplate[]> {
@@ -196,7 +205,7 @@ export class EnhancedAssignmentService {
 
     // Check if this is a grammar-based assignment
     const isGrammarAssignment = assignmentData.config?.gameConfig?.selectedGames?.includes('conjugation-duel') &&
-                               assignmentData.config?.gameConfig?.grammarConfig;
+      assignmentData.config?.gameConfig?.grammarConfig;
 
     // Check if this is a sentence-based assignment (games that use sentences table)
     // IMPORTANT: Only set content_type to 'sentences' if ALL games are sentence-based
@@ -204,7 +213,7 @@ export class EnhancedAssignmentService {
     const sentenceBasedGames = ['sentence-towers', 'speed-builder', 'case-file-translator', 'lava-temple-word-restore'];
     const selectedGames = assignmentData.config?.gameConfig?.selectedGames || [];
     const isSentenceAssignment = selectedGames.length > 0 &&
-                                 selectedGames.every((gameId: string) => sentenceBasedGames.includes(gameId));
+      selectedGames.every((gameId: string) => sentenceBasedGames.includes(gameId));
 
     console.log('📝 [ASSIGNMENT SERVICE] Assignment type check:', {
       selectedGames: assignmentData.config?.gameConfig?.selectedGames,
@@ -216,8 +225,12 @@ export class EnhancedAssignmentService {
     });
 
     // Extract vocabulary configuration from game config (handle nested structure)
+    // Also check VocabMaster config for simplified model
     const vocabularyConfig = assignmentData.config?.vocabularyConfig ||
-                            assignmentData.config?.gameConfig?.vocabularyConfig;
+      assignmentData.config?.gameConfig?.vocabularyConfig ||
+      (assignmentData.config?.vocabMasterConfig?.enabled
+        ? assignmentData.config.vocabMasterConfig.vocabularyConfig
+        : null);
 
     // Handle vocabulary configuration for non-grammar assignments
     if (vocabularyConfig && vocabularyConfig.source && vocabularyConfig.source !== '' && !isGrammarAssignment) {
@@ -598,7 +611,16 @@ export class EnhancedAssignmentService {
     // Transform the vocabulary config from Smart Assignment Creator format
     // to the format expected by the assignment creation API
 
-    console.log('🔄 [TRANSFORM] Transforming vocabulary config:', vocabularyConfig);
+    // Inline normalization to prevent HMR issues
+    const normalizeLang = (l: any) => {
+      const s = String(l || 'es').toLowerCase();
+      if (s === 'spanish') return 'es';
+      if (s === 'french') return 'fr';
+      if (s === 'german') return 'de';
+      return s;
+    };
+
+    console.log('🔄 [TRANSFORM] Transforming vocabulary config (Fixed):', vocabularyConfig);
 
     // =====================================================
     // HANDLE MULTIPLE SUBCATEGORIES (Enhanced Creator)
@@ -616,8 +638,8 @@ export class EnhancedAssignmentService {
         type: 'subcategory_based', // Use valid constraint value (multiple subcategories stored in array)
         categories: vocabularyConfig.categories || [], // Array of categories
         subcategories: vocabularyConfig.subcategories, // Array of subcategories
-        language: vocabularyConfig.language || 'es',
-        wordCount: vocabularyConfig.wordCount || 20, // Default 20 for multiple subcategories
+        language: normalizeLang(vocabularyConfig.language),
+        wordCount: vocabularyConfig.wordCount || 75, // Default to MAX_POOL (75) to get ALL words
         difficulty: vocabularyConfig.difficulty || 'intermediate',
         curriculumLevel: vocabularyConfig.curriculumLevel || 'KS3',
         isMultiple: true // Flag to indicate multiple subcategories
@@ -637,8 +659,8 @@ export class EnhancedAssignmentService {
       return {
         type: 'category_based', // Use valid constraint value (multiple categories stored in array)
         categories: vocabularyConfig.categories, // Array of categories
-        language: vocabularyConfig.language || 'es',
-        wordCount: vocabularyConfig.wordCount || 20, // Default 20 for multiple categories
+        language: normalizeLang(vocabularyConfig.language),
+        wordCount: vocabularyConfig.wordCount || 75, // Default to MAX_POOL (75) to get ALL words
         difficulty: vocabularyConfig.difficulty || 'intermediate',
         curriculumLevel: vocabularyConfig.curriculumLevel || 'KS3',
         isMultiple: true // Flag to indicate multiple categories
@@ -700,7 +722,7 @@ export class EnhancedAssignmentService {
         unit: unitName,
         examBoard: vocabularyConfig.examBoard,
         tier: vocabularyConfig.tier,
-        language: vocabularyConfig.language || 'es',
+        language: normalizeLang(vocabularyConfig.language),
         wordCount: vocabularyConfig.wordCount || 10
       };
     }
@@ -719,8 +741,8 @@ export class EnhancedAssignmentService {
         type: 'subcategory_based',
         category: category,
         subcategory: vocabularyConfig.subcategory,
-        language: vocabularyConfig.language || 'es',
-        wordCount: vocabularyConfig.wordCount || 10 // Default 10 for single subcategory
+        language: normalizeLang(vocabularyConfig.language),
+        wordCount: vocabularyConfig.wordCount || 75 // Default to MAX_POOL (75) to get ALL words
       };
     }
 
@@ -942,8 +964,12 @@ export class EnhancedAssignmentService {
         .select('id, word, translation, category, subcategory, part_of_speech, language');
 
       // Apply language filter first (most important)
+      // Apply language filter first (most important)
       if (criteria.language) {
-        query = query.eq('language', criteria.language);
+        // Inline normalization
+        const lang = String(criteria.language).toLowerCase();
+        const normalized = lang === 'spanish' ? 'es' : (lang === 'french' ? 'fr' : (lang === 'german' ? 'de' : lang));
+        query = query.eq('language', normalized);
       }
 
       // Apply curriculum level filter if present
@@ -960,13 +986,36 @@ export class EnhancedAssignmentService {
           subcategories: criteria.subcategories,
           categories: criteria.categories
         });
-        query = query.in('subcategory', criteria.subcategories);
+
+        // Handle case sensitivity by including both original and lowercase versions
+        // This fixes issues where 'Days' matches 'days'
+        const safeSubcategories = [
+          ...criteria.subcategories,
+          ...criteria.subcategories.map((s: string) => s.toLowerCase())
+        ];
+        // Remove duplicates
+        const uniqueSubcategories = [...new Set(safeSubcategories)];
+
+        query = query.in('subcategory', uniqueSubcategories);
+
         if (hasMultipleCats) {
-          query = query.in('category', criteria.categories);
+          const safeCategories = [
+            ...criteria.categories,
+            ...criteria.categories.map((c: string) => c.toLowerCase())
+          ];
+          const uniqueCategories = [...new Set(safeCategories)];
+          query = query.in('category', uniqueCategories);
         }
       } else if (hasMultipleCats) {
         console.log('🎯 [ASSIGNMENT SERVICE] Applying MULTIPLE category filters:', criteria.categories);
-        query = query.in('category', criteria.categories);
+
+        const safeCategories = [
+          ...criteria.categories,
+          ...criteria.categories.map((c: string) => c.toLowerCase())
+        ];
+        const uniqueCategories = [...new Set(safeCategories)];
+
+        query = query.in('category', uniqueCategories);
       } else {
         // Apply filters based on criteria type (single selection cases)
         switch (criteria.type) {

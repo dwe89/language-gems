@@ -149,28 +149,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     difficulty: 'Intermediate',
     source: 'unified'
   },
-  {
-    id: 'pronunciation_practice',
-    name: 'Pronunciation Master',
-    description: 'Perfect your Spanish pronunciation with audio feedback',
-    icon: <Mic className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-purple-600 to-violet-700',
-    category: 'skills',
-    estimatedTime: '8-12 min',
-    difficulty: 'Advanced',
-    source: 'unified'
-  },
-  {
-    id: 'memory_palace',
-    name: 'Memory Palace',
-    description: 'Learn through visual associations and memory techniques',
-    icon: <Brain className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-indigo-600 to-purple-700',
-    category: 'challenge',
-    estimatedTime: '15-20 min',
-    difficulty: 'Intermediate',
-    source: 'unified'
-  },
+
   {
     id: 'word_race',
     name: 'Word Race',
@@ -213,8 +192,8 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
   const [selectedTier, setSelectedTier] = useState<'foundation' | 'higher'>('foundation');
 
   // Dynamic categories based on curriculum level and exam board
-  const [availableCategories, setAvailableCategories] = useState<Array<{value: string, label: string}>>([]);
-  const [availableSubcategories, setAvailableSubcategories] = useState<Array<{value: string, label: string}>>([]);
+  const [availableCategories, setAvailableCategories] = useState<Array<{ value: string, label: string }>>([]);
+  const [availableSubcategories, setAvailableSubcategories] = useState<Array<{ value: string, label: string }>>([]);
 
   // Track initialization state to prevent infinite loops
   const [isInitialized, setIsInitialized] = useState(false);
@@ -642,7 +621,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
 
   // Start game session
   const startGameSession = async (modeId: string) => {
-  setLocalLoading(true);
+    setLocalLoading(true);
     setSelectedMode(modeId);
 
     try {
@@ -684,7 +663,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       onGameStart(modeId, vocabularySubset, gameConfig);
     } catch (error) {
       console.error('Error starting game session:', error);
-  setLocalLoading(false);
+      setLocalLoading(false);
       setSelectedMode('');
     }
   };

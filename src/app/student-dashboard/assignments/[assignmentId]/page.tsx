@@ -12,6 +12,7 @@ import { calculateRemainingTime, getTimeCategory } from '../../../../utils/assig
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import AssessmentAssignmentView from '../../../../components/student-dashboard/AssessmentAssignmentView';
 import AssignmentIntroModal from '../../../../components/assignments/AssignmentIntroModal';
+import GrammarActivityWrapper from '../../../../components/assignments/GrammarActivityWrapper';
 import { useAssignmentWinConditions } from '../../../../hooks/useAssignmentCompletion';
 import { COMPLETION_CONFIG } from '../../../../services/assignments/GameCompletionService';
 
@@ -76,6 +77,15 @@ export default function StudentAssignmentDetailPage() {
   const [showIntroModal, setShowIntroModal] = useState(false);
   const [hasSeenIntro, setHasSeenIntro] = useState(false);
   const { winConditions, isLoading: winConditionsLoading } = useAssignmentWinConditions(assignmentId);
+
+  // Grammar activity wrapper state
+  const [showGrammarWrapper, setShowGrammarWrapper] = useState(false);
+  const [selectedGrammarActivity, setSelectedGrammarActivity] = useState<{
+    activityId: string;
+    topicId: string;
+    topicTitle: string;
+    contentTypes: string[];
+  } | null>(null);
 
   useEffect(() => {
     // Check if preview mode is enabled from URL params
@@ -407,8 +417,37 @@ export default function StudentAssignmentDetailPage() {
           // Extract VocabMaster config
           const vocabMasterConfig = assignmentData.game_config?.vocabMasterConfig;
           const vocabMasterModes = vocabMasterConfig?.selectedModes || [];
+          const vocabMasterEnabled = vocabMasterConfig?.enabled === true;
 
-          if (vocabMasterModes.length > 0) {
+          // NEW: Handle simplified VocabMaster model (enabled=true, single vocabularyConfig)
+          if (vocabMasterEnabled) {
+            // Get progress for vocab-master
+            const vmMetrics = await progressService.getGameProgress(assignmentId, user.id, 'vocab-master');
+            const vmProgress = gameProgressData?.find(gp => gp.game_id === 'vocab-master');
+
+            // Create a single VocabMaster activity that gives students access to ALL modes
+            vocabMasterActivities = [{
+              id: 'vocab-master-suite',
+              gameId: 'vocab-master',
+              modeId: null, // No specific mode - student will choose
+              name: 'VocabMaster',
+              description: 'Choose from 13 learning modes: Flashcards, Dictation, Speed Challenge, Memory Palace & more!',
+              type: 'vocab-master',
+              completed: vmProgress?.status === 'completed' || vmMetrics.completed,
+              score: vmProgress?.score || vmMetrics.bestScore || 0,
+              accuracy: vmProgress?.accuracy || vmMetrics.accuracy || 0,
+              timeSpent: vmProgress?.time_spent || vmMetrics.totalTimeSpent || 0,
+              completedAt: vmProgress?.completed_at || vmMetrics.completedAt,
+              progressPercentage: vmMetrics.progressPercentage || 0,
+              status: vmProgress?.status || vmMetrics.status || 'not_started',
+              instanceConfig: {
+                vocabularySource: vocabMasterConfig.vocabularyConfig,
+                ...vocabMasterConfig.settings
+              },
+              isStudentChoice: true // Flag to indicate students can choose modes
+            }];
+          } else if (vocabMasterModes.length > 0) {
+            // LEGACY: Handle per-mode configuration
             // Get progress for vocab-master (shared across modes for now)
             const vmMetrics = await progressService.getGameProgress(assignmentId, user.id, 'vocab-master');
 
@@ -1428,35 +1467,23 @@ export default function StudentAssignmentDetailPage() {
                                 </div>
                               </div>
 
-                              {/* Content Type Buttons for Each Topic */}
-                              <div className="flex gap-2 ml-8">
-                                {activity.instanceConfig?.contentTypes?.includes('lesson') && (
-                                  <button
-                                    onClick={() => handlePlaySkill({ ...activity, skillType: 'lesson' }, topic.id)}
-                                    className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors flex items-center justify-center gap-1"
-                                  >
-                                    <BookOpen className="h-3 w-3" />
-                                    Lesson
-                                  </button>
-                                )}
-                                {activity.instanceConfig?.contentTypes?.includes('practice') && (
-                                  <button
-                                    onClick={() => handlePlaySkill({ ...activity, skillType: 'practice' }, topic.id)}
-                                    className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors flex items-center justify-center gap-1"
-                                  >
-                                    <Target className="h-3 w-3" />
-                                    Practice
-                                  </button>
-                                )}
-                                {activity.instanceConfig?.contentTypes?.includes('quiz') && (
-                                  <button
-                                    onClick={() => handlePlaySkill({ ...activity, skillType: 'quiz' }, topic.id)}
-                                    className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors flex items-center justify-center gap-1"
-                                  >
-                                    <Award className="h-3 w-3" />
-                                    Quiz
-                                  </button>
-                                )}
+                              {/* Single Start Button for Topic */}
+                              <div className="ml-8">
+                                <button
+                                  onClick={() => {
+                                    setSelectedGrammarActivity({
+                                      activityId: activity.id,
+                                      topicId: topic.id,
+                                      topicTitle: topic.title,
+                                      contentTypes: activity.instanceConfig?.contentTypes || ['lesson', 'practice', 'quiz'],
+                                    });
+                                    setShowGrammarWrapper(true);
+                                  }}
+                                  className="w-full px-4 py-3 text-sm font-bold rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105 shadow-lg"
+                                >
+                                  <Play className="h-4 w-4" />
+                                  Start Activity
+                                </button>
                               </div>
                             </div>
                           );
@@ -1521,6 +1548,24 @@ export default function StudentAssignmentDetailPage() {
               seenIntros[assignmentId] = true;
               localStorage.setItem('seenAssignmentIntros', JSON.stringify(seenIntros));
             }
+          }}
+        />
+      )}
+
+      {/* Grammar Activity Wrapper Modal */}
+      {showGrammarWrapper && selectedGrammarActivity && user && (
+        <GrammarActivityWrapper
+          assignmentId={assignmentId}
+          activityId={selectedGrammarActivity.activityId}
+          topicId={selectedGrammarActivity.topicId}
+          topicTitle={selectedGrammarActivity.topicTitle}
+          contentTypes={selectedGrammarActivity.contentTypes}
+          userId={user.id}
+          onClose={() => {
+            setShowGrammarWrapper(false);
+            setSelectedGrammarActivity(null);
+            // Refresh the assignment data to update progress
+            setRefreshKey((prev) => prev + 1);
           }}
         />
       )}

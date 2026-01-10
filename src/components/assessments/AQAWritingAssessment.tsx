@@ -383,16 +383,32 @@ export function AQAWritingAssessment({
 
   const renderGapFillQuestion = (question: AQAWritingQuestion) => {
     const response = responses[question.id] || {};
+    // Support both 'questions' (database format) and 'sentences' (legacy format)
+    const questions = question.data?.questions || question.data?.sentences || [];
 
     return (
       <div className="space-y-6">
         <p className="text-gray-700 mb-4">Choose the correct word to complete each sentence:</p>
 
         <div className="space-y-6">
-          {(question.data?.sentences || []).map((sentence: any, index: number) => {
-            // Build the sentence with gap
-            const words = sentence.completeSentence?.trim().split(/\s+/).filter((w: string) => w) || [];
-            const gapPosition = sentence.gapPosition || 1;
+          {questions.map((item: any, index: number) => {
+            // Handle both database format (sentence with gaps) and legacy format (completeSentence with gapPosition)
+            let sentenceDisplay;
+            
+            if (item.sentence) {
+              // Database format: sentence has gaps marked with dots (……………………)
+              // Replace the dots with a gap placeholder
+              sentenceDisplay = item.sentence.replace(/…+/g, '<span class="inline-block px-3 py-1 bg-yellow-100 border-2 border-yellow-400 rounded mx-1">_____</span>');
+            } else if (item.completeSentence) {
+              // Legacy format: build sentence with gap at specific position
+              const words = item.completeSentence?.trim().split(/\s+/).filter((w: string) => w) || [];
+              const gapPosition = item.gapPosition || 1;
+              sentenceDisplay = words.map((word: string, i: number) => 
+                i === gapPosition - 1 
+                  ? '<span class="inline-block px-3 py-1 bg-yellow-100 border-2 border-yellow-400 rounded mx-1">_____</span>'
+                  : word
+              ).join(' ');
+            }
 
             return (
               <div key={index} className="border border-gray-200 rounded-lg p-4">
@@ -402,24 +418,14 @@ export function AQAWritingAssessment({
                   </span>
                   <div className="flex-1">
                     {/* Display sentence with gap */}
-                    <p className="text-gray-900 mb-3 font-medium">
-                      {words.map((word: string, i: number) => (
-                        <span key={i}>
-                          {i === gapPosition - 1 ? (
-                            <span className="inline-block px-3 py-1 bg-yellow-100 border-2 border-yellow-400 rounded mx-1">
-                              _____
-                            </span>
-                          ) : (
-                            word
-                          )}
-                          {i < words.length - 1 && ' '}
-                        </span>
-                      ))}
-                    </p>
+                    <p 
+                      className="text-gray-900 mb-3 font-medium"
+                      dangerouslySetInnerHTML={{ __html: sentenceDisplay || '' }}
+                    />
 
                     {/* Multiple choice options */}
                     <div className="grid grid-cols-1 gap-2">
-                      {(sentence.options || []).map((option: string, optIndex: number) => (
+                      {(item.options || []).map((option: string, optIndex: number) => (
                         <label key={optIndex} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors">
                           <input
                             type="radio"

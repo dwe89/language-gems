@@ -20,7 +20,7 @@ export default function GrammarLessonTracker({ topicId, contentId }: GrammarLess
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [startTime] = useState(Date.now());
   const hasTrackedRef = useRef(false);
-  
+
   const assignmentId = searchParams.get('assignment');
   const mode = searchParams.get('mode');
   const isAssignmentMode = assignmentId && mode === 'assignment';
@@ -33,9 +33,9 @@ export default function GrammarLessonTracker({ topicId, contentId }: GrammarLess
     const trackLessonView = async () => {
       try {
         const supabase = createBrowserClient();
-        
+
         console.log('📖 [GRAMMAR LESSON] Tracking lesson view for assignment:', assignmentId);
-        
+
         // Check if there's already an active session
         const { data: existingSession } = await supabase
           .from('grammar_assignment_sessions')
@@ -44,14 +44,14 @@ export default function GrammarLessonTracker({ topicId, contentId }: GrammarLess
           .eq('content_id', contentId)
           .eq('completion_status', 'in_progress')
           .maybeSingle();
-        
+
         if (existingSession) {
           console.log('♻️ [GRAMMAR LESSON] Resuming existing session:', existingSession.id);
           setSessionId(existingSession.id);
           hasTrackedRef.current = true;
           return;
         }
-        
+
         // Create new session for lesson view
         const { data: newSession, error } = await supabase
           .from('grammar_assignment_sessions')
@@ -69,16 +69,16 @@ export default function GrammarLessonTracker({ topicId, contentId }: GrammarLess
           })
           .select('id')
           .single();
-        
+
         if (error) {
           console.error('❌ [GRAMMAR LESSON] Error creating session:', error);
           return;
         }
-        
+
         setSessionId(newSession.id);
         hasTrackedRef.current = true;
         console.log('✅ [GRAMMAR LESSON] Session created:', newSession.id);
-        
+
       } catch (error) {
         console.error('❌ [GRAMMAR LESSON] Error tracking lesson:', error);
       }
@@ -97,13 +97,13 @@ export default function GrammarLessonTracker({ topicId, contentId }: GrammarLess
       try {
         const supabase = createBrowserClient();
         const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-        
+
         // Only complete if user spent at least 30 seconds on the lesson
         if (timeSpent < 30) {
           console.log('⏱️ [GRAMMAR LESSON] Not enough time spent, not marking as complete');
           return;
         }
-        
+
         console.log('🏁 [GRAMMAR LESSON] Completing lesson session:', sessionId);
 
         // Calculate gems based on time spent (1 gem per minute, max 10)
@@ -160,7 +160,10 @@ export default function GrammarLessonTracker({ topicId, contentId }: GrammarLess
 
         // Update assignment progress
         await updateAssignmentProgress(supabase, assignmentId!, user!.id, topicId);
-        
+
+        // Update step-by-step progress tracking
+        await updateStepProgress(supabase, assignmentId!, user!.id, topicId, timeSpent, gemsEarned, xpEarned);
+
       } catch (error) {
         console.error('❌ [GRAMMAR LESSON] Error completing lesson:', error);
       }
@@ -198,7 +201,7 @@ async function updateAssignmentProgress(
 ) {
   try {
     console.log('📊 [GRAMMAR LESSON] Updating assignment progress');
-    
+
     // Get current progress
     const { data: currentProgress } = await supabase
       .from('enhanced_assignment_progress')
@@ -206,14 +209,14 @@ async function updateAssignmentProgress(
       .eq('assignment_id', assignmentId)
       .eq('student_id', studentId)
       .single();
-    
+
     if (currentProgress) {
       // Update with incremented values
       const topicsPracticed = currentProgress.grammar_topics_practiced || [];
       if (!topicsPracticed.includes(topicId)) {
         topicsPracticed.push(topicId);
       }
-      
+
       const { error: progressError } = await supabase
         .from('enhanced_assignment_progress')
         .update({
@@ -223,7 +226,7 @@ async function updateAssignmentProgress(
         })
         .eq('assignment_id', assignmentId)
         .eq('student_id', studentId);
-      
+
       if (progressError) {
         console.warn('⚠️ [GRAMMAR LESSON] Error updating assignment progress:', progressError);
       } else {
@@ -232,6 +235,72 @@ async function updateAssignmentProgress(
     }
   } catch (error) {
     console.error('❌ [GRAMMAR LESSON] Error updating assignment progress:', error);
+  }
+}
+
+/**
+ * Update step-by-step progress for lesson completion
+ */
+async function updateStepProgress(
+  supabase: any,
+  assignmentId: string,
+  studentId: string,
+  topicId: string,
+  timeSpent: number,
+  gemsEarned: number,
+  xpEarned: number
+) {
+  try {
+    console.log('📊 [GRAMMAR LESSON] Updating step progress for lesson');
+
+    // Try to get existing step progress
+    const { data: existingProgress } = await supabase
+      .from('grammar_topic_step_progress')
+      .select('*')
+      .eq('assignment_id', assignmentId)
+      .eq('student_id', studentId)
+      .eq('topic_id', topicId)
+      .single();
+
+    const now = new Date().toISOString();
+
+    if (existingProgress) {
+      // Update existing progress
+      await supabase
+        .from('grammar_topic_step_progress')
+        .update({
+          lesson_completed: true,
+          lesson_completed_at: existingProgress.lesson_completed_at || now,
+          lesson_time_spent_seconds: (existingProgress.lesson_time_spent_seconds || 0) + timeSpent,
+          total_gems_earned: (existingProgress.total_gems_earned || 0) + gemsEarned,
+          total_xp_earned: (existingProgress.total_xp_earned || 0) + xpEarned,
+          updated_at: now
+        })
+        .eq('id', existingProgress.id);
+
+      console.log('✅ [GRAMMAR LESSON] Updated step progress for lesson');
+    } else {
+      // Create new progress record
+      await supabase
+        .from('grammar_topic_step_progress')
+        .insert({
+          assignment_id: assignmentId,
+          student_id: studentId,
+          topic_id: topicId,
+          lesson_completed: true,
+          lesson_completed_at: now,
+          lesson_time_spent_seconds: timeSpent,
+          total_gems_earned: gemsEarned,
+          total_xp_earned: xpEarned,
+          created_at: now,
+          updated_at: now
+        });
+
+      console.log('✅ [GRAMMAR LESSON] Created new step progress for lesson');
+    }
+  } catch (error) {
+    console.error('⚠️ [GRAMMAR LESSON] Error updating step progress (non-fatal):', error);
+    // Non-fatal error - don't throw
   }
 }
 

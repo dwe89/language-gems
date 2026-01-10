@@ -376,7 +376,16 @@ export default function EnhancedAssignmentCreator({
   });
 
   const [vocabMasterConfig, setVocabMasterConfig] = useState<VocabMasterConfig>({
-    selectedModes: []
+    enabled: false,
+    vocabularyConfig: undefined,
+    settings: {
+      wordsPerSession: 20,
+      enableAudio: true,
+      enableSpacedRepetition: true,
+      adaptiveDifficulty: true,
+      showHints: true
+    },
+    selectedModes: [] // Legacy support
   });
 
   // --- New Unified Content Configuration State ---
@@ -581,7 +590,7 @@ export default function EnhancedAssignmentCreator({
       title: 'Choose Activities',
       description: 'Select games, assessments, or skills',
       icon: <Gamepad2 className="h-5 w-5" />,
-      completed: gameConfig.selectedGames.length > 0 || assessmentConfig.selectedAssessments.length > 0 || skillsConfig.selectedSkills.length > 0 || vocabMasterConfig.selectedModes.length > 0
+      completed: gameConfig.selectedGames.length > 0 || assessmentConfig.selectedAssessments.length > 0 || skillsConfig.selectedSkills.length > 0 || vocabMasterConfig.enabled || vocabMasterConfig.selectedModes.length > 0
     },
     {
       id: 'content',
@@ -590,9 +599,9 @@ export default function EnhancedAssignmentCreator({
       icon: <Gem className="h-5 w-5" />,
       completed: (() => {
         // Check game content completeness
-  const needsVocabulary = gameConfig.selectedGames.some(gameId => ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening', 'vocab-master', 'word-towers'].includes(gameId));
-  const needsSentences = gameConfig.selectedGames.some(gameId => ['speed-builder', 'case-file-translator', 'lava-temple-word-restore', 'sentence-towers'].includes(gameId));
-  const needsGrammar = gameConfig.selectedGames.some(gameId => ['conjugation-duel'].includes(gameId));
+        const needsVocabulary = gameConfig.selectedGames.some(gameId => ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening', 'vocab-master', 'word-towers'].includes(gameId));
+        const needsSentences = gameConfig.selectedGames.some(gameId => ['speed-builder', 'case-file-translator', 'lava-temple-word-restore', 'sentence-towers'].includes(gameId));
+        const needsGrammar = gameConfig.selectedGames.some(gameId => ['conjugation-duel'].includes(gameId));
 
         // Vocabulary completeness: require additional fields when using custom sources
         const vocabSource = gameConfig.vocabularyConfig.source;
@@ -620,14 +629,21 @@ export default function EnhancedAssignmentCreator({
             return config?.language && config?.category && config?.topicIds && config?.topicIds.length > 0;
           });
 
-        // VocabMaster modes require vocabulary source configuration
-        const vocabMasterContentComplete = vocabMasterConfig.selectedModes.length === 0 ||
-          vocabMasterConfig.selectedModes.every(mode => {
-            const config = mode.instanceConfig;
-            return config?.language && config?.vocabularySource?.source && config?.vocabularySource?.source !== '';
-          });
+        // VocabMaster configuration completeness
+        const vocabMasterContentComplete = (() => {
+          // New simplified model
+          if (vocabMasterConfig.enabled) {
+            return vocabMasterConfig.vocabularyConfig?.source && vocabMasterConfig.vocabularyConfig?.source !== '';
+          }
+          // Legacy mode
+          return vocabMasterConfig.selectedModes.length === 0 ||
+            vocabMasterConfig.selectedModes.every(mode => {
+              const config = mode.instanceConfig;
+              return config?.language && config?.vocabularySource?.source && config?.vocabularySource?.source !== '';
+            });
+        })();
 
-        return (gameConfig.selectedGames.length > 0 || assessmentConfig.selectedAssessments.length > 0 || skillsConfig.selectedSkills.length > 0 || vocabMasterConfig.selectedModes.length > 0) &&
+        return (gameConfig.selectedGames.length > 0 || assessmentConfig.selectedAssessments.length > 0 || skillsConfig.selectedSkills.length > 0 || vocabMasterConfig.enabled || vocabMasterConfig.selectedModes.length > 0) &&
           gamesContentComplete &&
           assessmentsContentComplete &&
           skillsContentComplete &&
@@ -726,7 +742,7 @@ export default function EnhancedAssignmentCreator({
 
       if (!user) throw new Error('User not authenticated');
       if (selectedClasses.length === 0) throw new Error('Please select at least one class.');
-      if (gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0 && vocabMasterConfig.selectedModes.length === 0) {
+      if (gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0 && !vocabMasterConfig.enabled && vocabMasterConfig.selectedModes.length === 0) {
         throw new Error('Please select at least one game, assessment, skills activity, or VocabMaster mode.');
       }
       if (!assignmentDetails.title || !assignmentDetails.description || !assignmentDetails.due_date) {
@@ -739,7 +755,7 @@ export default function EnhancedAssignmentCreator({
         gameConfig: gameConfig.selectedGames.length > 0 ? gameConfig : undefined, // Only include if games are selected
         assessmentConfig: assessmentConfig.selectedAssessments.length > 0 ? assessmentConfig : undefined, // Only include if assessments are selected
         skillsConfig: skillsConfig.selectedSkills.length > 0 ? skillsConfig : undefined, // Only include if skills are selected
-        vocabMasterConfig: vocabMasterConfig.selectedModes.length > 0 ? vocabMasterConfig : undefined, // Only include if VocabMaster modes are selected
+        vocabMasterConfig: (vocabMasterConfig.enabled || vocabMasterConfig.selectedModes.length > 0) ? vocabMasterConfig : undefined, // Include if enabled OR legacy modes selected
         // Add any other global assignment configs here
       };
 
@@ -1076,8 +1092,8 @@ export default function EnhancedAssignmentCreator({
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className={`relative p-4 rounded-xl border-2 transition-all cursor-pointer ${isSelected
-                      ? 'border-indigo-500 bg-indigo-50 shadow-lg'
-                      : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                    ? 'border-indigo-500 bg-indigo-50 shadow-lg'
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
                     }`}
                   onClick={() => {
                     // Always add a new instance when clicked, even if already selected
@@ -1314,8 +1330,8 @@ export default function EnhancedAssignmentCreator({
                 }));
               }}
               className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${assignmentDetails.curriculum_level === 'KS3'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
             >
               KS3 (Year 7-9)
@@ -1334,8 +1350,8 @@ export default function EnhancedAssignmentCreator({
                 }));
               }}
               className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${assignmentDetails.curriculum_level === 'KS4'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
             >
               KS4 (GCSE)
@@ -1918,11 +1934,10 @@ export default function EnhancedAssignmentCreator({
             {/* Simple Assignment */}
             <button
               onClick={() => setIsAdvancedMode(false)}
-              className={`p-5 rounded-xl border-2 transition-all text-left ${
-                !isAdvancedMode
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-lg scale-105'
-                  : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:shadow-md'
-              }`}
+              className={`p-5 rounded-xl border-2 transition-all text-left ${!isAdvancedMode
+                ? 'bg-blue-600 border-blue-600 text-white shadow-lg scale-105'
+                : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:shadow-md'
+                }`}
             >
               <div className="flex items-start gap-3">
                 <Zap className={`h-6 w-6 flex-shrink-0 ${!isAdvancedMode ? 'text-white' : 'text-blue-600'}`} />
@@ -1940,11 +1955,10 @@ export default function EnhancedAssignmentCreator({
             {/* Multi-Activity Assignment */}
             <button
               onClick={() => setIsAdvancedMode(true)}
-              className={`p-5 rounded-xl border-2 transition-all text-left ${
-                isAdvancedMode
-                  ? 'bg-purple-600 border-purple-600 text-white shadow-lg scale-105'
-                  : 'bg-white border-gray-200 text-gray-700 hover:border-purple-300 hover:shadow-md'
-              }`}
+              className={`p-5 rounded-xl border-2 transition-all text-left ${isAdvancedMode
+                ? 'bg-purple-600 border-purple-600 text-white shadow-lg scale-105'
+                : 'bg-white border-gray-200 text-gray-700 hover:border-purple-300 hover:shadow-md'
+                }`}
             >
               <div className="flex items-start gap-3">
                 <Sparkles className={`h-6 w-6 flex-shrink-0 ${isAdvancedMode ? 'text-white' : 'text-purple-600'}`} />
@@ -1982,10 +1996,10 @@ export default function EnhancedAssignmentCreator({
             <div key={step.id} className="flex items-center flex-1 min-w-0">
               <div
                 className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200 flex-shrink-0 ${index < currentStep
-                    ? 'bg-green-500 border-green-500 text-white shadow-sm'
-                    : index === currentStep
-                      ? 'bg-purple-600 border-purple-600 text-white shadow-md scale-110'
-                      : 'bg-gray-100 border-gray-300 text-gray-400'
+                  ? 'bg-green-500 border-green-500 text-white shadow-sm'
+                  : index === currentStep
+                    ? 'bg-purple-600 border-purple-600 text-white shadow-md scale-110'
+                    : 'bg-gray-100 border-gray-300 text-gray-400'
                   }`}
               >
                 {index < currentStep ? (

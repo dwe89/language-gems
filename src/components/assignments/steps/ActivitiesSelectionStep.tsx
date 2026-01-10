@@ -163,7 +163,7 @@ export default function ActivitiesSelectionStep({
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [selectedAssessmentForConfig, setSelectedAssessmentForConfig] = useState<typeof AVAILABLE_ASSESSMENTS[0] | null>(null);
   const [editingAssessmentId, setEditingAssessmentId] = useState<string | null>(null);
-  
+
   // Simple mode: track which activity type user selected
   const [simpleActivityType, setSimpleActivityType] = useState<'games' | 'vocabmaster' | 'assessments' | 'skills' | null>(null);
 
@@ -172,10 +172,10 @@ export default function ActivitiesSelectionStep({
     const hasGames = gameConfig.selectedGames.length > 0;
     const hasAssessments = assessmentConfig.selectedAssessments.length > 0;
     const hasSkills = skillsConfig.selectedSkills.length > 0;
-    const hasVocabMaster = vocabMasterConfig.selectedModes.length > 0;
+    const hasVocabMaster = vocabMasterConfig.enabled || vocabMasterConfig.selectedModes.length > 0; // Support both new and legacy
     const isCompleted = hasGames || hasAssessments || hasSkills || hasVocabMaster;
     onStepComplete('activities', isCompleted);
-  }, [gameConfig.selectedGames, assessmentConfig.selectedAssessments, skillsConfig.selectedSkills, vocabMasterConfig.selectedModes, onStepComplete]);
+  }, [gameConfig.selectedGames, assessmentConfig.selectedAssessments, skillsConfig.selectedSkills, vocabMasterConfig.enabled, vocabMasterConfig.selectedModes, onStepComplete]);
 
   const openConfigModal = (assessmentType: typeof AVAILABLE_ASSESSMENTS[0]) => {
     setSelectedAssessmentForConfig(assessmentType);
@@ -330,61 +330,55 @@ export default function ActivitiesSelectionStep({
         <div className="grid grid-cols-3 gap-2 bg-gradient-to-r from-gray-50 to-gray-100 p-2 rounded-xl border border-gray-200 shadow-sm">
           <button
             onClick={() => setActiveTab('games')}
-            className={`flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform ${
-              activeTab === 'games'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105 border-2 border-blue-400'
-                : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:shadow-md border border-gray-200'
-            }`}
+            className={`flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform ${activeTab === 'games'
+              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105 border-2 border-blue-400'
+              : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:shadow-md border border-gray-200'
+              }`}
           >
             <Gamepad2 className={`h-5 w-5 mr-2 ${activeTab === 'games' ? 'text-white' : 'text-blue-600'}`} />
             <span>Games</span>
-            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'games'
-                ? 'bg-white bg-opacity-20 text-white'
-                : gameConfig.selectedGames.length > 0
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-gray-100 text-gray-500'
-            }`}>
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'games'
+              ? 'bg-white bg-opacity-20 text-white'
+              : gameConfig.selectedGames.length > 0
+                ? 'bg-blue-100 text-blue-800'
+                : 'bg-gray-100 text-gray-500'
+              }`}>
               {gameConfig.selectedGames.length}
             </span>
           </button>
           <button
             onClick={() => setActiveTab('vocabmaster')}
-            className={`flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform ${
-              activeTab === 'vocabmaster'
-                ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg scale-105 border-2 border-purple-400'
-                : 'bg-white text-gray-700 hover:bg-purple-50 hover:text-purple-700 hover:shadow-md border border-gray-200'
-            }`}
+            className={`flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform ${activeTab === 'vocabmaster'
+              ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg scale-105 border-2 border-purple-400'
+              : 'bg-white text-gray-700 hover:bg-purple-50 hover:text-purple-700 hover:shadow-md border border-gray-200'
+              }`}
           >
             <Brain className={`h-5 w-5 mr-2 ${activeTab === 'vocabmaster' ? 'text-white' : 'text-purple-600'}`} />
             <span>VocabMaster</span>
-            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'vocabmaster'
-                ? 'bg-white bg-opacity-20 text-white'
-                : vocabMasterConfig.selectedModes.length > 0
-                  ? 'bg-purple-100 text-purple-800'
-                  : 'bg-gray-100 text-gray-500'
-            }`}>
-              {vocabMasterConfig.selectedModes.length}
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'vocabmaster'
+              ? 'bg-white bg-opacity-20 text-white'
+              : (vocabMasterConfig.enabled || vocabMasterConfig.selectedModes.length > 0)
+                ? 'bg-purple-100 text-purple-800'
+                : 'bg-gray-100 text-gray-500'
+              }`}>
+              {vocabMasterConfig.enabled ? '✓' : vocabMasterConfig.selectedModes.length || '0'}
             </span>
           </button>
           <button
             onClick={() => setActiveTab('skills')}
-            className={`flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform ${
-              activeTab === 'skills'
-                ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg scale-105 border-2 border-orange-400'
-                : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-700 hover:shadow-md border border-gray-200'
-            }`}
+            className={`flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform ${activeTab === 'skills'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg scale-105 border-2 border-orange-400'
+              : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-700 hover:shadow-md border border-gray-200'
+              }`}
           >
             <Settings className={`h-5 w-5 mr-2 ${activeTab === 'skills' ? 'text-white' : 'text-orange-600'}`} />
             <span>Skills</span>
-            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'skills'
-                ? 'bg-white bg-opacity-20 text-white'
-                : skillsConfig.selectedSkills.length > 0
-                  ? 'bg-orange-100 text-orange-800'
-                  : 'bg-gray-100 text-gray-500'
-            }`}>
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'skills'
+              ? 'bg-white bg-opacity-20 text-white'
+              : skillsConfig.selectedSkills.length > 0
+                ? 'bg-orange-100 text-orange-800'
+                : 'bg-gray-100 text-gray-500'
+              }`}>
               {skillsConfig.selectedSkills.length}
             </span>
           </button>
@@ -516,87 +510,121 @@ export default function ActivitiesSelectionStep({
                   <X className="h-4 w-4" />
                   Choose Different Activity Type
                 </button>
-                <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                  <p className="text-sm text-purple-800">
-                    <strong>Simple Mode:</strong> Select one VocabMaster learning mode for comprehensive vocabulary practice. Switch to Advanced Mode for multi-activity assignments.
-                  </p>
-                </div>
               </div>
             )}
-            <h3 className="text-xl font-bold text-gray-900 mb-4">VocabMaster Learning Modes</h3>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-2">VocabMaster</h3>
             <p className="text-sm text-gray-600 mb-6">
-              Select comprehensive vocabulary learning activities with adaptive difficulty and spaced repetition
+              Add comprehensive vocabulary learning with 13+ learning modes including flashcards, dictation, speed challenges, and more.
             </p>
 
-            {/* VocabMaster Modes Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              {AVAILABLE_VOCABMASTER_MODES.map((mode) => (
-                <motion.div
-                  key={mode.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-5 cursor-pointer hover:border-purple-400 hover:shadow-lg transition-all"
-                  onClick={() => addVocabMasterModeToBasket(mode)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="font-bold text-gray-900 mb-1">{mode.name}</h4>
-                      <p className="text-xs text-gray-600 mb-2">{mode.description}</p>
-                    </div>
-                    <button
-                      className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addVocabMasterModeToBasket(mode);
-                      }}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
-                      {mode.difficulty}
-                    </span>
-                    <span className="text-gray-500">{mode.estimatedTime}</span>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            {/* Single VocabMaster Enable Card */}
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => {
+                setVocabMasterConfig(prev => ({
+                  ...prev,
+                  enabled: !prev.enabled,
+                  selectedModes: [] // Clear legacy modes
+                }));
+              }}
+              className={`relative overflow-hidden rounded-2xl p-6 cursor-pointer transition-all ${vocabMasterConfig.enabled
+                ? 'bg-gradient-to-br from-purple-600 to-indigo-700 text-white shadow-xl ring-4 ring-purple-300'
+                : 'bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg'
+                }`}
+            >
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-white rounded-full translate-y-1/2 -translate-x-1/2" />
+              </div>
 
-            {/* Selected VocabMaster Modes */}
-            {vocabMasterConfig.selectedModes.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Selected Learning Modes ({vocabMasterConfig.selectedModes.length})
-                </h3>
-                <div className="space-y-3">
-                  {vocabMasterConfig.selectedModes.map((mode, index) => (
-                    <div key={mode.id} className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{mode.name}</h4>
-                            <p className="text-sm text-gray-600">
-                              {mode.estimatedTime} • {mode.difficulty}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => removeVocabMasterModeFromBasket(mode.id)}
-                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors"
-                          title="Remove mode"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
+              <div className="relative flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`p-3 rounded-xl ${vocabMasterConfig.enabled ? 'bg-white/20' : 'bg-purple-600'}`}>
+                      <Brain className={`h-7 w-7 ${vocabMasterConfig.enabled ? 'text-white' : 'text-white'}`} />
                     </div>
-                  ))}
+                    <div>
+                      <h4 className={`text-xl font-bold ${vocabMasterConfig.enabled ? 'text-white' : 'text-gray-900'}`}>
+                        VocabMaster Suite
+                      </h4>
+                      <p className={`text-sm ${vocabMasterConfig.enabled ? 'text-purple-100' : 'text-purple-600'}`}>
+                        {vocabMasterConfig.enabled ? '✓ Enabled' : 'Click to enable'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className={`text-sm mb-4 ${vocabMasterConfig.enabled ? 'text-purple-100' : 'text-gray-600'}`}>
+                    Students will have access to <strong>all 13 learning modes</strong> and can choose which ones to practice with. You'll configure the vocabulary content in the next step.
+                  </p>
+
+                  {/* Mode Categories Preview */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${vocabMasterConfig.enabled ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700'
+                      }`}>
+                      🎯 Core Learning
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${vocabMasterConfig.enabled ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'
+                      }`}>
+                      🎧 Listening & Dictation
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${vocabMasterConfig.enabled ? 'bg-white/20 text-white' : 'bg-orange-100 text-orange-700'
+                      }`}>
+                      ⚡ Speed Challenges
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${vocabMasterConfig.enabled ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'
+                      }`}>
+                      🧠 Memory Games
+                    </span>
+                  </div>
+                </div>
+
+                {/* Toggle Indicator */}
+                <div className={`flex-shrink-0 w-14 h-8 rounded-full p-1 transition-colors ${vocabMasterConfig.enabled ? 'bg-white/30' : 'bg-gray-200'
+                  }`}>
+                  <div className={`w-6 h-6 rounded-full shadow-md transition-transform ${vocabMasterConfig.enabled ? 'translate-x-6 bg-white' : 'translate-x-0 bg-purple-600'
+                    }`} />
                 </div>
               </div>
-            )}
+
+              {/* Available Modes List (collapsed) */}
+              {vocabMasterConfig.enabled && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="mt-4 pt-4 border-t border-white/20"
+                >
+                  <p className="text-xs text-purple-200 mb-2">Available modes for students:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Flashcards', 'Multiple Choice', 'Dictation', 'Speed Challenge', 'Word Matching', 'Context Practice', 'Listening', 'Memory Palace', 'Word Builder', 'Word Race', 'Pronunciation'].map((mode) => (
+                      <span key={mode} className="px-2 py-0.5 bg-white/10 rounded text-xs text-white">
+                        {mode}
+                      </span>
+                    ))}
+                    <span className="px-2 py-0.5 bg-white/10 rounded text-xs text-white">+2 more</span>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+
+            {/* Info Box */}
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 bg-blue-100 rounded-lg">
+                  <Settings className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <h5 className="font-medium text-blue-900">How it works</h5>
+                  <ol className="mt-1 text-sm text-blue-700 list-decimal list-inside space-y-1">
+                    <li>Enable VocabMaster above</li>
+                    <li>Configure vocabulary content in the next step (choose topic, category, etc.)</li>
+                    <li>Students pick which learning mode(s) they want to practice with</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
           </div>
         ) : activeTab === 'skills' ? (
           <div className="space-y-6">
@@ -690,7 +718,9 @@ export default function ActivitiesSelectionStep({
           </div>
           <div>
             <span className="text-gray-600">VocabMaster:</span>
-            <span className="ml-2 font-medium text-purple-600">{vocabMasterConfig.selectedModes.length} selected</span>
+            <span className="ml-2 font-medium text-purple-600">
+              {vocabMasterConfig.enabled ? '✓ Enabled (13 modes)' : 'Not enabled'}
+            </span>
           </div>
           <div>
             <span className="text-gray-600">Assessments:</span>
@@ -701,7 +731,7 @@ export default function ActivitiesSelectionStep({
             <span className="ml-2 font-medium text-purple-600">{skillsConfig.selectedSkills.length} selected</span>
           </div>
         </div>
-        {(gameConfig.selectedGames.length === 0 && vocabMasterConfig.selectedModes.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0) && (
+        {(gameConfig.selectedGames.length === 0 && !vocabMasterConfig.enabled && vocabMasterConfig.selectedModes.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0) && (
           <p className="text-sm text-amber-600 mt-2">⚠️ Please select at least one activity to continue.</p>
         )}
       </div>

@@ -17,6 +17,7 @@ export interface VocabularyConfig {
   // Other fields
   customListId?: string;
   customList?: any;
+  customVocabulary?: string; // Inline custom vocabulary text
   wordCount?: number;
   difficulty?: string;
   curriculumLevel?: 'KS3' | 'KS4';
@@ -100,7 +101,27 @@ export interface SkillsConfig {
 }
 
 // VocabMaster-specific configuration
+// NEW SIMPLIFIED MODEL: Teacher enables VocabMaster and configures vocabulary ONCE
+// Students choose which mode(s) to practice with at runtime
 export interface VocabMasterConfig {
+  // Is VocabMaster enabled for this assignment?
+  enabled: boolean;
+
+  // Single vocabulary configuration that applies to ALL modes
+  vocabularyConfig?: VocabularyConfig;
+
+  // Optional settings that apply to all modes
+  settings?: {
+    wordsPerSession?: number;
+    sessionLength?: number; // in minutes
+    enableAudio?: boolean;
+    enableSpacedRepetition?: boolean;
+    adaptiveDifficulty?: boolean;
+    showHints?: boolean;
+    timeLimit?: number;
+  };
+
+  // LEGACY: Keep for backward compatibility with existing assignments
   selectedModes: Array<{
     id: string;
     modeId: string; // flashcard_review, listening_practice, dictation_practice, etc.

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import { ClassSummaryDashboard } from '../../../components/dashboard/ClassSummaryDashboard';
+import { MultiClassOverview } from '../../../components/dashboard/MultiClassOverview';
 import TeacherVocabularyAnalyticsDashboard from '../../../components/teacher/TeacherVocabularyAnalyticsDashboard';
 import TeacherGrammarAnalyticsDashboard from '../../../components/teacher/TeacherGrammarAnalyticsDashboard';
 import {
@@ -37,7 +38,7 @@ export default function AnalyticsHubPage() {
     // State
     const [activeTab, setActiveTab] = useState<TabType>('overview');
     const [classes, setClasses] = useState<ClassOption[]>([]);
-    const [selectedClassId, setSelectedClassId] = useState<string>('all');
+    const [selectedClassId, setSelectedClassId] = useState<string>('all'); // Default to All Classes view
     const [viewScope, setViewScope] = useState<ViewScope>('my');
     const [schoolCode, setSchoolCode] = useState<string | null>(null);
     const [hasSchoolAccess, setHasSchoolAccess] = useState(false);
@@ -159,16 +160,16 @@ export default function AnalyticsHubPage() {
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
-                        {/* Title & School Info */}
+                        {/* Title & Class Info */}
                         <div>
                             <h1 className="text-2xl font-bold text-slate-900 flex items-center">
                                 <BarChart3 className="mr-2 h-6 w-6 text-indigo-600" />
                                 Analytics Hub
                             </h1>
                             <p className="text-slate-500 text-sm mt-1">
-                                {viewScope === 'school' && schoolCode
-                                    ? `Viewing data for entire school (${schoolCode})`
-                                    : 'Viewing your classes performance'}
+                                {selectedClassId === 'all'
+                                    ? `Viewing all ${classes.length} class${classes.length !== 1 ? 'es' : ''}`
+                                    : `Viewing: ${classes.find(c => c.id === selectedClassId)?.name || 'Selected class'}`}
                             </p>
                         </div>
 
@@ -204,12 +205,16 @@ export default function AnalyticsHubPage() {
                                 <select
                                     value={selectedClassId}
                                     onChange={(e) => setSelectedClassId(e.target.value)}
-                                    className="pl-3 pr-10 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer min-w-[150px]"
+                                    className="pl-3 pr-10 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer min-w-[180px]"
                                 >
                                     <option value="all">All Classes</option>
-                                    {classes.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
+                                    {classes.length === 0 ? (
+                                        <option value="" disabled>No classes found</option>
+                                    ) : (
+                                        classes.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))
+                                    )}
                                 </select>
                                 <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                             </div>
@@ -253,14 +258,22 @@ export default function AnalyticsHubPage() {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
                         >
-                            <ClassSummaryDashboard
-                                teacherId={user.id}
-                                classId={currentClassId}
-                                viewScope={viewScope}
-                                schoolCode={schoolCode || undefined}
-                                onStudentClick={(id) => router.push(`/dashboard/progress/student/${id}`)}
-                                onAssignmentClick={(id) => router.push(`/dashboard/progress/assignment/${id}`)}
-                            />
+                            {selectedClassId === 'all' ? (
+                                <MultiClassOverview
+                                    teacherId={user.id}
+                                    viewScope={viewScope}
+                                    schoolCode={schoolCode || undefined}
+                                    onClassClick={(classId) => setSelectedClassId(classId)}
+                                />
+                            ) : (
+                                <ClassSummaryDashboard
+                                    teacherId={user.id}
+                                    classId={currentClassId}
+                                    viewScope={viewScope}
+                                    schoolCode={schoolCode || undefined}
+                                    onStudentClick={(id) => router.push(`/dashboard/progress/student/${id}`)}
+                                />
+                            )}
                         </motion.div>
                     )}
 

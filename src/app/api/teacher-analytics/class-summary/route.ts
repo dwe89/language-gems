@@ -689,7 +689,10 @@ export async function GET(request: NextRequest) {
       studentsNeverLoggedIn: studentsNeverLoggedIn,
       topClassWeakness: await calculateTopClassWeakness(supabase, studentIds, dateFilter),
       recentAssignments: (assignments || []).map((a: any) => {
-        const progress = a.enhanced_assignment_progress || [];
+        const allProgress = a.enhanced_assignment_progress || [];
+        // Filter progress to only include students enrolled in the selected class(es)
+        const studentIdSet = new Set(studentIds);
+        const progress = allProgress.filter((p: any) => studentIdSet.has(p.student_id));
         const completed = progress.filter((p: any) => p.status === 'completed').length;
         const avgScore = progress.length > 0
           ? progress.reduce((sum: number, p: any) => sum + (parseFloat(p.best_score) || 0), 0) / progress.length

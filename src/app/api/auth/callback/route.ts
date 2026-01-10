@@ -42,9 +42,24 @@ export async function GET(request: NextRequest) {
     try {
       // Exchange the code for a session
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      
+
       if (error) {
         console.error('❌ Error exchanging code for session:', error);
+
+        // Log available cookies (names only) to debug missing verifier issues
+        const cookieNames = cookieStore.getAll().map(c => c.name);
+        console.log('🍪 Available cookies:', cookieNames);
+        console.log('🍪 Looking for verifier cookie...');
+
+        // Check for specific verifier error
+        const isVerifierError = error.message?.includes('code verifier') || (error as any).code === 'validation_failed';
+
+        if (isVerifierError) {
+          console.error('❌ Code verifier missing. This usually happens when the link is opened on a different device/browser.');
+          // Redirect with a specific error code so the UI can show a helpful message
+          return NextResponse.redirect(`${origin}/auth/login?error=verifier_missing`);
+        }
+
         return NextResponse.redirect(`${origin}/auth/login?error=verification_failed`);
       }
 
@@ -66,7 +81,7 @@ export async function GET(request: NextRequest) {
             .select('user_id')
             .eq('user_id', data.user.id)
             .single();
-          
+
           if (profile) {
             userProfileExists = true;
             console.log(`✅ User profile exists (attempt ${i + 1})`);
@@ -205,7 +220,7 @@ export async function GET(request: NextRequest) {
             console.log('📝 Marking invitation as accepted...');
             const { error: invitationUpdateError } = await supabaseAdmin
               .from('pending_teacher_invitations')
-              .update({ 
+              .update({
                 status: 'accepted',
                 updated_at: new Date().toISOString()
               })

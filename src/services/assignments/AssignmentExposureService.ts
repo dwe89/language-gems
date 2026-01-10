@@ -161,8 +161,18 @@ export class AssignmentExposureService {
         return null;
       }
 
-      const exposedWordIds = (exposures || []).map(e => e.centralized_vocabulary_id);
-      const exposedWords = exposedWordIds.length;
+      let exposedWordIds = (exposures || []).map(e => e.centralized_vocabulary_id);
+      let exposedWords = exposedWordIds.length;
+
+      // 🔧 SELF-REPAIR: If 0 exposures but we might have history (legacy data fix)
+      if (exposedWords === 0 && studentId && assignmentId) {
+        try {
+          exposedWordIds = await this.attemptExposureRepair(assignmentId, studentId, exposedWordIds);
+          exposedWords = exposedWordIds.length;
+        } catch (repairError) {
+          console.warn(`⚠️ [EXPOSURE SERVICE] Repair attempt failed [${callId}]:`, repairError);
+        }
+      }
       const unexposedWords = totalWords - exposedWords;
       const progress = totalWords > 0 ? (exposedWords / totalWords) * 100 : 0;
       const isComplete = progress >= 100;
@@ -299,6 +309,103 @@ export class AssignmentExposureService {
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
+
+  /**
+   * Attempt to repair missing exposures by scanning session history
+   * This handles cases where VocabMaster games didn't record exposures properly
+   */
+  private async attemptExposureRepair(
+    assignmentId: string,
+    studentId: string,
+    currentExposedIds: string[]
+  ): Promise<string[]> {
+    // 1. Check if user has ANY progress using the old metric
+    const { count } = await this.supabase
+      .from('assignment_game_progress')
+      .select('*', { count: 'exact', head: true })
+      .eq('assignment_id', assignmentId)
+      .eq('student_id', studentId)
+      .gt('score', 0);
+
+    if (!count || count === 0) return currentExposedIds;
+
+    console.log(`🔧 [EXPOSURE SERVICE] Detected missing exposures for active student. Attempting repair for ${assignmentId}...`);
+
+    // 2. Fetch assignment vocabulary (to map words -> IDs)
+    const { data: assignment } = await this.supabase
+      .from('assignments')
+      .select('vocabulary_assignment_list_id')
+      .eq('id', assignmentId)
+      .single();
+
+    if (!assignment?.vocabulary_assignment_list_id) return currentExposedIds;
+
+    const { data: vocabItems } = await this.supabase
+      .from('vocabulary_assignment_items')
+      .select('centralized_vocabulary_id')
+      .eq('assignment_list_id', assignment.vocabulary_assignment_list_id);
+
+    if (!vocabItems || vocabItems.length === 0) return currentExposedIds;
+
+    const vocabIds = vocabItems
+      .map(item => item.centralized_vocabulary_id)
+      .filter(id => id); // Filter nulls
+
+    if (vocabIds.length === 0) return currentExposedIds;
+
+    // Fetch actual words to map back from session strings
+    const { data: vocabDetails } = await this.supabase
+      .from('centralized_vocabulary')
+      .select('id, word, translation')
+      .in('id', vocabIds);
+
+    if (!vocabDetails) return currentExposedIds;
+
+    const wordToIdMap = new Map<string, string>();
+    vocabDetails.forEach(item => {
+      // Map both Spanish and English words to the ID for robustness
+      if (item.word) wordToIdMap.set(item.word.toLowerCase().trim(), item.id);
+      if (item.translation) wordToIdMap.set(item.translation.toLowerCase().trim(), item.id);
+    });
+
+    // 3. Fetch session history to find learned words
+    const { data: sessions } = await this.supabase
+      .from('assignment_session_history')
+      .select('session_data')
+      .eq('assignment_id', assignmentId)
+      .eq('student_id', studentId);
+
+    if (!sessions) return currentExposedIds;
+
+    const recoveredIds = new Set<string>(currentExposedIds);
+    let recoveredCount = 0;
+
+    sessions.forEach(session => {
+      const data = session.session_data;
+      if (data?.wordsLearned && Array.isArray(data.wordsLearned)) {
+        data.wordsLearned.forEach((w: any) => {
+          if (typeof w === 'string') {
+            const id = wordToIdMap.get(w.toLowerCase().trim());
+            if (id) {
+              recoveredIds.add(id);
+              recoveredCount++;
+            }
+          }
+        });
+      }
+    });
+
+    if (recoveredIds.size > currentExposedIds.length) {
+      console.log(`🔧 [EXPOSURE SERVICE] Recovered ${recoveredIds.size - currentExposedIds.length} unique words from history.`);
+      const idsToSave = Array.from(recoveredIds);
+
+      // Save recovered exposures
+      await this.recordWordExposures(assignmentId, studentId, idsToSave);
+      return idsToSave;
+    }
+
+    return currentExposedIds;
   }
 }
 

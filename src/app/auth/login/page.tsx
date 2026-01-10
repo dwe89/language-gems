@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useToast } from '../../../components/ui/use-toast';
 import {
   Users,
   GraduationCap,
@@ -18,6 +19,37 @@ export default function LoginPage() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirectTo');
+  const error = searchParams?.get('error');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (error) {
+      let title = 'Login Error';
+      let description = 'An error occurred during login. Please try again.';
+      let variant: 'destructive' | 'default' = 'destructive';
+
+      if (error === 'verifier_missing') {
+        title = 'Session Expired';
+        description = 'Please log in again directly on this device. Email links must be opened in the same browser they were requested from.';
+      } else if (error === 'verification_failed') {
+        title = 'Verification Failed';
+        description = 'The verification link is invalid or has expired. Please try logging in again to receive a new link.';
+      } else if (error === 'invalid_verification_link') {
+        title = 'Invalid Link';
+        description = 'The login link used is invalid. Please try again.';
+      }
+
+      // Delay toast slightly to ensure UI is ready
+      setTimeout(() => {
+        toast({
+          title,
+          description,
+          variant,
+        });
+      }, 500);
+    }
+  }, [error, toast]);
+
 
   const loginOptions = [
     {

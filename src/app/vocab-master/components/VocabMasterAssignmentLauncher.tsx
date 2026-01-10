@@ -2,16 +2,15 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Lightbulb, 
-  Target, 
-  Brain, 
-  Headphones, 
-  FileText, 
-  Zap, 
-  Clock, 
-  Shuffle, 
-  Mic, 
+import {
+  Target,
+  Brain,
+  Headphones,
+  FileText,
+  Zap,
+  Clock,
+  Shuffle,
+  Mic,
   Keyboard,
   ArrowLeft,
   Play
@@ -31,14 +30,15 @@ interface GameMode {
 }
 
 // Streamlined Mode Definitions for Assignment Mode
+// Note: 'Learn New Words' is excluded because assignments have pre-set vocabulary
 const ASSIGNMENT_GAME_MODES: GameMode[] = [
   // Core Learning & Review
   {
-    id: 'learn_new',
+    id: 'learn_new_words',
     name: 'Learn New Words',
-    description: 'Start with unfamiliar vocabulary using spaced repetition',
-    icon: <Lightbulb className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-green-400 to-blue-500',
+    description: 'Master new vocabulary items',
+    icon: <Brain className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-emerald-400 to-teal-500',
     category: 'core',
     estimatedTime: '10-15 min',
     difficulty: 'Beginner',
@@ -63,6 +63,26 @@ const ASSIGNMENT_GAME_MODES: GameMode[] = [
     category: 'core',
     estimatedTime: '5-10 min',
     difficulty: 'Beginner'
+  },
+  {
+    id: 'word_builder',
+    name: 'Word Builder',
+    description: 'Assemble words from scrambled letters',
+    icon: <Keyboard className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-emerald-400 to-teal-500',
+    category: 'core',
+    estimatedTime: '10-15 min',
+    difficulty: 'Intermediate'
+  },
+  {
+    id: 'active_recall',
+    name: 'Active Recall',
+    description: 'Type the translation with no hints',
+    icon: <Brain className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-rose-400 to-red-500',
+    category: 'core',
+    estimatedTime: '10-15 min',
+    difficulty: 'Advanced'
   },
 
   // Skill Builders
@@ -117,8 +137,20 @@ const ASSIGNMENT_GAME_MODES: GameMode[] = [
     category: 'challenge',
     estimatedTime: '6-10 min',
     difficulty: 'Intermediate'
+  },
+  {
+    id: 'word_race',
+    name: 'Word Race',
+    description: 'Race against time to match words',
+    icon: <Clock className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-red-400 to-pink-500',
+    category: 'challenge',
+    estimatedTime: '3-5 min',
+    difficulty: 'Expert'
   }
 ];
+
+
 
 interface VocabMasterAssignmentLauncherProps {
   vocabulary: VocabularyWord[];
@@ -141,7 +173,7 @@ export default function VocabMasterAssignmentLauncher({
   const handleModeSelect = async (modeId: string) => {
     setIsLoading(true);
     setSelectedMode(modeId);
-    
+
     // Small delay for visual feedback
     setTimeout(() => {
       onModeSelect(modeId);
@@ -171,7 +203,7 @@ export default function VocabMasterAssignmentLauncher({
                 Back to Assignments
               </button>
             )}
-            
+
             {!isAssessmentMode && (
               <div className="text-white/60 text-sm">
                 {vocabulary.length} words loaded
@@ -207,10 +239,10 @@ export default function VocabMasterAssignmentLauncher({
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getCategoryModes('core').map((mode, index) => (
-                <ModeCard 
-                  key={mode.id} 
-                  mode={mode} 
-                  index={index} 
+                <ModeCard
+                  key={mode.id}
+                  mode={mode}
+                  index={index}
                   onSelect={handleModeSelect}
                   isLoading={isLoading}
                   selectedMode={selectedMode}
@@ -235,10 +267,10 @@ export default function VocabMasterAssignmentLauncher({
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getCategoryModes('skills').map((mode, index) => (
-                <ModeCard 
-                  key={mode.id} 
-                  mode={mode} 
-                  index={index + 3} 
+                <ModeCard
+                  key={mode.id}
+                  mode={mode}
+                  index={index + 3}
                   onSelect={handleModeSelect}
                   isLoading={isLoading}
                   selectedMode={selectedMode}
@@ -263,10 +295,10 @@ export default function VocabMasterAssignmentLauncher({
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getCategoryModes('challenge').map((mode, index) => (
-                <ModeCard 
-                  key={mode.id} 
-                  mode={mode} 
-                  index={index + 6} 
+                <ModeCard
+                  key={mode.id}
+                  mode={mode}
+                  index={index + 6}
                   onSelect={handleModeSelect}
                   isLoading={isLoading}
                   selectedMode={selectedMode}
@@ -306,21 +338,20 @@ function ModeCard({ mode, index, onSelect, isLoading, selectedMode, vocabularyLe
       <button
         onClick={() => onSelect(mode.id)}
         disabled={isDisabled}
-        className={`w-full text-left p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden ${
-          isDisabled
-            ? 'opacity-50 cursor-not-allowed'
-            : 'hover:transform hover:-translate-y-1'
-        }`}
+        className={`w-full text-left p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden ${isDisabled
+          ? 'opacity-50 cursor-not-allowed'
+          : 'hover:transform hover:-translate-y-1'
+          }`}
       >
         <div className={`absolute inset-0 ${mode.color} opacity-90`} />
-        
+
         {/* Loading overlay */}
         {isSelected && isLoading && (
           <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
           </div>
         )}
-        
+
         <div className="relative z-10">
           <div className="flex items-start justify-between mb-4">
             <div className="text-white">
@@ -332,15 +363,15 @@ function ModeCard({ mode, index, onSelect, isLoading, selectedMode, vocabularyLe
               </span>
             )}
           </div>
-          
+
           <h4 className="text-xl font-bold text-white mb-2">
             {mode.name}
           </h4>
-          
+
           <p className="text-white/90 text-sm mb-4 leading-relaxed">
             {mode.description}
           </p>
-          
+
           <div className="flex items-center justify-between text-white/80 text-sm">
             <div className="flex items-center">
               <Clock className="h-4 w-4 mr-1" />

@@ -440,7 +440,7 @@ export default function ContentConfigurationStep({
     const hasGames = gameConfig.selectedGames.length > 0;
     const hasAssessments = assessmentConfig.selectedAssessments.length > 0;
     const hasSkills = skillsConfig.selectedSkills.length > 0;
-    const hasVocabMaster = vocabMasterConfig?.selectedModes?.length > 0;
+    const hasVocabMaster = vocabMasterConfig?.enabled || (vocabMasterConfig?.selectedModes?.length > 0);
 
     let gameConfigComplete = true;
     let assessmentConfigComplete = true;
@@ -522,10 +522,17 @@ export default function ContentConfigurationStep({
 
     // VocabMaster configuration completeness
     if (hasVocabMaster) {
-      vocabMasterConfigComplete = vocabMasterConfig.selectedModes.every(mode => {
-        const source = mode.instanceConfig?.vocabularySource?.source;
-        return source && source !== '';
-      });
+      // NEW: Check if using simplified model (enabled + single vocabularyConfig)
+      if (vocabMasterConfig.enabled) {
+        const source = vocabMasterConfig.vocabularyConfig?.source;
+        vocabMasterConfigComplete = source !== undefined && source !== '';
+      } else {
+        // LEGACY: Check each mode's vocabularySource
+        vocabMasterConfigComplete = vocabMasterConfig.selectedModes.every(mode => {
+          const source = mode.instanceConfig?.vocabularySource?.source;
+          return source && source !== '';
+        });
+      }
     }
 
     const isCompleted = (!hasGames || gameConfigComplete) && (!hasAssessments || assessmentConfigComplete) && (!hasSkills || skillsConfigComplete) && (!hasVocabMaster || vocabMasterConfigComplete);
@@ -534,21 +541,22 @@ export default function ContentConfigurationStep({
 
   // Determine which tab to show first
   useEffect(() => {
-    if (gameConfig.selectedGames.length > 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0 && vocabMasterConfig.selectedModes.length === 0) {
+    const vmEnabled = vocabMasterConfig?.enabled || vocabMasterConfig?.selectedModes?.length > 0;
+    if (gameConfig.selectedGames.length > 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0 && !vmEnabled) {
       setActiveTab('games');
-    } else if (assessmentConfig.selectedAssessments.length > 0 && gameConfig.selectedGames.length === 0 && skillsConfig.selectedSkills.length === 0 && vocabMasterConfig.selectedModes.length === 0) {
+    } else if (assessmentConfig.selectedAssessments.length > 0 && gameConfig.selectedGames.length === 0 && skillsConfig.selectedSkills.length === 0 && !vmEnabled) {
       setActiveTab('assessments');
-    } else if (skillsConfig.selectedSkills.length > 0 && gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && vocabMasterConfig.selectedModes.length === 0) {
+    } else if (skillsConfig.selectedSkills.length > 0 && gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && !vmEnabled) {
       setActiveTab('skills');
-    } else if (vocabMasterConfig.selectedModes.length > 0 && gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0) {
+    } else if (vmEnabled && gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0) {
       setActiveTab('vocab-master');
     }
-  }, [gameConfig.selectedGames.length, assessmentConfig.selectedAssessments.length, skillsConfig.selectedSkills.length, vocabMasterConfig.selectedModes.length]);
+  }, [gameConfig.selectedGames.length, assessmentConfig.selectedAssessments.length, skillsConfig.selectedSkills.length, vocabMasterConfig?.enabled, vocabMasterConfig?.selectedModes?.length]);
 
   const hasGames = gameConfig.selectedGames.length > 0;
   const hasAssessments = assessmentConfig.selectedAssessments.length > 0;
   const hasSkills = skillsConfig.selectedSkills.length > 0;
-  const hasVocabMaster = vocabMasterConfig?.selectedModes?.length > 0;
+  const hasVocabMaster = vocabMasterConfig?.enabled || (vocabMasterConfig?.selectedModes?.length > 0);
 
   // Compute skills configuration completeness for display
   const skillsConfigComplete = hasSkills ? skillsConfig.selectedSkills.every(skill => {
@@ -562,10 +570,14 @@ export default function ContentConfigurationStep({
   }) : true;
 
   // Compute VocabMaster completeness for display
-  const vocabMasterConfigComplete = hasVocabMaster ? vocabMasterConfig.selectedModes.every(mode => {
-    const source = mode.instanceConfig?.vocabularySource?.source;
-    return source && source !== '';
-  }) : true;
+  const vocabMasterConfigComplete = hasVocabMaster ? (
+    vocabMasterConfig.enabled
+      ? (vocabMasterConfig.vocabularyConfig?.source !== undefined && vocabMasterConfig.vocabularyConfig?.source !== '')
+      : vocabMasterConfig.selectedModes.every(mode => {
+        const source = mode.instanceConfig?.vocabularySource?.source;
+        return source && source !== '';
+      })
+  ) : true;
 
   // Define game types for different configurations
   const vocabGameIds = ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening', 'vocab-master', 'word-towers'];
@@ -1283,88 +1295,174 @@ export default function ContentConfigurationStep({
         {/* VocabMaster Configuration */}
         {activeTab === 'vocab-master' && hasVocabMaster && (
           <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start">
-                <Info className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
-                <div>
-                  <h4 className="font-medium text-blue-900">VocabMaster Configuration</h4>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Configure the vocabulary content for each selected VocabMaster mode.
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-purple-600 rounded-xl">
+                  <Brain className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900 text-lg">VocabMaster Vocabulary Configuration</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Configure the vocabulary content that students will practice with. They'll be able to choose from all 13 learning modes.
                   </p>
                 </div>
               </div>
             </div>
 
-            {vocabMasterConfig.selectedModes.map((mode, index) => {
-              const vocabSource = (mode.instanceConfig?.vocabularySource || {
-                source: '',
-                language: contentConfig.language,
-                difficulty: 'intermediate',
-                curriculumLevel: assignmentDetails.curriculum_level
-              }) as any;
+            {/* NEW: Single Vocabulary Configuration */}
+            {vocabMasterConfig.enabled && (
+              <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                <div className="flex items-center mb-4 pb-4 border-b border-gray-100">
+                  <div className="p-2 bg-indigo-100 rounded-lg mr-3">
+                    <BookOpen className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900">Vocabulary Content</h4>
+                    <p className="text-xs text-gray-500">Select the vocabulary students will learn and practice</p>
+                  </div>
+                </div>
 
-              // Map VocabularyConfig to ContentConfig for initialization
-              const initialContentConfig: any = {
-                type: vocabSource.source === 'create' ? 'custom' :
-                  vocabSource.source === 'custom' ? 'my-vocabulary' :
-                    (vocabSource.curriculumLevel || assignmentDetails.curriculum_level || 'KS3'),
-                language: vocabSource.language || contentConfig.language,
-                categories: vocabSource.categories,
-                subcategories: vocabSource.subcategories,
-                customListId: vocabSource.customListId,
-                customVocabulary: vocabSource.customVocabulary,
-                examBoard: vocabSource.examBoard,
-                tier: vocabSource.tier,
-                themes: vocabSource.themes,
-                units: vocabSource.units
-              };
+                <CurriculumContentSelector
+                  curriculumLevel={assignmentDetails.curriculum_level || 'KS3'}
+                  language={(vocabMasterConfig.vocabularyConfig?.language as any) || contentConfig.language || 'spanish'}
+                  initialConfig={{
+                    type: vocabMasterConfig.vocabularyConfig?.source === 'create' ? 'custom' :
+                      vocabMasterConfig.vocabularyConfig?.source === 'custom' ? 'my-vocabulary' :
+                        (vocabMasterConfig.vocabularyConfig?.curriculumLevel || assignmentDetails.curriculum_level || 'KS3'),
+                    language: (vocabMasterConfig.vocabularyConfig?.language as any) || contentConfig.language || 'spanish',
+                    categories: vocabMasterConfig.vocabularyConfig?.categories,
+                    subcategories: vocabMasterConfig.vocabularyConfig?.subcategories,
+                    customListId: vocabMasterConfig.vocabularyConfig?.customListId,
+                    customVocabulary: vocabMasterConfig.vocabularyConfig?.customVocabulary as any,
+                    examBoard: vocabMasterConfig.vocabularyConfig?.examBoard,
+                    tier: vocabMasterConfig.vocabularyConfig?.tier,
+                    themes: vocabMasterConfig.vocabularyConfig?.themes,
+                    units: vocabMasterConfig.vocabularyConfig?.units
+                  }}
+                  onConfigChange={(newContentConfig: any) => {
+                    // Map ContentConfig to VocabularyConfig
+                    const newVocabConfig: any = {
+                      source: newContentConfig.type === 'custom' ? 'create' : newContentConfig.type === 'my-vocabulary' ? 'custom' : 'category',
+                      language: newContentConfig.language,
+                      categories: newContentConfig.categories,
+                      subcategories: newContentConfig.subcategories,
+                      category: newContentConfig.categories?.[0] || '',
+                      subcategory: newContentConfig.subcategories?.[0] || '',
+                      customListId: newContentConfig.customListId,
+                      customVocabulary: newContentConfig.customVocabulary,
+                      examBoard: newContentConfig.examBoard,
+                      tier: newContentConfig.tier,
+                      themes: newContentConfig.themes,
+                      units: newContentConfig.units,
+                      curriculumLevel: newContentConfig.type === 'KS3' || newContentConfig.type === 'KS4' ? newContentConfig.type : assignmentDetails.curriculum_level
+                    };
 
-              return (
-                <div key={mode.id} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                  <div className="flex items-center mb-4 pb-2 border-b border-gray-100">
-                    <div className="p-2 bg-indigo-100 rounded-lg mr-3">
-                      <BookOpen className="h-5 w-5 text-indigo-600" />
-                    </div>
+                    setVocabMasterConfig({
+                      ...vocabMasterConfig,
+                      vocabularyConfig: newVocabConfig
+                    });
+                  }}
+                />
+
+                {/* Mode Preview */}
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <p className="text-sm font-medium text-gray-700 mb-3">Students can practice with these modes:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Flashcards', 'Multiple Choice', 'Dictation', 'Speed Challenge', 'Word Matching', 'Context Practice', 'Listening Comprehension', 'Memory Palace', 'Word Builder', 'Word Race', 'Pronunciation', 'Learn New', 'Mixed Review'].map((mode) => (
+                      <span key={mode} className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium">
+                        {mode}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LEGACY: Per-mode configuration (for backward compatibility) */}
+            {!vocabMasterConfig.enabled && vocabMasterConfig.selectedModes.length > 0 && (
+              <>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start">
+                    <Info className="h-5 w-5 text-amber-500 mt-0.5 mr-3" />
                     <div>
-                      <h4 className="font-bold text-gray-900">{mode.name}</h4>
-                      <p className="text-xs text-gray-500">Configure content for this activity</p>
+                      <h4 className="font-medium text-amber-900">Legacy Mode Configuration</h4>
+                      <p className="text-sm text-amber-700 mt-1">
+                        You have selected individual VocabMaster modes. Configure vocabulary for each mode below.
+                      </p>
                     </div>
                   </div>
-
-                  <CurriculumContentSelector
-                    curriculumLevel={assignmentDetails.curriculum_level || 'KS3'}
-                    language={(vocabSource.language || 'spanish') as any}
-                    initialConfig={initialContentConfig}
-                    onConfigChange={(newContentConfig: any) => {
-                      // Map ContentConfig back to VocabularyConfig
-                      const newVocabConfig: any = {
-                        source: newContentConfig.type === 'custom' ? 'create' : newContentConfig.type === 'my-vocabulary' ? 'custom' : 'category',
-                        language: newContentConfig.language,
-                        categories: newContentConfig.categories,
-                        subcategories: newContentConfig.subcategories,
-                        customListId: newContentConfig.customListId,
-                        customVocabulary: newContentConfig.customVocabulary,
-                        examBoard: newContentConfig.examBoard,
-                        tier: newContentConfig.tier,
-                        themes: newContentConfig.themes,
-                        units: newContentConfig.units,
-                        curriculumLevel: newContentConfig.type === 'KS3' || newContentConfig.type === 'KS4' ? newContentConfig.type : assignmentDetails.curriculum_level
-                      };
-
-                      const newModes = [...vocabMasterConfig.selectedModes];
-                      newModes[index] = {
-                        ...newModes[index],
-                        instanceConfig: {
-                          ...newModes[index].instanceConfig,
-                          vocabularySource: newVocabConfig
-                        }
-                      };
-                      setVocabMasterConfig({ ...vocabMasterConfig, selectedModes: newModes });
-                    }}
-                  />
                 </div>
-              );
-            })}
+
+                {vocabMasterConfig.selectedModes.map((mode, index) => {
+                  const vocabSource = (mode.instanceConfig?.vocabularySource || {
+                    source: '',
+                    language: contentConfig.language,
+                    difficulty: 'intermediate',
+                    curriculumLevel: assignmentDetails.curriculum_level
+                  }) as any;
+
+                  const initialContentConfig: any = {
+                    type: vocabSource.source === 'create' ? 'custom' :
+                      vocabSource.source === 'custom' ? 'my-vocabulary' :
+                        (vocabSource.curriculumLevel || assignmentDetails.curriculum_level || 'KS3'),
+                    language: vocabSource.language || contentConfig.language,
+                    categories: vocabSource.categories,
+                    subcategories: vocabSource.subcategories,
+                    customListId: vocabSource.customListId,
+                    customVocabulary: vocabSource.customVocabulary,
+                    examBoard: vocabSource.examBoard,
+                    tier: vocabSource.tier,
+                    themes: vocabSource.themes,
+                    units: vocabSource.units
+                  };
+
+                  return (
+                    <div key={mode.id} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center mb-4 pb-2 border-b border-gray-100">
+                        <div className="p-2 bg-indigo-100 rounded-lg mr-3">
+                          <BookOpen className="h-5 w-5 text-indigo-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900">{mode.name}</h4>
+                          <p className="text-xs text-gray-500">Configure content for this activity</p>
+                        </div>
+                      </div>
+
+                      <CurriculumContentSelector
+                        curriculumLevel={assignmentDetails.curriculum_level || 'KS3'}
+                        language={(vocabSource.language || 'spanish') as any}
+                        initialConfig={initialContentConfig}
+                        onConfigChange={(newContentConfig: any) => {
+                          const newVocabConfig: any = {
+                            source: newContentConfig.type === 'custom' ? 'create' : newContentConfig.type === 'my-vocabulary' ? 'custom' : 'category',
+                            language: newContentConfig.language,
+                            categories: newContentConfig.categories,
+                            subcategories: newContentConfig.subcategories,
+                            customListId: newContentConfig.customListId,
+                            customVocabulary: newContentConfig.customVocabulary,
+                            examBoard: newContentConfig.examBoard,
+                            tier: newContentConfig.tier,
+                            themes: newContentConfig.themes,
+                            units: newContentConfig.units,
+                            curriculumLevel: newContentConfig.type === 'KS3' || newContentConfig.type === 'KS4' ? newContentConfig.type : assignmentDetails.curriculum_level
+                          };
+
+                          const newModes = [...vocabMasterConfig.selectedModes];
+                          newModes[index] = {
+                            ...newModes[index],
+                            instanceConfig: {
+                              ...newModes[index].instanceConfig,
+                              vocabularySource: newVocabConfig
+                            }
+                          };
+                          setVocabMasterConfig({ ...vocabMasterConfig, selectedModes: newModes });
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </div>
         )}
       </div>

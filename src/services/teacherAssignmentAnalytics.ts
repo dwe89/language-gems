@@ -1,4 +1,12 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import {
+  AssessmentType,
+  AssessmentTypeConfig,
+  NormalizedAssessmentResult,
+  ASSESSMENT_TYPE_REGISTRY,
+  getAssessmentConfig
+} from '@/types/assessmentTypes';
+import { detectAssessmentTypes, AssignmentMetadata } from '@/utils/assignmentTypeDetector';
 
 export type AssessmentCategory =
   | 'gcse-reading'
@@ -72,6 +80,9 @@ export interface AssessmentResultDetail {
   performanceByQuestionType?: Record<string, AssessmentPerformanceSnapshot> | null;
   performanceByTheme?: Record<string, AssessmentPerformanceSnapshot> | null;
   performanceByTopic?: Record<string, AssessmentPerformanceSnapshot> | null;
+  isOverridden?: boolean;
+  originalScore?: number;
+  originalPercentage?: number;
 }
 
 export interface AssignmentOverviewMetrics {
@@ -88,6 +99,7 @@ export interface AssignmentOverviewMetrics {
   classSuccessScore: number; // (strong + weak retrieval) / total attempts
   studentsNeedingHelp: number;
   isAssessmentAssignment: boolean;
+  isSkillsAssignment?: boolean;
   assessmentSummary?: AssessmentTypeSummary[];
   assessmentPerformanceBreakdown?: AssessmentPerformanceBreakdown;
 }
@@ -129,18 +141,95 @@ export interface StudentWordStruggle {
   recommendedIntervention: string;
 }
 
-export class TeacherAssignmentAnalyticsService {
-  private assessmentResultsCache = new Map<string, AssessmentResultDetail[]>();
+interface PreloadedData {
+  preloadedReadingComprehensionResults?: any[];
+}
 
-  constructor(private supabase: SupabaseClient) { }
+export class TeacherAssignmentAnalyticsService {
+  // Cache is now cleared on each instantiation to prevent stale data in dev mode
+  private assessmentResultsCache = new Map<string, AssessmentResultDetail[]>();
+  private preloadedData: PreloadedData;
+
+  constructor(private supabase: SupabaseClient, preloadedData: PreloadedData = {}) {
+    // Clear cache on each instantiation to ensure fresh data
+    this.assessmentResultsCache.clear();
+    this.preloadedData = preloadedData;
+    if (preloadedData.preloadedReadingComprehensionResults?.length) {
+      console.log('📊 [SERVICE] Received preloaded reading comprehension data:', preloadedData.preloadedReadingComprehensionResults.length, 'results');
+    }
+  }
+
+  /**
+   * Check if a student's score has been overridden by a teacher
+   * and return the override details if it exists
+   */
+  private async getScoreOverride(
+    assignmentId: string,
+    studentId: string,
+    assessmentType: string
+  ): Promise<{ overrideScore: number; overridePercentage: number; originalScore: number; originalPercentage: number } | null> {
+    try {
+      const { data: override, error } = await this.supabase
+        .from('teacher_score_overrides')
+        .select('*')
+        .eq('assignment_id', assignmentId)
+        .eq('student_id', studentId)
+        .eq('assessment_type', assessmentType)
+        .order('overridden_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !override) {
+        return null;
+      }
+
+      return {
+        overrideScore: override.override_score,
+        overridePercentage: Math.round((override.override_score / override.override_max_score) * 100),
+        originalScore: override.original_score,
+        originalPercentage: Math.round((override.original_score / override.original_max_score) * 100)
+      };
+    } catch (error) {
+      console.error('Error fetching score override:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Apply score overrides to a list of assessment results
+   */
+  private async applyScoreOverrides(
+    assignmentId: string,
+    results: AssessmentResultDetail[]
+  ): Promise<AssessmentResultDetail[]> {
+    const overridePromises = results.map(async (result) => {
+      const override = await this.getScoreOverride(
+        assignmentId,
+        result.studentId,
+        result.assessmentType
+      );
+
+      if (override) {
+        return {
+          ...result,
+          isOverridden: true,
+          originalScore: override.originalScore,
+          originalPercentage: override.originalPercentage,
+          rawScore: override.overrideScore,
+          scorePercentage: override.overridePercentage
+        };
+      }
+
+      return result;
+    });
+
+    return Promise.all(overridePromises);
+  }
 
   /**
    * Get assignment overview metrics for the triage zone
    */
   async getAssignmentOverview(assignmentId: string): Promise<AssignmentOverviewMetrics> {
-    console.log('📊 [ASSIGNMENT ANALYTICS] Getting overview for:', assignmentId);
-    console.log('📊 [ASSIGNMENT ANALYTICS] Supabase client:', !!this.supabase);
-
     try {
       // Get assignment details
       const { data: assignment, error: assignmentError } = await this.supabase
@@ -158,8 +247,6 @@ export class TeacherAssignmentAnalyticsService {
         console.error('❌ No assignment found for ID:', assignmentId);
         throw new Error('Assignment not found');
       }
-
-      console.log('📋 Assignment data:', assignment);
 
       if (!assignment.class_id) {
         console.error('❌ Assignment has no class_id:', assignment);
@@ -275,7 +362,7 @@ export class TeacherAssignmentAnalyticsService {
         }
 
         console.log('🔍 [SKILLS] Grammar sessions found:', grammarSessions?.length || 0);
-        
+
         // 🔧 FIX: For mixed-mode assignments (game_type === 'mixed-mode'), also check vocabulary games
         let vocabSessions: any[] = [];
         if (assignment?.game_type === 'mixed-mode') {
@@ -284,7 +371,7 @@ export class TeacherAssignmentAnalyticsService {
             .from('enhanced_game_sessions')
             .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage, words_attempted, words_correct')
             .eq('assignment_id', assignmentId);
-          
+
           if (!vocabError && vocabData) {
             vocabSessions = vocabData;
             console.log('🔍 [MIXED-MODE] Vocabulary sessions found:', vocabSessions.length);
@@ -313,7 +400,7 @@ export class TeacherAssignmentAnalyticsService {
         const grammarTimes = grammarSessions?.filter(s => s.duration_seconds && s.duration_seconds > 0) || [];
         const vocabTimes = vocabSessions?.filter((s: any) => s.duration_seconds && s.duration_seconds > 0) || [];
         const allSessionTimes = [...grammarTimes, ...vocabTimes];
-        
+
         if (allSessionTimes.length > 0) {
           averageTimeSeconds = allSessionTimes.reduce((sum, s: any) => sum + (s.duration_seconds || 0), 0) / allSessionTimes.length;
         }
@@ -348,7 +435,7 @@ export class TeacherAssignmentAnalyticsService {
 
         // Calculate students needing help (accuracy < 50%)
         const studentAccuracyMap = new Map<string, { total: number; correct: number }>();
-        
+
         // Include grammar sessions
         grammarSessions?.forEach(session => {
           const current = studentAccuracyMap.get(session.student_id) || { total: 0, correct: 0 };
@@ -378,10 +465,15 @@ export class TeacherAssignmentAnalyticsService {
 
         // 🔧 FIX: Query enhanced_game_sessions directly instead of using RPC
         // The service role client should bypass RLS automatically
+        // 🔥 DEBUG: Use same pattern as test query to see if it works
         let { data: sessions, error: sessionError } = await this.supabase
           .from('enhanced_game_sessions')
-          .select('id, student_id, duration_seconds, started_at, ended_at, completion_status, accuracy_percentage, words_attempted, words_correct, game_type')
+          .select('*')
           .eq('assignment_id', assignmentId);
+
+        // 🔥 CRITICAL DEBUG: Store immediately after query
+        (this as any)._vocabQueryError = sessionError?.message || null;
+        (this as any)._vocabQuerySessionsRaw = sessions?.length || 0;
 
         console.log('🔍 [DEBUG] Sessions query result - error:', sessionError);
         console.log('🔍 [DEBUG] Sessions found:', sessions?.length);
@@ -554,6 +646,7 @@ export class TeacherAssignmentAnalyticsService {
         classSuccessScore,
         studentsNeedingHelp,
         isAssessmentAssignment: isAssessmentType,
+        isSkillsAssignment: isSkillsType,
         assessmentSummary,
         assessmentPerformanceBreakdown
       };
@@ -574,30 +667,61 @@ export class TeacherAssignmentAnalyticsService {
     }
 
     try {
-      console.log('📊 [ASSESSMENT RESULTS] Fetching all assessment types for:', assignmentId);
-      const [reading, listening, dictation, writing, legacyReading] = await Promise.all([
-        this.fetchAqaReadingResults(assignmentId),
-        this.fetchAqaListeningResults(assignmentId),
-        this.fetchAqaDictationResults(assignmentId),
-        this.fetchAqaWritingResults(assignmentId),
-        this.fetchReadingComprehensionResults(assignmentId)
-      ]);
-      console.log('📊 [ASSESSMENT RESULTS] Fetched results:', {
-        reading: reading.length,
-        listening: listening.length,
-        dictation: dictation.length,
-        writing: writing.length,
-        legacyReading: legacyReading.length
+      // Fetch assignment metadata to detect types
+      const { data: assignment } = await this.supabase
+        .from('assignments')
+        .select('game_type, type, game_config')
+        .eq('id', assignmentId)
+        .single();
+
+      if (!assignment) {
+        console.error('❌ Assignment not found:', assignmentId);
+        return [];
+      }
+
+      // Map the assignment data to AssignmentMetadata format
+      const metadata: AssignmentMetadata = {
+        game_type: assignment.game_type,
+        content_type: assignment.type, // 'type' column is the content_type
+        game_config: assignment.game_config
+      };
+
+      // Detect which assessment types are present
+      const assessmentTypes = detectAssessmentTypes(metadata);
+
+      console.log(`🔍 Detected assessment types for ${assignmentId}:`, assessmentTypes);
+
+      // Fetch all relevant assessment types in parallel
+      const fetchPromises = assessmentTypes.map(type => {
+        switch (type) {
+          case 'reading-comprehension':
+            return this.fetchReadingComprehensionResults(assignmentId);
+          case 'aqa-reading':
+            return this.fetchAQAReadingResults(assignmentId);
+          case 'aqa-listening':
+            return this.fetchAQAListeningResults(assignmentId);
+          case 'aqa-dictation':
+            return this.fetchAQADictationResults(assignmentId);
+          case 'aqa-writing':
+            return this.fetchAQAWritingResults(assignmentId);
+          case 'four-skills':
+            return this.fetchFourSkillsResults(assignmentId);
+          case 'exam-style':
+            return this.fetchExamStyleResults(assignmentId);
+          case 'vocabulary-game':
+            return this.fetchVocabularyGameResults(assignmentId);
+          case 'grammar-practice':
+            return this.fetchGrammarPracticeResults(assignmentId);
+          default:
+            console.warn(`⚠️ Unknown assessment type: ${type}`);
+            return Promise.resolve([]);
+        }
       });
 
-      const combined = [
-        ...reading,
-        ...listening,
-        ...dictation,
-        ...writing,
-        ...legacyReading
-      ];
+      const resultArrays = await Promise.all(fetchPromises);
+      const combined = resultArrays.flat();
 
+      // Enrich with student names
       if (combined.length > 0) {
         const studentIds = Array.from(new Set(combined.map(result => result.studentId).filter(Boolean)));
         if (studentIds.length > 0) {
@@ -613,8 +737,11 @@ export class TeacherAssignmentAnalyticsService {
         }
       }
 
-      this.assessmentResultsCache.set(assignmentId, combined);
-      return combined;
+      // Apply score overrides
+      const resultsWithOverrides = await this.applyScoreOverrides(assignmentId, combined);
+
+      this.assessmentResultsCache.set(assignmentId, resultsWithOverrides);
+      return resultsWithOverrides;
     } catch (error) {
       console.error('❌ Error aggregating assessment results:', error);
       return [];
@@ -994,16 +1121,46 @@ export class TeacherAssignmentAnalyticsService {
     }
   }
 
+  /**
+   * Fetch reading comprehension results using direct REST API call
+   * NOTE: We use direct fetch instead of Supabase JS client due to caching/connection 
+   * issues observed in Next.js where the JS client intermittently returns empty results
+   */
   private async fetchReadingComprehensionResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
     try {
-      // console.log('📖 [READING COMP] Fetching results for:', assignmentId);
-      let { data, error } = await this.supabase
-        .from('reading_comprehension_results')
-        .select('id, user_id, assignment_id, text_id, total_questions, correct_answers, score, time_spent, passed, completed_at')
-        .eq('assignment_id', assignmentId);
+      let data: any[] | null = null;
+      let error: any = null;
 
-      // console.log('📖 [READING COMP] Query result:', { count: data?.length, error });
+      // Use preloaded data if available
+      if (this.preloadedData.preloadedReadingComprehensionResults?.length) {
+        data = this.preloadedData.preloadedReadingComprehensionResults.filter(r => r.assignment_id === assignmentId);
+      } else {
+        // Direct fetch to Supabase REST API (bypasses JS client caching issues)
+        try {
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+          const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
+          const url = `${supabaseUrl}/rest/v1/reading_comprehension_results?assignment_id=eq.${assignmentId}&select=id,user_id,assignment_id,text_id,total_questions,correct_answers,score,time_spent,passed,completed_at`;
+
+          const response = await fetch(url, {
+            headers: {
+              'apikey': serviceRoleKey,
+              'Authorization': `Bearer ${serviceRoleKey}`,
+              'Content-Type': 'application/json'
+            },
+            cache: 'no-store'
+          });
+
+          if (response.ok) {
+            data = await response.json();
+          } else {
+            error = { message: `HTTP ${response.status}`, details: await response.text() };
+          }
+        } catch (fetchError) {
+          console.error('❌ Error fetching reading comprehension results:', fetchError);
+          error = fetchError;
+        }
+      }
       if (error) {
         console.error('❌ Error fetching reading comprehension results:', error);
         return [];
@@ -1085,6 +1242,169 @@ export class TeacherAssignmentAnalyticsService {
       console.error('❌ Error in fetchReadingComprehensionResults:', error);
       return [];
     }
+  }
+
+  /**
+   * Generic assessment result fetcher - works with any assessment type from the registry
+   * Uses direct REST API to avoid Supabase JS client caching issues
+   */
+  private async fetchAssessmentResults(
+    assignmentId: string,
+    assessmentType: AssessmentType
+  ): Promise<AssessmentResultDetail[]> {
+    try {
+      const config = getAssessmentConfig(assessmentType);
+      if (!config) {
+        console.error(`❌ Unknown assessment type: ${assessmentType}`);
+        return [];
+      }
+
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      if (!supabaseUrl || !serviceRoleKey) {
+        console.error('❌ Missing Supabase credentials');
+        return [];
+      }
+
+      // Build select clause from config
+      const selectFields = config.resultColumns.join(',');
+
+      // Direct fetch to Supabase REST API (bypasses JS client caching)
+      const url = `${supabaseUrl}/rest/v1/${config.tableName}?assignment_id=eq.${assignmentId}&select=${selectFields}`;
+
+      const response = await fetch(url, {
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store' // Prevent Next.js caching
+      });
+
+      if (!response.ok) {
+        console.error(`❌ REST API error for ${assessmentType}:`, response.status);
+        return [];
+      }
+
+      const data = await response.json();
+
+      // Normalize results using the config
+      return this.normalizeAssessmentResults(data, config);
+    } catch (error) {
+      console.error(`❌ Error fetching ${assessmentType} results:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Normalizes assessment results from different table schemas into a unified format
+   * Returns complete AssessmentResultDetail objects for dashboard consumption
+   */
+  private normalizeAssessmentResults(
+    data: any[],
+    config: AssessmentTypeConfig
+  ): AssessmentResultDetail[] {
+    return data.map((result) => {
+      // Handle different score field types
+      const rawScore = result[config.scoreField] ?? result.raw_score ?? 0;
+      const maxScore = result[config.maxScoreField] ?? result.total_possible_score ?? result.max_score ?? 100;
+
+      // Calculate percentage - some tables store it directly
+      let percentageScore = result.percentage_score ?? result.score ?? 0;
+      if (typeof percentageScore === 'string') {
+        percentageScore = parseFloat(percentageScore) || 0;
+      }
+      // If percentage not stored, calculate from raw/max
+      if (!percentageScore && rawScore && maxScore > 0) {
+        percentageScore = Math.round((rawScore / maxScore) * 100);
+      }
+
+      // Determine student ID field - varies by table schema
+      const studentId = result.student_id ?? result.user_id ?? '';
+
+      // Determine status
+      const status = result.status ?? (result.completed_at || result.completion_time ? 'completed' : 'in_progress');
+
+      return {
+        resultId: result.id,
+        studentId: studentId,
+        studentName: 'Unknown Student', // Populated later by getAssessmentResults
+        assessmentType: config.type as AssessmentCategory,
+        examBoard: result.exam_board ?? config.displayName.includes('AQA') ? 'AQA' : null,
+        paperIdentifier: result.assessment_id ?? result.text_id ?? null,
+        paperTitle: result.title ?? null,
+        tier: result.tier ?? result.level ?? null,
+        language: result.language ?? null,
+        attemptNumber: result.attempt_number ?? 1,
+        status: status,
+        scorePercentage: Math.round(percentageScore),
+        rawScore: rawScore,
+        maxScore: maxScore,
+        timeSpentSeconds: result[config.timeField] ?? result.total_time_seconds ?? result.time_spent ?? 0,
+        completedAt: result.completion_time ?? result.completed_at ?? null,
+        gcseGrade: result.gcse_grade ?? null,
+        performanceByQuestionType: result.performance_by_question_type ?? null,
+        performanceByTheme: result.performance_by_theme ?? null,
+        performanceByTopic: result.performance_by_topic ?? null
+      };
+    });
+  }
+
+  /**
+   * Fetch AQA Reading assessment results
+   */
+  private async fetchAQAReadingResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    return this.fetchAssessmentResults(assignmentId, 'aqa-reading');
+  }
+
+  /**
+   * Fetch AQA Listening assessment results
+   */
+  private async fetchAQAListeningResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    return this.fetchAssessmentResults(assignmentId, 'aqa-listening');
+  }
+
+  /**
+   * Fetch AQA Dictation assessment results
+   */
+  private async fetchAQADictationResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    return this.fetchAssessmentResults(assignmentId, 'aqa-dictation');
+  }
+
+  /**
+   * Fetch AQA Writing assessment results
+   */
+  private async fetchAQAWritingResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    return this.fetchAssessmentResults(assignmentId, 'aqa-writing');
+  }
+
+  /**
+   * Fetch Four Skills assessment results
+   */
+  private async fetchFourSkillsResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    return this.fetchAssessmentResults(assignmentId, 'four-skills');
+  }
+
+  /**
+   * Fetch Exam Style assessment results
+   */
+  private async fetchExamStyleResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    return this.fetchAssessmentResults(assignmentId, 'exam-style');
+  }
+
+  /**
+   * Fetch Vocabulary Game results
+   */
+  private async fetchVocabularyGameResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    return this.fetchAssessmentResults(assignmentId, 'vocabulary-game');
+  }
+
+  /**
+   * Fetch Grammar Practice results
+   */
+  private async fetchGrammarPracticeResults(assignmentId: string): Promise<AssessmentResultDetail[]> {
+    return this.fetchAssessmentResults(assignmentId, 'grammar-practice');
   }
 
   private async buildAssignmentFilterIds(bridgeTable: string, assignmentId: string): Promise<string[]> {
@@ -1424,16 +1744,17 @@ export class TeacherAssignmentAnalyticsService {
 
       const nameMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
 
-      // Fetch all sessions for this assignment at once (using RPC to bypass RLS)
+      // Fetch all sessions for this assignment at once
+      // 🔧 FIX: Use direct query with select('*') instead of RPC - the column select issue was causing 0 results
       console.log('🔍 [STUDENT ROSTER] Fetching sessions for assignment:', assignmentId);
 
       const { data: allSessions, error: sessionsError } = await this.supabase
-        .rpc('get_assignment_analytics_sessions', {
-          p_assignment_id: assignmentId
-        });
+        .from('enhanced_game_sessions')
+        .select('*')
+        .eq('assignment_id', assignmentId);
 
       if (sessionsError) {
-        console.error('❌ Error fetching sessions via RPC:', sessionsError);
+        console.error('❌ Error fetching sessions:', sessionsError);
       }
 
       console.log('🔍 [STUDENT ROSTER] Sessions query result:', {
@@ -1558,7 +1879,7 @@ export class TeacherAssignmentAnalyticsService {
         if (isSkillsAssignment) {
           // For skills (grammar) assignments, use grammar_assignment_sessions
           const studentGrammarSessions = grammarSessionsByStudent.get(studentId) || [];
-          
+
           // 🔧 FIX: For mixed-mode, also calculate vocabulary game performance
           let totalCorrect = 0;
           let totalAttempts = 0;
@@ -1593,18 +1914,18 @@ export class TeacherAssignmentAnalyticsService {
             // Get vocabulary session metrics
             const vocabAttempts = studentSessions.reduce((sum, s) => sum + (s.words_attempted || 0), 0);
             const vocabCorrect = studentSessions.reduce((sum, s) => sum + (s.words_correct || 0), 0);
-            
+
             if (vocabAttempts > 0) {
               totalAttempts += vocabAttempts;
               totalCorrect += vocabCorrect;
               hasVocabData = true;
-              
+
               // If no grammar time, use vocab time
               if (timeSpentMinutes === 0) {
                 const totalVocabSeconds = studentSessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
                 timeSpentMinutes = Math.round(totalVocabSeconds / 60);
               }
-              
+
               // Update last attempt if vocab is more recent
               const vocabSorted = [...studentSessions]
                 .filter(s => s.started_at)
@@ -1627,6 +1948,8 @@ export class TeacherAssignmentAnalyticsService {
         } else if (isAssessmentAssignment) {
           // For assessments, ALWAYS fetch actual results from the results tables first
           // This ensures we catch results even if sessions are missing or RLS hides them
+
+          // Check Reading Comprehension results first
           const { data: rcResults } = await this.supabase
             .from('reading_comprehension_results')
             .select('score, correct_answers, total_questions, time_spent, completed_at')
@@ -1647,8 +1970,125 @@ export class TeacherAssignmentAnalyticsService {
             if (result.time_spent) {
               timeSpentMinutes = Math.round(result.time_spent / 60);
             }
-          } else if (studentSessionIds.length > 0) {
-            // Fallback to session data if no results found but sessions exist
+          }
+
+          // Check GCSE Reading results (AQA)
+          if (status === 'not_started') {
+            const { data: grResults } = await this.supabase
+              .from('aqa_reading_results')
+              .select('percentage_score, raw_score, total_possible_score, total_time_seconds, completion_time, status')
+              .eq('assignment_id', assignmentId)
+              .eq('student_id', studentId)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (grResults && grResults.length > 0) {
+              const result = grResults[0];
+              successScore = Math.round(result.percentage_score || 0);
+              failureRate = 100 - successScore;
+              weakRetrievalPercent = failureRate;
+              lastAttempt = result.completion_time;
+              status = result.status === 'completed' ? 'completed' : 'in_progress';
+              if (result.total_time_seconds) {
+                timeSpentMinutes = Math.round(result.total_time_seconds / 60);
+              }
+            }
+          }
+
+          // Check GCSE Listening results (AQA)
+          if (status === 'not_started') {
+            const { data: glResults } = await this.supabase
+              .from('aqa_listening_results')
+              .select('percentage_score, raw_score, total_possible_score, total_time_seconds, completion_time, status')
+              .eq('assignment_id', assignmentId)
+              .eq('student_id', studentId)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (glResults && glResults.length > 0) {
+              const result = glResults[0];
+              successScore = Math.round(result.percentage_score || 0);
+              failureRate = 100 - successScore;
+              weakRetrievalPercent = failureRate;
+              lastAttempt = result.completion_time;
+              status = result.status === 'completed' ? 'completed' : 'in_progress';
+              if (result.total_time_seconds) {
+                timeSpentMinutes = Math.round(result.total_time_seconds / 60);
+              }
+            }
+          }
+
+          // Check GCSE Writing results (AQA)
+          if (status === 'not_started') {
+            const { data: gwResults } = await this.supabase
+              .from('aqa_writing_results')
+              .select('percentage_score, total_score, max_score, time_spent_seconds, completed_at, is_completed')
+              .eq('assignment_id', assignmentId)
+              .eq('student_id', studentId)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (gwResults && gwResults.length > 0) {
+              const result = gwResults[0];
+              successScore = Math.round(result.percentage_score || 0);
+              failureRate = 100 - successScore;
+              weakRetrievalPercent = failureRate;
+              lastAttempt = result.completed_at;
+              status = result.is_completed ? 'completed' : 'in_progress';
+              if (result.time_spent_seconds) {
+                timeSpentMinutes = Math.round(result.time_spent_seconds / 60);
+              }
+            }
+          }
+
+          // Check GCSE Speaking results (AQA)
+          if (status === 'not_started') {
+            const { data: gsResults } = await this.supabase
+              .from('aqa_speaking_results')
+              .select('percentage_score, total_score, max_score, time_spent_seconds, completed_at')
+              .eq('assignment_id', assignmentId)
+              .eq('student_id', studentId)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (gsResults && gsResults.length > 0) {
+              const result = gsResults[0];
+              successScore = Math.round(result.percentage_score || 0);
+              failureRate = 100 - successScore;
+              weakRetrievalPercent = failureRate;
+              lastAttempt = result.completed_at;
+              status = result.completed_at ? 'completed' : 'in_progress';
+              if (result.time_spent_seconds) {
+                timeSpentMinutes = Math.round(result.time_spent_seconds / 60);
+              }
+            }
+          }
+
+          // Check Dictation results (AQA)
+          if (status === 'not_started') {
+            const { data: dictResults } = await this.supabase
+              .from('aqa_dictation_results')
+              .select('percentage_score, raw_score, total_possible_score, total_time_seconds, completion_time, status')
+              .eq('assignment_id', assignmentId)
+              .eq('student_id', studentId)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (dictResults && dictResults.length > 0) {
+              const result = dictResults[0];
+              successScore = Math.round(result.percentage_score || 0);
+              failureRate = 100 - successScore;
+              weakRetrievalPercent = failureRate;
+              lastAttempt = result.completion_time;
+              status = result.status === 'completed' ? 'completed' : 'in_progress';
+              if (result.total_time_seconds) {
+                timeSpentMinutes = Math.round(result.total_time_seconds / 60);
+              }
+            }
+          }
+
+          // Fallback to session data if no results found but sessions exist
+          if (status === 'not_started' && studentSessionIds.length > 0) {
             const sessionsWithData = studentSessions?.filter(s => s.ended_at) || [];
             if (sessionsWithData.length > 0) {
               const latestSession = sessionsWithData[sessionsWithData.length - 1] as any;
@@ -1656,6 +2096,7 @@ export class TeacherAssignmentAnalyticsService {
               failureRate = 100 - successScore;
               weakRetrievalPercent = failureRate;
               lastAttempt = latestSession.ended_at;
+              status = 'in_progress';
             }
           }
         } else if (studentSessionIds.length > 0) {

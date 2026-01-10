@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
-import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
+import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
+import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 
 import { 
   ArrowRight, Shuffle, Target, Brain, Headphones, BookOpen, 
@@ -14,8 +14,8 @@ import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { VocabularyWord as VocabWord, GameResult } from '../types';
 
 // Category system imports
-import ModernCategorySelector from '../../../../components/games/ModernCategorySelector';
-import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
+import ModernCategorySelector from '../../../components/games/ModernCategorySelector';
+import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
 
 // Helper function to get category display name
 const getCategoryById = (id: string) => {
@@ -56,74 +56,95 @@ interface LearningMode {
   isRecommended?: boolean;
   isPremium?: boolean;
   showCount?: boolean;
+  category: 'intelligent' | 'immersion'; // Group modes by category
 }
 
-const LEARNING_MODES: LearningMode[] = [
+// 🧠 Intelligent Learning Path - FSRS-driven adaptive learning
+const INTELLIGENT_LEARNING_MODES: LearningMode[] = [
   {
     id: 'learn_new',
     name: 'Learn New Words',
-    description: 'Start with unfamiliar vocabulary using spaced repetition',
+    description: 'Discover unfamiliar vocabulary with intelligent spaced repetition',
     icon: <Lightbulb className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-green-400 to-blue-500',
-    isRecommended: true
+    color: 'bg-gradient-to-r from-blue-500 to-indigo-600',
+    isRecommended: true,
+    category: 'intelligent'
   },
   {
     id: 'review_weak',
     name: 'Review Weak Words',
-    description: 'Focus on words you\'ve struggled with before',
+    description: 'Focus on words you\'ve struggled with - personalized to your progress',
     icon: <Target className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-red-400 to-pink-500',
-    showCount: true
+    color: 'bg-gradient-to-r from-amber-500 to-orange-600',
+    showCount: true,
+    category: 'intelligent'
   },
   {
     id: 'spaced_repetition',
-    name: 'Spaced Repetition',
-    description: 'Review words at scientifically optimized intervals',
+    name: 'Scheduled Review',
+    description: 'Review words at scientifically optimized intervals for maximum retention',
     icon: <Brain className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-purple-400 to-indigo-500'
-  },
-  {
-    id: 'speed_review',
-    name: 'Speed Review',
-    description: 'Quick-fire practice to improve reaction time',
-    icon: <Zap className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-yellow-400 to-orange-500'
-  },
+    color: 'bg-gradient-to-r from-purple-500 to-violet-600',
+    category: 'intelligent'
+  }
+];
+
+// 🎯 Skill Immersion - Practice modes for comprehensive skill development
+const SKILL_IMMERSION_MODES: LearningMode[] = [
   {
     id: 'listening_practice',
-    name: 'Listening Practice',
-    description: 'Hear words and type what you understand',
+    name: 'Listening Immersion',
+    description: 'Develop your ear - hear words and type what you understand',
     icon: <Headphones className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-blue-400 to-cyan-500'
-  },
-  {
-    id: 'context_practice',
-    name: 'Context Practice',
-    description: 'Learn words through example sentences and context',
-    icon: <BookOpen className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-teal-400 to-green-500'
-  },
-  {
-    id: 'mixed_review',
-    name: 'Mixed Review',
-    description: 'Random mix of all learned vocabulary',
-    icon: <Shuffle className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-indigo-400 to-purple-500'
+    color: 'bg-gradient-to-r from-cyan-500 to-blue-600',
+    category: 'immersion'
   },
   {
     id: 'dictation',
-    name: 'Dictation Practice',
-    description: 'Listen and type what you hear - audio only',
+    name: 'Dictation Challenge',
+    description: 'Master spelling and pronunciation - audio-only practice',
     icon: <Headphones className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-pink-400 to-red-500'
+    color: 'bg-gradient-to-r from-rose-500 to-pink-600',
+    category: 'immersion'
+  },
+  {
+    id: 'context_practice',
+    name: 'Context Learning',
+    description: 'Learn words through real example sentences and usage',
+    icon: <BookOpen className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-emerald-500 to-teal-600',
+    category: 'immersion'
+  },
+  {
+    id: 'speed_review',
+    name: 'Speed Challenge',
+    description: 'Quick-fire practice to improve reaction time and fluency',
+    icon: <Zap className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-yellow-500 to-amber-600',
+    category: 'immersion'
+  },
+  {
+    id: 'mixed_review',
+    name: 'Mixed Practice',
+    description: 'Random mix of all modes for comprehensive review',
+    icon: <Shuffle className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-indigo-500 to-purple-600',
+    category: 'immersion'
   },
   {
     id: 'match',
     name: 'Word Matching',
-    description: 'Match Spanish words with their English translations',
+    description: 'Match words with their translations - visual memory practice',
     icon: <Target className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-violet-400 to-purple-500'
+    color: 'bg-gradient-to-r from-violet-500 to-purple-600',
+    category: 'immersion'
   }
+];
+
+// Combined array for backward compatibility
+const LEARNING_MODES: LearningMode[] = [
+  ...INTELLIGENT_LEARNING_MODES,
+  ...SKILL_IMMERSION_MODES
 ];
 
 export default function VocabMasterLauncher() {
@@ -792,8 +813,11 @@ export default function VocabMasterLauncher() {
           transition={{ delay: 0.2 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Choose Learning Mode</h2>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">Choose Your Learning Path</h2>
+              <p className="text-gray-600">Adaptive learning fueled by intelligent spaced repetition</p>
+            </div>
             <button
               onClick={() => setShowSettings(!showSettings)}
               className="flex items-center space-x-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
@@ -848,9 +872,93 @@ export default function VocabMasterLauncher() {
             </motion.div>
           )}
 
-          {/* Mode Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {LEARNING_MODES.map((mode) => (
+          {/* Intelligent Learning Path Section */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <Brain className="h-6 w-6 text-indigo-600" />
+              <h3 className="text-2xl font-bold text-gray-800">Intelligent Learning Path</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              FSRS-driven adaptive learning that personalizes to your progress
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {INTELLIGENT_LEARNING_MODES.map((mode) => (
+                <motion.div
+                  key={mode.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <button
+                    onClick={() => startGameSession(mode.id)}
+                    disabled={isLoading && selectedMode === mode.id || vocabulary.length === 0}
+                    className={`w-full text-left p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden ${
+                      isLoading && selectedMode === mode.id || vocabulary.length === 0
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:transform hover:-translate-y-1'
+                    }`}
+                  >
+                    <div className={`absolute inset-0 ${mode.color} opacity-90`} />
+
+                    <div className="relative z-10">
+                      {mode.isRecommended && (
+                        <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                          Recommended
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                          {mode.icon}
+                        </div>
+                        {isLoading && selectedMode === mode.id && (
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+                        )}
+                      </div>
+
+                      <h3 className="text-xl font-bold text-white mb-2">
+                        {mode.name}
+                      </h3>
+
+                      <p className="text-white/90 text-sm leading-relaxed mb-4">
+                        {mode.description}
+                        {mode.showCount && mode.id === 'review_weak' && (
+                          <span className="block mt-2 text-white/80 font-medium">
+                            {weakWordsCount > 0
+                              ? `${weakWordsCount} weak words found`
+                              : 'No weak words yet - practice more to identify areas for improvement'
+                            }
+                          </span>
+                        )}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/80 text-sm font-medium">
+                          {vocabulary.length} words available
+                        </span>
+                        <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                          <ChevronRight className="h-4 w-4 text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Skill Immersion Section */}
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <Zap className="h-6 w-6 text-amber-600" />
+              <h3 className="text-2xl font-bold text-gray-800">Skill Immersion</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Practice modes for comprehensive skill development and fluency
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {SKILL_IMMERSION_MODES.map((mode) => (
               <motion.div
                 key={mode.id}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -923,6 +1031,7 @@ export default function VocabMasterLauncher() {
                 </button>
               </motion.div>
             ))}
+            </div>
           </div>
         </motion.div>
 

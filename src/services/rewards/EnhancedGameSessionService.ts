@@ -403,9 +403,20 @@ export class EnhancedGameSessionService {
         return null;
       }
 
-      console.log(`🔮 [SESSION SERVICE] Getting student ID for session [${callId}]...`);
-      const studentId = await this.getSessionStudentId(sessionId);
-      console.log(`🔮 [SESSION SERVICE] Student ID: ${studentId} [${callId}]`);
+      console.log(`🔮 [SESSION SERVICE] Getting session context for session [${callId}]...`);
+      const { student_id: studentId, assignment_id: assignmentId } = await this.getSessionContext(sessionId);
+      console.log(`🔮 [SESSION SERVICE] Student ID: ${studentId}, Assignment ID: ${assignmentId} [${callId}]`);
+
+      // 🎯 LAYER 2: Record assignment exposure for this word (Non-blocking)
+      if (assignmentId && attempt.vocabularyId) {
+        const vocabId = String(attempt.vocabularyId);
+        // Only record if it looks like a valid UUID (centralized_vocabulary_id)
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(vocabId)) {
+          console.log(`📝 [LAYER 2] Recording exposure for word ${vocabId} in assignment ${assignmentId}`);
+          assignmentExposureService.recordWordExposures(assignmentId, studentId, [vocabId])
+            .catch(e => console.warn('⚠️ [LAYER 2] Failed to record exposure:', e));
+        }
+      }
 
       let lastGemEvent: GemEvent | null = null;
 
@@ -789,14 +800,22 @@ export class EnhancedGameSessionService {
   /**
    * Private helper methods
    */
-  private async getSessionStudentId(sessionId: string): Promise<string> {
+  private async getSessionContext(sessionId: string): Promise<{ student_id: string; assignment_id: string | null }> {
     const { data } = await this.supabase
       .from('enhanced_game_sessions')
-      .select('student_id')
+      .select('student_id, assignment_id')
       .eq('id', sessionId)
       .single();
 
-    return data?.student_id || '';
+    return {
+      student_id: data?.student_id || '',
+      assignment_id: data?.assignment_id || null
+    };
+  }
+
+  private async getSessionStudentId(sessionId: string): Promise<string> {
+    const { student_id } = await this.getSessionContext(sessionId);
+    return student_id;
   }
 
   private async calculateXPFromGems(sessionId: string): Promise<number> {

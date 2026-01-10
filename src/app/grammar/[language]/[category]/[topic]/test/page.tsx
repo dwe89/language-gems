@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { GrammarSessionService } from '@/services/grammar/GrammarSessionService';
 import { sanitizeInlineHtml, stripHtmlTags } from '@/utils/richTextHelpers';
+import GrammarSkillWrapper from '@/components/grammar/GrammarSkillWrapper';
 
 interface PageProps {
   params: {
@@ -136,7 +137,7 @@ export default function GrammarTestPage({ params }: PageProps) {
 
       const rawQuestion = q.question_text || q.question || '';
       const sanitizedQuestion = sanitizeInlineHtml(rawQuestion);
-  const sanitizedOptions = (q.options || []).map((option: string) => stripHtmlTags(sanitizeInlineHtml(option)));
+      const sanitizedOptions = (q.options || []).map((option: string) => stripHtmlTags(sanitizeInlineHtml(option)));
       const sanitizedHint = stripHtmlTags(sanitizeInlineHtml(q.hint || q.explanation || ''));
 
       return {
@@ -203,7 +204,7 @@ export default function GrammarTestPage({ params }: PageProps) {
   }
 
   if (showTest) {
-    return (
+    const testContent = (
       <GrammarPractice
         language={params.language}
         category={params.category}
@@ -223,9 +224,26 @@ export default function GrammarTestPage({ params }: PageProps) {
         questionCount={20}
       />
     );
+
+    if (isAssignmentMode && topicId && assignmentId) {
+      return (
+        <GrammarSkillWrapper
+          topicId={topicId}
+          assignmentId={assignmentId}
+          currentStep="test"
+          language={params.language}
+          category={params.category}
+          topicSlug={params.topic}
+        >
+          {testContent}
+        </GrammarSkillWrapper>
+      );
+    }
+
+    return testContent;
   }
 
-  return (
+  const mainContent = (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       {/* Test Header */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 border-b border-purple-300 shadow-lg">
@@ -283,5 +301,22 @@ export default function GrammarTestPage({ params }: PageProps) {
       </div>
     </div>
   );
+
+  if (isAssignmentMode && topicId && assignmentId) {
+    return (
+      <GrammarSkillWrapper
+        topicId={topicId}
+        assignmentId={assignmentId}
+        currentStep="test"
+        language={params.language}
+        category={params.category}
+        topicSlug={params.topic}
+      >
+        {mainContent}
+      </GrammarSkillWrapper>
+    );
+  }
+
+  return mainContent;
 }
 

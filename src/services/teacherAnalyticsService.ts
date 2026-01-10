@@ -67,7 +67,7 @@ export class TeacherAnalyticsService {
     // Get recent assignments
     const recentAssignments = this.calculateRecentAssignments(
       assignmentsData,
-      studentsData.length
+      studentsData
     );
 
     console.timeEnd('⏱️ [ANALYTICS] getClassSummary');
@@ -803,10 +803,17 @@ export class TeacherAnalyticsService {
 
   private calculateRecentAssignments(
     assignmentsData: any[],
-    totalStudents: number
+    studentsData: any[]
   ): any[] {
+    // Get student IDs from the selected class
+    const classStudentIds = new Set(studentsData.map(s => s.student_id));
+    const totalStudents = studentsData.length;
+
     return assignmentsData.slice(0, 10).map((assignment) => {
-      const progress = assignment.assignment_progress || [];
+      const allProgress = assignment.assignment_progress || [];
+      
+      // Filter progress to only include students from the selected class
+      const progress = allProgress.filter((p: any) => classStudentIds.has(p.student_id));
       const completedProgress = progress.filter((p: any) => p.completed_at);
       const scores = completedProgress.map((p: any) => p.score);
       const averageScore =
@@ -817,7 +824,9 @@ export class TeacherAnalyticsService {
       const now = new Date();
       const dueDate = assignment.due_date ? new Date(assignment.due_date) : null;
       const isOverdue = dueDate && dueDate < now;
-      const isComplete = completedProgress.length === progress.length;
+      const uniqueStartedStudents = new Set(progress.map((p: any) => p.student_id));
+      const uniqueCompletedStudents = new Set(completedProgress.map((p: any) => p.student_id));
+      const isComplete = uniqueCompletedStudents.size === uniqueStartedStudents.size && uniqueStartedStudents.size === totalStudents;
 
       return {
         assignmentId: assignment.id,
@@ -829,8 +838,8 @@ export class TeacherAnalyticsService {
           : isComplete
           ? ('complete' as const)
           : ('in-progress' as const),
-        completedCount: completedProgress.length,
-        totalStudents: progress.length,
+        completedCount: uniqueCompletedStudents.size,
+        totalStudents: totalStudents,
         dueDate,
       };
     });

@@ -5,6 +5,8 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import GrammarPageTemplate from '@/components/grammar/GrammarPageTemplate';
 import GrammarEditButton from '@/components/admin/GrammarEditButton';
 import GrammarLessonTracker from '@/components/grammar/GrammarLessonTracker';
+import GrammarClientWrapper from '@/components/grammar/GrammarClientWrapper';
+import GrammarPageContent from '@/components/grammar/GrammarPageContent';
 
 interface PageProps {
   params: {
@@ -12,6 +14,7 @@ interface PageProps {
     category: string;
     topic: string;
   };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
 // Generate static params for all grammar pages (for static generation)
@@ -231,8 +234,15 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
     },
   };
 
+  // Always wrap with GrammarClientWrapper - it detects assignment mode client-side
   return (
-    <>
+    <GrammarClientWrapper
+      topicId={topicData?.id || ''}
+      topicTitle={page.title}
+      language={params.language}
+      category={params.category}
+      topic={params.topic}
+    >
       {/* JSON-LD Structured Data for SEO */}
       <script
         type="application/ld+json"
@@ -249,51 +259,14 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
         />
       )}
 
-      {/* Assignment Tracker (invisible, only tracks when in assignment mode) */}
-      {topicData && contentData && (
-        <GrammarLessonTracker
-          topicId={topicData.id}
-          contentId={contentData.id}
-        />
-      )}
-
-      <GrammarPageTemplate
-        language={languageMap[page.language] || page.language}
-        category={page.category}
-        topic={page.topic_slug}
-        title={page.title}
-        description={page.description}
-        difficulty={page.difficulty}
-        estimatedTime={page.estimated_time}
-        sections={page.sections}
-        backUrl={page.back_url || `/grammar/${page.language}`}
-        practiceUrl={page.practice_url}
-        quizUrl={page.quiz_url}
-        songUrl={page.song_url}
-        youtubeVideoId={page.youtube_video_id}
-        relatedTopics={page.related_topics || []}
+      <GrammarPageContent
+        page={page}
+        topicData={topicData}
+        contentData={contentData}
+        isAdmin={isAdmin}
+        languageMap={languageMap}
       />
-
-      {/* Admin Edit Button (only visible to danieletienne89@gmail.com) */}
-      {isAdmin && (
-        <GrammarEditButton
-          language={params.language}
-          category={params.category}
-          topicSlug={params.topic}
-          initialData={{
-            title: page.title,
-            description: page.description,
-            difficulty: page.difficulty,
-            estimated_time: page.estimated_time,
-            youtube_video_id: page.youtube_video_id,
-            sections: page.sections,
-            related_topics: page.related_topics,
-            practice_url: page.practice_url,
-            quiz_url: page.quiz_url,
-          }}
-        />
-      )}
-    </>
+    </GrammarClientWrapper>
   );
 }
 

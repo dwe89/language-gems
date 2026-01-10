@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, ArrowRight, ArrowLeft, CheckCircle,
-  AlertCircle, GraduationCap, FileText
+  AlertCircle, GraduationCap, FileText, Trash2, Plus
 } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
@@ -104,6 +104,9 @@ interface AssessmentConfig {
       level?: 'KS3' | 'KS4';
       difficulty?: 'foundation' | 'higher';
       examBoard?: 'AQA' | 'Edexcel' | 'Eduqas' | 'General';
+      paper?: string;
+      theme?: string;
+      topic?: string;
       category?: string;
       subcategory?: string;
       timeLimit?: number;
@@ -135,7 +138,7 @@ export default function AssessmentCreator() {
   const [currentStep, setCurrentStep] = useState(0);
   const [availableClasses, setAvailableClasses] = useState<any[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
-  
+
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [selectedAssessmentForConfig, setSelectedAssessmentForConfig] = useState<typeof AVAILABLE_ASSESSMENTS[0] | null>(null);
   const [editingAssessmentId, setEditingAssessmentId] = useState<string | null>(null);
@@ -258,16 +261,11 @@ export default function AssessmentCreator() {
 
     setAssessmentConfig(prev => ({
       ...prev,
-      selectedAssessments: [newAssessment] // Only allow one assessment for now to keep it simple? Or allow multiple?
-      // The user said "Create and Track assessments similar to how the assignments work".
-      // Assignments allow multi-game. Assessments could allow multi-assessment, but usually an assessment is a single event.
-      // Let's stick to single assessment for now to simplify, or append if we want multi.
-      // Actually, let's allow multiple but maybe the UI suggests one.
-      // For now, let's just append.
+      selectedAssessments: [...prev.selectedAssessments, newAssessment] // Append to allow multiple assessments
     }));
     setConfigModalOpen(false);
   };
-  
+
   const removeAssessment = (id: string) => {
     setAssessmentConfig(prev => ({
       ...prev,
@@ -332,11 +330,10 @@ export default function AssessmentCreator() {
         <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10 transform -translate-y-1/2" />
         {steps.map((step, index) => (
           <div key={step.id} className={`flex flex-col items-center bg-white px-4 z-10 ${index <= currentStep ? 'text-indigo-600' : 'text-gray-400'}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
-              index < currentStep ? 'bg-green-500 text-white' :
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${index < currentStep ? 'bg-green-500 text-white' :
               index === currentStep ? 'bg-indigo-600 text-white' :
-              'bg-gray-200 text-gray-500'
-            }`}>
+                'bg-gray-200 text-gray-500'
+              }`}>
               {index < currentStep ? <CheckCircle className="w-6 h-6" /> : step.icon}
             </div>
             <span className="text-sm font-medium">{step.title}</span>
@@ -357,7 +354,9 @@ export default function AssessmentCreator() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Title <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
@@ -367,7 +366,9 @@ export default function AssessmentCreator() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date & Time</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Due Date & Time <span className="text-red-500">*</span>
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="date"
@@ -416,50 +417,51 @@ export default function AssessmentCreator() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Assign to Classes</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Assign to Classes <span className="text-red-500">*</span>
+              </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {availableClasses.map(cls => (
                   <div
                     key={cls.id}
                     onClick={() => {
-                      setSelectedClasses(prev => 
-                        prev.includes(cls.id) 
+                      setSelectedClasses(prev =>
+                        prev.includes(cls.id)
                           ? prev.filter(id => id !== cls.id)
                           : [...prev, cls.id]
                       );
                     }}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      selectedClasses.includes(cls.id)
-                        ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500'
-                        : 'hover:bg-gray-50 border-gray-200'
-                    }`}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedClasses.includes(cls.id)
+                      ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500'
+                      : 'hover:bg-gray-50 border-gray-200'
+                      }`}
                   >
                     <div className="font-medium text-gray-900">{cls.name}</div>
                   </div>
                 ))}
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Curriculum Level</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Curriculum Level <span className="text-red-500">*</span>
+              </label>
               <div className="flex space-x-4">
                 <button
                   onClick={() => setAssignmentDetails(prev => ({ ...prev, curriculum_level: 'KS3' }))}
-                  className={`px-4 py-2 rounded-lg border ${
-                    assignmentDetails.curriculum_level === 'KS3'
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`px-4 py-2 rounded-lg border ${assignmentDetails.curriculum_level === 'KS3'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
                 >
                   KS3 (Years 7-9)
                 </button>
                 <button
                   onClick={() => setAssignmentDetails(prev => ({ ...prev, curriculum_level: 'KS4' }))}
-                  className={`px-4 py-2 rounded-lg border ${
-                    assignmentDetails.curriculum_level === 'KS4'
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`px-4 py-2 rounded-lg border ${assignmentDetails.curriculum_level === 'KS4'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
                 >
                   KS4 (GCSE)
                 </button>
@@ -470,6 +472,12 @@ export default function AssessmentCreator() {
 
         {currentStep === 1 && (
           <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Select Assessment Type <span className="text-red-500">*</span>
+              </h3>
+              <p className="text-gray-600">Choose the type of assessment you want to assign to your students.</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {AVAILABLE_ASSESSMENTS.map(assessment => (
                 <div
@@ -498,24 +506,42 @@ export default function AssessmentCreator() {
 
             {assessmentConfig.selectedAssessments.length > 0 && (
               <div className="mt-8 border-t pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected Assessments</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Selected Assessments
+                    <span className="ml-2 px-2 py-0.5 text-sm bg-indigo-100 text-indigo-700 rounded-full">
+                      {assessmentConfig.selectedAssessments.length}
+                    </span>
+                  </h3>
+                  <p className="text-sm text-gray-500">Click another assessment type above to add more</p>
+                </div>
                 <div className="space-y-3">
                   {assessmentConfig.selectedAssessments.map((assessment, idx) => (
-                    <div key={assessment.id} className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg border border-indigo-100">
-                      <div>
-                        <div className="font-medium text-indigo-900">{assessment.name}</div>
-                        <div className="text-sm text-indigo-700">
-                          {assessment.instanceConfig?.examBoard} {assessment.instanceConfig?.level} • {assessment.instanceConfig?.topic || 'General'}
+                    <div key={assessment.id} className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg border border-indigo-100 group hover:border-indigo-200 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <span className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white text-sm font-bold">
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <div className="font-medium text-indigo-900">{assessment.name}</div>
+                          <div className="text-sm text-indigo-700">
+                            {assessment.instanceConfig?.examBoard || 'General'} • {assessment.instanceConfig?.difficulty || 'Standard'} • {assessment.instanceConfig?.paper || assessment.instanceConfig?.subcategory || 'Standard'}
+                          </div>
                         </div>
                       </div>
                       <button
                         onClick={() => removeAssessment(assessment.id)}
-                        className="p-2 hover:bg-indigo-100 rounded-full text-indigo-600 transition-colors"
+                        className="p-2 hover:bg-red-100 rounded-full text-gray-400 hover:text-red-600 transition-colors"
+                        title="Remove assessment"
                       >
-                        <AlertCircle className="w-5 h-5" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2 text-green-700">
+                  <Plus className="w-5 h-5" />
+                  <span className="text-sm">Click any assessment card above to add another assessment to this bundle</span>
                 </div>
               </div>
             )}
@@ -530,7 +556,7 @@ export default function AssessmentCreator() {
                 <p className="text-lg font-semibold text-gray-900">{assignmentDetails.title}</p>
                 <p className="text-gray-600">{assignmentDetails.description}</p>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Due Date</h3>
@@ -565,22 +591,20 @@ export default function AssessmentCreator() {
         <button
           onClick={handleBack}
           disabled={currentStep === 0 || loading}
-          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-            currentStep === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          className={`px-6 py-2 rounded-lg font-medium transition-colors ${currentStep === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+            }`}
         >
           Back
         </button>
-        
+
         {currentStep < steps.length - 1 ? (
           <button
             onClick={handleNext}
             disabled={!steps[currentStep].completed}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center ${
-              steps[currentStep].completed
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center ${steps[currentStep].completed
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
           >
             Next Step
             <ArrowRight className="w-4 h-4 ml-2" />
@@ -598,16 +622,18 @@ export default function AssessmentCreator() {
       </div>
 
       {/* Config Modal */}
-      <AssessmentConfigModal
-        isOpen={configModalOpen}
-        onClose={() => setConfigModalOpen(false)}
-        onSave={handleConfigSave}
-        assessmentType={selectedAssessmentForConfig}
-        initialConfig={editingAssessmentId 
-          ? assessmentConfig.selectedAssessments.find(a => a.id === editingAssessmentId)?.instanceConfig 
-          : undefined
-        }
-      />
+      {selectedAssessmentForConfig && (
+        <AssessmentConfigModal
+          isOpen={configModalOpen}
+          onClose={() => setConfigModalOpen(false)}
+          onSave={handleConfigSave}
+          assessmentType={selectedAssessmentForConfig}
+          currentConfig={editingAssessmentId
+            ? assessmentConfig.selectedAssessments.find(a => a.id === editingAssessmentId)?.instanceConfig
+            : undefined
+          }
+        />
+      )}
     </div>
   );
 }

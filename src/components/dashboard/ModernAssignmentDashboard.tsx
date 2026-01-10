@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { AssignmentOverviewMetrics, WordDifficulty, StudentProgress } from '@/services/teacherAssignmentAnalytics';
 import { AssessmentResultsDetailView } from './AssessmentResultsDetailView';
+import GrammarAssignmentAnalyticsDashboard from '@/components/teacher/GrammarAssignmentAnalyticsDashboard';
 
 interface ModernAssignmentDashboardProps {
   assignmentId: string;
@@ -21,7 +22,7 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
   const [wordDifficulty, setWordDifficulty] = useState<WordDifficulty[]>([]);
   const [studentRoster, setStudentRoster] = useState<StudentProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'words' | 'students'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'words' | 'students' | 'grammar'>('overview');
   const [sortBy, setSortBy] = useState<'name' | 'score' | 'time' | 'accuracy'>('score');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [viewingStudentDetails, setViewingStudentDetails] = useState<{ studentId: string; studentName: string } | null>(null);
@@ -327,6 +328,18 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
               <Users className="h-4 w-4 inline mr-2" />
               Student Performance
             </button>
+            {overview?.isSkillsAssignment && (
+              <button
+                onClick={() => setActiveTab('grammar')}
+                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${activeTab === 'grammar'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+              >
+                <Award className="h-4 w-4 inline mr-2" />
+                Grammar Skills
+              </button>
+            )}
           </div>
         </div>
 
@@ -718,6 +731,14 @@ export function ModernAssignmentDashboard({ assignmentId, onBack }: ModernAssign
               </Card>
             )}
           </div>
+        )}
+
+        {activeTab === 'grammar' && (
+          <GrammarAssignmentAnalyticsDashboard
+            assignmentId={assignmentId}
+            assignmentTitle={overview?.assignmentTitle}
+            teacherId="" // Not needed for now
+          />
         )}
       </div>
     </div>

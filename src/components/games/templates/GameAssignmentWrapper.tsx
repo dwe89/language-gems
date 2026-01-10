@@ -6,7 +6,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useGlobalAudioContext } from '../../../hooks/useGlobalAudioContext';
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import { assignmentProgressService, type GameProgress } from '../../../services/AssignmentProgressService';
-import { 
+import {
   useAssignmentVocabulary,
   type StandardVocabularyItem,
   type AssignmentData
@@ -123,7 +123,7 @@ export default function GameAssignmentWrapper({
 }: GameAssignmentWrapperProps) {
   const { user } = useAuth();
   const audioContext = useGlobalAudioContext();
-  
+
   // Game control states
   const [isMusicEnabled, setIsMusicEnabled] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<string>('default');
@@ -143,7 +143,9 @@ export default function GameAssignmentWrapper({
     assignmentId,
     studentId: activeStudentId,
     fullVocabulary: vocabulary,
-    sessionSize: 10
+    // Use all assignment vocabulary - assignments have curated word lists
+    // that should be practiced in full, not limited to 10 words
+    sessionSize: vocabulary.length > 0 ? vocabulary.length : 10
   });
 
   // Use session vocabulary if available, otherwise use full vocabulary
@@ -275,9 +277,9 @@ export default function GameAssignmentWrapper({
   // Show theme selector
   if (showThemeSelector) {
     const gameTitle = gameId === 'noughts-and-crosses' ? 'Noughts and Crosses' :
-                     gameId === 'vocab-blast' ? 'Vocab Blast' :
-                     gameId === 'word-blast' ? 'Word Blast' :
-                     gameId === 'hangman' ? 'Hangman' : 'Game';
+      gameId === 'vocab-blast' ? 'Vocab Blast' :
+        gameId === 'word-blast' ? 'Word Blast' :
+          gameId === 'hangman' ? 'Hangman' : 'Game';
 
     return (
       <UniversalThemeSelector
@@ -357,7 +359,7 @@ export default function GameAssignmentWrapper({
                 <Palette className="h-5 w-5" />
               </button>
             )}
-            
+
             {gameId === 'memory-game' && (
               <>
                 <button

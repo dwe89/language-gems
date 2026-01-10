@@ -46,14 +46,14 @@ export class GrammarSessionService {
   private supabase: SupabaseClient<any>;
   private currentSessionId: string | null = null;
   private questionAttempts: GrammarQuestionAttempt[] = [];
-  
+
   constructor(supabaseClient?: SupabaseClient<any>) {
     this.supabase = supabaseClient || createBrowserClient<any>(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
   }
-  
+
   /**
    * Start a new grammar session
    */
@@ -108,7 +108,7 @@ export class GrammarSessionService {
       throw error;
     }
   }
-  
+
   /**
    * Record a question attempt
    */
@@ -119,7 +119,7 @@ export class GrammarSessionService {
     try {
       // Store attempt in memory for session summary
       this.questionAttempts.push(attempt);
-      
+
       // Optionally record individual attempts to grammar_practice_attempts table
       // This is useful for detailed analytics
       if (attempt.question_type === 'conjugation') {
@@ -127,13 +127,13 @@ export class GrammarSessionService {
         // This integrates with existing grammar analytics
         console.log('📝 [GRAMMAR SESSION] Recording conjugation attempt');
       }
-      
+
       console.log('✅ [GRAMMAR SESSION] Question attempt recorded');
     } catch (error) {
       console.error('❌ [GRAMMAR SESSION] Error recording attempt:', error);
     }
   }
-  
+
   /**
    * End grammar session with final statistics
    */
@@ -297,7 +297,7 @@ export class GrammarSessionService {
 
     return Math.max(1, gems); // Minimum 1 gem
   }
-  
+
   /**
    * Update assignment progress after session completion
    */
@@ -309,11 +309,11 @@ export class GrammarSessionService {
         .select('assignment_id, student_id, topic_id, accuracy_percentage, questions_attempted, questions_correct')
         .eq('id', sessionId)
         .single();
-      
+
       if (sessionError || !session || !session.assignment_id) {
         return; // Not an assignment session
       }
-      
+
       console.log('📊 [GRAMMAR SESSION] Updating assignment progress');
 
       // First, get current progress
@@ -347,15 +347,141 @@ export class GrammarSessionService {
           console.warn('⚠️ [GRAMMAR SESSION] Error updating assignment progress:', progressError);
         }
       }
-      
+
+      // Update step progress tracking (lesson → practice → test)
+      await this.updateStepProgress(session);
+
       // Check if assignment is complete
       await this.checkAssignmentCompletion(session.assignment_id, session.student_id);
-      
+
     } catch (error) {
       console.error('❌ [GRAMMAR SESSION] Error updating assignment progress:', error);
     }
   }
-  
+
+  /**
+   * Update step-by-step progress for granular tracking
+   * This tracks lesson/practice/test completion separately per topic
+   */
+  private async updateStepProgress(session: {
+    assignment_id: string;
+    student_id: string;
+    topic_id: string;
+    accuracy_percentage: number;
+    questions_attempted: number;
+    questions_correct: number;
+  }): Promise<void> {
+    try {
+      // Get the full session data including session_type, duration, and gems
+      const { data: fullSession } = await this.supabase
+        .from('grammar_assignment_sessions')
+        .select('session_type, duration_seconds, gems_earned, xp_earned, final_score')
+        .eq('assignment_id', session.assignment_id)
+        .eq('student_id', session.student_id)
+        .eq('topic_id', session.topic_id)
+        .eq('completion_status', 'completed')
+        .order('ended_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!fullSession) return;
+
+      // Try to get existing step progress
+      const { data: existingProgress } = await this.supabase
+        .from('grammar_topic_step_progress')
+        .select('*')
+        .eq('assignment_id', session.assignment_id)
+        .eq('student_id', session.student_id)
+        .eq('topic_id', session.topic_id)
+        .maybeSingle();
+
+      const now = new Date().toISOString();
+      const sessionType = fullSession.session_type;
+
+      if (existingProgress) {
+        // Update existing progress based on session type
+        const updates: any = {
+          updated_at: now,
+          total_gems_earned: (existingProgress.total_gems_earned || 0) + (fullSession.gems_earned || 0),
+          total_xp_earned: (existingProgress.total_xp_earned || 0) + (fullSession.xp_earned || 0)
+        };
+
+        if (sessionType === 'lesson') {
+          updates.lesson_completed = true;
+          updates.lesson_completed_at = existingProgress.lesson_completed_at || now;
+          updates.lesson_time_spent_seconds = (existingProgress.lesson_time_spent_seconds || 0) + (fullSession.duration_seconds || 0);
+        } else if (sessionType === 'practice') {
+          updates.practice_completed = true;
+          updates.practice_completed_at = existingProgress.practice_completed_at || now;
+          updates.practice_attempts = (existingProgress.practice_attempts || 0) + 1;
+          updates.practice_total_time_seconds = (existingProgress.practice_total_time_seconds || 0) + (fullSession.duration_seconds || 0);
+          // Update best scores if current is better
+          if (session.accuracy_percentage > (existingProgress.practice_best_accuracy || 0)) {
+            updates.practice_best_accuracy = session.accuracy_percentage;
+            updates.practice_best_score = fullSession.final_score;
+          }
+        } else if (sessionType === 'test') {
+          updates.test_completed = true;
+          updates.test_completed_at = existingProgress.test_completed_at || now;
+          updates.test_attempts = (existingProgress.test_attempts || 0) + 1;
+          updates.test_passed = session.accuracy_percentage >= 60; // 60% to pass
+          // Update best scores if current is better
+          if (session.accuracy_percentage > (existingProgress.test_best_accuracy || 0)) {
+            updates.test_best_accuracy = session.accuracy_percentage;
+            updates.test_best_score = fullSession.final_score;
+          }
+        }
+
+        await this.supabase
+          .from('grammar_topic_step_progress')
+          .update(updates)
+          .eq('id', existingProgress.id);
+
+        console.log('✅ [GRAMMAR SESSION] Updated step progress:', sessionType);
+      } else {
+        // Create new progress record
+        const newProgress: any = {
+          assignment_id: session.assignment_id,
+          student_id: session.student_id,
+          topic_id: session.topic_id,
+          total_gems_earned: fullSession.gems_earned || 0,
+          total_xp_earned: fullSession.xp_earned || 0,
+          created_at: now,
+          updated_at: now
+        };
+
+        if (sessionType === 'lesson') {
+          newProgress.lesson_completed = true;
+          newProgress.lesson_completed_at = now;
+          newProgress.lesson_time_spent_seconds = fullSession.duration_seconds || 0;
+        } else if (sessionType === 'practice') {
+          newProgress.practice_completed = true;
+          newProgress.practice_completed_at = now;
+          newProgress.practice_attempts = 1;
+          newProgress.practice_total_time_seconds = fullSession.duration_seconds || 0;
+          newProgress.practice_best_accuracy = session.accuracy_percentage;
+          newProgress.practice_best_score = fullSession.final_score;
+        } else if (sessionType === 'test') {
+          newProgress.test_completed = true;
+          newProgress.test_completed_at = now;
+          newProgress.test_attempts = 1;
+          newProgress.test_passed = session.accuracy_percentage >= 60;
+          newProgress.test_best_accuracy = session.accuracy_percentage;
+          newProgress.test_best_score = fullSession.final_score;
+        }
+
+        await this.supabase
+          .from('grammar_topic_step_progress')
+          .insert(newProgress);
+
+        console.log('✅ [GRAMMAR SESSION] Created new step progress:', sessionType);
+      }
+    } catch (error) {
+      console.error('⚠️ [GRAMMAR SESSION] Error updating step progress (non-fatal):', error);
+      // Non-fatal error - don't throw
+    }
+  }
+
   /**
    * Check if grammar assignment is complete
    */
@@ -370,15 +496,15 @@ export class GrammarSessionService {
         .select('game_config')
         .eq('id', assignmentId)
         .single();
-      
+
       if (!assignment) return;
-      
+
       // Get required topics from assignment config
       const skillsConfig = assignment.game_config?.skillsConfig;
       const requiredTopicIds = skillsConfig?.selectedSkills?.[0]?.instanceConfig?.topicIds || [];
-      
+
       if (requiredTopicIds.length === 0) return;
-      
+
       // Get completed topics
       const { data: sessions } = await this.supabase
         .from('grammar_assignment_sessions')
@@ -386,17 +512,17 @@ export class GrammarSessionService {
         .eq('assignment_id', assignmentId)
         .eq('student_id', studentId)
         .eq('completion_status', 'completed');
-      
+
       const completedTopicIds = [...new Set(sessions?.map(s => s.topic_id) || [])];
-      
+
       // Check if all required topics are completed
-      const isComplete = requiredTopicIds.every((topicId: string) => 
+      const isComplete = requiredTopicIds.every((topicId: string) =>
         completedTopicIds.includes(topicId)
       );
-      
+
       if (isComplete) {
         console.log('🎉 [GRAMMAR SESSION] Assignment completed!');
-        
+
         // Update assignment progress status
         await this.supabase
           .from('enhanced_assignment_progress')
@@ -411,7 +537,7 @@ export class GrammarSessionService {
       console.error('❌ [GRAMMAR SESSION] Error checking assignment completion:', error);
     }
   }
-  
+
   /**
    * Get session statistics
    */
@@ -422,7 +548,7 @@ export class GrammarSessionService {
         .select('*')
         .eq('id', sessionId)
         .single();
-      
+
       if (error) throw error;
       return data;
     } catch (error) {
@@ -430,7 +556,7 @@ export class GrammarSessionService {
       return null;
     }
   }
-  
+
   /**
    * Get assignment progress for a student
    */
@@ -444,7 +570,7 @@ export class GrammarSessionService {
           p_assignment_id: assignmentId,
           p_student_id: studentId
         });
-      
+
       if (error) throw error;
       return data?.[0] || null;
     } catch (error) {
