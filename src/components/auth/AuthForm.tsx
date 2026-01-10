@@ -49,16 +49,16 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
     try {
       let finalEmailOrUsername = emailOrUsername;
-      
+
       // If it's a student login and the input doesn't contain @, convert username to email
       if (mode === 'login' && isStudentLogin && !emailOrUsername.includes('@')) {
         // Convert username to student email format
         finalEmailOrUsername = `${emailOrUsername}@student.languagegems.com`;
         console.log(`Converting username '${emailOrUsername}' to email '${finalEmailOrUsername}'`);
       }
-      
+
       console.log(`Attempting to ${mode} with identifier: ${finalEmailOrUsername}`);
-      
+
       if (mode === 'login') {
         if (isStudentLogin) {
           // First verify student credentials via API
@@ -82,11 +82,11 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
           // If verification successful, use the returned email and password to sign in normally
           const { error: signInError } = await signIn(data.user.email, password);
-          
+
           if (signInError) {
             throw new Error(signInError);
           }
-          
+
           console.log('Student login successful, navigating to student dashboard');
           // Use setTimeout to avoid DOM manipulation conflicts
           setTimeout(() => {
@@ -95,11 +95,11 @@ export default function AuthForm({ mode }: AuthFormProps) {
         } else {
           // Use the signIn method from auth context for teachers/admins
           const { error: signInError, user: signedInUser } = await signIn(finalEmailOrUsername, password);
-          
+
           if (signInError) {
             throw new Error(signInError);
           }
-          
+
           console.log('Login successful, navigating to appropriate page');
           // Use setTimeout to avoid DOM manipulation conflicts
           setTimeout(() => {
@@ -128,20 +128,20 @@ export default function AuthForm({ mode }: AuthFormProps) {
             role: 'teacher'
           }),
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.error || 'Signup failed');
         }
-        
+
         console.log('Signup successful, redirect URL:', data.redirectUrl);
-        
+
         // Store email for verification page if needed
         if (data.needsEmailVerification) {
           localStorage.setItem('pendingVerificationEmail', finalEmailOrUsername);
         }
-        
+
         // Use the redirect URL from the response
         // Use setTimeout to avoid DOM manipulation conflicts
         setTimeout(() => {
@@ -161,11 +161,11 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setLoading(true);
     try {
       const { error: signInError } = await signIn('teacher@example.com', 'password123');
-      
+
       if (signInError) {
         throw new Error(signInError);
       }
-      
+
       console.log('Teacher login successful, navigating to account page');
       setTimeout(() => {
         router.push('/account');
@@ -183,11 +183,11 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setLoading(true);
     try {
       const { error: signInError } = await signIn('student@example.com', 'password123');
-      
+
       if (signInError) {
         throw new Error(signInError);
       }
-      
+
       console.log('Student login successful, navigating to student dashboard');
       setTimeout(() => {
         router.push('/student-dashboard');
@@ -267,22 +267,20 @@ export default function AuthForm({ mode }: AuthFormProps) {
               <button
                 type="button"
                 onClick={() => setIsStudentLogin(false)}
-                className={`flex-1 p-2 rounded-md text-sm transition-colors ${
-                  !isStudentLogin 
-                    ? 'bg-cyan-600 text-white' 
+                className={`flex-1 p-2 rounded-md text-sm transition-colors ${!isStudentLogin
+                    ? 'bg-cyan-600 text-white'
                     : 'bg-indigo-800/50 text-gray-300 hover:bg-indigo-700/50'
-                }`}
+                  }`}
               >
                 Teacher
               </button>
               <button
                 type="button"
                 onClick={() => setIsStudentLogin(true)}
-                className={`flex-1 p-2 rounded-md text-sm transition-colors ${
-                  isStudentLogin 
-                    ? 'bg-cyan-600 text-white' 
+                className={`flex-1 p-2 rounded-md text-sm transition-colors ${isStudentLogin
+                    ? 'bg-cyan-600 text-white'
                     : 'bg-indigo-800/50 text-gray-300 hover:bg-indigo-700/50'
-                }`}
+                  }`}
               >
                 Student
               </button>
@@ -301,9 +299,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
             onChange={(e) => setEmailOrUsername(e.target.value)}
             className="w-full p-3 bg-indigo-800/50 border border-indigo-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
             placeholder={
-              mode === 'signup' 
-                ? "Enter your email" 
-                : isStudentLogin 
+              mode === 'signup'
+                ? "Enter your email"
+                : isStudentLogin
                   ? "Enter your username (e.g., stevej)"
                   : "Enter your email address"
             }
@@ -328,7 +326,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setSchoolCode(e.target.value.toUpperCase())}
               className="w-full p-3 bg-indigo-800/50 border border-indigo-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
               placeholder="Enter your school code (e.g., CHS)"
-              maxLength={10}
+
               required
             />
             <p className="text-xs text-gray-400 mt-1">
