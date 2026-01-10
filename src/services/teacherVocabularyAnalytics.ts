@@ -2,8 +2,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Simple 3-tier proficiency system for teacher-facing analytics
- * 🔴 Struggling: Accuracy < 60% OR total_encounters < 3
- * 🟡 Learning: Accuracy 60-89% AND total_encounters >= 3
+ * 🔴 Struggling: Accuracy < 60%
+ * 🟡 Learning: Accuracy >= 60% AND (total_encounters < 5 OR Accuracy < 90%)
  * 🟢 Proficient: Accuracy >= 90% AND total_encounters >= 5
  */
 export type ProficiencyLevel = 'struggling' | 'learning' | 'proficient';
@@ -15,8 +15,9 @@ export function calculateProficiencyLevel(
   accuracy: number,
   totalEncounters: number
 ): ProficiencyLevel {
-  // 🔴 Struggling: Low accuracy OR insufficient exposure
-  if (accuracy < 60 || totalEncounters < 3) {
+  // 🔴 Struggling: Low accuracy regardless of exposure
+  // OR strictly low accuracy (< 60%)
+  if (accuracy < 60) {
     return 'struggling';
   }
 
@@ -25,7 +26,8 @@ export function calculateProficiencyLevel(
     return 'proficient';
   }
 
-  // 🟡 Learning: Everything in between
+  // 🟡 Learning: Good accuracy but low exposure (< 5), OR moderate accuracy (60-89%)
+  // This covers cases like "100% accuracy but only seen once" -> Learning
   return 'learning';
 }
 
@@ -38,6 +40,8 @@ export interface StudentVocabularyProgress {
   strugglingWords: number;
   overdueWords: number;
   averageAccuracy: number;
+  memoryStrength: number;
+  wordsReadyForReview: number;
   lastActivity: string | null;
   classId: string;
   className: string;
@@ -51,6 +55,7 @@ export interface ClassVocabularyStats {
   strugglingWords: number;    // NEW
   averageAccuracy: number;
   studentsWithOverdueWords: number;
+  activeStudentsLast7Days: number;
   topPerformingStudents: StudentVocabularyProgress[];
   strugglingStudents: StudentVocabularyProgress[];
   totalWordsReadyForReview: number;
@@ -524,9 +529,9 @@ export class TeacherVocabularyAnalyticsService {
           }
         }
 
-        // Fallback to game sessions and assignment progress
         if (!lastActivity) {
-          lastActivity = gameSessionsByStudent.get(student.id) || this.getLatestAssignmentDate(assignmentProgressByStudent.get(student.id)) || null;
+          const assignmentProgress = assignmentProgressByStudent.get(student.id);
+          lastActivity = gameSessionsByStudent.get(student.id) || this.getLatestAssignmentDate(assignmentProgress || undefined) || null;
         }
 
         // Data validation: catch impossible combinations
@@ -599,12 +604,14 @@ export class TeacherVocabularyAnalyticsService {
       classStats: {
         totalStudents: 0,
         totalWords: 0,
-        averageMasteredWords: 0,
+        proficientWords: 0,
+        learningWords: 0,
+        strugglingWords: 0,
         averageAccuracy: 0,
         studentsWithOverdueWords: 0,
+        activeStudentsLast7Days: 0,
         topPerformingStudents: [],
         strugglingStudents: [],
-        classAverageMemoryStrength: 0,
         totalWordsReadyForReview: 0
       },
       studentProgress: [],
@@ -643,6 +650,7 @@ export class TeacherVocabularyAnalyticsService {
         strugglingWords: 0,
         averageAccuracy: 0,
         studentsWithOverdueWords: 0,
+        activeStudentsLast7Days: 0,
         topPerformingStudents: [],
         strugglingStudents: [],
         totalWordsReadyForReview: 0
@@ -669,6 +677,12 @@ export class TeacherVocabularyAnalyticsService {
       : 0;
 
     const studentsWithOverdueWords = studentProgress.filter(s => s.overdueWords > 0).length;
+
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const activeStudentsLast7Days = studentProgress.filter(s =>
+      s.lastActivity && new Date(s.lastActivity) >= oneWeekAgo
+    ).length;
 
     const totalWordsReadyForReview = studentProgress.reduce((sum, s) => sum + s.wordsReadyForReview, 0);
 
@@ -700,6 +714,7 @@ export class TeacherVocabularyAnalyticsService {
       strugglingWords: strugglingWordsTotal,
       averageAccuracy,
       studentsWithOverdueWords,
+      activeStudentsLast7Days,
       topPerformingStudents,
       strugglingStudents,
       totalWordsReadyForReview
@@ -879,7 +894,8 @@ export class TeacherVocabularyAnalyticsService {
           studentsEngaged,
           averageAccuracy: Math.round(averageAccuracy * 10) / 10,
           totalWords,
-          masteredWords,
+          proficientWords: masteredWords,
+          learningWords: 0, // Calculated field
           strugglingWords,
           isWeakTopic,
           isStrongTopic,
@@ -914,42 +930,53 @@ export class TeacherVocabularyAnalyticsService {
           return date;
         })();
 
-      // BATCHED FETCHING for session data
-      const sessionData: any[] = [];
+      // BATCHED FETCHING
       const batchSize = 5;
       const batches = this.chunkArray(studentIds, batchSize);
+
+      const sessionData: any[] = [];
+      const assignmentActivityData: any[] = [];
+      const vocabData: any[] = [];
+      const assignmentVocabData: any[] = [];
 
       for (const batch of batches) {
         await this.delay(20);
 
-        const { data, error } = await this.supabase
+        // 1. Fetch Game Sessions
+        const { data: sessions, error: sessionError } = await this.supabase
           .from('enhanced_game_sessions')
           .select('student_id, created_at')
           .in('student_id', batch)
           .gte('created_at', startDate.toISOString());
 
-        if (error) {
-          console.error('Error fetching batch session data for trends', error);
-          continue;
-        }
-        if (data) sessionData.push(...data);
-      }
+        if (!sessionError && sessions) sessionData.push(...sessions);
 
-      // Get vocabulary data with last_encountered_at for accuracy trends
-      const vocabData: any[] = [];
-      // Batches already defined above
-      for (const batch of batches) {
-        const { data, error } = await this.supabase
+        // 2. Fetch Assignment Activity
+        const { data: assignments, error: assignmentError } = await this.supabase
+          .from('enhanced_assignment_progress')
+          .select('student_id, last_attempt_at, completed_at, created_at')
+          .in('student_id', batch)
+          .or(`last_attempt_at.gte.${startDate.toISOString()},completed_at.gte.${startDate.toISOString()},created_at.gte.${startDate.toISOString()}`);
+
+        if (!assignmentError && assignments) assignmentActivityData.push(...assignments);
+
+        // 3. Fetch Vocabulary Gems
+        const { data: gems, error: gemError } = await this.supabase
           .from('vocabulary_gem_collection')
-          .select('student_id, last_encountered_at, total_encounters, correct_encounters, mastery_level')
+          .select('student_id, vocabulary_item_id, centralized_vocabulary_id, last_encountered_at, total_encounters, correct_encounters, mastery_level')
           .in('student_id', batch)
           .gte('last_encountered_at', startDate.toISOString());
 
-        if (error) {
-          console.error('Error fetching batch vocabulary trends', error);
-          continue;
-        }
-        if (data) vocabData.push(...data);
+        if (!gemError && gems) vocabData.push(...gems);
+
+        // 4. Fetch Assignment Vocabulary
+        const { data: assignVocab, error: assignVocabError } = await this.supabase
+          .from('assignment_vocabulary_progress')
+          .select('student_id, vocab_id, last_seen_at, seen_count, correct_count')
+          .in('student_id', batch)
+          .gte('last_seen_at', startDate.toISOString());
+
+        if (!assignVocabError && assignVocab) assignmentVocabData.push(...assignVocab);
       }
 
       // Group by date with proficiency tracking
@@ -962,48 +989,78 @@ export class TeacherVocabularyAnalyticsService {
         strugglingWords: Set<string>;
       }>();
 
-      // Process game sessions for active students
+      const getOrCreateTrend = (date: string) => {
+        if (!trendsByDate.has(date)) {
+          trendsByDate.set(date, {
+            activeStudents: new Set(),
+            totalEncounters: 0,
+            correctEncounters: 0,
+            proficientWords: new Set(),
+            learningWords: new Set(),
+            strugglingWords: new Set()
+          });
+        }
+        return trendsByDate.get(date)!;
+      };
+
+      // Process Game Sessions for active students
       (sessionData || []).forEach(session => {
         const date = session.created_at.split('T')[0];
-        if (!trendsByDate.has(date)) {
-          trendsByDate.set(date, {
-            activeStudents: new Set(),
-            totalEncounters: 0,
-            correctEncounters: 0,
-            proficientWords: new Set(),
-            learningWords: new Set(),
-            strugglingWords: new Set()
-          });
-        }
-        trendsByDate.get(date)!.activeStudents.add(session.student_id);
+        getOrCreateTrend(date).activeStudents.add(session.student_id);
       });
 
-      // Process vocabulary data for accuracy and proficiency
+      // Process Assignment Activity for active students
+      (assignmentActivityData || []).forEach(assignment => {
+        [assignment.last_attempt_at, assignment.completed_at, assignment.created_at].forEach(ts => {
+          if (ts && ts >= startDate.toISOString()) {
+            const date = ts.split('T')[0];
+            getOrCreateTrend(date).activeStudents.add(assignment.student_id);
+          }
+        });
+      });
+
+      // Process Vocabulary Gems
       (vocabData || []).forEach(vocab => {
         const date = vocab.last_encountered_at.split('T')[0];
-        if (!trendsByDate.has(date)) {
-          trendsByDate.set(date, {
-            activeStudents: new Set(),
-            totalEncounters: 0,
-            correctEncounters: 0,
-            proficientWords: new Set(),
-            learningWords: new Set(),
-            strugglingWords: new Set()
-          });
-        }
-        const trend = trendsByDate.get(date)!;
+        const trend = getOrCreateTrend(date);
+
         trend.totalEncounters += vocab.total_encounters;
         trend.correctEncounters += vocab.correct_encounters;
 
-        // Calculate accuracy and categorize by proficiency level
         const accuracy = vocab.total_encounters > 0
           ? (vocab.correct_encounters / vocab.total_encounters) * 100
           : 0;
-        const wordKey = `${vocab.student_id}-${date}`;
+
+        const vocabId = vocab.centralized_vocabulary_id || vocab.vocabulary_item_id || 'unknown';
+        const wordKey = `${vocab.student_id}-${vocabId}`;
 
         if (accuracy >= 90 && vocab.total_encounters >= 5) {
           trend.proficientWords.add(wordKey);
         } else if (accuracy >= 60 && vocab.total_encounters >= 3) {
+          trend.learningWords.add(wordKey);
+        } else {
+          trend.strugglingWords.add(wordKey);
+        }
+      });
+
+      // Process Assignment Vocabulary
+      (assignmentVocabData || []).forEach(vocab => {
+        const date = vocab.last_seen_at.split('T')[0];
+        const trend = getOrCreateTrend(date);
+
+        const seen = vocab.seen_count || 0;
+        const correct = vocab.correct_count || 0;
+
+        trend.totalEncounters += seen;
+        trend.correctEncounters += correct;
+
+        const accuracy = seen > 0 ? (correct / seen) * 100 : 0;
+        const wordKey = `${vocab.student_id}-${vocab.vocab_id || 'unknown'}`;
+
+        // Using same logic for proficiency as gems
+        if (accuracy >= 90 && seen >= 5) {
+          trend.proficientWords.add(wordKey);
+        } else if (accuracy >= 60 && seen >= 3) {
           trend.learningWords.add(wordKey);
         } else {
           trend.strugglingWords.add(wordKey);
@@ -1023,7 +1080,7 @@ export class TeacherVocabularyAnalyticsService {
 
         trends.push({
           date: dateStr,
-          totalWords: 0,
+          totalWords: 0, // Not tracked in this aggregation
           proficientWords: dayData ? dayData.proficientWords.size : 0,
           learningWords: dayData ? dayData.learningWords.size : 0,
           strugglingWords: dayData ? dayData.strugglingWords.size : 0,

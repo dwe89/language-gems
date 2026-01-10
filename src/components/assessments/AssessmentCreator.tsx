@@ -143,6 +143,27 @@ export default function AssessmentCreator() {
   const [selectedAssessmentForConfig, setSelectedAssessmentForConfig] = useState<typeof AVAILABLE_ASSESSMENTS[0] | null>(null);
   const [editingAssessmentId, setEditingAssessmentId] = useState<string | null>(null);
 
+  // Availability Check
+  const [assessmentAvailability, setAssessmentAvailability] = useState<Record<string, number>>({});
+  const [availabilityLoading, setAvailabilityLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAvailability = async () => {
+      try {
+        const res = await fetch('/api/assessments/availability');
+        const data = await res.json();
+        if (data.success) {
+          setAssessmentAvailability(data.counts);
+        }
+      } catch (e) {
+        console.error('Failed to check availability', e);
+      } finally {
+        setAvailabilityLoading(false);
+      }
+    };
+    checkAvailability();
+  }, []);
+
   // Assignment Details
   const [assignmentDetails, setAssignmentDetails] = useState<{
     title: string;
@@ -478,31 +499,49 @@ export default function AssessmentCreator() {
               </h3>
               <p className="text-gray-600">Choose the type of assessment you want to assign to your students.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {AVAILABLE_ASSESSMENTS.map(assessment => (
-                <div
-                  key={assessment.id}
-                  onClick={() => openConfigModal(assessment)}
-                  className="border rounded-xl p-4 hover:shadow-md transition-all cursor-pointer bg-white hover:border-indigo-300 group"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="p-2 bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
-                      <GraduationCap className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+            {availabilityLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+              </div>
+            ) : (
+              <>
+                {AVAILABLE_ASSESSMENTS.some(a => assessmentAvailability[a.id] > 0) ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {AVAILABLE_ASSESSMENTS
+                      .filter(assessment => assessmentAvailability[assessment.id] > 0)
+                      .map(assessment => (
+                        <div
+                          key={assessment.id}
+                          onClick={() => openConfigModal(assessment)}
+                          className="border rounded-xl p-4 hover:shadow-md transition-all cursor-pointer bg-white hover:border-indigo-300 group"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="p-2 bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                              <GraduationCap className="w-6 h-6 text-indigo-600" />
+                            </div>
+                            <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+                          </div>
+                          <h3 className="font-semibold text-gray-900 mb-1">{assessment.name}</h3>
+                          <p className="text-sm text-gray-500 mb-3">{assessment.description}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {assessment.skills.map(skill => (
+                              <span key={skill} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{assessment.name}</h3>
-                  <p className="text-sm text-gray-500 mb-3">{assessment.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {assessment.skills.map(skill => (
-                      <span key={skill} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
-                        {skill}
-                      </span>
-                    ))}
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                    <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <h3 className="text-lg font-medium text-gray-900">Assessments Coming Soon</h3>
+                    <p className="text-gray-500 mt-1 max-w-sm mx-auto">We are currently preparing our assessment library. Please check back later.</p>
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </>
+            )}
 
             {assessmentConfig.selectedAssessments.length > 0 && (
               <div className="mt-8 border-t pt-6">

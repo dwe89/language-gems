@@ -167,10 +167,48 @@ export default function Home() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
-                  className="text-lg md:text-xl text-slate-600 mb-12 leading-relaxed max-w-4xl mx-auto"
+                  className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-4xl mx-auto"
                 >
-                  {hero.subheadline || "The complete GCSE language learning platform for Spanish, French, and German. Perfect for schools, teachers, and individual learners worldwide."}
+                  {hero.subheadline || "The complete language learning platform for Spanish, French, and German. Perfect for schools, teachers, and individual learners."}
                 </motion.p>
+
+                {/* Key Features Usps */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="flex flex-wrap justify-center gap-4 mb-12"
+                >
+                  <div className="flex items-center px-5 py-3 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-indigo-100 hover:shadow-md transition-all hover:-translate-y-1">
+                    <div className="bg-indigo-100 p-1.5 rounded-full mr-3">
+                      <School className="w-4 h-4 text-indigo-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider leading-tight">Curriculum Ready</p>
+                      <p className="text-slate-800 font-bold text-sm leading-none">KS2, KS3 & KS4</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center px-5 py-3 bg-white rounded-full shadow-lg border border-purple-200 hover:shadow-xl transition-all hover:-translate-y-1 ring-4 ring-purple-50 ring-offset-2 hover:ring-purple-100">
+                    <div className="bg-purple-100 p-1.5 rounded-full mr-3">
+                      <BookOpen className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] text-purple-500 font-bold uppercase tracking-wider leading-tight">Total Flexibility</p>
+                      <p className="text-slate-800 font-bold text-sm leading-none">Use YOUR Vocabulary</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center px-5 py-3 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-emerald-100 hover:shadow-md transition-all hover:-translate-y-1">
+                    <div className="bg-emerald-100 p-1.5 rounded-full mr-3">
+                      <Gamepad2 className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider leading-tight">Assessment</p>
+                      <p className="text-slate-800 font-bold text-sm leading-none">Gamified Learning</p>
+                    </div>
+                  </div>
+                </motion.div>
 
                 {/* Audience Selection Cards */}
                 <motion.div

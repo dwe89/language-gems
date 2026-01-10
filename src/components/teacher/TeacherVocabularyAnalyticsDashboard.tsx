@@ -27,6 +27,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import ExcelJS from 'exceljs';
 
 interface TeacherVocabularyAnalyticsDashboardProps {
   classId?: string;
@@ -100,11 +101,8 @@ export default function TeacherVocabularyAnalyticsDashboard({
   // Word analysis sorting
   const [wordSortField, setWordSortField] = useState<'struggling' | 'accuracy' | 'word' | 'translation' | 'mistakes'>('struggling');
   const [wordSortOrder, setWordSortOrder] = useState<'desc' | 'asc'>('desc');
-
-  // Class selector state
-  const [availableClasses, setAvailableClasses] = useState<Array<{ id: string; name: string }>>([]);
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(classId || null);
-  const [loadingClasses, setLoadingClasses] = useState(true);
+  // Word analysis topic filtering
+  const [selectedTopic, setSelectedTopic] = useState<string>('all');
 
   // Lazy loading state
   const [loadingSection, setLoadingSection] = useState<string | null>(null);
@@ -119,60 +117,49 @@ export default function TeacherVocabularyAnalyticsDashboard({
       .join(' & ');
   };
 
-  // Load teacher's classes
+  // Load analytics data whenever user, classId, or date range changes
   useEffect(() => {
-    if (user && supabase) {
-      loadTeacherClasses();
+    if (user) {
+      // If we are on a specific view, we want to load that data immediately with the stats
+      loadAnalytics(selectedView);
     }
-  }, [user, supabase]);
+  }, [user, classId, dateRange]); // We don't include selectedView here to avoid double-loading on tab switch (handleTabChange handles that)
 
-  const loadTeacherClasses = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('classes')
-        .select('id, name')
-        .eq('teacher_id', user.id)
-        .order('name');
-
-      if (error) throw error;
-
-      const classes = data || [];
-      setAvailableClasses([
-        { id: 'all', name: 'All Classes' },
-        ...classes
-      ]);
-      setLoadingClasses(false);
-    } catch (err) {
-      console.error('Error loading classes:', err);
-      setLoadingClasses(false);
-    }
-  };
-
-  // Load analytics data
-  useEffect(() => {
-    if (user && !loadingClasses) {
-      loadAnalytics();
-    }
-  }, [user, selectedClassId, dateRange, loadingClasses]);
-
-  const loadAnalytics = async () => {
+  const loadAnalytics = async (currentView: typeof selectedView = 'overview') => {
     if (!user) return;
 
     try {
       setLoading(true);
       setError(null);
-      setLoadedSections(new Set(['stats'])); // Reset loaded sections
-      console.log('🔄 [TEACHER VOCAB DASHBOARD] Loading analytics overview...');
+
+      // Determine which sections to fetch
+      const sectionsToFetch = ['stats'];
+      const sectionMap: Record<string, string> = {
+        'students': 'students,students_detailed',
+        'topics': 'topics',
+        'trends': 'trends',
+        'words': 'words'
+      };
+
+      if (currentView !== 'overview' && sectionMap[currentView]) {
+        sectionsToFetch.push(sectionMap[currentView]);
+      }
+
+      // Reset loaded sections but mark the ones we are about to fetch as loaded (optimistic)
+      // This prevents race conditions where the UI might try to fetch them again
+      const newLoadedSet = new Set(['stats']);
+      if (currentView !== 'overview') newLoadedSet.add(currentView);
+      setLoadedSections(newLoadedSet);
+
+      console.log(`🔄 [TEACHER VOCAB DASHBOARD] Loading analytics for view: ${currentView}...`);
 
       const params = new URLSearchParams({
         teacherId: user.id,
-        sections: 'stats' // Only fetch overview stats initially
+        sections: sectionsToFetch.join(',')
       });
 
-      if (selectedClassId && selectedClassId !== 'all') {
-        params.set('classId', selectedClassId);
+      if (classId) {
+        params.set('classId', classId);
       }
 
       if (dateRange?.from && dateRange?.to) {
@@ -197,7 +184,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
       }
 
       setAnalytics(data);
-      console.log('📊 [TEACHER VOCAB DASHBOARD] Overview loaded:', data);
+      console.log('📊 [TEACHER VOCAB DASHBOARD] Data loaded:', data);
 
     } catch (err) {
       console.error('❌ [TEACHER VOCAB DASHBOARD] Error loading analytics:', err);
@@ -220,8 +207,8 @@ export default function TeacherVocabularyAnalyticsDashboard({
         sections: section === 'students' ? 'students,students_detailed' : section
       });
 
-      if (selectedClassId && selectedClassId !== 'all') {
-        params.set('classId', selectedClassId);
+      if (classId) {
+        params.set('classId', classId);
       }
 
       const response = await fetch(`/api/dashboard/vocabulary/analytics?${params.toString()}`, {
@@ -262,8 +249,8 @@ export default function TeacherVocabularyAnalyticsDashboard({
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    setLoadedSections(new Set(['overview']));
-    await loadAnalytics();
+    // Resetting loadedSections is handled in loadAnalytics
+    await loadAnalytics(selectedView);
   };
 
   const handleTabChange = (view: typeof selectedView) => {
@@ -847,7 +834,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
           />
           <StatCard
             title="Active Students"
-            value={latestTrend.activeStudents}
+            value={analytics.classStats.activeStudentsLast7Days}
             icon={<Users className="h-6 w-6 text-purple-600" />}
             trend={studentsChange}
             subtitle="This week"
@@ -974,6 +961,18 @@ export default function TeacherVocabularyAnalyticsDashboard({
       );
     }
 
+    // Extract unique topics for filtering
+    const uniqueTopics = Array.from(
+      new Set(
+        analytics.detailedWordAnalytics.map(w => w.category || 'Uncategorized')
+      )
+    ).sort();
+
+    // Filter by topic first
+    const filteredByTopic = selectedTopic === 'all'
+      ? analytics.detailedWordAnalytics
+      : analytics.detailedWordAnalytics.filter(w => (w.category || 'Uncategorized') === selectedTopic);
+
     // Sort words by selected field
     const comparator = (a: any, b: any) => {
       let va: any; let vb: any;
@@ -1007,7 +1006,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
       }
     };
 
-    const sortedWords = [...analytics.detailedWordAnalytics].sort((a, b) => {
+    const sortedWords = [...filteredByTopic].sort((a, b) => {
       const res = comparator(a, b);
       return wordSortOrder === 'asc' ? res : -res;
     });
@@ -1019,28 +1018,179 @@ export default function TeacherVocabularyAnalyticsDashboard({
             <h3 className="text-lg font-semibold text-gray-900">Most Challenging Words</h3>
             <p className="text-sm text-gray-600">Words that the highest number of students are struggling with</p>
           </div>
-          {/* Sort controls */}
-          <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-end gap-3">
-            <label className="text-sm text-gray-600">Sort by:</label>
-            <select
-              value={wordSortField}
-              onChange={(e) => setWordSortField(e.target.value as any)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm"
-            >
-              <option value="struggling">Struggling Students</option>
-              <option value="accuracy">Accuracy</option>
-              <option value="word">Word</option>
-              <option value="translation">Translation</option>
-              <option value="mistakes">Mistakes</option>
-            </select>
+          {/* Sort and Filter controls */}
+          <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+            {/* Topic Filter */}
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-gray-600">Filter by topic:</label>
+              <select
+                value={selectedTopic}
+                onChange={(e) => setSelectedTopic(e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1 text-sm"
+              >
+                <option value="all">All Topics ({analytics.detailedWordAnalytics.length} words)</option>
+                {uniqueTopics.map(topic => {
+                  const count = (analytics.detailedWordAnalytics || []).filter(
+                    w => (w.category || 'Uncategorized') === topic
+                  ).length;
+                  return (
+                    <option key={topic} value={topic}>
+                      {formatTopicName(topic)} ({count} words)
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
 
-            <button
-              onClick={() => setWordSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-              className="px-2 py-1 border border-gray-300 rounded text-sm"
-              title="Toggle sort order"
-            >
-              {wordSortOrder === 'asc' ? '▲' : '▼'}
-            </button>
+            {/* Sort Controls */}
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-gray-600">Sort by:</label>
+              <select
+                value={wordSortField}
+                onChange={(e) => setWordSortField(e.target.value as any)}
+                className="border border-gray-300 rounded px-2 py-1 text-sm"
+              >
+                <option value="struggling">Struggling Students</option>
+                <option value="accuracy">Accuracy</option>
+                <option value="word">Word</option>
+                <option value="translation">Translation</option>
+                <option value="mistakes">Mistakes</option>
+              </select>
+
+              <button
+                onClick={() => setWordSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                className="px-2 py-1 border border-gray-300 rounded text-sm"
+                title="Toggle sort order"
+              >
+                {wordSortOrder === 'asc' ? '▲' : '▼'}
+              </button>
+
+              <button
+                onClick={async () => {
+                  // Create a new workbook
+                  const workbook = new ExcelJS.Workbook();
+                  workbook.creator = 'LanguageGems';
+                  workbook.created = new Date();
+
+                  const sheet = workbook.addWorksheet('Word Analysis');
+
+                  // --- 1. Branding Header ---
+                  // Merge cells A1:H1 for the title
+                  sheet.mergeCells('A1:H1');
+                  const titleCell = sheet.getCell('A1');
+                  titleCell.value = 'LanguageGems Analytics Dashboard';
+                  titleCell.font = { name: 'Arial', size: 18, bold: true, color: { argb: 'FFFFFFFF' } };
+                  titleCell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FF1D4ED8' } // Darker Blue (blue-700) for more contrast
+                  };
+                  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+                  sheet.getRow(1).height = 40;
+
+                  // --- 2. Metadata ---
+                  sheet.mergeCells('A2:H2');
+                  const metadataCell = sheet.getCell('A2');
+                  metadataCell.value = `Generated on: ${new Date().toLocaleDateString()}  |  Filter: ${selectedTopic === 'all' ? 'All Topics' : formatTopicName(selectedTopic)}`;
+                  metadataCell.font = { name: 'Arial', size: 11, italic: true, color: { argb: 'FF4B5563' } }; // Gray-600
+                  metadataCell.alignment = { horizontal: 'center', vertical: 'middle' };
+                  sheet.getRow(2).height = 25;
+
+                  // Spacer row
+                  sheet.getRow(3).height = 15;
+
+                  // --- 3. Data Table ---
+                  // Define columns
+                  sheet.columns = [
+                    { header: 'Word', key: 'word', width: 25 },
+                    { header: 'Translation', key: 'translation', width: 35 },
+                    { header: 'Category', key: 'category', width: 25 },
+                    { header: 'Accuracy', key: 'accuracy', width: 15 },
+                    { header: 'Encounters', key: 'totalEncounters', width: 15 },
+                    { header: 'Mistakes', key: 'mistakes', width: 15 },
+                    { header: 'Struggling Students', key: 'struggling', width: 20 },
+                    { header: 'Proficiency Level', key: 'proficiency', width: 20 }
+                  ];
+
+                  // Add data rows starting at Row 4
+                  const tableRows = sortedWords.map((w: any) => ({
+                    word: w.word,
+                    translation: w.translation,
+                    category: w.category || 'Uncategorized',
+                    accuracy: w.accuracy / 100, // For percentage formatting
+                    totalEncounters: w.totalEncounters,
+                    mistakes: w.mistakeCount,
+                    struggling: w.strugglingCount,
+                    proficiency: w.proficiencyLevel === 'proficient' ? '🟢 Proficient' :
+                      w.proficiencyLevel === 'learning' ? '🟡 Learning' : '🔴 Struggling'
+                  }));
+
+                  // Add table
+                  sheet.addTable({
+                    name: 'VocabularyAnalysis', // Table name
+                    ref: 'A4', // Top-left corner of the table (header row)
+                    headerRow: true,
+                    totalsRow: false,
+                    style: {
+                      theme: 'TableStyleMedium9', // Blue header, banded rows
+                      showRowStripes: true,
+                    },
+                    columns: [
+                      { name: 'Word', filterButton: true },
+                      { name: 'Translation', filterButton: true },
+                      { name: 'Category', filterButton: true },
+                      { name: 'Accuracy', filterButton: true },
+                      { name: 'Total Encounters', filterButton: true },
+                      { name: 'Mistakes', filterButton: true },
+                      { name: 'Struggling Students', filterButton: true },
+                      { name: 'Proficiency Level', filterButton: true },
+                    ],
+                    rows: tableRows.map(r => [
+                      r.word,
+                      r.translation,
+                      r.category,
+                      r.accuracy,
+                      r.totalEncounters,
+                      r.mistakes,
+                      r.struggling,
+                      r.proficiency
+                    ]),
+                  });
+
+                  // --- 4. Custom Formatting ---
+                  // Format the Accuracy column (Column D, index 4) as percentage
+                  const accuracyColIndex = 4;
+                  sheet.getColumn(accuracyColIndex).numFmt = '0.0%';
+
+                  // Center align numbers
+                  [4, 5, 6, 7].forEach(idx => {
+                    sheet.getColumn(idx).alignment = { horizontal: 'center', vertical: 'middle' };
+                  });
+
+                  // Left align text columns for better readability
+                  [1, 2, 3, 8].forEach(idx => {
+                    sheet.getColumn(idx).alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+                  });
+
+                  // Save file
+                  const buffer = await workbook.xlsx.writeBuffer();
+                  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                  const link = document.createElement('a');
+                  const url = URL.createObjectURL(blob);
+                  link.setAttribute('href', url);
+                  link.setAttribute('download', `LanguageGems_Analytics_${new Date().toISOString().split('T')[0]}.xlsx`);
+                  link.style.visibility = 'hidden';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="ml-2 flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium border border-transparent rounded-lg transition-all shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                title="Download filtered data as Excel"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download Report</span>
+              </button>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -1074,8 +1224,8 @@ export default function TeacherVocabularyAnalyticsDashboard({
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
     );
   };
 
@@ -1086,34 +1236,13 @@ export default function TeacherVocabularyAnalyticsDashboard({
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Vocabulary Analytics</h1>
           <p className="text-gray-600 mt-1">
-            {selectedClassId && selectedClassId !== 'all'
-              ? `Viewing: ${availableClasses.find(c => c.id === selectedClassId)?.name || 'Selected Class'}`
+            {classId
+              ? 'Viewing selected class vocabulary progress'
               : 'Class-wide vocabulary progress and insights'}
           </p>
         </div>
 
         <div className="flex items-center space-x-4">
-          {/* Class Selector */}
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <select
-              value={selectedClassId || 'all'}
-              onChange={(e) => setSelectedClassId(e.target.value === 'all' ? null : e.target.value)}
-              disabled={loadingClasses}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-            >
-              {loadingClasses ? (
-                <option>Loading classes...</option>
-              ) : (
-                availableClasses.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-
           <button
             onClick={handleRefresh}
             disabled={refreshing}

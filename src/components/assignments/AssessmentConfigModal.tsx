@@ -136,14 +136,15 @@ export default function AssessmentConfigModal({
   currentConfig,
   onSave
 }: AssessmentConfigModalProps) {
-  // Check if this is a GCSE exam
-  const isGCSEExam = assessmentType?.id?.startsWith('gcse-') || false;
+  // Check if this is a GCSE exam or Dictation
+  const isGCSEExam = assessmentType?.id?.startsWith('gcse-') || assessmentType?.id === 'dictation' || false;
+  const isDictation = assessmentType?.id === 'dictation';
 
   const [config, setConfig] = useState({
     language: currentConfig?.language || 'spanish',
-    level: currentConfig?.level || (isGCSEExam ? 'KS4' : 'KS3'), // Auto-set to KS4 for GCSE exams
+    level: currentConfig?.level || (isGCSEExam ? 'KS4' : 'KS3'), // Auto-set to KS4 for GCSE exams/Dictation
     difficulty: currentConfig?.difficulty || 'foundation',
-    examBoard: currentConfig?.examBoard || 'General',
+    examBoard: currentConfig?.examBoard || (isDictation ? 'AQA' : 'General'),
     paper: currentConfig?.paper || '',
     category: currentConfig?.category || '',
     subcategory: currentConfig?.subcategory || '',
@@ -157,7 +158,7 @@ export default function AssessmentConfigModal({
 
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [availableTopics, setAvailableTopics] = useState<string[]>([]);
-  const [availablePapers, setAvailablePapers] = useState<Array<{identifier: string, title: string}>>([]);
+  const [availablePapers, setAvailablePapers] = useState<Array<{ identifier: string, title: string }>>([]);
 
   // Update subcategories when category changes (KS3)
   useEffect(() => {
@@ -176,7 +177,7 @@ export default function AssessmentConfigModal({
     }
   }, [config.theme, config.level, config.examBoard]);
 
-  // Fetch available papers when exam board, language, or difficulty changes for GCSE exams
+  // Fetch available papers when exam board, language, or difficulty changes for GCSE exams or Dictation
   useEffect(() => {
     if (isGCSEExam && config.examBoard !== 'General' && config.language && config.difficulty) {
       fetchAvailablePapers();
@@ -204,8 +205,8 @@ export default function AssessmentConfigModal({
       const language = config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de';
 
       let endpoint = '';
-      
-      // Only AQA has API endpoints currently
+
+      // Only AQA has API endpoints currently, Dictation supports AQA style
       if (config.examBoard === 'AQA') {
         if (assessmentType.id === 'gcse-reading') {
           endpoint = `/api/admin/aqa-reading/list?language=${language}&tier=${level}`;
@@ -213,6 +214,8 @@ export default function AssessmentConfigModal({
           endpoint = `/api/admin/aqa-listening/list?language=${language}&tier=${level}`;
         } else if (assessmentType.id === 'gcse-writing') {
           endpoint = `/api/admin/aqa-writing/list?language=${language}&tier=${level}`;
+        } else if (assessmentType.id === 'dictation') {
+          endpoint = `/api/dictation/assessments?language=${language}&level=${level}`; // API expects 'level', not 'tier'
         }
       } else if (config.examBoard === 'Edexcel') {
         // Edexcel papers exist in database but no API endpoints yet
@@ -224,14 +227,25 @@ export default function AssessmentConfigModal({
       if (endpoint) {
         const response = await fetch(endpoint);
         const data = await response.json();
-        
-        if (data.success && data.papers) {
-          // Extract unique identifiers and titles
-          const papers = data.papers.map((paper: any) => ({
-            identifier: paper.identifier,
-            title: paper.title
-          }));
-          setAvailablePapers(papers);
+
+        if (data.success) {
+          if (isDictation && data.assessments) {
+            // Handle dictation specific response format
+            const papers = data.assessments.map((paper: any) => ({
+              identifier: paper.identifier,
+              title: paper.title
+            }));
+            setAvailablePapers(papers);
+          } else if (data.papers) {
+            // Handle standard GCSE/admin list response format
+            const papers = data.papers.map((paper: any) => ({
+              identifier: paper.identifier,
+              title: paper.title
+            }));
+            setAvailablePapers(papers);
+          } else {
+            setAvailablePapers([]);
+          }
         } else {
           setAvailablePapers([]);
         }
@@ -252,15 +266,15 @@ export default function AssessmentConfigModal({
   const isConfigComplete = () => {
     if (!config.language) return false;
 
-    // For GCSE exams, level is always KS4 and we don't need category/subcategory
+    // For GCSE exams and Dictation, level is always KS4 and we don't need category/subcategory
     if (isGCSEExam) {
       if (!config.examBoard) return false;
-      
+
       // Edexcel papers not available yet - block completion
       if (config.examBoard === 'Edexcel') return false;
-      
-      // For reading/listening/writing exams, require paper selection when exam board is not General
-      if ((assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening' || assessmentType.id === 'gcse-writing') && config.examBoard !== 'General') {
+
+      // For reading/listening/writing exams AND Dictation, require paper selection when exam board is not General
+      if ((assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening' || assessmentType.id === 'gcse-writing' || assessmentType.id === 'dictation') && config.examBoard !== 'General') {
         if (!config.paper) return false;
       }
       return true;
@@ -330,7 +344,7 @@ export default function AssessmentConfigModal({
               </select>
             </div>
 
-            {/* Curriculum Level - Hide for GCSE exams */}
+            {/* Curriculum Level - Hide for GCSE exams and Dictation */}
             {!isGCSEExam && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -339,22 +353,20 @@ export default function AssessmentConfigModal({
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setConfig(prev => ({ ...prev, level: 'KS3' }))}
-                    className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                      config.level === 'KS3'
+                    className={`px-4 py-3 rounded-lg border-2 transition-all ${config.level === 'KS3'
                         ? 'border-purple-600 bg-purple-50 text-purple-700'
                         : 'border-gray-300 hover:border-gray-400'
-                    }`}
+                      }`}
                   >
                     <div className="font-semibold">KS3</div>
                     <div className="text-xs text-gray-600">Years 7-9</div>
                   </button>
                   <button
                     onClick={() => setConfig(prev => ({ ...prev, level: 'KS4' }))}
-                    className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                      config.level === 'KS4'
+                    className={`px-4 py-3 rounded-lg border-2 transition-all ${config.level === 'KS4'
                         ? 'border-purple-600 bg-purple-50 text-purple-700'
                         : 'border-gray-300 hover:border-gray-400'
-                    }`}
+                      }`}
                   >
                     <div className="font-semibold">KS4 (GCSE)</div>
                     <div className="text-xs text-gray-600">Years 10-11</div>
@@ -363,7 +375,7 @@ export default function AssessmentConfigModal({
               </div>
             )}
 
-            {/* Exam Board Selection - Show for GCSE exams or KS4 */}
+            {/* Exam Board Selection - Show for GCSE exams, KS4, or Dictation */}
             {(isGCSEExam || config.level === 'KS4') && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -381,7 +393,7 @@ export default function AssessmentConfigModal({
               </div>
             )}
 
-            {/* Tier/Difficulty - Show for GCSE exams or KS4 with exam board */}
+            {/* Tier/Difficulty - Show for GCSE exams, KS4 with exam board, or Dictation */}
             {(isGCSEExam || (config.level === 'KS4' && config.examBoard !== 'General')) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -390,21 +402,19 @@ export default function AssessmentConfigModal({
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setConfig(prev => ({ ...prev, difficulty: 'foundation' }))}
-                    className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                      config.difficulty === 'foundation'
+                    className={`px-4 py-2 rounded-lg border-2 transition-all ${config.difficulty === 'foundation'
                         ? 'border-purple-600 bg-purple-50 text-purple-700'
                         : 'border-gray-300 hover:border-gray-400'
-                    }`}
+                      }`}
                   >
                     Foundation
                   </button>
                   <button
                     onClick={() => setConfig(prev => ({ ...prev, difficulty: 'higher' }))}
-                    className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                      config.difficulty === 'higher'
+                    className={`px-4 py-2 rounded-lg border-2 transition-all ${config.difficulty === 'higher'
                         ? 'border-purple-600 bg-purple-50 text-purple-700'
                         : 'border-gray-300 hover:border-gray-400'
-                    }`}
+                      }`}
                   >
                     Higher
                   </button>
@@ -412,8 +422,8 @@ export default function AssessmentConfigModal({
               </div>
             )}
 
-            {/* Paper Selection for GCSE Exams */}
-            {(assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening' || assessmentType.id === 'gcse-writing') && config.examBoard !== 'General' && (
+            {/* Paper Selection for GCSE Exams and Dictation */}
+            {(assessmentType.id === 'gcse-reading' || assessmentType.id === 'gcse-listening' || assessmentType.id === 'gcse-writing' || assessmentType.id === 'dictation') && config.examBoard !== 'General' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Paper <span className="text-red-500">*</span>
@@ -579,11 +589,10 @@ export default function AssessmentConfigModal({
             <button
               onClick={handleSave}
               disabled={!isConfigComplete()}
-              className={`px-6 py-2 rounded-lg font-medium transition-all flex items-center space-x-2 ${
-                isConfigComplete()
+              className={`px-6 py-2 rounded-lg font-medium transition-all flex items-center space-x-2 ${isConfigComplete()
                   ? 'bg-purple-600 text-white hover:bg-purple-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+                }`}
             >
               <Check className="h-4 w-4" />
               <span>Save Configuration</span>
