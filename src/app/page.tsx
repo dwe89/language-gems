@@ -33,12 +33,12 @@ import { iconMap } from '../lib/iconMap';
 
 // Universal hero text variations
 const heroTextVariations = [
-  { text: "Master Languages", color: "text-blue-600" },
-  { text: "Learn Through Gaming", color: "text-green-600" },
-  { text: "Achieve KS2-KS4 Success", color: "text-purple-600" },
-  { text: "Build Vocabulary", color: "text-indigo-600" },
-  { text: "Practice Daily", color: "text-emerald-600" },
-  { text: "Reach Fluency", color: "text-orange-600" }
+  { text: "Master Spanish, French & German", color: "text-blue-600" },
+  { text: "Gaming for KS2, KS3 & KS4", color: "text-purple-600" },
+  { text: "Gamified Language Magic", color: "text-indigo-600" },
+  { text: "Vocabulary Mastery", color: "text-emerald-600" },
+  { text: "Exam Prep Made Fun", color: "text-orange-600" },
+  { text: "Love Learning Languages", color: "text-pink-600" }
 ];
 
 // Animated text hook
@@ -169,10 +169,16 @@ export default function Home() {
                   transition={{ duration: 0.6, delay: 0.2 }}
                   className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-4xl mx-auto"
                 >
-                  {hero.subheadline || (
+                  {hero.subheadline ? (
+                    hero.subheadline.split(/(\*\*.*?\*\*)/g).filter(Boolean).map((part: string, i: number) =>
+                      part.startsWith('**') && part.endsWith('**') ? (
+                        <span key={i} className="font-bold text-slate-900">{part.slice(2, -2)}</span>
+                      ) : part
+                    )
+                  ) : (
                     <>
-                      The complete language learning platform for Spanish 🇪🇸, French 🇫🇷, and German 🇩🇪.
-                      Perfect for <span className="font-bold text-slate-800">KS2, KS3 & KS4</span> schools, teachers, and individual learners worldwide.
+                      The complete language learning powerhouse for <span className="text-blue-600 font-bold">Spanish 🇪🇸</span>, <span className="text-blue-600 font-bold">French 🇫🇷</span>, and <span className="text-blue-600 font-bold">German 🇩🇪</span>.
+                      Perfect for <span className="font-extrabold text-slate-900 bg-yellow-100 px-1 rounded">KS2, KS3 & KS4</span> schools, teachers, and individual learners worldwide.
                     </>
                   )}
                 </motion.p>
@@ -320,22 +326,43 @@ export default function Home() {
                   transition={{ duration: 0.6, delay: 0.8 }}
                   className="flex items-center gap-8 text-sm text-slate-500 justify-center flex-wrap"
                 >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Free to Start</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-blue-500" />
-                    <span>Spanish, French & German</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-purple-500" />
-                    <span>KS2, KS3 & KS4 Aligned</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-red-500" />
-                    <span>Loved by Students & Teachers</span>
-                  </div>
+                  {hero.trust_indicators && hero.trust_indicators.length > 0 ? (
+                    hero.trust_indicators.map((indicator: any, index: number) => {
+                      const Icon = iconMap[indicator.icon] || CheckCircle;
+                      const iconColor = {
+                        green: 'text-green-500',
+                        blue: 'text-blue-500',
+                        purple: 'text-purple-500',
+                        red: 'text-red-500'
+                      }[indicator.color as string] || 'text-slate-500';
+
+                      return (
+                        <div key={index} className="flex items-center gap-2">
+                          <Icon className={`w-4 h-4 ${iconColor}`} />
+                          <span>{indicator.text}</span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span>Free to Start</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-blue-500" />
+                        <span>Spanish, French & German</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-purple-500" />
+                        <span>KS2, KS3 & KS4 Aligned</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-red-500" />
+                        <span>Loved by Students & Teachers</span>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
               </div>
             </div>
