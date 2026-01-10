@@ -15,6 +15,7 @@ export interface FeatureFlags {
   youtubeVideos: boolean;
   forSchools: boolean;
   forLearners: boolean;
+  teacherDemo: boolean;
 }
 
 // Check if we're in development environment
@@ -47,6 +48,7 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
       youtubeVideos: true,
       forSchools: true,
       forLearners: true,
+      teacherDemo: true,
     };
   }
 
@@ -66,6 +68,7 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
     youtubeVideos: true, // Enable YouTube videos in production
     forSchools: false, // Hidden by default - enable via feature flag
     forLearners: false, // Hidden by default - enable via feature flag
+    teacherDemo: true, // Enable teacher demo
   };
 };
 
@@ -119,6 +122,14 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       description: 'High-engagement interactive learning games'
     },
     {
+      name: 'Demo',
+      path: '/demo',
+      enabled: flags.teacherDemo,
+      comingSoon: !flags.teacherDemo,
+      comingSoonPath: null,
+      description: 'Interactive demo of the teacher platform'
+    },
+    {
       name: 'Songs',
       path: '/songs',
       enabled: flags.youtubeVideos,
@@ -151,14 +162,6 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       description: 'Premium teaching materials and worksheets'
     },
     {
-      name: 'Blog',
-      path: '/blog',
-      enabled: flags.blog,
-      comingSoon: false,
-      comingSoonPath: null,
-      description: 'Language learning tips and insights'
-    },
-    {
       name: 'More',
       path: '#',
       enabled: true,
@@ -167,6 +170,13 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       hasDropdown: true,
       dropdownOnly: true,
       dropdownItems: [
+        {
+          name: 'Blog',
+          path: '/blog',
+          enabled: flags.blog,
+          comingSoon: false,
+          description: 'Language learning tips and insights'
+        },
         {
           name: 'Pricing',
           path: '/pricing',

@@ -91,7 +91,7 @@ function generateStudents(classId: string, count: number, language: string) {
   const students = [];
   const shuffledFirst = [...FIRST_NAMES].sort(() => Math.random() - 0.5);
   const shuffledLast = [...LAST_NAMES].sort(() => Math.random() - 0.5);
-  
+
   for (let i = 0; i < count; i++) {
     const firstName = shuffledFirst[i % shuffledFirst.length];
     const lastName = shuffledLast[i % shuffledLast.length];
@@ -100,7 +100,7 @@ function generateStudents(classId: string, count: number, language: string) {
     const streak = Math.floor(Math.random() * 30);
     const accuracy = 45 + Math.floor(Math.random() * 50);
     const totalGems = Math.floor(Math.random() * 500) + 50;
-    
+
     students.push({
       id: `demo-student-${classId}-${i + 1}`,
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@student.demo.com`,
@@ -123,7 +123,7 @@ function generateStudents(classId: string, count: number, language: string) {
       trend: ['improving', 'stable', 'declining'][Math.floor(Math.random() * 3)] as 'improving' | 'stable' | 'declining',
     });
   }
-  
+
   return students;
 }
 
@@ -191,20 +191,20 @@ const GERMAN_TOPICS = [
 function generateAssignments(classData: typeof DEMO_CLASSES[0], topics: typeof FRENCH_TOPICS) {
   const assignments = [];
   const now = Date.now();
-  
+
   for (let i = 0; i < 12; i++) {
     const topic = topics[i % topics.length];
     const gameType = GAME_TYPES[i % GAME_TYPES.length];
     const isCompleted = i < 8;
     const isPast = i < 5;
     const isFuture = i >= 10;
-    
-    const dueDate = isFuture 
+
+    const dueDate = isFuture
       ? new Date(now + (i - 9) * 7 * 24 * 60 * 60 * 1000)
       : isPast
         ? new Date(now - (8 - i) * 7 * 24 * 60 * 60 * 1000)
         : new Date(now + (i - 4) * 2 * 24 * 60 * 60 * 1000);
-    
+
     assignments.push({
       id: `demo-assignment-${classData.id}-${i + 1}`,
       title: `${topic.name} - ${gameType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`,
@@ -228,7 +228,7 @@ function generateAssignments(classData: typeof DEMO_CLASSES[0], topics: typeof F
       completionRate: isCompleted ? 95 + Math.floor(Math.random() * 5) : 20 + Math.floor(Math.random() * 60),
     });
   }
-  
+
   return assignments;
 }
 
@@ -251,14 +251,14 @@ export const ALL_DEMO_ASSIGNMENTS = [
 function generateGameSessions(studentId: string, language: string, count: number) {
   const sessions = [];
   const now = Date.now();
-  
+
   for (let i = 0; i < count; i++) {
     const gameType = GAME_TYPES[Math.floor(Math.random() * GAME_TYPES.length)];
     const accuracy = 40 + Math.floor(Math.random() * 55);
     const score = Math.floor(accuracy * 10 * (0.8 + Math.random() * 0.4));
     const gemsTotal = Math.floor(score / 50) + Math.floor(Math.random() * 10);
     const xpEarned = Math.floor(gemsTotal * 15);
-    
+
     const gemsByRarity: Record<GemRarity, number> = {
       new_discovery: Math.floor(Math.random() * 3),
       common: Math.floor(Math.random() * 5),
@@ -267,7 +267,7 @@ function generateGameSessions(studentId: string, language: string, count: number
       epic: Math.random() > 0.7 ? 1 : 0,
       legendary: Math.random() > 0.95 ? 1 : 0,
     };
-    
+
     sessions.push({
       id: `demo-session-${studentId}-${i + 1}`,
       student_id: studentId,
@@ -285,7 +285,7 @@ function generateGameSessions(studentId: string, language: string, count: number
       words_correct: Math.floor((10 + Math.floor(Math.random() * 30)) * accuracy / 100),
     });
   }
-  
+
   return sessions;
 }
 
@@ -330,7 +330,7 @@ function generateAssessmentResults(studentId: string, language: string) {
 // DEMO VOCABULARY DATA
 // =====================================================
 
-const FRENCH_VOCABULARY = [
+export const FRENCH_VOCABULARY = [
   { word: 'bonjour', translation: 'hello', category: 'Greetings' },
   { word: 'merci', translation: 'thank you', category: 'Greetings' },
   { word: 'la famille', translation: 'family', category: 'Family' },
@@ -353,7 +353,7 @@ const FRENCH_VOCABULARY = [
   { word: 'regarder', translation: 'to watch', category: 'Free Time' },
 ];
 
-const SPANISH_VOCABULARY = [
+export const SPANISH_VOCABULARY = [
   { word: 'hola', translation: 'hello', category: 'Saludos' },
   { word: 'gracias', translation: 'thank you', category: 'Saludos' },
   { word: 'la familia', translation: 'family', category: 'Familia' },
@@ -376,7 +376,7 @@ const SPANISH_VOCABULARY = [
   { word: 'ver', translation: 'to watch', category: 'Tiempo Libre' },
 ];
 
-const GERMAN_VOCABULARY = [
+export const GERMAN_VOCABULARY = [
   { word: 'hallo', translation: 'hello', category: 'Begrüßungen' },
   { word: 'danke', translation: 'thank you', category: 'Begrüßungen' },
   { word: 'die Familie', translation: 'family', category: 'Familie' },
@@ -405,7 +405,7 @@ function generateVocabularyProgress(studentId: string, vocabulary: typeof FRENCH
     const correctEncounters = Math.floor(totalEncounters * (0.4 + Math.random() * 0.55));
     const accuracy = Math.round((correctEncounters / totalEncounters) * 100);
     const masteryLevel = Math.min(5, Math.floor(correctEncounters / 5));
-    
+
     return {
       id: `demo-vocab-${studentId}-${i + 1}`,
       student_id: studentId,
@@ -450,7 +450,7 @@ const ACHIEVEMENT_TEMPLATES = [
 function generateStudentAchievements(studentId: string) {
   const achievementCount = 3 + Math.floor(Math.random() * 8);
   const shuffled = [...ACHIEVEMENT_TEMPLATES].sort(() => Math.random() - 0.5);
-  
+
   return shuffled.slice(0, achievementCount).map((achievement, i) => ({
     id: `demo-achievement-${studentId}-${i + 1}`,
     user_id: studentId,
@@ -470,16 +470,16 @@ function generateStudentAchievements(studentId: string) {
 function generateRecentActivity(classId: string) {
   const students = DEMO_STUDENTS[classId];
   const activities = [];
-  
+
   for (let i = 0; i < 15; i++) {
     const student = students[Math.floor(Math.random() * students.length)];
     const type = ['assignment_completed', 'achievement_earned', 'game_session', 'assessment_completed'][Math.floor(Math.random() * 4)];
     const gameType = GAME_TYPES[Math.floor(Math.random() * GAME_TYPES.length)];
-    
+
     let description = '';
     let score: number | undefined;
     let achievement: string | undefined;
-    
+
     switch (type) {
       case 'assignment_completed':
         description = `Completed "${gameType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" assignment`;
@@ -500,14 +500,14 @@ function generateRecentActivity(classId: string) {
         score = 50 + Math.floor(Math.random() * 50);
         break;
     }
-    
+
     const minutesAgo = Math.floor(Math.random() * 60 * 24);
-    const timestamp = minutesAgo < 60 
+    const timestamp = minutesAgo < 60
       ? `${minutesAgo} minutes ago`
-      : minutesAgo < 60 * 24 
+      : minutesAgo < 60 * 24
         ? `${Math.floor(minutesAgo / 60)} hours ago`
         : `${Math.floor(minutesAgo / 60 / 24)} days ago`;
-    
+
     activities.push({
       id: `demo-activity-${classId}-${i + 1}`,
       type,
@@ -520,7 +520,7 @@ function generateRecentActivity(classId: string) {
       achievement,
     });
   }
-  
+
   return activities.sort((a, b) => new Date(b.timestampDate).getTime() - new Date(a.timestampDate).getTime());
 }
 
@@ -543,13 +543,15 @@ export const DEMO_TEACHER_STATS = {
   totalGameSessions: 3247,
   studentsOnline: 12,
   improvementRate: 15.3,
+  totalClasses: DEMO_CLASSES.length,
+  totalWords: 48592,
 };
 
 export const DEMO_CLASS_OVERVIEWS = DEMO_CLASSES.map((cls, i) => {
   const students = DEMO_STUDENTS[cls.id];
   const avgScore = Math.round(students.reduce((sum, s) => sum + s.accuracy * 10, 0) / students.length);
   const avgAccuracy = Math.round(students.reduce((sum, s) => sum + s.accuracy, 0) / students.length);
-  
+
   return {
     id: cls.id,
     name: cls.name,
@@ -576,12 +578,12 @@ export const DEMO_SELECTED_STUDENT = DEMO_STUDENTS[DEMO_CLASSES[0].id][0]; // Em
 export function getDemoStudentData(studentId: string = DEMO_SELECTED_STUDENT.id) {
   const student = ALL_DEMO_STUDENTS.find(s => s.id === studentId) || DEMO_SELECTED_STUDENT;
   const classData = DEMO_CLASSES.find(c => c.id === student.class_id)!;
-  const vocabulary = classData.language === 'French' 
-    ? FRENCH_VOCABULARY 
-    : classData.language === 'Spanish' 
-      ? SPANISH_VOCABULARY 
+  const vocabulary = classData.language === 'French'
+    ? FRENCH_VOCABULARY
+    : classData.language === 'Spanish'
+      ? SPANISH_VOCABULARY
       : GERMAN_VOCABULARY;
-  
+
   return {
     student,
     class: classData,

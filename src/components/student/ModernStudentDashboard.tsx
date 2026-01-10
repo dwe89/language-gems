@@ -181,31 +181,43 @@ const EnhancedAssignmentCard: React.FC<{
   );
 };
 
-// Simple NavigationCard component (restores earlier behavior)
+// Enhanced NavigationCard component with better styling
 const NavigationCard: React.FC<{ item: NavigationItem; isActive: boolean; onClick: () => void }> = ({ item, isActive, onClick }) => (
   <motion.button
     onClick={onClick}
-    className={`relative w-full p-4 rounded-xl text-left transition-all duration-300 ${
+    className={`relative w-full p-4 rounded-2xl text-left transition-all duration-300 overflow-hidden ${
       isActive
-        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-xl'
-        : 'bg-white/50 backdrop-blur-lg border border-gray-200 text-gray-700 shadow-md hover:shadow-lg'
+        ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-xl shadow-purple-500/25'
+        : 'bg-white border border-gray-100 text-gray-700 shadow-sm hover:shadow-lg hover:border-gray-200'
     }`}
-    whileHover={{ scale: 1.02 }}
+    whileHover={{ scale: 1.02, y: -2 }}
     whileTap={{ scale: 0.98 }}
   >
-    <div className="flex items-center space-x-3">
-      <div className={`p-2 rounded-full ${isActive ? 'bg-white/20' : `bg-gradient-to-br ${item.color} shadow`}`}>
-        <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-white'}`} />
+    {/* Subtle background pattern for active state */}
+    {isActive && (
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-1/2 -translate-x-1/2" />
+      </div>
+    )}
+    
+    <div className="relative flex items-center space-x-3">
+      <div className={`p-2.5 rounded-xl ${isActive ? 'bg-white/20 backdrop-blur-sm' : `bg-gradient-to-br ${item.color} shadow-lg`}`}>
+        <item.icon className="h-5 w-5 text-white" />
       </div>
 
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <h3 className={`font-semibold ${isActive ? 'text-white' : 'text-gray-900'}`}>{item.label}</h3>
-        <p className={`text-sm ${isActive ? 'text-white/80' : 'text-gray-600'}`}>{item.description}</p>
+        <p className={`text-sm truncate ${isActive ? 'text-white/80' : 'text-gray-500'}`}>{item.description}</p>
       </div>
 
-      {item.badge && <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">{item.badge}</div>}
+      {item.badge && item.badge > 0 && (
+        <div className="flex-shrink-0 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse shadow-lg shadow-red-500/30">
+          {item.badge}
+        </div>
+      )}
 
-      <ChevronRight className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+      <ChevronRight className={`h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-1 ${isActive ? 'text-white' : 'text-gray-400'}`} />
     </div>
   </motion.button>
 );
@@ -1583,28 +1595,60 @@ export default function ModernStudentDashboard({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Welcome Header */}
-      <div className="bg-white/70 backdrop-blur-lg border-b border-gray-200 mb-6 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Enhanced Welcome Header with Gradient */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 student-font-display">
-                Welcome back, {user?.user_metadata?.first_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Student'}!
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Level {studentStats?.level || 1} • {gemsAnalytics?.totalGems || 0} Gems • {studentStats?.streak || 0} day streak
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Avatar */}
+              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/20">
+                <span className="text-2xl font-bold">
+                  {(user?.user_metadata?.first_name || user?.user_metadata?.name || user?.email || 'S')[0].toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold student-font-display">
+                  Welcome back, {user?.user_metadata?.first_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Student'}!
+                </h1>
+                <div className="flex items-center gap-4 mt-1 text-white/80 text-sm">
+                  <div className="flex items-center gap-1">
+                    <Crown className="h-4 w-4 text-yellow-300" />
+                    <span>Level {studentStats?.level || 1}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Gem className="h-4 w-4 text-cyan-300" />
+                    <span>{(gemsAnalytics?.totalGems || 0).toLocaleString()} Gems</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Flame className="h-4 w-4 text-orange-300" />
+                    <span>{studentStats?.streak || 0} day streak</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Notifications */}
-            <div>
+            {/* Right side actions */}
+            <div className="flex items-center gap-3">
+              {/* Quick Stats Pills */}
+              <div className="hidden md:flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+                  <Target className="h-4 w-4 text-green-300" />
+                  <span className="text-sm font-medium">{dashboardMetrics?.overallAccuracy?.toFixed(0) || 0}% Accuracy</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+                  <CheckCircle className="h-4 w-4 text-emerald-300" />
+                  <span className="text-sm font-medium">{studentStats?.completedAssignments || 0}/{studentStats?.totalAssignments || 0} Done</span>
+                </div>
+              </div>
+
+              {/* Notifications */}
               <button
-                className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors"
+                className="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm"
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="h-5 w-5" />
                 {visibleNotifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full animate-pulse">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold animate-pulse">
                     {visibleNotifications.length}
                   </span>
                 )}

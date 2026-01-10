@@ -84,13 +84,9 @@ export default function TeacherGrammarAnalyticsDashboard({
   const [error, setError] = useState<string | null>(null);
   const [selectedView, setSelectedView] = useState<'overview' | 'students' | 'tenses'>('overview');
 
-  useEffect(() => {
-    if (user) {
-      loadAnalytics();
-    }
-  }, [user, classId, dateRange]);
 
-  const loadAnalytics = async () => {
+
+  const loadAnalytics = React.useCallback(async () => {
     if (!user) return;
 
     try {
@@ -113,7 +109,13 @@ export default function TeacherGrammarAnalyticsDashboard({
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user, classId, dateRange, analyticsService]);
+
+  useEffect(() => {
+    if (user) {
+      loadAnalytics();
+    }
+  }, [user, loadAnalytics]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -200,8 +202,8 @@ export default function TeacherGrammarAnalyticsDashboard({
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium text-gray-700 capitalize">{item.topicTitle || item.tense}</span>
                   <span className={`text-sm font-semibold ${(item.accuracyPercentage || 0) >= 75 ? 'text-green-600' :
-                      (item.accuracyPercentage || 0) >= 60 ? 'text-yellow-600' :
-                        'text-red-600'
+                    (item.accuracyPercentage || 0) >= 60 ? 'text-yellow-600' :
+                      'text-red-600'
                     }`}>
                     {Math.round(item.accuracyPercentage || 0)}%
                   </span>
@@ -209,8 +211,8 @@ export default function TeacherGrammarAnalyticsDashboard({
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full ${(item.accuracyPercentage || 0) >= 75 ? 'bg-green-500' :
-                        (item.accuracyPercentage || 0) >= 60 ? 'bg-yellow-500' :
-                          'bg-red-500'
+                      (item.accuracyPercentage || 0) >= 60 ? 'bg-yellow-500' :
+                        'bg-red-500'
                       }`}
                     style={{ width: `${item.accuracyPercentage || 0}%` }}
                   />
@@ -316,8 +318,8 @@ export default function TeacherGrammarAnalyticsDashboard({
                 <div key={item.topicId || item.tense} className="text-center p-2 bg-gray-50 rounded">
                   <p className="text-xs font-medium text-gray-700 capitalize">{item.topicTitle || item.tense}</p>
                   <p className={`text-sm font-bold ${(item.accuracy || 0) >= 75 ? 'text-green-600' :
-                      (item.accuracy || 0) >= 60 ? 'text-yellow-600' :
-                        'text-red-600'
+                    (item.accuracy || 0) >= 60 ? 'text-yellow-600' :
+                      'text-red-600'
                     }`}>
                     {Math.round(item.accuracy || 0)}%
                   </p>
@@ -338,8 +340,8 @@ export default function TeacherGrammarAnalyticsDashboard({
           <button
             onClick={() => setSelectedView('overview')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedView === 'overview'
-                ? 'bg-purple-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+              ? 'bg-purple-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
           >
             Overview
@@ -347,8 +349,8 @@ export default function TeacherGrammarAnalyticsDashboard({
           <button
             onClick={() => setSelectedView('students')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedView === 'students'
-                ? 'bg-purple-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+              ? 'bg-purple-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
           >
             Students

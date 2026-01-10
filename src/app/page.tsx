@@ -310,6 +310,12 @@ export default function Home() {
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
 
+                  <Link href="/demo" className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                    <Users className="mr-2 h-5 w-5" />
+                    View Teacher Demo
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Link>
+
                   <button
                     onClick={() => setShowSignupModal(true)}
                     className="inline-flex items-center justify-center bg-white text-slate-700 font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105 border border-slate-200"
