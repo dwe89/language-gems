@@ -434,12 +434,14 @@ function GCSEWritingAssignmentMode({ assignmentId }: { assignmentId: string }) {
       console.log('✍️ [WRITING] Assessment completed:', results);
 
       const sessionService = new EnhancedGameSessionService();
+      const writingService = new AQAWritingAssessmentService();
 
       // Calculate scores from writing assessment results
       const totalScore = results.totalScore || 0;
       const maxScore = results.maxScore || 100;
       const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 
+      // Save to game_sessions table (for general tracking)
       await sessionService.endGameSession(gameSessionId, {
         student_id: user.id,
         assignment_id: assignmentId,
@@ -456,10 +458,28 @@ function GCSEWritingAssignmentMode({ assignmentId }: { assignmentId: string }) {
         session_data: results
       });
 
+      // CRITICAL: Also save to aqa_writing_results table for analytics
+      if (results.assessmentId) {
+        console.log('✍️ [WRITING] Saving to aqa_writing_results...');
+        await writingService.saveCompletedResults({
+          assessmentId: results.assessmentId,
+          studentId: user.id,
+          assignmentId: assignmentId,
+          totalScore: totalScore,
+          maxScore: maxScore,
+          questionsCompleted: results.questionsCompleted || 0,
+          timeSpentSeconds: results.timeSpent || 0,
+          questionResults: results.questionResults || []
+        });
+        console.log('✅ [WRITING] Saved to aqa_writing_results');
+      } else {
+        console.warn('⚠️ [WRITING] No assessmentId in results, cannot save to aqa_writing_results');
+      }
+
       console.log('✅ [WRITING] Progress recorded successfully');
 
-      // Redirect back to assignment
-      router.push(`/student-dashboard/assignments/${assignmentId}`);
+      // NOTE: Do NOT auto-redirect here - let the user see the feedback screen first
+      // The feedback screen has "Back to Assignment" button for navigation
     } catch (err) {
       console.error('Error recording progress:', err);
     }
@@ -525,6 +545,7 @@ function GCSEWritingAssignmentMode({ assignmentId }: { assignmentId: string }) {
       level={writingConfig.level}
       difficulty={writingConfig.difficulty}
       identifier={writingConfig.identifier}
+      assignmentId={assignmentId}
       onComplete={handleComplete}
       onQuestionComplete={() => {}}
     />

@@ -25,6 +25,7 @@ interface AQAWritingFeedbackProps {
   timeSpent: number;
   language: string;
   difficulty: 'foundation' | 'higher';
+  isAssignmentMode?: boolean;
   onRetry: () => void;
   onBackToMenu: () => void;
 }
@@ -38,6 +39,7 @@ export function AQAWritingFeedback({
   timeSpent,
   language,
   difficulty,
+  isAssignmentMode = false,
   onRetry,
   onBackToMenu
 }: AQAWritingFeedbackProps) {
@@ -228,7 +230,7 @@ export function AQAWritingFeedback({
           className="flex items-center justify-center px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
         >
           <BookOpen className="h-5 w-5 mr-2" />
-          Back to Assessments
+          {isAssignmentMode ? 'Back to Assignment' : 'Back to Assessments'}
         </button>
       </div>
 

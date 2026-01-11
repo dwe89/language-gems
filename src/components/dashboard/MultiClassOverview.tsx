@@ -211,7 +211,7 @@ export function MultiClassOverview({
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Classes at a Glance
         </h3>
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {data.classes
             .sort((a, b) => {
               // Sort by status (critical, warning, healthy)
@@ -268,48 +268,53 @@ function ClassHealthCard({
   return (
     <button
       onClick={onClick}
-      className={`w-full ${config.bg} border-2 ${config.border} rounded-lg p-4 hover:shadow-md transition-all text-left group`}
+      className={`w-full ${config.bg} border-2 ${config.border} rounded-xl p-5 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 text-left group h-full flex flex-col`}
     >
-      <div className="flex items-center justify-between">
-        {/* Left: Class Info */}
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-3">
-            {config.icon}
-            <h3 className="font-semibold text-gray-900 text-lg">
-              {classData.className}
-            </h3>
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${config.text} ${config.bg} border ${config.border}`}>
-              {config.label}
-            </span>
+      <div className="w-full">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg bg-white/60`}>
+              {config.icon}
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg leading-tight">
+                {classData.className}
+              </h3>
+              <span className={`inline-flex mt-1 px-2 py-0.5 rounded text-xs font-semibold ${config.text} bg-white/50 border ${config.border}`}>
+                {config.label}
+              </span>
+            </div>
           </div>
-
-          {/* Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-gray-500 text-xs">Students</p>
-              <p className="font-semibold text-gray-900">
-                {classData.activeStudents}/{classData.totalStudents}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-500 text-xs">Avg Score</p>
-              <p className="font-semibold text-gray-900">{classData.averageScore}%</p>
-            </div>
-            <div>
-              <p className="text-gray-500 text-xs">Completion</p>
-              <p className="font-semibold text-gray-900">{classData.completionRate}%</p>
-            </div>
-            {classData.studentsNeverLoggedIn > 0 && (
-              <div>
-                <p className="text-red-600 text-xs">Never Logged In</p>
-                <p className="font-semibold text-red-700">{classData.studentsNeverLoggedIn}</p>
-              </div>
-            )}
-          </div>
+          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
         </div>
 
-        {/* Right: Click indicator */}
-        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0 ml-4" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white/40 p-2 rounded-lg">
+            <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-0.5">Students</p>
+            <p className="font-bold text-gray-900 text-lg">
+              {classData.activeStudents}<span className="text-gray-400 text-sm font-normal">/{classData.totalStudents}</span>
+            </p>
+          </div>
+          <div className="bg-white/40 p-2 rounded-lg">
+            <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-0.5">Avg Score</p>
+            <p className="font-bold text-gray-900 text-lg">{classData.averageScore}%</p>
+          </div>
+          <div className="bg-white/40 p-2 rounded-lg">
+            <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-0.5">Completion</p>
+            <p className="font-bold text-gray-900 text-lg">{classData.completionRate}%</p>
+          </div>
+          {classData.studentsNeverLoggedIn > 0 ? (
+            <div className="bg-red-100/50 p-2 rounded-lg border border-red-100">
+              <p className="text-red-600 text-xs font-medium uppercase tracking-wider mb-0.5">No Login</p>
+              <p className="font-bold text-red-700 text-lg">{classData.studentsNeverLoggedIn}</p>
+            </div>
+          ) : (
+            <div className="bg-white/40 p-2 rounded-lg opacity-50">
+              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-0.5">Issues</p>
+              <p className="font-bold text-gray-400 text-lg">-</p>
+            </div>
+          )}
+        </div>
       </div>
     </button>
   );

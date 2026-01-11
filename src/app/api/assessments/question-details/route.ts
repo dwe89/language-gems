@@ -598,8 +598,8 @@ export async function GET(request: NextRequest) {
           };
         }));
       }
-    } else if (assessmentType === 'gcse-listening') {
-      // Handle GCSE Listening assessment type - similar to reading
+    } else if (assessmentType === 'gcse-listening' || assessmentType === 'aqa-listening') {
+      // Handle GCSE/AQA Listening assessment type - similar to reading
       const { data: listeningResults, error } = await supabase
         .from('aqa_listening_results')
         .select('id, student_id, raw_score, total_possible_score, percentage_score, total_time_seconds, responses, created_at')
@@ -625,50 +625,97 @@ export async function GET(request: NextRequest) {
           profiles.forEach(p => userProfiles.set(p.user_id, p.display_name));
         }
 
-        // Helper function to extract correct answers from listening question_data
-        const extractListeningCorrectAnswer = (questionData: any, questionType: string): string => {
+        // Helper function to extract correct answer for a specific sub-question from listening question_data
+        const extractListeningSubQuestionCorrectAnswer = (
+          questionData: any,
+          questionType: string,
+          subQuestionId: string | null
+        ): string => {
           if (!questionData) return 'See mark scheme';
 
           try {
             switch (questionType) {
               case 'letter-matching':
+                // Look up the specific sub-question by id
                 if (questionData.questions && Array.isArray(questionData.questions)) {
-                  return questionData.questions
-                    .map((q: any, i: number) => {
-                      const correct = q.correctAnswer || q.correct;
-                      return correct ? `${q.label || `Q${i + 1}`}: ${correct}` : null;
-                    })
-                    .filter(Boolean)
-                    .join(', ') || 'See mark scheme';
+                  const subQ = questionData.questions.find((q: any) => q.id === subQuestionId);
+                  if (subQ) {
+                    return subQ.correctAnswer || subQ.correct || '?';
+                  }
                 }
                 break;
               case 'multiple-choice':
+                // Look up by question id (e.g., 'q1', 'q2')
                 if (questionData.questions && Array.isArray(questionData.questions)) {
-                  return questionData.questions
-                    .map((q: any, i: number) => {
-                      const correct = q.correctAnswer || q.correct;
-                      return correct ? `Q${i + 1}: ${correct}` : null;
-                    })
-                    .filter(Boolean)
-                    .join(', ') || 'See mark scheme';
+                  const qIndex = parseInt(subQuestionId?.replace('q', '') || '1') - 1;
+                  const subQ = questionData.questions[qIndex];
+                  if (subQ) {
+                    return subQ.correctAnswer || subQ.correct || '?';
+                  }
+                }
+                break;
+              case 'lifestyle-grid':
+                // Format: ana_good, ana_needs, carlos_good, carlos_needs, etc.
+                if (questionData.speakers && Array.isArray(questionData.speakers)) {
+                  const parts = subQuestionId?.split('_') || [];
+                  const speakerId = parts[0];
+                  const answerType = parts[1]; // 'good' or 'needs'
+                  const speaker = questionData.speakers.find((s: any) => s.id === speakerId);
+                  if (speaker) {
+                    if (answerType === 'good') {
+                      return speaker.correctGood || '?';
+                    } else if (answerType === 'needs') {
+                      return speaker.correctNeedsImprovement || '?';
+                    }
+                  }
+                }
+                break;
+              case 'opinion-rating':
+                // Look up by aspect id
+                if (questionData.aspects && Array.isArray(questionData.aspects)) {
+                  const aspect = questionData.aspects.find((a: any) => a.id === subQuestionId);
+                  if (aspect) {
+                    return aspect.correctAnswer || '?';
+                  }
                 }
                 break;
               case 'open-response':
+                // Look up by question id (e.g., 'q1', 'q2')
                 if (questionData.questions && Array.isArray(questionData.questions)) {
-                  return questionData.questions
-                    .map((q: any, i: number) => {
-                      const correct = q.expectedAnswer || q.acceptableAnswers?.join(' / ') || q.correct;
-                      return correct ? `Q${i + 1}: ${correct}` : null;
-                    })
-                    .filter(Boolean)
-                    .join('; ') || 'Requires manual marking';
+                  const subQ = questionData.questions.find((q: any) => q.id === subQuestionId);
+                  if (subQ) {
+                    return subQ.sampleAnswer || subQ.expectedAnswer || subQ.acceptableAnswers?.join(' / ') || 'See mark scheme';
+                  }
+                }
+                break;
+              case 'activity-timing':
+                // Complex type - show general answer format
+                if (questionData.questions && Array.isArray(questionData.questions)) {
+                  const qIndex = parseInt(subQuestionId?.replace('q', '') || '1') - 1;
+                  const subQ = questionData.questions[qIndex];
+                  if (subQ) {
+                    return `Activity: ${subQ.correctActivity}, Time: ${subQ.correctTime}`;
+                  }
+                }
+                return 'See mark scheme';
+              case 'multi-part':
+                // Look up by part id (e.g., 'part1', 'part2')
+                if (questionData.parts && Array.isArray(questionData.parts)) {
+                  const partIndex = parseInt(subQuestionId?.replace('part', '') || '1') - 1;
+                  const part = questionData.parts[partIndex];
+                  if (part) {
+                    return part.correctAnswer || part.correct || '?';
+                  }
                 }
                 break;
               case 'dictation':
+                // Look up by sentence number
                 if (questionData.sentences && Array.isArray(questionData.sentences)) {
-                  return questionData.sentences
-                    .map((s: any, i: number) => `${i + 1}: ${s.text || s.sentence || s}`)
-                    .join('; ') || 'See mark scheme';
+                  const sentenceIndex = parseInt(subQuestionId?.replace('sentence', '') || '1') - 1;
+                  const sentence = questionData.sentences[sentenceIndex];
+                  if (sentence) {
+                    return sentence.text || sentence.sentence || sentence;
+                  }
                 }
                 break;
             }
@@ -676,6 +723,91 @@ export async function GET(request: NextRequest) {
             console.error('Error extracting listening correct answer:', e);
           }
           return 'See mark scheme';
+        };
+
+        // Helper to format sub-question label nicely
+        const formatSubQuestionLabel = (subQuestionId: string | null, questionType: string): string => {
+          if (!subQuestionId) return '';
+
+          // Capitalize first letter and replace underscores with spaces
+          const formatted = subQuestionId
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+
+          // For certain types, format more nicely
+          if (questionType === 'lifestyle-grid') {
+            const parts = subQuestionId.split('_');
+            const speaker = parts[0]?.charAt(0).toUpperCase() + parts[0]?.slice(1);
+            const type = parts[1] === 'good' ? 'Good at' : 'Needs to improve';
+            return `${speaker} - ${type}`;
+          }
+
+          if (questionType === 'letter-matching') {
+            return formatted; // e.g., "Monday", "Tuesday"
+          }
+
+          if (subQuestionId.startsWith('q')) {
+            return `Part ${subQuestionId.replace('q', '')}`;
+          }
+
+          if (subQuestionId.startsWith('part')) {
+            return `Part ${subQuestionId.replace('part', '')}`;
+          }
+
+          if (subQuestionId.startsWith('sentence')) {
+            return `Sentence ${subQuestionId.replace('sentence', '')}`;
+          }
+
+          return formatted;
+        };
+
+        // Helper to parse JSON student answer
+        const parseStudentAnswer = (answer: string): string => {
+          if (!answer) return 'No answer';
+
+          try {
+            if (answer.startsWith('{') || answer.startsWith('[')) {
+              const parsed = JSON.parse(answer);
+              if (typeof parsed === 'object' && parsed !== null) {
+                if (Array.isArray(parsed)) {
+                  return parsed.join(', ');
+                }
+                // Key-value pairs
+                return Object.entries(parsed)
+                  .map(([key, value]) => {
+                    let formattedValue = value;
+                    if (typeof value === 'object' && value !== null) {
+                      // Handle formatting of nested objects like {activity: 3, time: "C"}
+                      if ('activity' in value && 'time' in value) {
+                        formattedValue = `Activity: ${value.activity}, Time: ${value.time}`;
+                      } else {
+                        formattedValue = JSON.stringify(value);
+                      }
+                    }
+
+                    // Format keys if they are q1, q2, etc.
+                    let formattedKey = key;
+                    if (/^q\d+$/.test(key)) {
+                      formattedKey = `Part ${key.substring(1)}`;
+                    } else if (/^part\d+$/.test(key)) {
+                      formattedKey = `Part ${key.substring(4)}`;
+                    } else if (/^sentence\d+$/.test(key)) {
+                      formattedKey = `Sentence ${key.substring(8)}`;
+                    } else {
+                      // Capitalize
+                      formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+                    }
+
+                    return `${formattedKey}: ${formattedValue}`;
+                  })
+                  .join(', ');
+              }
+              return String(parsed);
+            }
+          } catch (e) {
+            // If parse fails, return original
+          }
+          return answer;
         };
 
         // Process each result
@@ -696,23 +828,252 @@ export async function GET(request: NextRequest) {
             }
           }
 
-          const questions: Question[] = responses.map((r: any, index: number) => {
+          // Group responses by question_id to determine sub-question numbering
+          const questionGroups = new Map<string, number>();
+          responses.forEach((r: any) => {
+            const count = questionGroups.get(r.question_id) || 0;
+            questionGroups.set(r.question_id, count + 1);
+          });
+
+          // Track sub-question index within each question
+          const subQuestionCounters = new Map<string, number>();
+
+          const questions: Question[] = responses.flatMap((r: any, index: number) => {
             const qDetails = questionDetailsMap.get(r.question_id);
+            const questionType = r.question_type || qDetails?.question_type || 'unknown';
+
+            // Check if this response needs expansion (single row in DB but multiple sub-questions in data)
+            const questionData = qDetails?.question_data;
+            const needsExpansion = !r.sub_question_number && questionData && (
+              (questionType === 'opinion-rating' && questionData.aspects) ||
+              (questionType === 'open-response' && questionData.questions) ||
+              (questionType === 'activity-timing' && questionData.questions) ||
+              (questionType === 'multi-part' && questionData.parts) ||
+              (questionType === 'dictation' && questionData.sentences)
+            );
+
+            if (needsExpansion) {
+              let parsedAnswer: any = {};
+              try {
+                if (typeof r.student_answer === 'string' && (r.student_answer.startsWith('{') || r.student_answer.startsWith('['))) {
+                  parsedAnswer = JSON.parse(r.student_answer);
+                } else {
+                  parsedAnswer = r.student_answer;
+                }
+              } catch (e) {
+                parsedAnswer = {};
+              }
+
+              const expandedQuestions: Question[] = [];
+              let localSubIndex = 1;
+
+              if (questionType === 'opinion-rating' && questionData.aspects) {
+                questionData.aspects.forEach((aspect: any) => {
+                  const subId = aspect.id;
+                  const studentVal = parsedAnswer[subId];
+                  const correctVal = aspect.correctAnswer || aspect.correct || '?';
+
+                  // Check for manual override
+                  let points = String(studentVal) === String(correctVal) ? 1 : 0;
+                  if (r.sub_question_scores && r.sub_question_scores[subId] !== undefined) {
+                    points = r.sub_question_scores[subId];
+                  }
+
+                  expandedQuestions.push({
+                    questionId: `${r.question_id}-${subId}`,
+                    questionNumber: parseFloat(`${r.question_number}.${localSubIndex}`),
+                    questionText: `${qDetails?.title || 'Question'} - ${aspect.label || aspect.aspect || 'Aspect'}`,
+                    studentAnswer: studentVal || 'No answer',
+                    correctAnswer: correctVal,
+                    isCorrect: points === 1,
+                    points: points,
+                    maxPoints: 1,
+                    timeSpent: undefined
+                  });
+                  localSubIndex++;
+                });
+              } else if (questionType === 'open-response' && questionData.questions) {
+                questionData.questions.forEach((q: any) => {
+                  const subId = q.id || `q${localSubIndex}`;
+                  const studentVal = parsedAnswer[subId];
+                  const correctVal = q.sampleAnswer || q.expectedAnswer || '?';
+                  const maxP = q.marks || 1;
+
+                  // Check for manual override
+                  let points = 0; // Default to 0 for open response unless marked
+                  if (r.sub_question_scores && r.sub_question_scores[subId] !== undefined) {
+                    points = r.sub_question_scores[subId];
+                  } else if (r.is_correct) {
+                    // Fallback to average/total if no specific score? No, dangerous.
+                    // Just keep 0 if not auto-gradable.
+                  }
+
+                  expandedQuestions.push({
+                    questionId: `${r.question_id}-${subId}`,
+                    questionNumber: parseFloat(`${r.question_number}.${localSubIndex}`),
+                    questionText: `${qDetails?.title || 'Question'} - ${q.question || `Part ${localSubIndex}`}`,
+                    studentAnswer: studentVal || 'No answer',
+                    correctAnswer: correctVal,
+                    isCorrect: points === maxP,
+                    points: points,
+                    maxPoints: maxP,
+                    timeSpent: undefined
+                  });
+                  localSubIndex++;
+                });
+              } else if (questionType === 'activity-timing' && questionData.questions) {
+                questionData.questions.forEach((q: any) => {
+                  const subId = q.id || `q${localSubIndex}`;
+                  const studentVal = parsedAnswer[subId];
+                  // Format nested student answer: {activity: 3, time: "C"}
+                  let formattedStudentVal = 'No answer';
+                  if (studentVal) {
+                    if (typeof studentVal === 'object') {
+                      formattedStudentVal = `Activity: ${studentVal.activity}, Time: ${studentVal.time}`;
+                    } else {
+                      formattedStudentVal = String(studentVal);
+                    }
+                  }
+
+                  const correctVal = `Activity: ${q.correctActivity}, Time: ${q.correctTime}`;
+
+                  // Partial scoring: 1 point activity, 1 point time
+                  let points = 0;
+                  if (studentVal && typeof studentVal === 'object') {
+                    if (String(studentVal.activity) === String(q.correctActivity)) points += 1;
+                    if (String(studentVal.time) === String(q.correctTime)) points += 1;
+                  }
+
+                  // Check for manual override
+                  if (r.sub_question_scores && r.sub_question_scores[subId] !== undefined) {
+                    points = r.sub_question_scores[subId];
+                  }
+
+                  expandedQuestions.push({
+                    questionId: `${r.question_id}-${subId}`,
+                    questionNumber: parseFloat(`${r.question_number}.${localSubIndex}`),
+                    questionText: `${qDetails?.title || 'Question'} - Part ${localSubIndex}`,
+                    studentAnswer: formattedStudentVal,
+                    correctAnswer: correctVal,
+                    isCorrect: points === 2,
+                    points: points,
+                    maxPoints: 2,
+                    timeSpent: undefined
+                  });
+                  localSubIndex++;
+                });
+              } else if (questionType === 'multi-part' && questionData.parts) {
+                questionData.parts.forEach((p: any) => {
+                  const subId = p.id || `part${localSubIndex}`;
+                  const studentVal = parsedAnswer[subId];
+                  const correctVal = p.correctAnswer || p.correct || '?';
+
+                  let points = String(studentVal) === String(correctVal) ? 1 : 0;
+                  if (r.sub_question_scores && r.sub_question_scores[subId] !== undefined) {
+                    points = r.sub_question_scores[subId];
+                  }
+
+                  expandedQuestions.push({
+                    questionId: `${r.question_id}-${subId}`,
+                    questionNumber: parseFloat(`${r.question_number}.${localSubIndex}`),
+                    questionText: `${qDetails?.title || 'Question'} - ${p.question || `Part ${localSubIndex}`}`,
+                    studentAnswer: studentVal || 'No answer',
+                    correctAnswer: correctVal,
+                    isCorrect: points === 1,
+                    points: points,
+                    maxPoints: 1,
+                    timeSpent: undefined
+                  });
+                  localSubIndex++;
+                });
+              } else if (questionType === 'dictation' && questionData.sentences) {
+                questionData.sentences.forEach((s: any) => {
+                  const subId = s.id || `sentence${localSubIndex}`;
+                  const studentVal = parsedAnswer[subId];
+                  const correctVal = s.text || s.sentence || s.correctText || '?';
+
+                  // Simple scoring heuristic
+                  let points = 0;
+                  const normStudent = String(studentVal || '').trim().toLowerCase();
+                  const normCorrect = String(correctVal).trim().toLowerCase();
+
+                  if (normStudent === normCorrect && normStudent.length > 0) {
+                    points = 2;
+                  } else if (normStudent.length > 5 && normCorrect.includes(normStudent.substring(0, Math.min(10, normStudent.length)))) {
+                    points = 1;
+                  }
+
+                  // Check for manual override
+                  if (r.sub_question_scores && r.sub_question_scores[subId] !== undefined) {
+                    points = r.sub_question_scores[subId];
+                  }
+
+                  expandedQuestions.push({
+                    questionId: `${r.question_id}-${subId}`,
+                    questionNumber: parseFloat(`${r.question_number}.${localSubIndex}`),
+                    questionText: `${qDetails?.title || 'Dictation'} - Sentence ${localSubIndex}`,
+                    studentAnswer: studentVal || 'No answer',
+                    correctAnswer: correctVal,
+                    isCorrect: points === 2,
+                    points: points,
+                    maxPoints: 2,
+                    timeSpent: undefined
+                  });
+                  localSubIndex++;
+                });
+              }
+
+              if (expandedQuestions.length > 0) {
+                return expandedQuestions;
+              }
+            }
+
+            // Standard processing (existing logic)
+
+            // Get or increment sub-question counter for this question
+            const subIndex = (subQuestionCounters.get(r.question_id) || 0) + 1;
+            subQuestionCounters.set(r.question_id, subIndex);
+
+            // Determine correct answer for this specific sub-question
             const correctAnswer = qDetails?.question_data
-              ? extractListeningCorrectAnswer(qDetails.question_data, r.question_type || qDetails.question_type)
+              ? extractListeningSubQuestionCorrectAnswer(
+                qDetails.question_data,
+                questionType,
+                r.sub_question_number
+              )
               : 'See mark scheme';
 
-            return {
-              questionId: r.question_id || `q${index + 1}`,
-              questionNumber: r.question_number || index + 1,
-              questionText: qDetails?.title || `Question ${r.question_number || index + 1}${r.sub_question_number || ''}`,
-              studentAnswer: r.student_answer || '',
+            // Build question text with sub-question label
+            let questionText = qDetails?.title || `Question ${r.question_number || index + 1}`;
+            if (r.sub_question_number) {
+              const subLabel = formatSubQuestionLabel(r.sub_question_number, questionType);
+              questionText = `${questionText} - ${subLabel}`;
+            }
+
+            // Calculate question number (e.g., 1.1, 1.2, 2.1, etc.)
+            const hasSubQuestions = questionGroups.get(r.question_id)! > 1;
+            const questionNumber = hasSubQuestions
+              ? parseFloat(`${r.question_number}.${subIndex}`)
+              : r.question_number || index + 1;
+
+            // Parse student answer if it's JSON
+            const studentAnswer = typeof r.student_answer === 'string' && r.student_answer.startsWith('{')
+              ? parseStudentAnswer(r.student_answer)
+              : r.student_answer || 'No answer';
+
+            return [{
+              questionId: r.sub_question_number
+                ? `${r.question_id}-${r.sub_question_number}`
+                : r.question_id || `q${index + 1}`,
+              questionNumber: questionNumber,
+              questionText: questionText,
+              studentAnswer: studentAnswer,
               correctAnswer: correctAnswer,
               isCorrect: r.is_correct || false,
               points: r.points_awarded || 0,
               maxPoints: r.marks_possible || 1,
-              timeSpent: undefined
-            };
+              timeSpent: r.time_spent_seconds || undefined
+            }];
           });
 
           return {
@@ -727,8 +1088,8 @@ export async function GET(request: NextRequest) {
           };
         }));
       }
-    } else if (assessmentType === 'gcse-writing') {
-      // Handle GCSE Writing assessment type
+    } else if (assessmentType === 'gcse-writing' || assessmentType === 'aqa-writing' || assessmentType === 'writing') {
+      // Handle GCSE/AQA Writing assessment type
       const { data: writingResults, error } = await supabase
         .from('aqa_writing_results')
         .select('id, student_id, total_score, max_score, percentage_score, time_spent_seconds, created_at')
@@ -759,21 +1120,100 @@ export async function GET(request: NextRequest) {
           const { data: responses } = await supabase
             .from('aqa_writing_question_responses')
             .select('question_id, response_data, score, max_score, feedback, is_correct, ai_grading')
-            .eq('result_id', result.id);
+            .eq('result_id', result.id)
+            .order('created_at', { ascending: true });
 
-          // Writing assessments are typically manually graded
-          const questions: Question[] = (responses || []).map((r: any, index: number) => ({
-            questionId: r.question_id || `q${index + 1}`,
-            questionNumber: index + 1,
-            questionText: `Writing Task ${index + 1}`,
-            studentAnswer: typeof r.response_data === 'string' ? r.response_data : JSON.stringify(r.response_data),
-            correctAnswer: 'Writing tasks require manual marking',
-            isCorrect: r.is_correct || false,
-            points: r.score || 0,
-            maxPoints: r.max_score || 10,
-            timeSpent: undefined,
-            aiGrading: r.ai_grading
-          }));
+          // Fetch question details to get proper titles and types
+          const questionIds = (responses || []).map((r: any) => r.question_id).filter(Boolean);
+          let questionDetails = new Map<string, any>();
+          
+          if (questionIds.length > 0) {
+            const { data: questions } = await supabase
+              .from('aqa_writing_questions')
+              .select('id, title, question_type, question_number, marks')
+              .in('id', questionIds);
+            
+            if (questions) {
+              questions.forEach((q: any) => {
+                questionDetails.set(q.id, {
+                  title: q.title,
+                  type: q.question_type,
+                  number: q.question_number,
+                  marks: q.marks
+                });
+              });
+            }
+          }
+
+          // Helper function to format response data for display
+          const formatResponseData = (responseData: any, questionType: string, questionNumber: number): string => {
+            if (!responseData) return '(No response)';
+            if (typeof responseData === 'string') return responseData;
+            
+            if (typeof responseData === 'object') {
+              // Photo description: sentences array
+              if (questionType === 'photo-description' && responseData.sentences) {
+                return responseData.sentences.map((s: string, i: number) => 
+                  `${questionNumber}.${i + 1}: ${s}`
+                ).join('\n');
+              }
+              // Short message
+              if (responseData.message) {
+                return responseData.message;
+              }
+              // Extended writing article
+              if (responseData.article) {
+                return responseData.article;
+              }
+              // Gap-fill: question-0, question-1, etc.
+              if (questionType === 'gap-fill') {
+                const entries = Object.entries(responseData);
+                return entries.map(([key, value]) => {
+                  const num = key.replace('question-', '');
+                  return `${questionNumber}.${parseInt(num) + 1}: ${value}`;
+                }).join('\n');
+              }
+              // Translation
+              if (questionType === 'translation') {
+                const entries = Object.entries(responseData);
+                return entries.map(([key, value]) => {
+                  if (key.startsWith('translation-')) {
+                    const num = key.replace('translation-', '');
+                    return `${questionNumber}.${parseInt(num) + 1}: ${value}`;
+                  }
+                  return `${value}`;
+                }).join('\n');
+              }
+              // Fallback: show key-value pairs
+              const entries = Object.entries(responseData);
+              if (entries.length > 0) {
+                return entries.map(([k, v]) => `${k}: ${v}`).join('\n');
+              }
+            }
+            
+            return String(responseData);
+          };
+
+          // Build question list with proper formatting
+          const questions: Question[] = (responses || []).map((r: any, index: number) => {
+            const qDetails = questionDetails.get(r.question_id);
+            const questionType = qDetails?.type || 'unknown';
+            const questionNumber = qDetails?.number || (index + 1);
+            
+            return {
+              questionId: r.question_id || `q${index + 1}`,
+              questionNumber: questionNumber,
+              questionText: qDetails?.title || `Writing Task ${index + 1}`,
+              studentAnswer: formatResponseData(r.response_data, questionType, questionNumber),
+              correctAnswer: 'AI-marked - see feedback below',
+              isCorrect: r.is_correct || false,
+              points: r.score || 0,
+              maxPoints: r.max_score || qDetails?.marks || 10,
+              timeSpent: undefined,
+              feedback: r.feedback || '',  // Include AI feedback from database
+              aiGrading: r.ai_grading
+            };
+          });
 
           return {
             resultId: result.id,
@@ -787,8 +1227,8 @@ export async function GET(request: NextRequest) {
           };
         }));
       }
-    } else if (assessmentType === 'gcse-speaking') {
-      // Handle GCSE Speaking assessment type
+    } else if (assessmentType === 'gcse-speaking' || assessmentType === 'aqa-speaking' || assessmentType === 'speaking') {
+      // Handle GCSE/AQA Speaking assessment type
       const { data: speakingResults, error } = await supabase
         .from('aqa_speaking_results')
         .select('id, student_id, total_score, max_score, percentage_score, time_spent_seconds, created_at')
@@ -825,7 +1265,7 @@ export async function GET(request: NextRequest) {
           questions: [] // Speaking typically doesn't have discrete questions with answers
         }));
       }
-    } else if (assessmentType === 'dictation') {
+    } else if (assessmentType === 'dictation' || assessmentType === 'aqa-dictation' || assessmentType === 'gcse-dictation') {
       // Handle Dictation assessment type
       const { data: dictationResults, error } = await supabase
         .from('aqa_dictation_results')

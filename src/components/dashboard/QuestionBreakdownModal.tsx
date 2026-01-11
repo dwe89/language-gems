@@ -20,7 +20,6 @@ import {
   X,
   User,
   FileText,
-  Brain,
   MessageSquare,
   Sparkles
 } from 'lucide-react';
@@ -78,7 +77,6 @@ export function QuestionBreakdownModal({
   const [studentResults, setStudentResults] = useState<StudentResult[]>([]);
   const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
-  const [gradingInProgress, setGradingInProgress] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -159,35 +157,6 @@ export function QuestionBreakdownModal({
     } catch (error) {
       console.error('❌ Manual override error:', error);
       alert('Failed to update answer. Please try again.');
-    }
-  };
-
-  const handleAIGrading = async (resultId: string, questionId: string) => {
-    try {
-      setGradingInProgress(true);
-      // We need to pass the studentId for writing results if needed by the backend
-      const studentId = studentResults[currentStudentIndex].studentId;
-
-      const response = await fetch('/api/assessments/grade-writing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resultId,
-          questionId,
-          studentId
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('AI Grading failed');
-      }
-
-      await fetchQuestionData();
-    } catch (error) {
-      console.error('AI Grading error:', error);
-      alert('Failed to grade with AI. Please try again.');
-    } finally {
-      setGradingInProgress(false);
     }
   };
 
@@ -457,43 +426,30 @@ export function QuestionBreakdownModal({
                       </div>
                     ) : isWriting ? (
                       <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex-1 flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
-                            <span className="font-medium">Score:</span>
-                            <input
-                              type="number"
-                              min="0"
-                              max={currentQuestion.maxPoints}
-                              value={currentQuestion.points}
-                              onChange={(e) => handleManualOverride(
-                                currentStudent.resultId,
-                                currentQuestion.questionId,
-                                { setScore: parseInt(e.target.value) || 0 }
-                              )}
-                              className="w-20 p-2 border rounded text-center font-bold text-lg"
-                            />
-                            <span className="text-slate-500">/ {currentQuestion.maxPoints}</span>
-                          </div>
-
-                          <Button
-                            onClick={() => handleAIGrading(currentStudent.resultId, currentQuestion.questionId)}
-                            disabled={gradingInProgress}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                          >
-                            {gradingInProgress ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            ) : (
-                              <Brain className="w-4 h-4 mr-2" />
+                        {/* Score Override */}
+                        <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
+                          <span className="font-medium">Score:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max={currentQuestion.maxPoints}
+                            value={currentQuestion.points}
+                            onChange={(e) => handleManualOverride(
+                              currentStudent.resultId,
+                              currentQuestion.questionId,
+                              { setScore: parseInt(e.target.value) || 0 }
                             )}
-                            Auto-Grade with AI
-                          </Button>
+                            className="w-20 p-2 border rounded text-center font-bold text-lg"
+                          />
+                          <span className="text-slate-500">/ {currentQuestion.maxPoints}</span>
                         </div>
 
+                        {/* Additional AI Grading Details if available */}
                         {currentQuestion.aiGrading && (
                           <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
                             <h6 className="font-semibold text-indigo-900 flex items-center gap-2 mb-2">
                               <Sparkles className="w-4 h-4" />
-                              AI Grading Feedback
+                              Detailed Breakdown
                             </h6>
 
                             {currentQuestion.aiGrading.breakdown && (
@@ -506,10 +462,6 @@ export function QuestionBreakdownModal({
                                 ))}
                               </div>
                             )}
-
-                            <div className="mb-3">
-                              <p className="text-sm text-slate-800">{currentQuestion.feedback}</p>
-                            </div>
 
                             {currentQuestion.aiGrading.suggestions && currentQuestion.aiGrading.suggestions.length > 0 && (
                               <div className="text-sm bg-white p-3 rounded">
@@ -557,11 +509,14 @@ export function QuestionBreakdownModal({
                     )}
                   </div>
 
-                  {/* Feedback (if generic feedback exists and not already shown in AI section) */}
-                  {currentQuestion.feedback && !currentQuestion.aiGrading && (
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm font-medium text-blue-900 mb-2">Feedback:</p>
-                      <p className="text-blue-900">{currentQuestion.feedback}</p>
+                  {/* Feedback (generic or AI) */}
+                  {currentQuestion.feedback && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h6 className="font-semibold text-blue-900 flex items-center gap-2 mb-2">
+                        <MessageSquare className="w-4 h-4" />
+                        AI Feedback
+                      </h6>
+                      <p className="text-sm text-slate-800 whitespace-pre-wrap">{currentQuestion.feedback}</p>
                     </div>
                   )}
 

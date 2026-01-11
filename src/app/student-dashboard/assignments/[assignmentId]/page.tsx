@@ -871,8 +871,14 @@ export default function StudentAssignmentDetailPage() {
   }
 
   // If this is an assessment-only assignment, redirect to the assessment detail page
-  if (assignment.isAssessmentOnly) {
-    router.push(`/student-dashboard/assessments/${assignmentId}`);
+  // Use useEffect to avoid calling router.push during render
+  useEffect(() => {
+    if (assignment?.isAssessmentOnly) {
+      router.push(`/student-dashboard/assessments/${assignmentId}`);
+    }
+  }, [assignment?.isAssessmentOnly, assignmentId, router]);
+
+  if (assignment?.isAssessmentOnly) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>

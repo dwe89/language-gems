@@ -51,6 +51,7 @@ interface AQAWritingAssessmentProps {
   level: string;
   difficulty: 'foundation' | 'higher';
   identifier: string;
+  assignmentId?: string; // For navigation back to assignment
   onComplete: (results: any) => void;
   onQuestionComplete: (questionId: string, answer: any, timeSpent: number) => void;
 }
@@ -60,6 +61,7 @@ export function AQAWritingAssessment({
   level,
   difficulty,
   identifier,
+  assignmentId,
   onComplete,
   onQuestionComplete
 }: AQAWritingAssessmentProps) {
@@ -76,6 +78,7 @@ export function AQAWritingAssessment({
   const [isMarking, setIsMarking] = useState(false);
   const [markingResults, setMarkingResults] = useState<any>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [assessmentId, setAssessmentId] = useState<string | null>(null);
 
   const assessmentService = useRef(new AQAWritingAssessmentService());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -120,6 +123,9 @@ export function AQAWritingAssessment({
         setError('Assessment not found');
         return;
       }
+
+      // Store the assessment ID for later use
+      setAssessmentId(assessment.id);
 
       // Get questions for this assessment
       const questionsData = await assessmentService.current.getQuestions(assessment.id);
@@ -203,7 +209,9 @@ export function AQAWritingAssessment({
           language: language,
           maxMarks: question.marks,
           wordCountRequirement: question.wordCount,
-          specificCriteria: question.data?.requirements || []
+          specificCriteria: question.data?.requirements || [],
+          // Pass question data for gap-fill and translation marking
+          questionData: question.data
         }
       }));
 
@@ -224,19 +232,49 @@ export function AQAWritingAssessment({
 
       const aiResults = await response.json();
 
-      setMarkingResults({
-        ...aiResults,
-        timeSpent: finalTotalTime,
-        language,
-        difficulty
+      // CRITICAL: Merge AI results with question data for database saving
+      // The API returns MarkingResult objects but we need to attach questionId, response, etc.
+      const enrichedQuestionResults = (aiResults.questionResults || []).map((result: any, index: number) => {
+        const question = questions[index];
+        const questionResponse = responses[question?.id] || {};
+        return {
+          questionId: question?.id || `q${index + 1}`,
+          questionType: question?.type || 'unknown',
+          response: questionResponse,  // Student's actual response
+          score: result.score || 0,
+          maxScore: result.maxScore || question?.marks || 0,
+          percentage: result.percentage || 0,
+          feedback: result.feedback || '',
+          detailedFeedback: result.detailedFeedback || {},
+          timeSpent: timeSpent[question?.id] || 0
+        };
       });
 
+      // Prepare the complete results object including assessment ID
+      const completeResults = {
+        ...aiResults,
+        assessmentId,  // Include the assessment ID for database saving
+        timeSpent: finalTotalTime,
+        language,
+        difficulty,
+        questionsCompleted,
+        responses,
+        questionTimeSpent: timeSpent,
+        questionResults: enrichedQuestionResults  // Use enriched results with all data
+      };
+
+      setMarkingResults(completeResults);
       setShowFeedback(true);
+
+      // CRITICAL: Call onComplete to save results to database
+      console.log('✅ [Writing Assessment] Calling onComplete with results:', completeResults);
+      onComplete(completeResults);
 
     } catch (error) {
       console.error('Error marking assessment:', error);
       // Fallback to basic completion
       const results = {
+        assessmentId,
         totalTimeSpent: finalTotalTime,
         questionsCompleted,
         responses,
@@ -268,8 +306,12 @@ export function AQAWritingAssessment({
   };
 
   const handleBackToMenu = () => {
-    // Navigate back to assessment selection
-    window.location.href = '/exam-style-assessment';
+    // Navigate back to assignment if in assignment mode, otherwise to assessment selection
+    if (assignmentId) {
+      window.location.href = `/student-dashboard/assessments/${assignmentId}`;
+    } else {
+      window.location.href = '/exam-style-assessment';
+    }
   };
 
   // Question rendering functions
@@ -596,6 +638,7 @@ export function AQAWritingAssessment({
         timeSpent={markingResults.timeSpent}
         language={language}
         difficulty={difficulty}
+        isAssignmentMode={!!assignmentId}
         onRetry={handleRetry}
         onBackToMenu={handleBackToMenu}
       />

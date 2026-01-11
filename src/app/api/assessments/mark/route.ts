@@ -15,6 +15,8 @@ interface MarkingCriteria {
   maxMarks: number;
   wordCountRequirement?: number;
   specificCriteria?: string[];
+  // Question data for gap-fill and translation (contains correct answers)
+  questionData?: any;
 }
 
 interface MarkingResult {
@@ -42,46 +44,72 @@ function getLanguageName(code: string): string {
   return names[code as keyof typeof names] || code;
 }
 
+// Helper to safely parse JSON from AI responses (strips markdown code fences)
+function parseAIResponse(content: string | null | undefined): any {
+  if (!content) return {};
+  // Strip markdown code fences that AI sometimes adds
+  let cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  return JSON.parse(cleaned);
+}
+
 async function markPhotoDescription(response: any, criteria: MarkingCriteria): Promise<MarkingResult> {
   const sentences = response.sentences || [];
   const languageName = getLanguageName(criteria.language);
 
-  const prompt = `You are an experienced ${languageName} language teacher marking an AQA GCSE Foundation photo description task following the official mark scheme.
+  const prompt = `You are an experienced ${languageName} language teacher marking an AQA GCSE Foundation photo description task following the OFFICIAL AQA mark scheme. BE GENEROUS with marking.
 
 OFFICIAL AQA MARK SCHEME - Question 01 (Foundation) - Photo Description:
 Maximum Marks: 10 (5 sentences x 2 marks each)
 Assessment Objective: AO2 (Communication)
 
 MARKING CRITERIA PER SENTENCE:
-• 2 Marks: Clear communication, relevant to the photo, uses a conjugated verb. Can be broadly relevant or potentially true.
-• 1 Mark: Ambiguity, delay in communication (e.g., infinitive use, some errors).
-• 0 Marks: Irrelevant, unintelligible, inappropriate verb, single word.
+• 2 Marks: Sentence is relevant to the photo, communicates clearly, and uses a conjugated verb. 
+  - Sentence can be BROADLY relevant or POTENTIALLY true about the photo
+  - For example: "hay comida" (there is food) = 2 marks if food is in the photo
+  - "El niño está feliz" = 2 marks even with simple vocabulary
+  - Students do NOT need to expand sentences - a simple subject + verb is sufficient for 2 marks
+  
+• 1 Mark: Some ambiguity OR delay in communication, e.g.:
+  - Uses infinitive instead of conjugated verb
+  - Contains errors that cause momentary confusion but meaning is recoverable
+  
+• 0 Marks: ONLY give 0 if:
+  - Completely irrelevant to the photo
+  - Totally unintelligible
+  - Single word only (no verb)
+  - Uses inappropriate verb form that destroys meaning
 
-KEY GUIDANCE:
-- Statements must refer to the photo
-- Opinions only scored if they include specific reference to the photo
-- Present tense is aimed for, but other tenses are accepted
-- Major errors affect communication, minor errors do not
+CRITICAL MARKING GUIDANCE (AQA Official):
+- Present tense is aimed for, but ALL tenses are accepted
+- MINOR errors do NOT affect the mark - these include:
+  * Missing or incorrect accents (niño vs nino = STILL 2 marks)
+  * Gender errors (el mesa instead of la mesa = STILL 2 marks if communication clear)
+  * Agreement errors (los niño instead of los niños = STILL 2 marks)
+  * Minor spelling errors where meaning is clear
+- Only MAJOR errors that DESTROY communication should reduce the mark
+- Be GENEROUS - if in doubt, give the higher mark
+- Short sentences are perfectly acceptable for full marks
 
 Student's sentences:
 ${sentences.map((s: string, i: number) => `${i + 1}. ${s || '[No response]'}`).join('\n')}
 
-For each sentence, assess:
-1. Is it relevant to the photo?
-2. Does it communicate clearly?
-3. Does it use a conjugated verb appropriately?
-4. Are there major errors that affect communication?
+For each sentence, award 2 marks if it:
+1. Is relevant (even broadly) to what could be in a photo
+2. Communicates clearly (meaning is understood)
+3. Contains a conjugated verb (any tense)
 
 Format your response as JSON:
 {
   "totalScore": number,
   "sentenceScores": [number, number, number, number, number],
   "sentenceAnalysis": ["analysis for sentence 1", "analysis for sentence 2", etc.],
-  "feedback": "Overall feedback based on AQA criteria",
+  "feedback": "Overall feedback - be encouraging and constructive",
   "strengths": ["strength1", "strength2"],
   "improvements": ["improvement1", "improvement2"],
-  "grammarErrors": ["major errors that affect communication"]
-}`;
+  "grammarErrors": ["ONLY major errors that affected communication - be lenient"]
+}
+IMPORTANT: Do NOT use double quotes " inside your strings unless escaped like \". Use single quotes ' instead.
+`;
 
   try {
     console.log('🤖 [OpenAI] Calling API for photo description...');
@@ -97,7 +125,7 @@ Format your response as JSON:
     console.log('✅ [OpenAI] Response received');
     console.log('   Content:', completion.choices[0].message.content?.substring(0, 200));
 
-    const result = JSON.parse(completion.choices[0].message.content || '{}');
+    const result = parseAIResponse(completion.choices[0].message.content);
     console.log('   Parsed result:', result);
 
     return {
@@ -121,8 +149,31 @@ Format your response as JSON:
 }
 
 async function markTranslation(response: any, criteria: MarkingCriteria): Promise<MarkingResult> {
-  const translations = Object.values(response).filter(t => t);
+  const translations = Object.values(response).filter(t => t && t.toString().trim() !== '');
   const languageName = getLanguageName(criteria.language);
+
+  // CRITICAL: Check if all translations are empty - return 0 immediately
+  if (translations.length === 0) {
+    console.log('❌ [Translation] All translations empty - returning 0/10');
+    return {
+      score: 0,
+      maxScore: criteria.maxMarks,
+      percentage: 0,
+      feedback: 'No translations were provided. You must attempt to translate each sentence to receive marks.',
+      detailedFeedback: {
+        strengths: [],
+        improvements: ['You did not provide any translations. Try to translate each sentence, even if you are unsure.'],
+        grammarErrors: ['No translations provided']
+      }
+    };
+  }
+
+  // Check if most translations are empty (low effort)
+  const expectedSentences = criteria.questionData?.sentences?.length || 5;
+  if (translations.length < expectedSentences / 2) {
+    console.log(`⚠️ [Translation] Only ${translations.length}/${expectedSentences} translations provided`);
+    // Continue with AI marking but the low response count will be reflected in score
+  }
 
   const prompt = `You are an experienced ${languageName} language teacher marking an AQA GCSE Higher translation task following the official mark scheme.
 
@@ -172,7 +223,9 @@ Format as JSON:
   "strengths": ["strength1", "strength2"],
   "improvements": ["improvement1", "improvement2"],
   "grammarErrors": ["major errors affecting meaning"]
-}`;
+}
+IMPORTANT: Do NOT use double quotes " inside your strings unless escaped like \". Use single quotes ' instead.
+`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -181,7 +234,7 @@ Format as JSON:
       max_completion_tokens: 1200
     });
 
-    const result = JSON.parse(completion.choices[0].message.content || '{}');
+    const result = parseAIResponse(completion.choices[0].message.content);
 
     return {
       score: result.totalScore || 0,
@@ -201,6 +254,123 @@ Format as JSON:
   }
 }
 
+// NEW: Dedicated function for Q2 Short Message (10 marks = 5 AO2 + 5 AO3)
+async function markShortMessage(response: any, criteria: MarkingCriteria): Promise<MarkingResult> {
+  const text = response.message || response.article || '';
+  const wordCount = text.split(/\s+/).filter((w: string) => w.length > 0).length;
+  const languageName = getLanguageName(criteria.language);
+  const targetWords = criteria.wordCountRequirement || 50;
+  const bulletPoints = criteria.specificCriteria || [];
+
+  const prompt = `You are an experienced ${languageName} language teacher marking an AQA GCSE Foundation Question 2 - Short Message task following the OFFICIAL AQA mark scheme. BE GENEROUS with marking.
+
+OFFICIAL AQA MARK SCHEME - Question 02 (Foundation) - Short Message:
+Maximum Marks: 10 (5 marks AO2 + 5 marks AO3)
+Target: approximately 50 words
+Bullet points to cover: ${bulletPoints.length > 0 ? bulletPoints.join(', ') : '5 bullet points'}
+
+=== AO2: COMMUNICATION (5 Marks) ===
+Level 5 (5 marks): All five bullet points are covered. Communication is clear.
+Level 4 (4 marks): At least four bullet points are covered. Communication is mostly clear with occasional lapses.
+Level 3 (3 marks): At least three bullet points are covered. Communication is generally clear with several lapses.
+Level 2 (2 marks): At least two bullet points are covered. Communication is sometimes clear with regular lapses.
+Level 1 (1 mark): At least one bullet point is covered. Communication is often not clear with many lapses.
+Level 0 (0 marks): Content does not meet the standard.
+
+CRITICAL AO2 GUIDANCE:
+- There is NO requirement to use different tenses - present tense only is PERFECTLY ACCEPTABLE
+- The bullet points only need to be COVERED, not extensively developed
+- A simple reference to each bullet point is sufficient
+- "Lapse in clarity" = use of language causing delay in communication (e.g., "Mi escola es grande")
+- Judge by CONTENT COVERAGE first, then clarity
+
+=== AO3: LINGUISTIC QUALITY (5 Marks) ===
+Level 5 (5 marks): Variety of vocabulary AND grammatical structures. May have SOME errors, but these are MINOR.
+Level 4 (4 marks): Some variety of vocabulary and structures. Frequent minor errors with occasional major error.
+Level 3 (3 marks): Some ATTEMPT at variety. Frequent minor errors with some major errors.
+Level 2 (2 marks): Limited or repetitive vocabulary. Frequent minor errors and a number of major errors.
+Level 1 (1 mark): Little awareness of appropriate vocabulary. Errors in vast majority of sentences.
+Level 0 (0 marks): Language does not meet standard.
+
+CRITICAL AO3 GUIDANCE:
+- MINOR errors = do NOT affect communication (wrong gender, agreement errors, missing accents, close spellings)
+  Examples: "Mi colegio es pequeña" (gender), "Mis proffesores son interesante" (spelling/agreement)
+- MAJOR errors = ADVERSELY affect communication (wrong verb form, wrong pronoun changing meaning)
+  Examples: "Te gusta el deporte" instead of "Me gusta" (changes meaning), "Ayer como un bocadillo" (wrong tense affecting meaning)
+- Missing accents are MINOR errors unless they change meaning
+- A mark of 0 for AO2 = automatic 0 for AO3
+- Variety shown through: different adjectives, different verb persons, varied nouns/verbs, intensifiers (muy, mucho, bastante)
+
+EXAMPLE FULL MARKS RESPONSE (10/10):
+"Me gusta el tenis y juego con mis amigos los sábados. También corro y nado. Escucho música cuando estudio en mi dormitorio. No veo mucho la tele, prefiero ver Netflix en mi ordenador. Me encanta leer, es mi actividad favorita. No voy mucho al cine porque es muy caro."
+- All bullet points covered ✓
+- Clear communication ✓
+- Variety of vocabulary (tenis, amigos, música, dormitorio, tele, cine) ✓
+- Variety of structures (me gusta, juego, corro, nado, escucho, prefiero, me encanta) ✓
+- Mainly accurate ✓
+
+Student's writing:
+"${text}"
+
+Word count: ${wordCount} words (target: ~${targetWords} words)
+Bullet points to address: ${bulletPoints.length > 0 ? bulletPoints.join(', ') : 'Check the student response for coverage of required topics'}
+
+MARKING APPROACH:
+1. First count how many bullet points are covered (even briefly)
+2. Assess clarity of communication
+3. Then assess variety of vocabulary and structures
+4. Only mark down for MAJOR errors that affect communication
+5. BE GENEROUS - if in doubt, give the higher mark
+
+Format your response as JSON:
+{
+  "totalScore": number (sum of ao2Score + ao3Score),
+  "ao2Score": number (out of 5),
+  "ao3Score": number (out of 5),
+  "bulletPointsCovered": number,
+  "bulletPointsAnalysis": ["what they wrote about each bullet point"],
+  "feedback": "Constructive feedback - be encouraging",
+  "strengths": ["strength1", "strength2"],
+  "improvements": ["improvement1 - focus on what would help them improve"],
+  "grammarErrors": ["ONLY list major errors that affected communication"],
+  "vocabularyFeedback": "Positive assessment of vocabulary variety"
+}
+IMPORTANT: Do NOT use double quotes " inside your strings unless escaped like \". Use single quotes ' instead.
+`;
+
+  try {
+    console.log('📝 [Short Message] Calling OpenAI...');
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1-nano",
+      messages: [{ role: "user", content: prompt }],
+      max_completion_tokens: 1500
+    });
+
+    const rawContent = completion.choices[0].message.content;
+    console.log('📝 [Short Message] Raw AI response:', rawContent?.substring(0, 500));
+
+    const result = parseAIResponse(rawContent);
+    console.log('📝 [Short Message] Parsed result:', { totalScore: result.totalScore });
+
+    return {
+      score: result.totalScore || 0,
+      maxScore: criteria.maxMarks,
+      percentage: Math.round(((result.totalScore || 0) / criteria.maxMarks) * 100),
+      feedback: result.feedback || 'No feedback provided',
+      detailedFeedback: {
+        strengths: result.strengths || [],
+        improvements: result.improvements || [],
+        grammarErrors: result.grammarErrors || [],
+        vocabularyFeedback: result.vocabularyFeedback
+      }
+    };
+  } catch (error: any) {
+    console.error('❌ [Short Message] Error marking:', error.message);
+    console.error('❌ [Short Message] Stack:', error.stack);
+    throw error;
+  }
+}
+
 async function markExtendedWriting(response: any, criteria: MarkingCriteria): Promise<MarkingResult> {
   const text = response.article || response.message || '';
   const wordCount = text.split(/\s+/).filter((w: string) => w.length > 0).length;
@@ -208,10 +378,10 @@ async function markExtendedWriting(response: any, criteria: MarkingCriteria): Pr
   const isAdvancedWriting = criteria.maxMarks === 25;
   const targetWords = criteria.wordCountRequirement || (isAdvancedWriting ? 150 : 90);
 
-  const prompt = `You are an experienced ${languageName} language teacher marking an AQA GCSE extended writing task.
+  const prompt = `You are an experienced ${languageName} language teacher marking an AQA GCSE extended writing task following the OFFICIAL AQA mark scheme. BE GENEROUS with marking.
 
 ${isAdvancedWriting ?
-`OFFICIAL AQA MARK SCHEME - Question 03 (Higher) - Extended Writing:
+      `OFFICIAL AQA MARK SCHEME - Question 03 (Higher) - Extended Writing:
 Maximum Marks: 25 (15 marks AO2 + 10 marks AO3)
 
 AO2: Communication (15 Marks)
@@ -235,40 +405,89 @@ Grid Two: Accuracy (5 Marks)
 • 3 Marks: More accurate than inaccurate, regular errors
 • 2 Marks: More inaccurate than accurate, frequent errors
 • 1 Mark: Mostly inaccurate` :
-`OFFICIAL AQA MARK SCHEME - Extended Writing (15 marks):
-AO2: Communication (10 Marks)
-• 9-10 Marks: All bullet points covered, clear communication, ideas regularly developed
-• 7-8 Marks: All bullet points covered, mostly clear communication
-• 5-6 Marks: At least two bullet points covered, generally clear communication
-• 3-4 Marks: At least two bullet points covered, communication sometimes unclear
-• 1-2 Marks: At least one bullet point covered, communication often unclear
+      `OFFICIAL AQA MARK SCHEME - Question 05 (Foundation) / Question 02 (Higher) - Extended Writing:
+Maximum Marks: 15 (10 marks AO2 + 5 marks AO3)
+Task: Respond to THREE compulsory bullet points (~90 words)
 
-AO3: Linguistic Quality (5 Marks)
-• 5 Marks: Good variety, complex language attempts, successful time frames, mainly minor errors
-• 4 Marks: Variety, some complexity, at least two time frames, mainly minor errors
-• 3 Marks: Some variety, occasional complexity, two time frames attempted, more accurate than inaccurate
-• 2 Marks: Limited variety, simple language, two time frames (often unsuccessful), more inaccurate
-• 1 Mark: Narrow vocabulary, simple sentences, no successful time frames`}
+=== AO2: COMMUNICATION (10 Marks) ===
+Level 5 (9-10 marks): All THREE bullet points covered. Communication is clear. Ideas are REGULARLY developed with A LOT of relevant information.
+Level 4 (7-8 marks): All THREE bullet points covered. Communication is mostly clear (occasional lapses). Ideas are OFTEN developed with quite a lot of relevant information.
+Level 3 (5-6 marks): At least TWO bullet points covered. Communication generally clear (likely lapses). A few ideas developed, some relevant information.
+Level 2 (3-4 marks): At least ONE bullet point covered. Communication sometimes clear (regular lapses). Little relevant information.
+Level 1 (1-2 marks): At least ONE bullet point covered. Communication often not clear (very many lapses). Very little relevant information.
+Level 0: Content does not meet standard.
+
+CRITICAL AO2 GUIDANCE:
+- "Development" = additional detail, reasoning, justification, elaboration (can be a clause or phrase)
+- Example development: "Mi casa es grande y es estupenda" or "Vivo en Manchester, en el noroeste de Inglaterra"
+- For 9-10 marks with ~90 words covering all 3 bullets with development = full marks is achievable
+- Some imbalance in bullet coverage is acceptable for full marks
+- A "lapse in clarity" = language causing delay in communication
+
+=== AO3: LINGUISTIC QUALITY (5 Marks) ===
+Level 5 (5 marks): GOOD variety of vocabulary. REGULAR attempts at complexity (structure/language). References to ALL THREE time frames (past, present, future) which are MAINLY successful. Errors mainly minor, some major in complex structures.
+Level 4 (4 marks): Variety of vocabulary. SOME attempts at complexity. References to at least TWO time frames which are mainly successful. Errors mainly minor with some major.
+Level 3 (3 marks): SOME variety of vocabulary. Occasional attempts at complexity. References to at least TWO time frames (may not always be successful). Some major errors, minor errors regular, but overall MORE ACCURATE than inaccurate.
+Level 2 (2 marks): Limited variety. Language mainly simple (some longer sentences with linking words). May be no successful time frame references. Frequent major/minor errors, generally INACCURATE.
+Level 1 (1 mark): Narrow/repetitive vocabulary. Simple/short sentences. No successful time frame references. Frequent errors, highly inaccurate.
+Level 0: Language does not meet standard.
+
+CRITICAL AO3 GUIDANCE:
+- "Time frames" NOT "tenses" - present tense CAN refer to future: "I'm going to the concert next week"
+- Reference to a time frame can be ONE example
+- Verb need not be totally correct if message is clear
+- MINOR errors (do NOT affect communication): wrong gender, agreement errors, missing accents, close spellings
+  Examples: "Mi colegio es pequeña", "Mis proffesores son interesante"
+- MAJOR errors (ADVERSELY affect communication): incorrect verb forms, incorrect pronouns
+  Examples: "Te gusta el deporte" for "Me gusta", "Ayer como un bocadillo"
+- Complexity shown through: different tenses, time markers, connectives (aunque, porque, por eso, si), subordinate clauses, infinitive constructions (para + inf, sin + inf), modal verbs, object pronouns, comparatives
+- AO2 mark of 0 = automatic AO3 mark of 0
+- AO2 mark does NOT limit AO3 mark otherwise (student with 2 bullets but great language can get 6+5)
+
+EXAMPLE RESPONSE WORTH 15/15:
+"Ayer hice muchas cosas. Por ejemplo, fui al cine con un grupo de amigos y lo pasé bomba. Después, fuimos a mi restaurante favorito que se llama Nandos y comí una hamburguesa de pollo. Fue muy rico. En general, tengo muchas cosas que me gusta hacer en mi tiempo libre. Me encanta leer y jugar a los videojuegos. Mi videojuego favorito se llama Death Stranding. Tiene una historia muy interesante. El fin de semana que viene voy a ir a España y espero que sea genial."
+
+Analysis of this example:
+- All 3 bullet points covered ✓ (yesterday/past, current hobbies/present, next weekend/future)
+- Clear communication ✓
+- Regular development of ideas ✓ (details about cinema, restaurant, videogame, Spain)
+- Good variety of vocabulary ✓ (cine, amigos, restaurante, hamburguesa, videojuegos, historia)
+- Regular complexity attempts ✓ (subordinate clauses with "que", time markers, "espero que + subjunctive")
+- All 3 time frames successful ✓ (preterite: hice, fui, comí, fue; present: tengo, me encanta, tiene; future: voy a ir, espero)
+- Minor errors only ✓ ("muchas cosas que me gusta" should be "gustan" - minor agreement error)
+= AO2: 10/10, AO3: 5/5 = 15/15`}
 
 Student's writing:
 "${text}"
 
 Word count: ${wordCount} words (target: ~${targetWords} words)
 
+MARKING APPROACH:
+1. Count bullet points covered (even brief coverage counts)
+2. Assess clarity and development of ideas
+3. Identify time frames used and if they're successful
+4. Assess vocabulary variety and complexity attempts
+5. Distinguish between minor errors (don't mark down) and major errors (affect communication)
+6. BE GENEROUS - if in doubt, give the higher mark
+7. Remember: ~90 words covering all bullets with development CAN achieve 15/15
+
 Format as JSON:
 {
-  "totalScore": number,
-  "ao2Score": number,
-  "ao3Score": number,
+  "totalScore": number (sum of ao2Score + ao3Score),
+  "ao2Score": number (out of ${isAdvancedWriting ? '15' : '10'}),
+  "ao3Score": number (out of ${isAdvancedWriting ? '10' : '5'}),
   ${isAdvancedWriting ? '"ao3GridOneScore": number, "ao3GridTwoScore": number,' : ''}
   "bulletPointsCovered": number,
+  "bulletPointsAnalysis": ["analysis of coverage for each bullet point"],
   ${!isAdvancedWriting ? '"timeFramesUsed": ["past", "present", "future"], "timeFramesSuccessful": number,' : ''}
-  "feedback": "Detailed feedback based on AQA criteria",
-  "strengths": ["strength1", "strength2"],
-  "improvements": ["improvement1", "improvement2"],
-  "grammarErrors": ["major errors affecting communication"],
-  "vocabularyFeedback": "Assessment of vocabulary variety and complexity"
-}`;
+  "feedback": "Constructive and encouraging feedback",
+  "strengths": ["strength1", "strength2", "strength3"],
+  "improvements": ["specific area for improvement"],
+  "grammarErrors": ["ONLY major errors that affected communication - be lenient"],
+  "vocabularyFeedback": "Positive assessment of vocabulary variety and complexity attempts"
+}
+IMPORTANT: Do NOT use double quotes " inside your strings unless escaped like \". Use single quotes ' instead.
+`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -277,7 +496,18 @@ Format as JSON:
       max_completion_tokens: 1500
     });
 
-    const result = JSON.parse(completion.choices[0].message.content || '{}');
+    let content = completion.choices[0].message.content || '{}';
+    console.log('📝 [Extended Writing] Raw AI response:', content.substring(0, 500));
+
+    // Strip markdown code fences if present (common AI response issue)
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    const result = JSON.parse(content);
+    console.log('📝 [Extended Writing] Parsed result:', {
+      totalScore: result.totalScore,
+      ao2Score: result.ao2Score,
+      ao3Score: result.ao3Score
+    });
 
     return {
       score: result.totalScore || 0,
@@ -291,63 +521,98 @@ Format as JSON:
         vocabularyFeedback: result.vocabularyFeedback
       }
     };
-  } catch (error) {
-    console.error('Error marking extended writing:', error);
+  } catch (error: any) {
+    console.error('❌ [Extended Writing] Error marking:', error.message);
+    console.error('❌ [Extended Writing] Stack:', error.stack);
     throw error;
   }
 }
 
-async function markGapFill(response: any, criteria: MarkingCriteria): Promise<MarkingResult> {
-  const answers = Object.values(response).filter(a => a);
-  const languageName = getLanguageName(criteria.language);
+// Gap-fill marking using database correct answers (NO AI NEEDED)
+function markGapFill(response: any, criteria: MarkingCriteria): MarkingResult {
+  console.log('📝 [Gap-Fill] Marking with database comparison');
+  console.log('   Response:', JSON.stringify(response));
+  console.log('   Question Data:', JSON.stringify(criteria.questionData));
 
-  const prompt = `You are an experienced ${languageName} language teacher marking AQA GCSE Foundation gap-fill questions.
+  // Get the questions from the database (contains correct answers)
+  const questions = criteria.questionData?.questions || criteria.questionData?.sentences || [];
 
-OFFICIAL AQA MARK SCHEME - Gap Fill Questions:
-- Each question worth 1 mark
-- Must be grammatically correct and appropriate in context
-- Minor spelling errors may be acceptable if meaning is clear
-- Major errors that affect communication score 0
-
-Student's answers:
-${answers.map((a: any, i: number) => `${i + 1}. ${a || '[No response]'}`).join('\n')}
-
-Assess each answer for grammatical correctness and contextual appropriateness.
-
-Format as JSON:
-{
-  "totalScore": number,
-  "questionScores": [array of 0 or 1 for each answer],
-  "feedback": "Overall feedback on grammar understanding",
-  "strengths": ["areas of good grammar knowledge"],
-  "improvements": ["grammar areas to review"],
-  "grammarErrors": ["specific errors made"]
-}`;
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
-      messages: [{ role: "user", content: prompt }],
-      max_completion_tokens: 800
-    });
-
-    const result = JSON.parse(completion.choices[0].message.content || '{}');
-
+  if (questions.length === 0) {
+    console.error('❌ [Gap-Fill] No questions found in question data');
     return {
-      score: result.totalScore || 0,
+      score: 0,
       maxScore: criteria.maxMarks,
-      percentage: Math.round(((result.totalScore || 0) / criteria.maxMarks) * 100),
-      feedback: result.feedback || 'Gap-fill exercise completed',
+      percentage: 0,
+      feedback: 'No questions found to mark.',
       detailedFeedback: {
-        strengths: result.strengths || [],
-        improvements: result.improvements || [],
-        grammarErrors: result.grammarErrors || []
+        strengths: [],
+        improvements: ['Please try again'],
+        grammarErrors: []
       }
     };
-  } catch (error) {
-    console.error('Error marking gap-fill:', error);
-    throw error;
   }
+
+  let totalScore = 0;
+  const questionScores: number[] = [];
+  const feedback: string[] = [];
+  const strengths: string[] = [];
+  const improvements: string[] = [];
+  const grammarErrors: string[] = [];
+
+  // Check each question against the correct answer from the database
+  questions.forEach((question: any, index: number) => {
+    const studentAnswer = response[`question-${index}`] || '';
+    // Support multiple key formats for correct answer
+    const correctAnswer = question.correctAnswer || question.correct_answer || question.correct || '';
+
+    console.log(`   Q${index + 1}: Student="${studentAnswer}" vs Correct="${correctAnswer}"`);
+
+    // Normalize answers for comparison (lowercase, trim)
+    const normalizedStudent = studentAnswer.toString().toLowerCase().trim();
+    const normalizedCorrect = correctAnswer.toString().toLowerCase().trim();
+
+    if (normalizedStudent === normalizedCorrect) {
+      totalScore += 1;
+      questionScores.push(1);
+      feedback.push(`Q${index + 1}: Correct! ✓`);
+    } else if (normalizedStudent === '') {
+      questionScores.push(0);
+      feedback.push(`Q${index + 1}: No answer given. The correct answer was "${correctAnswer}".`);
+      grammarErrors.push(`Q${index + 1}: No response`);
+    } else {
+      questionScores.push(0);
+      feedback.push(`Q${index + 1}: Incorrect. You answered "${studentAnswer}" but the correct answer was "${correctAnswer}".`);
+      grammarErrors.push(`Q${index + 1}: "${studentAnswer}" → should be "${correctAnswer}"`);
+    }
+  });
+
+  // Generate overall feedback
+  const percentage = Math.round((totalScore / criteria.maxMarks) * 100);
+
+  if (totalScore === criteria.maxMarks) {
+    strengths.push('Perfect score! All answers correct.');
+  } else if (totalScore > 0) {
+    strengths.push(`You got ${totalScore} out of ${criteria.maxMarks} correct.`);
+    improvements.push('Review the incorrect answers and practice vocabulary.');
+  } else {
+    improvements.push('Review the vocabulary and try again.');
+  }
+
+  const overallFeedback = feedback.join(' ');
+
+  console.log(`   ✅ Gap-Fill Result: ${totalScore}/${criteria.maxMarks} (${percentage}%)`);
+
+  return {
+    score: totalScore,
+    maxScore: criteria.maxMarks,
+    percentage,
+    feedback: overallFeedback,
+    detailedFeedback: {
+      strengths,
+      improvements,
+      grammarErrors
+    }
+  };
 }
 
 function getDefaultResult(criteria: MarkingCriteria): MarkingResult {
@@ -421,12 +686,13 @@ export async function POST(request: NextRequest) {
             result = await markExtendedWriting(response.response, response.criteria);
             break;
           case 'short-message':
-            console.log(`   ✅ Marking short message...`);
-            result = await markExtendedWriting(response.response, response.criteria);
+            console.log(`   ✅ Marking short message (Q2 - 10 marks)...`);
+            result = await markShortMessage(response.response, response.criteria);
             break;
           case 'gap-fill':
-            console.log(`   ✅ Marking gap fill...`);
-            result = await markGapFill(response.response, response.criteria);
+            console.log(`   ✅ Marking gap fill (database comparison)...`);
+            // Gap-fill is synchronous - no AI needed, just compare to database
+            result = markGapFill(response.response, response.criteria);
             break;
           default:
             console.log(`   ⚠️ Unknown question type: ${response.criteria.questionType}`);
