@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import Groq from 'groq-sdk';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// Use Groq with Llama 3.1 8B for the chatbot - fast and cheap for conversation
+// Cost: ~$0.05/M input, $0.08/M output (80% cheaper than GPT-4.1-nano)
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 // Knowledge base about LanguageGems
@@ -113,8 +115,8 @@ Remember: LanguageGems is more than grammar practice—it's a full classroom eco
       { role: 'user', content: message }
     ];
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-nano-2025-04-14', // Required GPT-4.1 Nano deployment
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant', // Fast & cheap for conversational AI
       messages: messages,
       max_tokens: 500,
       temperature: 0.7,

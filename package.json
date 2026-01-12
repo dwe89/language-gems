@@ -30,6 +30,7 @@
     "test:watch": "vitest --watch",
     "populate-listening": "tsx scripts/populate-aqa-listening-assessments.ts",
     "populate-reading-comprehension": "tsx scripts/populate-reading-comprehension.ts",
+    "populate-speaking-assessments": "tsx scripts/populate-speaking-assessments.ts",
     "generate-dictation-papers": "tsx scripts/generate-dictation-papers.ts",
     "populate-aqa-writing-assessments": "tsx scripts/populate-aqa-writing-assessments.ts",
     "populate-sentences": "tsx scripts/populate-sentences.ts",
@@ -52,6 +53,8 @@
     "type-check:progressive": "tsc --project tsconfig.progressive.json --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^3.0.4",
+    "@ai-sdk/openai": "^3.0.8",
     "@aws-sdk/client-polly": "^3.848.0",
     "@blex41/word-search": "^1.2.0",
     "@google-cloud/text-to-speech": "^6.2.0",
@@ -92,6 +95,7 @@
     "@types/react-window": "^1.8.8",
     "@types/uuid": "^10.0.0",
     "@vercel/analytics": "^1.5.0",
+    "ai": "^6.0.28",
     "aws-sdk": "^2.1692.0",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",
@@ -104,6 +108,7 @@
     "exceljs": "^4.4.0",
     "flag-icons": "^7.5.0",
     "framer-motion": "^12.23.9",
+    "groq-sdk": "^0.37.0",
     "gsap": "^3.13.0",
     "howler": "^2.2.4",
     "html2canvas": "^1.4.1",
@@ -137,6 +142,7 @@
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5",
+    "zod": "^4.3.5",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

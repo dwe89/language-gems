@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/utils/supabase/client';
-import OpenAI from 'openai';
+import Groq from 'groq-sdk';
 
 export const dynamic = 'force-dynamic';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+// Use Groq with GPT OSS 20B for professional-grade writing assessment
+// Catches subtle errors (A-Level subjunctive, German word-order) that smaller models miss
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY,
 });
 
 // AQA Writing mark scheme criteria
@@ -85,14 +87,14 @@ ${studentResponse}
 Grade this response:`;
 
     try {
-        const completion = await openai.chat.completions.create({
-            model: 'gpt-4.1-nano',
+        const completion = await groq.chat.completions.create({
+            model: 'openai/gpt-oss-20b',
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt }
             ],
             temperature: 0.3, // Lower temperature for more consistent grading
-            max_tokens: 500,
+            max_tokens: 1024,
             response_format: { type: 'json_object' }
         });
 
@@ -101,7 +103,19 @@ Grade this response:`;
             throw new Error('No response from AI');
         }
 
-        const parsed = JSON.parse(response);
+        // Clean response of markdown code blocks if present
+        let jsonStr = response;
+        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+            jsonStr = jsonMatch[1];
+        }
+        
+        // GPT OSS 20B sometimes returns Python-style single-quoted JSON - convert to valid JSON
+        jsonStr = jsonStr.trim()
+            .replace(/'/g, '"')  // Convert all single quotes to double quotes
+            .replace(/(\w)"(\w)/g, "$1'$2");  // Restore apostrophes within words (e.g., don't, it's)
+
+        const parsed = JSON.parse(jsonStr);
         const breakdown = parsed.breakdown || {};
 
         // Calculate total ensuring we don't exceed max marks
@@ -201,7 +215,7 @@ export async function POST(request: NextRequest) {
                     breakdown: gradingResult.breakdown,
                     suggestions: gradingResult.suggestions,
                     graded_at: new Date().toISOString(),
-                    model: 'gpt-4.1-nano'
+                    model: 'openai/gpt-oss-20b'
                 }
             })
             .eq('id', response.id);
@@ -303,7 +317,7 @@ export async function GET(request: NextRequest) {
                         breakdown: gradingResult.breakdown,
                         suggestions: gradingResult.suggestions,
                         graded_at: new Date().toISOString(),
-                        model: 'gpt-4.1-nano'
+                        model: 'openai/gpt-oss-20b'
                     }
                 })
                 .eq('id', response.id);

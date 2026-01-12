@@ -209,6 +209,194 @@ export type Database = {
           updated_at?: string | null
         }
       }
+      aqa_writing_assessments: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          identifier: string
+          is_active: boolean | null
+          language: string
+          level: string
+          time_limit_minutes: number
+          title: string
+          total_marks: number
+          total_questions: number
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          identifier: string
+          is_active?: boolean | null
+          language?: string
+          level: string
+          time_limit_minutes: number
+          title: string
+          total_marks?: number
+          total_questions?: number
+          updated_at?: string | null
+          version?: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          identifier?: string
+          is_active?: boolean | null
+          language?: string
+          level?: string
+          time_limit_minutes?: number
+          title?: string
+          total_marks?: number
+          total_questions?: number
+          updated_at?: string | null
+          version?: string
+        }
+      }
+      aqa_writing_questions: {
+        Row: {
+          assessment_id: string
+          created_at: string | null
+          difficulty_rating: number | null
+          id: string
+          instructions: string
+          marks: number
+          question_data: Json
+          question_number: number
+          question_type: string
+          sub_question_number: string | null
+          theme: string
+          title: string
+          topic: string
+          updated_at: string | null
+          word_count_requirement: number | null
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string | null
+          difficulty_rating?: number | null
+          id?: string
+          instructions: string
+          marks?: number
+          question_data: Json
+          question_number: number
+          question_type: string
+          sub_question_number?: string | null
+          theme: string
+          title: string
+          topic: string
+          updated_at?: string | null
+          word_count_requirement?: number | null
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string | null
+          difficulty_rating?: number | null
+          id?: string
+          instructions?: string
+          marks?: number
+          question_data?: Json
+          question_number?: number
+          question_type?: string
+          sub_question_number?: string | null
+          theme?: string
+          title?: string
+          topic?: string
+          updated_at?: string | null
+          word_count_requirement?: number | null
+        }
+      }
+      aqa_writing_assignments: {
+        Row: {
+          assessment_id: string
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          is_active: boolean | null
+          school_id: string | null
+          teacher_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          school_id?: string | null
+          teacher_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          school_id?: string | null
+          teacher_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+      }
+      aqa_writing_question_responses: {
+        Row: {
+          ai_grading: Json | null
+          created_at: string | null
+          feedback: string | null
+          id: string
+          is_correct: boolean | null
+          max_score: number
+          question_id: string
+          response_data: Json
+          result_id: string
+          score: number | null
+          student_id: string
+          time_spent_seconds: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_grading?: Json | null
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          is_correct?: boolean | null
+          max_score: number
+          question_id: string
+          response_data: Json
+          result_id: string
+          score?: number | null
+          student_id: string
+          time_spent_seconds?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_grading?: Json | null
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          is_correct?: boolean | null
+          max_score?: number
+          question_id?: string
+          response_data?: Json
+          result_id?: string
+          score?: number | null
+          student_id?: string
+          time_spent_seconds?: number | null
+          updated_at?: string | null
+        }
+      }
     }
   }
 }

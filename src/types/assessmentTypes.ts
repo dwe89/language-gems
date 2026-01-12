@@ -9,6 +9,7 @@ export type AssessmentType =
   | 'aqa-reading'
   | 'aqa-listening'
   | 'aqa-writing'
+  | 'aqa-speaking'
   | 'aqa-dictation'
   | 'four-skills'
   | 'exam-style'
@@ -157,6 +158,40 @@ export const ASSESSMENT_TYPE_REGISTRY: Record<AssessmentType, AssessmentTypeConf
     scoreField: 'percentage_score',
     maxScoreField: 'max_score',
     timeField: 'time_spent_seconds',
+    studentIdField: 'student_id'
+  },
+  'aqa-speaking': {
+    type: 'aqa-speaking',
+    tableName: 'aqa_speaking_results',
+    displayName: 'AQA Speaking',
+    icon: 'Mic',
+    color: 'red',
+    supportsOverride: true,
+    supportsDetailedBreakdown: true,
+    resultColumns: [
+      'id',
+      'student_id',
+      'assessment_id',
+      'assignment_id',
+      'percentage_score',
+      'total_score',
+      'max_score',
+      'total_time_seconds',
+      'status',
+      'gcse_grade',
+      'roleplay_score',
+      'roleplay_max',
+      'reading_aloud_score',
+      'reading_aloud_max',
+      'photocard_score',
+      'photocard_max',
+      'general_conversation_score',
+      'general_conversation_max',
+      'completed_at'
+    ],
+    scoreField: 'percentage_score',
+    maxScoreField: 'max_score',
+    timeField: 'total_time_seconds',
     studentIdField: 'student_id'
   },
   'aqa-dictation': {

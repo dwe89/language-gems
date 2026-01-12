@@ -97,6 +97,11 @@ const formatAnswer = (answer: string | string[] | undefined | null) => {
         }
     }
 
+    // Safety fallback for objects that slipped through
+    if (typeof answer === 'object' && answer !== null) {
+        return JSON.stringify(answer);
+    }
+
     return answer;
 };
 
@@ -704,7 +709,7 @@ export function AssessmentResultsDetailView({
                 return {
                     questionId: r.question_id,
                     questionText: qDetails?.title || `Question ${r.question_number}`,
-                    userAnswer: r.student_answer,
+                    userAnswer: (typeof r.student_answer === 'object' && r.student_answer !== null) ? JSON.stringify(r.student_answer) : String(r.student_answer || ''),
                     correctAnswer: correctAnswer,
                     isCorrect: r.is_correct,
                     points: r.points_awarded,
@@ -1248,7 +1253,7 @@ export function AssessmentResultsDetailView({
                 // Parse student answer if it's JSON
                 const studentAnswer = typeof r.student_answer === 'string' && r.student_answer.startsWith('{')
                     ? parseStudentAnswer(r.student_answer)
-                    : r.student_answer || 'No answer';
+                    : (typeof r.student_answer === 'object' && r.student_answer !== null) ? JSON.stringify(r.student_answer) : (r.student_answer || 'No answer');
 
                 return [{
                     questionId: r.sub_question_number
@@ -1417,7 +1422,7 @@ export function AssessmentResultsDetailView({
                     questionId: r.question_id,
                     questionText: qDetails?.title || `Question ${qDetails?.questionNumber || '?'}`,
                     questionType: questionType,
-                    userAnswer: formattedResponse || r.response_data,
+                    userAnswer: formattedResponse || (typeof r.response_data === 'object' ? JSON.stringify(r.response_data) : String(r.response_data || '')),
                     correctAnswer: 'AI-marked (see feedback)',
                     isCorrect: r.is_correct,
                     points: r.score,
@@ -1545,7 +1550,7 @@ export function AssessmentResultsDetailView({
             const questionResults = (row.responses || []).map((r: any) => ({
                 questionId: r.question_id,
                 questionText: `Sentence ${r.question_number}`,
-                userAnswer: r.student_answer || '',
+                userAnswer: (typeof r.student_answer === 'object' && r.student_answer !== null) ? JSON.stringify(r.student_answer) : String(r.student_answer || ''),
                 correctAnswer: r.correct_answer || 'See original sentence',
                 isCorrect: r.is_correct,
                 points: r.points_awarded,
