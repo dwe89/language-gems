@@ -103,6 +103,14 @@ export default function StudentAssignmentDetailPage() {
     }
   }, [assignmentId]);
 
+  // If this is an assessment-only assignment, redirect to the assessment detail page
+  // Use useEffect to avoid calling router.push during render
+  useEffect(() => {
+    if (assignment?.isAssessmentOnly) {
+      router.push(`/student-dashboard/assessments/${assignmentId}`);
+    }
+  }, [assignment?.isAssessmentOnly, assignmentId, router]);
+
   useEffect(() => {
     if (!user || !assignmentId) return;
 
@@ -869,14 +877,6 @@ export default function StudentAssignmentDetailPage() {
       </div>
     );
   }
-
-  // If this is an assessment-only assignment, redirect to the assessment detail page
-  // Use useEffect to avoid calling router.push during render
-  useEffect(() => {
-    if (assignment?.isAssessmentOnly) {
-      router.push(`/student-dashboard/assessments/${assignmentId}`);
-    }
-  }, [assignment?.isAssessmentOnly, assignmentId, router]);
 
   if (assignment?.isAssessmentOnly) {
     return (
