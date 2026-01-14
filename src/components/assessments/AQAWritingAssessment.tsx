@@ -200,20 +200,30 @@ export function AQAWritingAssessment({
 
     try {
       // Prepare questions for AI marking
-      const questionResponses: QuestionResponse[] = questions.map((question, index) => ({
-        questionId: question.id,
-        questionType: question.type,
-        response: responses[question.id] || {},
-        criteria: {
+      const questionResponses: QuestionResponse[] = questions.map((question, index) => {
+        // Extract bullet points from question data (may be in different locations)
+        const bulletPoints = question.data?.bulletPoints || 
+                            question.data?.requirements || 
+                            question.data?.option1?.bulletPoints || 
+                            [];
+        
+        console.log(`📝 [MARKING] Q${index + 1} (${question.type}): Bullet points:`, bulletPoints);
+        
+        return {
+          questionId: question.id,
           questionType: question.type,
-          language: language,
-          maxMarks: question.marks,
-          wordCountRequirement: question.wordCount,
-          specificCriteria: question.data?.requirements || [],
-          // Pass question data for gap-fill and translation marking
-          questionData: question.data
-        }
-      }));
+          response: responses[question.id] || {},
+          criteria: {
+            questionType: question.type,
+            language: language,
+            maxMarks: question.marks,
+            wordCountRequirement: question.wordCount,
+            specificCriteria: bulletPoints,
+            // Pass question data for gap-fill and translation marking
+            questionData: question.data
+          }
+        };
+      });
 
       // Call the API to mark the assessment
       const response = await fetch('/api/assessments/mark', {

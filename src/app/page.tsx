@@ -471,18 +471,18 @@ export default function Home() {
       {/* Admin Edit Button */}
       {userIsAdmin && <PageEditButton pageSlug="homepage" onSave={reload} />}
 
-      {/* School Code Update Notification Modal */}
-      <SchoolCodeUpdateModal />
+      {/* Free Access Promotion Modal */}
+      <FreeAccessPromotionModal />
     </SEOWrapper>
   );
 }
 
-function SchoolCodeUpdateModal() {
+function FreeAccessPromotionModal() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     // Check if previously dismissed
-    const dismissed = localStorage.getItem('school_code_update_modal_dismissed_v1');
+    const dismissed = localStorage.getItem('promotion_modal_dismissed_v1');
     if (!dismissed) {
       // Delay slightly to show after page load
       const timer = setTimeout(() => setIsOpen(true), 1500);
@@ -492,7 +492,7 @@ function SchoolCodeUpdateModal() {
 
   const handleDismiss = () => {
     setIsOpen(false);
-    localStorage.setItem('school_code_update_modal_dismissed_v1', 'true');
+    localStorage.setItem('promotion_modal_dismissed_v1', 'true');
   };
 
   return (
@@ -515,32 +515,32 @@ function SchoolCodeUpdateModal() {
         className="relative bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-white/20"
       >
         {/* Header Decoration */}
-        <div className="h-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 w-full" />
+        <div className="h-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 w-full" />
 
         <div className="p-8 md:p-10 text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
-            <Sparkles className="h-10 w-10 text-blue-600" />
+          <div className="w-20 h-20 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+            <Sparkles className="h-10 w-10 text-orange-600" />
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 border border-green-100 mb-6">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-bold text-green-700 uppercase tracking-wider">Update Resolved</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-100 mb-6">
+            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+            <span className="text-xs font-bold text-orange-700 uppercase tracking-wider">Limited Time Offer</span>
           </div>
 
           <h2 className="text-3xl font-bold text-slate-900 mb-4 px-4">
-            Student Login Issue Fixed
+            FREE Access Until February Half Term!
           </h2>
 
           <p className="text-slate-600 text-lg leading-relaxed mb-10">
-            We've updated our system to ensure your chosen school code is used correctly for student logins. If your students had trouble logging in earlier today, they can now log in using your specific school code.
+            Enjoy full access to the whole platform until February half term. Create classes, set assignments, track student vocabulary within the teacher dashboard, and explore our exam-style skills and grammar tools.
           </p>
 
           <div className="flex flex-col gap-4">
             <button
               onClick={handleDismiss}
-              className="w-full bg-slate-900 text-white font-bold py-5 rounded-2xl hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl active:scale-95 text-lg"
+              className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white font-bold py-5 rounded-2xl hover:from-orange-700 hover:to-red-700 transition-all shadow-lg hover:shadow-xl active:scale-95 text-lg"
             >
-              Great, thanks!
+              Get Started Now
             </button>
           </div>
         </div>

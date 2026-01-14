@@ -13,11 +13,9 @@ const groq = new Groq({
 // AQA Writing mark scheme criteria
 const FOUNDATION_CRITERIA = {
     'photo-description': {
-        maxMarks: 8,
+        maxMarks: 10,
         criteria: {
-            content: { max: 4, description: 'Description of photo with relevant details' },
-            languageRange: { max: 2, description: 'Range of vocabulary and structures' },
-            accuracy: { max: 2, description: 'Grammatical accuracy' }
+            communication: { max: 10, description: 'Communication of valid sentences (2 marks per sentence)' }
         }
     },
     'short-message': {
@@ -35,11 +33,10 @@ const FOUNDATION_CRITERIA = {
         }
     },
     'extended-writing': {
-        maxMarks: 16,
+        maxMarks: 15,
         criteria: {
-            content: { max: 8, description: 'Communication and development of ideas' },
-            languageRange: { max: 4, description: 'Range and variety of vocabulary/structures' },
-            accuracy: { max: 4, description: 'Grammatical accuracy' }
+            communication: { max: 10, description: 'Communication and development of ideas (AO2)' },
+            quality: { max: 5, description: 'Knowledge of vocabulary and grammar (AO3)' }
         }
     }
 };
@@ -109,7 +106,7 @@ Grade this response:`;
         if (jsonMatch) {
             jsonStr = jsonMatch[1];
         }
-        
+
         // GPT OSS 20B sometimes returns Python-style single-quoted JSON - convert to valid JSON
         jsonStr = jsonStr.trim()
             .replace(/'/g, '"')  // Convert all single quotes to double quotes

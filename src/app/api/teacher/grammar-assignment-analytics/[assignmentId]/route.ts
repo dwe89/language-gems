@@ -94,13 +94,13 @@ export async function GET(
             // Fetch profiles separately (more reliable than join on non-FK)
             const { data: profiles } = await supabase
                 .from('user_profiles')
-                .select('user_id, first_name, last_name, display_name, avatar_url')
+                .select('user_id, display_name')
                 .in('user_id', studentIds);
 
             students = (profiles || []).map((p: any) => ({
                 id: p.user_id,
-                name: p.display_name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown Student',
-                avatar_url: p.avatar_url
+                name: p.display_name || 'Unknown Student',
+                avatar_url: null
             }));
 
             // Add any students who have enrollment but no profile (fallback)
