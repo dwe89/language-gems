@@ -7,6 +7,9 @@ import BlogPageClient from '../../components/blog/BlogPageClient';
 import BlogAdminButton from '../../components/admin/BlogAdminButton';
 import { Metadata } from 'next';
 
+// ISR: Revalidate blog listing every 24 hours to reduce function invocations
+export const revalidate = 86400;
+
 export const metadata: Metadata = {
   title: 'Language Learning Blog - GCSE Tips, Teaching Strategies & Educational Insights',
   description: 'Expert insights on GCSE language learning, vocabulary techniques, gamification strategies, and modern teaching methods. Written by experienced MFL educators.',
@@ -430,7 +433,7 @@ export default async function BlogPage() {
                 More expert insights and practical guides are on the way
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {upcomingPosts.map((post, index) => {
                 const IconComponent = post.icon;

@@ -8,6 +8,10 @@ import GrammarLessonTracker from '@/components/grammar/GrammarLessonTracker';
 import GrammarClientWrapper from '@/components/grammar/GrammarClientWrapper';
 import GrammarPageContent from '@/components/grammar/GrammarPageContent';
 
+// SSG: Generate grammar pages once at build time (pure static)
+// Pages are served from CDN edge, zero function invocations for bot traffic
+export const dynamic = 'force-static';
+
 interface PageProps {
   params: {
     language: string;
@@ -270,6 +274,5 @@ export default async function DynamicGrammarPage({ params }: PageProps) {
   );
 }
 
-// Enable ISR (Incremental Static Regeneration) with on-demand revalidation
-export const revalidate = 3600; // Revalidate every hour, or use on-demand revalidation
+
 

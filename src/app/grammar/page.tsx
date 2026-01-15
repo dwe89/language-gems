@@ -1,6 +1,9 @@
 import { Metadata } from 'next';
 import GrammarIndexClient from './GrammarIndexClient';
 
+// ISR: Revalidate grammar hub every 24 hours to reduce function invocations
+export const revalidate = 86400;
+
 export const metadata: Metadata = {
   title: 'Grammar Guides - Spanish, French & German | Language Gems',
   description: 'Master grammar in Spanish, French, and German with comprehensive guides, interactive exercises, and quizzes. Perfect for all skill levels.',

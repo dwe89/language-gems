@@ -14,6 +14,9 @@ import { getRelatedPosts } from '@/utils/blog/getRelatedPosts';
 import { getColorScheme } from '@/lib/blog/colorSchemes';
 import * as LucideIcons from 'lucide-react';
 
+// ISR: Revalidate blog posts every 24 hours to reduce function invocations
+export const revalidate = 86400;
+
 interface BlogPost {
   id: string;
   title: string;
@@ -57,7 +60,7 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
       .eq('status', 'scheduled')
       .lte('scheduled_for', now)
       .maybeSingle();
-    
+
     post = result.data;
   }
 

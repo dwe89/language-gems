@@ -6,6 +6,9 @@ import SEOWrapper from '../../components/seo/SEOWrapper';
 import { generateMetadata } from '../../components/seo/SEOWrapper';
 import Footer from '../../components/layout/Footer';
 
+// ISR: Revalidate about page weekly (content rarely changes)
+export const revalidate = 604800;
+
 export const metadata: Metadata = generateMetadata({
   title: 'About Daniel Etienne - MFL Teacher, Language Gems Founder, EdTech Innovator',
   description: 'Meet Daniel Etienne, experienced MFL teacher, GCSE examiner, and founder of Language Gems and TeachWhizz. Discover his passion for innovative language learning and student success.',

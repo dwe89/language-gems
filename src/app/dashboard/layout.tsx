@@ -1,110 +1,115 @@
-'use client';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase-server';
+import DashboardLayoutClient from './DashboardLayoutClient';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../components/auth/AuthProvider';
-import { getFeatureFlags } from '../../lib/featureFlags';
-import TeacherNavigation from '../../components/TeacherNavigation';
-import { supabaseBrowser } from '../../components/auth/AuthProvider';
-import { Crown, Lock, Zap } from 'lucide-react';
-import Link from 'next/link';
-import Head from 'next/head';
-
-export default function DashboardLayout({
+// Server component: Subscription check happens ONCE when entering dashboard
+// This is cached by Next.js for subsequent navigation within dashboard
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, hasSubscription, isLoading } = useAuth();
-  const router = useRouter();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const supabase = await createClient();
 
-  // Check if we should redirect to preview in production
-  useEffect(() => {
-    if (!isLoading && user) {
-      const flags = getFeatureFlags(user.email);
-      const isProduction = process.env.NODE_ENV === 'production';
-      const isPreviewPage = window.location.pathname === '/dashboard/preview';
-      
-      // In production, redirect to preview unless user has subscription, admin access, or is already on preview page
-      if (isProduction && !hasSubscription && !flags.customLessons && !isPreviewPage) {
-        setShouldRedirect(true);
-        router.push('/dashboard/preview');
-        return;
+  // Get the current user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  // If no user, redirect to login (backup - middleware should catch this)
+  if (authError || !user) {
+    redirect('/auth/login');
+  }
+
+  // Check if admin
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@languagegems.com";
+  const devAdminEmail = "danieletienne89@gmail.com";
+  const isAdmin = user.email === adminEmail || user.email === devAdminEmail;
+
+  // Admin bypass - skip subscription check
+  if (isAdmin) {
+    return (
+      <DashboardLayoutClient hasSubscription={true} isAdmin={true}>
+        {children}
+      </DashboardLayoutClient>
+    );
+  }
+
+  // Get user profile with subscription information
+  const { data: profileData, error: profileError } = await supabase
+    .from('user_profiles')
+    .select(`
+      role,
+      subscription_status,
+      is_school_owner,
+      school_owner_id,
+      subscription_expires_at,
+      trial_ends_at
+    `)
+    .eq('user_id', user.id)
+    .single();
+
+  if (profileError) {
+    console.error('Error fetching user profile in layout:', profileError);
+    redirect('/account');
+  }
+
+  // Helper function to check if subscription is active
+  const isSubscriptionActive = (data: any): boolean => {
+    const now = new Date();
+    const status = data.subscription_status;
+
+    if (status === 'active' || status === 'trialing') {
+      if (data.subscription_expires_at) {
+        const expiresAt = new Date(data.subscription_expires_at);
+        return expiresAt > now;
       }
+
+      if (status === 'trialing' && data.trial_ends_at) {
+        const trialEnds = new Date(data.trial_ends_at);
+        return trialEnds > now;
+      }
+
+      return true;
     }
-  }, [hasSubscription, isLoading, user, router]);
 
-  // Show loading while checking redirect
-  if (shouldRedirect || isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If no user, don't render anything - middleware will redirect
-  if (!user) {
-    return null;
-  }
-
-  // Show upgrade banner for free users
-  const UpgradeBanner = () => {
-    if (hasSubscription || isLoading) return null;
-
-    return (
-      <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Crown className="h-5 w-5 mr-2" />
-              <span className="text-sm font-medium">
-                You're using the free version of LanguageGems
-              </span>
-            </div>
-            <Link
-              href="/account/upgrade"
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-1 rounded-full text-sm font-medium transition-colors flex items-center"
-            >
-              <Zap className="h-4 w-4 mr-1" />
-              Upgrade Now
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return false;
   };
 
+  // Check subscription status
+  let hasActiveSubscription = false;
+
+  // If user is a school owner, check their own subscription
+  if (profileData.is_school_owner) {
+    hasActiveSubscription = isSubscriptionActive(profileData);
+  }
+  // If user has a school owner, check the owner's subscription
+  else if (profileData.school_owner_id) {
+    const { data: ownerData, error: ownerError } = await supabase
+      .from('user_profiles')
+      .select('subscription_status, subscription_expires_at, trial_ends_at')
+      .eq('user_id', profileData.school_owner_id)
+      .single();
+
+    if (!ownerError && ownerData) {
+      hasActiveSubscription = isSubscriptionActive(ownerData);
+    }
+  }
+  // Individual teacher - check their own subscription
+  else {
+    hasActiveSubscription = isSubscriptionActive(profileData);
+  }
+
+  // Only enforce subscription check for teachers on full dashboard
+  // (students and learners have different access rules)
+  const role = profileData?.role || user.user_metadata?.role;
+
+  if (role === 'teacher' && !hasActiveSubscription) {
+    // Redirect to account page for subscription upgrade
+    redirect('/account');
+  }
+
   return (
-    <>
-      <Head>
-        <meta name="robots" content="noindex, nofollow" />
-        <meta name="googlebot" content="noindex, nofollow" />
-      </Head>
-      <TeacherNavigation>
-        <UpgradeBanner />
-        {!hasSubscription && !isLoading && (
-          <div className="bg-slate-100 border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-              <div className="flex items-center text-sm text-slate-600">
-                <Lock className="h-4 w-4 mr-2" />
-                <span>Some features are locked. </span>
-                <Link
-                  href="/account/upgrade"
-                  className="text-purple-600 hover:text-purple-700 font-medium ml-1"
-                >
-                  Upgrade to unlock full access →
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-        {children}
-      </TeacherNavigation>
-    </>
+    <DashboardLayoutClient hasSubscription={hasActiveSubscription} isAdmin={false}>
+      {children}
+    </DashboardLayoutClient>
   );
 }

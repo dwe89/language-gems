@@ -44,3 +44,22 @@ Sitemap: https://languagegems.com/sitemap.xml
 
 # Crawl delay (be respectful to the server)
 Crawl-delay: 1
+
+# Block bots that provide no SEO value and waste resources
+User-agent: PetalBot
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /

@@ -2,6 +2,9 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import LanguageGrammarPageClient from '../../../components/grammar/LanguageGrammarPageClient';
 
+// ISR: Revalidate language grammar hubs every 24 hours to reduce function invocations
+export const revalidate = 86400;
+
 const LANGUAGE_INFO = {
   spanish: { name: 'Spanish', flag: '🇪🇸', description: 'Master Spanish grammar with comprehensive guides, interactive exercises, and quizzes. Covers all levels from beginner to advanced.' },
   french: { name: 'French', flag: '🇫🇷', description: 'Learn French grammar systematically. Complete guide to conjugation, tenses, and sentence structure for GCSE and beyond.' },
