@@ -148,6 +148,7 @@ interface SkillsConfig {
   generalMaxAttempts: number;
   generalShowHints: boolean;
   generalRandomizeQuestions: boolean;
+  allowTestRetake: boolean; // NEW: Allow students to retake the test if they fail
 }
 
 // Unified AssessmentConfiguration to hold settings for all selected assessments
@@ -373,6 +374,7 @@ export default function EnhancedAssignmentCreator({
     generalMaxAttempts: 3,
     generalShowHints: true,
     generalRandomizeQuestions: false,
+    allowTestRetake: true, // Default: allow students to retake the test
   });
 
   const [vocabMasterConfig, setVocabMasterConfig] = useState<VocabMasterConfig>({

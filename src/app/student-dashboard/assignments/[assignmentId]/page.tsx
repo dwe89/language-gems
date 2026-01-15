@@ -1545,6 +1545,8 @@ export default function StudentAssignmentDetailPage() {
           perGameThresholds={winConditions.perGameThresholds}
           assignmentThreshold={winConditions.assignmentThreshold}
           tips={winConditions.tips}
+          isGrammarAssignment={winConditions.isGrammarAssignment}
+          grammarSteps={winConditions.grammarSteps}
           onStart={() => {
             setShowIntroModal(false);
             setHasSeenIntro(true);

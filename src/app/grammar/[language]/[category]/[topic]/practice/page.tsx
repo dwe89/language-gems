@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import GrammarPractice from '@/components/grammar/GrammarPractice';
 import { ArrowLeft, Loader2, Edit } from 'lucide-react';
 import Link from 'next/link';
@@ -26,6 +26,7 @@ const languageCodeMap: Record<string, string> = {
 };
 
 export default function GrammarPracticePage({ params }: PageProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const assignmentId = searchParams.get('assignment');
   const isAssignmentMode = !!assignmentId;
@@ -174,8 +175,28 @@ export default function GrammarPracticePage({ params }: PageProps) {
   const handlePracticeComplete = async (score: number, gemsEarned: number, timeSpent: number) => {
     console.log('Practice completed!', { score, gemsEarned, timeSpent });
 
-    // If in assignment mode, the session is already tracked by GrammarSessionService
-    // via the GrammarPractice component
+    // If in assignment mode, skip screen and mark complete
+    if (isAssignmentMode && topicId && userId) {
+      try {
+        const supabase = createClient();
+        await supabase
+          .from('grammar_topic_step_progress')
+          .update({
+            practice_completed: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('assignment_id', assignmentId)
+          .eq('student_id', userId)
+          .eq('topic_id', topicId);
+
+        // Navigate to test
+        const previewParam = searchParams.get('preview') ? '&preview=true' : '';
+        router.push(`/grammar/${params.language}/${params.category}/${params.topic}/test?mode=assignment&assignment=${assignmentId}${previewParam}`);
+        return;
+      } catch (err) {
+        console.error('Error updating progress:', err);
+      }
+    }
 
     setShowPractice(false);
   };
@@ -436,6 +457,7 @@ export default function GrammarPracticePage({ params }: PageProps) {
     </div>
   );
 
+  // Return wrapped or unwrapped content based on assignment mode
   if (isAssignmentMode && topicId && assignmentId) {
     return (
       <GrammarSkillWrapper
@@ -453,4 +475,3 @@ export default function GrammarPracticePage({ params }: PageProps) {
 
   return mainContent;
 }
-

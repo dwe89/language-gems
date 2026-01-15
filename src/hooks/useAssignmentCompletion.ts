@@ -135,6 +135,8 @@ export function useAssignmentWinConditions(assignmentId: string | null) {
         perGameThresholds: Array<{ gameId: string; gameName: string; wordsRequired: number }>;
         assignmentThreshold: { wordsRequired: number; totalWords: number; percentRequired: number };
         tips: string[];
+        isGrammarAssignment?: boolean;
+        grammarSteps?: Array<{ step: string; label: string; description: string }>;
     } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -152,7 +154,9 @@ export function useAssignmentWinConditions(assignmentId: string | null) {
                     setWinConditions({
                         perGameThresholds: data.perGameThresholds,
                         assignmentThreshold: data.assignmentThreshold,
-                        tips: data.tips
+                        tips: data.tips,
+                        isGrammarAssignment: data.isGrammarAssignment,
+                        grammarSteps: data.grammarSteps
                     });
                 } else {
                     throw new Error(data.error);

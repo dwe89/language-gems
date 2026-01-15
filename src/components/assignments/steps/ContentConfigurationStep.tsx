@@ -332,7 +332,39 @@ function SkillsConfigurationSection({
               </div>
             )}
           </div>
-        ))}
+        ))}\
+
+        {/* Global Settings for Skills */}
+        <div className="bg-white border border-purple-200 rounded-lg p-4 mt-4">
+          <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Settings className="h-5 w-5 text-purple-600" />
+            Test Settings
+          </h4>
+          <label className="flex items-center justify-between p-3 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors">
+            <div className="flex-1">
+              <div className="text-sm font-medium text-gray-900">Allow Test Retake</div>
+              <div className="text-xs text-gray-600">
+                Students can retry the test if they fail (lose all 3 lives). Gems are only awarded on first successful completion.
+              </div>
+            </div>
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={skillsConfig.allowTestRetake ?? true}
+                onChange={(e) => {
+                  setSkillsConfig((prev: any) => ({
+                    ...prev,
+                    allowTestRetake: e.target.checked
+                  }));
+                }}
+                className="sr-only"
+              />
+              <div className={`w-11 h-6 rounded-full transition-colors ${skillsConfig.allowTestRetake ?? true ? 'bg-purple-600' : 'bg-gray-300'}`}>
+                <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${skillsConfig.allowTestRetake ?? true ? 'translate-x-5' : 'translate-x-0.5'} mt-0.5`}></div>
+              </div>
+            </div>
+          </label>
+        </div>
 
         {/* Add Another Skill Button */}
         <button

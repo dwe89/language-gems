@@ -344,14 +344,59 @@ export class GameCompletionService {
     perGameThresholds: Array<{ gameId: string; gameName: string; wordsRequired: number }>;
     assignmentThreshold: { wordsRequired: number; totalWords: number; percentRequired: number };
     tips: string[];
+    isGrammarAssignment?: boolean;
+    grammarSteps?: Array<{ step: string; label: string; description: string }>;
   }> {
     try {
       const { data: assignment } = await this.supabase
         .from('assignments')
-        .select('vocabulary_count, game_config')
+        .select('vocabulary_count, game_config, game_type')
         .eq('id', assignmentId)
         .single();
 
+      // Check if this is a grammar/skills assignment
+      const isGrammarAssignment = assignment?.game_type === 'skills' ||
+        (assignment?.game_config?.skillsConfig?.selectedSkills?.length > 0);
+
+      if (isGrammarAssignment) {
+        // Return grammar-specific win conditions
+        const selectedSkills = assignment?.game_config?.skillsConfig?.selectedSkills || [];
+
+        const grammarSteps = [
+          { step: 'lesson', label: 'Lesson', description: 'Read and understand the grammar concept' },
+          { step: 'practice', label: 'Practice', description: 'Practice exercises with hints and feedback' },
+          { step: 'test', label: 'Test', description: 'Test your knowledge without hints' }
+        ];
+
+        const tips = [
+          'Complete all three steps for each grammar topic: Lesson → Practice → Test',
+          'The lesson explains the grammar concept - read it carefully!',
+          'Practice mode gives you hints and feedback to help you learn',
+          'Test mode checks your understanding without help',
+          'Use the navigation bar at the top or the buttons at the bottom to move between steps'
+        ];
+
+        // For grammar assignments, thresholds represent topics not words
+        const perGameThresholds = selectedSkills.map((skill: any) => ({
+          gameId: skill.id,
+          gameName: skill.name || 'Grammar Topic',
+          wordsRequired: skill.instanceConfig?.topicIds?.length || 1 // Number of topics to complete
+        }));
+
+        return {
+          perGameThresholds,
+          assignmentThreshold: {
+            wordsRequired: selectedSkills.length,
+            totalWords: selectedSkills.length,
+            percentRequired: 100 // Must complete all grammar topics
+          },
+          tips,
+          isGrammarAssignment: true,
+          grammarSteps
+        };
+      }
+
+      // Original vocabulary-focused logic for non-grammar assignments
       const totalWords = assignment?.vocabulary_count || 50;
       const isSampled = totalWords > COMPLETION_CONFIG.MAX_SAMPLE_SIZE;
       const sampledWords = isSampled ? COMPLETION_CONFIG.MAX_SAMPLE_SIZE : totalWords;
@@ -401,7 +446,8 @@ export class GameCompletionService {
           totalWords: sampledWords,
           percentRequired: COMPLETION_CONFIG.ASSIGNMENT_COVERAGE_PERCENT
         },
-        tips
+        tips,
+        isGrammarAssignment: false
       };
     } catch (error) {
       console.error('Error getting win conditions:', error);

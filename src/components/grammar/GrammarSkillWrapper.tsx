@@ -62,7 +62,7 @@ export default function GrammarSkillWrapper({
                 // derive slug from props or pathname fallback
                 const slugFromPath = pathname ? pathname.split('/').filter(Boolean).pop()?.split('?')[0] : undefined;
                 const slug = topicSlug || topic || slugFromPath;
-                
+
                 // Convert URL language format to database language code
                 const languageCodeMap: Record<string, string> = {
                     'spanish': 'es',
@@ -269,7 +269,7 @@ export default function GrammarSkillWrapper({
         <div className="min-h-screen bg-slate-50 flex flex-col">
             {/* Sticky Header */}
             <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-                <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+                <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={handleExit}
@@ -340,58 +340,56 @@ export default function GrammarSkillWrapper({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="flex-1 max-w-5xl mx-auto w-full p-4 md:p-6 pb-32"
+                className="flex-1 max-w-5xl mx-auto w-full p-2 md:p-4 pb-20"
             >
                 {children}
             </motion.div>
 
-            {/* Footer Navigation - Only show for lesson step */}
+            {/* Footer Navigation - Show only for lesson step */}
             {currentStep === 'lesson' && (
-                <div 
-                    className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-white/95 border-t-2 border-indigo-200 shadow-2xl z-[9999]"
+                <div
+                    className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-indigo-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-[9999]"
                     style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999 }}
                 >
-                    <div className="max-w-5xl mx-auto px-4 py-6">
-                        {/* Progress Indicator */}
-                        <div className="mb-4 text-center">
-                            <p className="text-sm text-gray-600 mb-2">
-                                Step 1 of 3: Lesson
-                            </p>
-                            <div className="w-full bg-gray-200 rounded-full h-2 max-w-md mx-auto">
-                                <div
-                                    className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-500"
-                                    style={{ width: '33%' }}
-                                />
-                            </div>
-                        </div>
-
+                    <div className="max-w-5xl mx-auto px-4 py-2">
                         {/* Action Buttons */}
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 items-center">
                             {/* Back Button */}
                             <button
                                 onClick={handleExit}
-                                className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 transition-colors flex items-center gap-2"
+                                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 transition-colors flex items-center gap-2 text-sm"
                             >
                                 <ArrowLeft className="w-4 h-4" />
                                 <span className="hidden sm:inline">Back</span>
                             </button>
 
-                            {/* Complete Lesson Button */}
                             {!progress?.lesson_completed ? (
                                 <button
                                     onClick={handleMarkComplete}
-                                    className="flex-1 py-4 px-6 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2"
+                                    className="flex-1 py-2 px-4 text-base font-bold bg-gradient-to-r from-green-500 to-emerald-600 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-md flex items-center justify-center gap-2"
                                 >
                                     <CheckCircle className="w-5 h-5" />
                                     Complete Lesson & Continue
                                 </button>
                             ) : (
-                                <button
-                                    onClick={handleExit}
-                                    className="flex-1 py-4 px-6 text-lg font-bold bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg flex items-center justify-center gap-2"
-                                >
-                                    Return to Activities <ChevronRight className="w-5 h-5" />
-                                </button>
+                                <>
+                                    {/* Return to Activities */}
+                                    <button
+                                        onClick={handleExit}
+                                        className="px-4 py-2 font-bold bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-all flex items-center justify-center gap-2 text-sm"
+                                    >
+                                        Return to Activities
+                                    </button>
+                                    {/* Continue to Practice */}
+                                    <button
+                                        onClick={() => handleNavigation('practice', '/practice')}
+                                        className="flex-1 py-2 px-4 text-base font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-md flex items-center justify-center gap-2"
+                                    >
+                                        <Brain className="w-5 h-5" />
+                                        Continue to Practice
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>

@@ -16,7 +16,8 @@ import {
   ArrowLeft,
   HeartCrack,
   Award,
-  Clock
+  Clock,
+  BookOpen
 } from 'lucide-react';
 import { GemButton, GemCard } from '../ui/GemTheme';
 import { GrammarSessionService } from '@/services/grammar/GrammarSessionService';
@@ -52,6 +53,9 @@ interface GrammarPracticeProps {
   topicId?: string;
   contentId?: string;
   userId?: string;
+  // NEW: Test retake and practice more props
+  allowTestRetake?: boolean;
+  onPracticeMore?: () => void;
 }
 
 export default function GrammarPractice({
@@ -72,7 +76,10 @@ export default function GrammarPractice({
   assignmentId,
   topicId,
   contentId,
-  userId
+  userId,
+  // NEW: Test retake and practice more props
+  allowTestRetake = true,
+  onPracticeMore
 }: GrammarPracticeProps) {
   const practiceItems = useMemo(() => {
     return rawPracticeItems.map((item) => ({
@@ -360,35 +367,64 @@ export default function GrammarPractice({
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {testFailed ? (
                 <>
-                  <GemButton
-                    variant="gem"
-                    gemType="legendary"
-                    onClick={() => {
-                      // Reset for another attempt
-                      setShowCompletion(false);
-                      setCurrentItem(0);
-                      setUserAnswer('');
-                      setShowFeedback(false);
-                      setScore(0);
-                      setCorrectAnswers(0);
-                      setStreak(0);
-                      setLives(3);
-                      setGemsEarned(0);
-                      setCompletedItems(new Set());
-                    }}
-                    className="px-8 py-3 text-lg"
-                  >
-                    <RotateCcw className="w-5 h-5 mr-2" />
-                    Try Again
-                  </GemButton>
-                  <GemButton
-                    variant="secondary"
-                    onClick={onExit}
-                    className="px-8 py-3 text-lg"
-                  >
-                    <ArrowLeft className="w-5 h-5 mr-2" />
-                    Go Back
-                  </GemButton>
+                  {/* Practice More button - shows if onPracticeMore callback is provided */}
+                  {onPracticeMore && (
+                    <GemButton
+                      variant="gem"
+                      gemType="common"
+                      onClick={onPracticeMore}
+                      className="px-8 py-3 text-lg"
+                    >
+                      <BookOpen className="w-5 h-5 mr-2" />
+                      Practice More
+                    </GemButton>
+                  )}
+                  {/* Retry Test button - only shows if allowTestRetake is true */}
+                  {allowTestRetake && (
+                    <GemButton
+                      variant="gem"
+                      gemType="legendary"
+                      onClick={() => {
+                        // Reset for another attempt
+                        setShowCompletion(false);
+                        setCurrentItem(0);
+                        setUserAnswer('');
+                        setShowFeedback(false);
+                        setScore(0);
+                        setCorrectAnswers(0);
+                        setStreak(0);
+                        setLives(3);
+                        setGemsEarned(0);
+                        setCompletedItems(new Set());
+                      }}
+                      className="px-8 py-3 text-lg"
+                    >
+                      <RotateCcw className="w-5 h-5 mr-2" />
+                      Retry Test
+                    </GemButton>
+                  )}
+                  {/* If no retake allowed and no practice option, show exit button */}
+                  {!allowTestRetake && !onPracticeMore && (
+                    <GemButton
+                      variant="secondary"
+                      onClick={onExit}
+                      className="px-8 py-3 text-lg"
+                    >
+                      <ArrowLeft className="w-5 h-5 mr-2" />
+                      Return to Assignment
+                    </GemButton>
+                  )}
+                  {/* Always show a secondary exit option if there are other buttons */}
+                  {(allowTestRetake || onPracticeMore) && (
+                    <GemButton
+                      variant="secondary"
+                      onClick={onExit}
+                      className="px-8 py-3 text-lg"
+                    >
+                      <ArrowLeft className="w-5 h-5 mr-2" />
+                      Exit
+                    </GemButton>
+                  )}
                 </>
               ) : (
                 <>
@@ -755,7 +791,7 @@ export default function GrammarPractice({
         ? 'bg-gradient-to-r from-red-600 to-purple-700 border-red-400'
         : 'bg-gradient-to-r from-purple-600 to-blue-600 border-purple-300'
         }`}>
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-1">
           <div className="flex items-center justify-between">
             {/* Left: Logo + Back + Title */}
             <div className="flex items-center space-x-4">
@@ -837,7 +873,7 @@ export default function GrammarPractice({
       </div>
 
       {/* Enhanced Content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-2">
         <div className="max-w-4xl mx-auto">
           <motion.div
             key={currentItem}
@@ -849,10 +885,10 @@ export default function GrammarPractice({
               ? 'border-4 border-red-200/50 bg-white'
               : 'border-4 border-purple-200/50'
               }`}>
-              <div className="p-8">
+              <div className="p-3 md:p-4">
                 {/* Card Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-3xl font-bold text-gray-900">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900">
                     {isTestMode ? `Test Question ${currentItem + 1}` : `Practice Item ${currentItem + 1}`}
                   </h2>
                   <div className="flex items-center space-x-2">
@@ -869,20 +905,20 @@ export default function GrammarPractice({
                 </div>
 
                 {/* Enhanced Question Display with Clear Instructions */}
-                <div className="mb-8">
+                <div className="mb-2">
                   {/* Instruction */}
-                  <div className="text-center mb-6">
+                  <div className="text-center mb-2">
                     <p className="text-xl font-bold text-gray-800 mb-2">
                       {getInstructionText(currentPracticeItem)}
                     </p>
                   </div>
 
                   {/* Question */}
-                  <div className={`p-8 rounded-2xl border-2 mb-8 ${isTestMode
+                  <div className={`p-3 rounded-lg border-2 mb-3 ${isTestMode
                     ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200'
                     : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200'
                     }`}>
-                    <p className="text-3xl font-bold text-gray-800 text-center leading-relaxed">
+                    <p className="text-xl md:text-2xl font-bold text-gray-800 text-center leading-relaxed">
                       <QuestionContent
                         value={currentPracticeItem.question}
                         enlargeBlanks={currentPracticeItem.type === 'fill_blank'}
@@ -893,7 +929,7 @@ export default function GrammarPractice({
                   {/* Multiple Choice Options or Text Input */}
                   {currentPracticeItem.options && currentPracticeItem.options.length > 0 ? (
                     <div>
-                      <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-2 gap-2 mb-2">
                         {currentPracticeItem.options.map((option: string, index: number) => (
                           <GemButton
                             key={index}
@@ -901,7 +937,7 @@ export default function GrammarPractice({
                             gemType={userAnswer === option ? "rare" : undefined}
                             onClick={() => setUserAnswer(option)}
                             disabled={showFeedback}
-                            className="p-6 text-2xl font-bold relative"
+                            className="p-3 text-base font-bold relative"
                           >
                             <span className="absolute top-2 left-2 text-sm opacity-60">
                               {index + 1}
@@ -910,8 +946,8 @@ export default function GrammarPractice({
                           </GemButton>
                         ))}
                       </div>
-                      <p className="text-center text-sm text-gray-500 mb-6">
-                        Press 1 or 2 to select, or click the buttons
+                      <p className="text-center text-xs text-gray-500 mb-2">
+                        Press 1-{currentPracticeItem.options!.length} to select, or click the buttons
                       </p>
                     </div>
                   ) : (
@@ -923,7 +959,7 @@ export default function GrammarPractice({
                         value={userAnswer}
                         onChange={(e) => setUserAnswer(e.target.value)}
                         placeholder="Type your answer here..."
-                        className="w-full p-6 text-2xl text-gray-900 border-3 border-blue-300 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-400 transition-all duration-200 text-center font-medium shadow-lg"
+                        className="w-full p-3 text-lg text-gray-900 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all duration-200 text-center font-medium shadow-sm"
                         onKeyDown={(e) => e.key === 'Enter' && !showFeedback && userAnswer.trim() && checkAnswer()}
                         disabled={showFeedback}
                         autoFocus
@@ -974,13 +1010,13 @@ export default function GrammarPractice({
                 </AnimatePresence>
 
                 {/* Enhanced Navigation */}
-                <div className="flex justify-center mt-8">
+                <div className="flex justify-center mt-2">
                   {showFeedback ? (
                     <GemButton
                       variant="gem"
                       gemType={isCorrect ? "legendary" : "rare"}
                       onClick={nextItem}
-                      className="px-12 py-4 text-xl font-bold"
+                      className="px-8 py-3 text-lg font-bold"
                     >
                       {isLastItem ? 'Finish Practice' : 'Next Question'}
                       <ArrowRight className="w-6 h-6 ml-3" />
@@ -991,7 +1027,7 @@ export default function GrammarPractice({
                       gemType="rare"
                       onClick={checkAnswer}
                       disabled={!userAnswer.trim()}
-                      className="px-12 py-4 text-xl font-bold"
+                      className="px-8 py-3 text-lg font-bold"
                     >
                       Check Answer
                       <CheckCircle className="w-6 h-6 ml-3" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import GrammarPractice from '@/components/grammar/GrammarPractice';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -26,6 +26,7 @@ const languageCodeMap: Record<string, string> = {
 };
 
 export default function GrammarTestPage({ params }: PageProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const assignmentId = searchParams.get('assignment');
   const isAssignmentMode = !!assignmentId;
@@ -41,6 +42,7 @@ export default function GrammarTestPage({ params }: PageProps) {
   const [contentId, setContentId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [sessionService] = useState(() => new GrammarSessionService());
+  const [allowTestRetake, setAllowTestRetake] = useState(true); // Default to true
 
   useEffect(() => {
     async function fetchTestData() {
@@ -125,6 +127,30 @@ export default function GrammarTestPage({ params }: PageProps) {
     fetchTestData();
   }, [params.language, params.category, params.topic]);
 
+  // Fetch allowTestRetake setting from assignment config
+  useEffect(() => {
+    async function fetchAssignmentConfig() {
+      if (!assignmentId) return;
+
+      try {
+        const supabase = createClient();
+        const { data: assignment } = await supabase
+          .from('assignments')
+          .select('game_config')
+          .eq('id', assignmentId)
+          .single();
+
+        if (assignment?.game_config?.skillsConfig?.allowTestRetake !== undefined) {
+          setAllowTestRetake(assignment.game_config.skillsConfig.allowTestRetake);
+        }
+      } catch (err) {
+        console.error('Error fetching assignment config:', err);
+      }
+    }
+
+    fetchAssignmentConfig();
+  }, [assignmentId]);
+
   // Transform test data to practice items format
   const transformTestData = (questions: any[]) => {
     return questions.map((q: any) => {
@@ -153,13 +179,41 @@ export default function GrammarTestPage({ params }: PageProps) {
     });
   };
 
-  const handleTestComplete = (score: number, gemsEarned: number, timeSpent: number) => {
+  const handleTestComplete = async (score: number, gemsEarned: number, timeSpent: number) => {
     console.log('Test completed!', { score, gemsEarned, timeSpent });
+
+    if (isAssignmentMode && topicId && userId) {
+      try {
+        const supabase = createClient();
+        await supabase
+          .from('grammar_topic_step_progress')
+          .update({
+            test_completed: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('assignment_id', assignmentId)
+          .eq('student_id', userId)
+          .eq('topic_id', topicId);
+
+        // Return to assignment dashboard
+        router.push(`/student-dashboard/assignments/${assignmentId}?ref=grammar_test_complete`);
+        return;
+      } catch (err) {
+        console.error('Error updating progress:', err);
+      }
+    }
+
     setShowTest(false);
   };
 
   const handleTestExit = () => {
     setShowTest(false);
+  };
+
+  // Navigate back to practice when student fails and wants to practice more
+  const handlePracticeMore = () => {
+    const previewParam = searchParams.get('preview') ? '&preview=true' : '';
+    router.push(`/grammar/${params.language}/${params.category}/${params.topic}/practice?mode=assignment&assignment=${assignmentId}${previewParam}`);
   };
 
   if (loading) {
@@ -222,6 +276,8 @@ export default function GrammarTestPage({ params }: PageProps) {
         contentId={contentId || undefined}
         userId={userId || undefined}
         questionCount={20}
+        allowTestRetake={allowTestRetake}
+        onPracticeMore={isAssignmentMode ? handlePracticeMore : undefined}
       />
     );
 
@@ -319,4 +375,3 @@ export default function GrammarTestPage({ params }: PageProps) {
 
   return mainContent;
 }
-
