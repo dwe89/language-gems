@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GeminiTTSService, type GeminiTTSConfig, type GeminiVoice } from '@/services/geminiTTS';
+import { GeminiTTSService, type GeminiTTSConfig, GEMINI_VOICES } from '@/services/geminiTTS';
+import { TTSCacheService } from '@/services/TTSCacheService';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
+// Type for Gemini voice names
+type GeminiVoiceName = typeof GEMINI_VOICES[number];
+
 // Language to voice mapping for examiner
-const EXAMINER_VOICES: Record<string, GeminiVoice> = {
+const EXAMINER_VOICES: Record<string, GeminiVoiceName> = {
   es: 'Aoede',    // Spanish - female adult voice
   fr: 'Charon',   // French - male adult voice
   de: 'Kore',     // German - female adult voice
@@ -21,12 +25,16 @@ const LANGUAGE_CODES: Record<string, string> = {
 interface TTSRequest {
   text: string;
   language: 'es' | 'fr' | 'de';
-  voice?: GeminiVoice;
+  voice?: string;
+  skipCache?: boolean;
 }
 
 /**
  * POST /api/speaking/tts
  * Generate TTS audio for examiner questions using Gemini
+ * 
+ * COST OPTIMIZATION: Uses check-before-create caching to avoid
+ * regenerating audio for text that has already been generated
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -47,24 +55,62 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    const voiceName = body.voice || EXAMINER_VOICES[body.language];
+
+    // 🔍 COST OPTIMIZATION: Check cache first before generating
+    if (!body.skipCache) {
+      try {
+        const cacheService = new TTSCacheService();
+        const cacheResult = await cacheService.checkCache({
+          text: body.text,
+          language: body.language,
+          voice: voiceName,
+          provider: 'gemini',
+          speakingRate: 0.95
+        });
+
+        if (cacheResult) {
+          console.log(`[TTS] ✅ Cache HIT - serving existing audio for: "${body.text.substring(0, 30)}..."`);
+
+          // Fetch the cached audio and return as base64
+          const response = await fetch(cacheResult.url);
+          if (response.ok) {
+            const audioBuffer = await response.arrayBuffer();
+            const base64Audio = Buffer.from(audioBuffer).toString('base64');
+
+            return NextResponse.json({
+              success: true,
+              audio: base64Audio,
+              mimeType: 'audio/mp3',
+              text: body.text,
+              language: body.language,
+              cached: true,
+              cacheKey: cacheResult.cacheKey
+            });
+          }
+        }
+      } catch (cacheError) {
+        console.warn('[TTS] Cache check failed, proceeding with generation:', cacheError);
+      }
+    }
+
     console.log(`[TTS] Generating audio for: "${body.text.substring(0, 50)}..." in ${body.language}`);
 
     // Initialize TTS service (use Flash for speed, Pro for quality)
     const ttsService = new GeminiTTSService(false); // false = use Flash (faster)
 
-    // Configure TTS
+    // Configure TTS - use correct property names for GeminiTTSConfig
     const config: GeminiTTSConfig = {
-      voice: body.voice || EXAMINER_VOICES[body.language],
-      languageCode: LANGUAGE_CODES[body.language],
-      speakingRate: 0.95, // Slightly slower for clarity
-      pitch: 0,
+      voiceName: voiceName,
+      language: body.language,
+      pace: 'slow', // Slightly slower for clarity
     };
 
     // Generate audio
     const audioBuffer = await ttsService.generateSingleSpeakerAudio(
       body.text,
       config,
-      body.language
+      `tts_${body.language}_${Date.now()}.wav`
     );
 
     if (!audioBuffer || audioBuffer.length === 0) {
@@ -77,6 +123,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log(`[TTS] Generated ${audioBuffer.length} bytes of audio`);
 
+    // 💾 COST OPTIMIZATION: Store in cache for future requests
+    let cacheKey: string | undefined;
+    try {
+      const cacheService = new TTSCacheService();
+      const storeResult = await cacheService.storeInCache(
+        {
+          text: body.text,
+          language: body.language,
+          voice: voiceName,
+          provider: 'gemini',
+          speakingRate: 0.95
+        },
+        Buffer.from(audioBuffer),
+        'mp3',
+        'audio/mpeg'
+      );
+
+      if (storeResult) {
+        cacheKey = storeResult.cacheKey;
+        console.log(`[TTS] ✅ Cached audio for future requests: ${cacheKey}`);
+      }
+    } catch (cacheError) {
+      console.warn('[TTS] Failed to cache audio:', cacheError);
+    }
+
     // Return audio as base64 for easy client-side playback
     const base64Audio = Buffer.from(audioBuffer).toString('base64');
 
@@ -86,6 +157,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       mimeType: 'audio/mp3',
       text: body.text,
       language: body.language,
+      cached: false,
+      cacheKey
     });
 
   } catch (error: any) {

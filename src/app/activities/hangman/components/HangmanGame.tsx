@@ -18,7 +18,7 @@ import PirateAdventureModal from './PirateAdventureModal';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService'; // Confirm this path and component name
 import { CentralizedVocabularyService, CentralizedVocabularyWord } from 'gems/services/centralizedVocabularyService';
 import { createClient } from '@supabase/supabase-js';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 
 // Removed: import { useAudio } from '../hooks/useAudio'; // This hook is used in the parent now
 
@@ -260,7 +260,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
                 timer
               });
 
-              const sessionService = new EnhancedGameSessionService();
+              const sessionService = getBufferedGameSessionService();
               const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
                 // ✅ FIXED: Use correct ID field based on vocabulary source
                 vocabularyId: currentVocabItem.isCustomVocabulary ? undefined : currentVocabItem.id,
@@ -466,7 +466,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
                   timer
                 });
 
-                const sessionService = new EnhancedGameSessionService();
+                const sessionService = getBufferedGameSessionService();
                 const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
                   // ✅ FIXED: Use correct ID field based on vocabulary source
                   vocabularyId: currentVocabItem.isCustomVocabulary ? undefined : currentVocabItem.id,

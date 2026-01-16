@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../components/auth/AuthProvider';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import ImprovedWordScrambleGame from './ImprovedWordScrambleGame';
 import { UnifiedVocabularyItem } from '../../../../hooks/useUnifiedVocabulary';
 
@@ -48,7 +48,7 @@ export default function WordScrambleFreePlayWrapper({
 }: WordScrambleFreePlayWrapperProps) {
   const { user } = useAuth();
   const [localGameSessionId, setLocalGameSessionId] = useState<string | null>(null);
-  const [sessionService] = useState(() => new EnhancedGameSessionService());
+  const [sessionService] = useState(() => getBufferedGameSessionService());
   const [gameKey, setGameKey] = useState(0); // Key to force component remount on game restart
 
   // Use parent session ID if provided (assignment mode), otherwise create local session (free play)

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 import DetectiveListeningGame from './DetectiveListeningGame';
 
@@ -125,7 +125,7 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
     if (!props.userId) return;
 
     try {
-      const sessionService = new EnhancedGameSessionService();
+      const sessionService = getBufferedGameSessionService();
       const startTime = new Date();
       const sessionId = await sessionService.startGameSession({
         student_id: props.userId,
@@ -151,7 +151,7 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
   const endGameSession = async () => {
     if (gameSessionId && props.userId && sessionStartTime) {
       try {
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalEvidence > 0
           ? (sessionStats.correctAnswers / sessionStats.totalEvidence) * 100

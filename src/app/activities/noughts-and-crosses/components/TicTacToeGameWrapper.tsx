@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService, BufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
@@ -51,7 +51,7 @@ interface TicTacToeGameWrapperProps {
 
 export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
-  const [gameService, setGameService] = useState<EnhancedGameSessionService | null>(null);
+  const [gameService, setGameService] = useState<BufferedGameSessionService | null>(null);
   const [showThemeSelector, setShowThemeSelector] = useState(!props.settings?.theme);
   const [selectedTheme, setSelectedTheme] = useState(props.settings?.theme || 'default');
 
@@ -126,7 +126,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
   // Initialize game service
   useEffect(() => {
     if (props.userId) {
-      const service = new EnhancedGameSessionService(supabaseBrowser);
+      const service = getBufferedGameSessionService();
       setGameService(service);
     }
   }, [props.userId]);

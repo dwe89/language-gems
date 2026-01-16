@@ -11,7 +11,7 @@ import { createAudio } from '@/utils/audioUtils';
 import { Evidence } from '../types';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 
 interface AssignmentMode {
@@ -411,7 +411,7 @@ export default function DetectiveRoom({
         });
 
         // Use EnhancedGameSessionService for gems-first vocabulary tracking (non-blocking)
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         sessionService.recordWordAttempt(gameSessionId, 'detective-listening', {
           // ✅ FIXED: Use correct ID field based on vocabulary source
           vocabularyId: currentEvidence.isCustomVocabulary ? undefined : currentEvidence.vocabularyId,

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import CaseFileTranslatorGame from './CaseFileTranslatorGame';
 
@@ -60,7 +60,7 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
     if (!props.userId) return;
 
     try {
-      const sessionService = new EnhancedGameSessionService();
+      const sessionService = getBufferedGameSessionService();
       const startTime = new Date();
       const sessionId = await sessionService.startGameSession({
         student_id: props.userId,
@@ -86,7 +86,7 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
   const endGameSession = async () => {
     if (gameSessionId && props.userId && sessionStartTime) {
       try {
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalQuestions > 0
           ? (sessionStats.correctAnswers / sessionStats.totalQuestions) * 100

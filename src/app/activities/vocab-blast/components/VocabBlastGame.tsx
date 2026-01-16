@@ -8,7 +8,7 @@ import { VocabBlastGameSettings } from '../page';
 import { useTheme } from '../../noughts-and-crosses/components/ThemeProvider';
 import { useAudio } from '../../vocab-blast/hooks/useAudio';
 import VocabBlastEngine from './VocabBlastEngine';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import UniversalThemeSelector from '../../../../components/games/UniversalThemeSelector';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
@@ -384,7 +384,7 @@ export default function VocabBlastGame({
         // Record gems in both assignment and free play modes
         if (gameSessionId && word.id) {
           try {
-            const sessionService = new EnhancedGameSessionService();
+            const sessionService = getBufferedGameSessionService();
             const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-blast', {
               // ✅ FIXED: Use correct ID field based on vocabulary source
               vocabularyId: word.isCustomVocabulary ? undefined : word.id,
@@ -447,8 +447,7 @@ export default function VocabBlastGame({
             });
 
             try {
-              const { EnhancedGameSessionService } = await import('../../../../services/rewards/EnhancedGameSessionService');
-              const sessionService = new EnhancedGameSessionService();
+              const sessionService = getBufferedGameSessionService();
 
               const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-blast', {
                 // ✅ FIXED: Use correct ID field based on vocabulary source

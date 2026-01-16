@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { ConjugationDuelService } from '../../../../services/ConjugationDuelService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
@@ -273,7 +274,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
 
     try {
       // Record vocabulary interaction using gems-first system
-      const sessionService = new EnhancedGameSessionService();
+      const sessionService = getBufferedGameSessionService();
       const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'conjugation-duel', {
         vocabularyId: undefined, // Conjugation-duel uses dynamic verbs
         wordText: verb,

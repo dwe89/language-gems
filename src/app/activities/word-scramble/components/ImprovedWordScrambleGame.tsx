@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, RotateCcw, Lightbulb, Volume2, VolumeX, Settings, PartyPopper, Sparkles, SkipForward, Undo2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
 import GameCompletionModal from '@/components/games/GameCompletionModal';
@@ -556,7 +556,7 @@ export default function WordScrambleGame({
             isCustomVocabulary: currentWordData.isCustomVocabulary
           });
 
-          const sessionService = new EnhancedGameSessionService();
+          const sessionService = getBufferedGameSessionService();
           const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
             // ✅ FIXED: Use correct ID field based on vocabulary source
             vocabularyId: currentWordData.isCustomVocabulary ? undefined : currentWordData.id,
@@ -714,7 +714,7 @@ export default function WordScrambleGame({
           isCustomVocabulary: currentWordData.isCustomVocabulary
         });
 
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
           // ✅ FIXED: Use correct ID field based on vocabulary source
           vocabularyId: currentWordData.isCustomVocabulary ? undefined : currentWordData.id,

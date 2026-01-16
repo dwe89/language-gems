@@ -7,7 +7,8 @@ import { Brain, ArrowLeft, Volume2, VolumeX, Settings, Users, Monitor, Target, M
 import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+// 🔄 COST OPTIMIZATION: Use buffered service to batch API calls (80%+ reduction)
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import AssignmentThemeSelector from '../../../../components/games/AssignmentThemeSelector';
 import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
@@ -363,9 +364,9 @@ export default function TicTacToeGame({
           });
 
           try {
-            const sessionService = new EnhancedGameSessionService();
-            // Record gem with minimal processing - skip FSRS to avoid delays
-            // Don't await - let this run in background to avoid blocking UI
+            // 🔄 COST OPTIMIZATION: Use buffered service - batches 5 answers per API call
+            const sessionService = getBufferedGameSessionService();
+            // Record gem with buffering - reduces API calls by 80%+
             sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
               // ✅ FIXED: Use correct ID field based on vocabulary source
               vocabularyId: (currentQuestion as any).isCustomVocabulary ? undefined : vocabularyId,
@@ -380,15 +381,15 @@ export default function TicTacToeGame({
               maxGemRarity: 'common',
               gameMode: 'multiple_choice',
               difficultyLevel: 'beginner'
-            }, false).then(gemEvent => {
+            }, false).then((gemEvent: any) => {
               if (gemEvent) {
-                console.log('✅ [NOUGHTS] Gem awarded successfully:', gemEvent);
+                console.log('✅ [NOUGHTS] Gem buffered (will batch-save):', gemEvent);
               } else {
                 console.warn('⚠️ [NOUGHTS] No gem event returned');
               }
-            }).catch(error => {
-              console.error('🚨 [NOUGHTS] Gem recording failed:', error);
-            }); // Skip FSRS = true for speed
+            }).catch((error: any) => {
+              console.error('🚨 [NOUGHTS] Gem buffering failed:', error);
+            });
           } catch (error) {
             console.error('🚨 [NOUGHTS] Gem recording exception:', error);
           }
@@ -483,7 +484,8 @@ export default function TicTacToeGame({
         });
 
         try {
-          const sessionService = new EnhancedGameSessionService();
+          // 🔄 COST OPTIMIZATION: Use buffered service - batches wrong answers too
+          const sessionService = getBufferedGameSessionService();
           sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
             // ✅ FIXED: Use correct ID field based on vocabulary source
             vocabularyId: (currentQuestion as any).isCustomVocabulary ? undefined : currentQuestion.id,
@@ -494,10 +496,10 @@ export default function TicTacToeGame({
             responseTimeMs: Math.round(responseTime * 1000),
             hintUsed: false,
             streakCount: 0
-          }, false).then(gemEvent => {
-            console.log('✅ [NOUGHTS] Wrong answer recorded:', gemEvent);
-          }).catch(error => {
-            console.error('🚨 [NOUGHTS] Wrong answer recording failed:', error);
+          }, false).then((gemEvent: any) => {
+            console.log('✅ [NOUGHTS] Wrong answer buffered:', gemEvent);
+          }).catch((error: any) => {
+            console.error('🚨 [NOUGHTS] Wrong answer buffering failed:', error);
           });
         } catch (error) {
           console.error('🚨 [NOUGHTS] Failed to record wrong answer:', error);

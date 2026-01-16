@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../../components/games/UnifiedSentenceCategorySelector';
 import WordBlastEngine from './WordBlastEngine';
 import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
@@ -371,7 +371,7 @@ export default function WordBlastGame({
           responseTimeMs: responseTime
         });
 
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'word-blast', {
           sentenceId: currentChallenge.id, // ✅ FIXED: Use challenge ID for sentence-based tracking
           sourceText: currentChallenge.targetSentence,
@@ -472,7 +472,7 @@ export default function WordBlastGame({
           responseTimeMs: responseTime
         });
 
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'word-blast', {
           sentenceId: currentChallenge.id, // ✅ FIXED: Use challenge ID for sentence-based tracking
           sourceText: currentChallenge.targetSentence,

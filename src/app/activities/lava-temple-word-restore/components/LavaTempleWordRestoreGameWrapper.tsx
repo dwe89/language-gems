@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import LavaTempleWordRestoreGame, { GameConfig } from './LavaTempleWordRestoreGame';
 import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
@@ -61,7 +61,7 @@ export default function LavaTempleWordRestoreGameWrapper(props: LavaTempleWordRe
     if (!props.userId) return;
 
     try {
-      const sessionService = new EnhancedGameSessionService();
+      const sessionService = getBufferedGameSessionService();
       const startTime = new Date();
       const sessionId = await sessionService.startGameSession({
         student_id: props.userId,
@@ -87,7 +87,7 @@ export default function LavaTempleWordRestoreGameWrapper(props: LavaTempleWordRe
   const endGameSession = async () => {
     if (gameSessionId && props.userId && sessionStartTime) {
       try {
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalAttempts > 0
           ? (sessionStats.correctAnswers / sessionStats.totalAttempts) * 100

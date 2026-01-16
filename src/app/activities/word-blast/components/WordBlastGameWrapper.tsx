@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService, BufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import WordBlastGame from './WordBlastGame';
@@ -29,7 +29,7 @@ interface WordBlastGameWrapperProps {
 
 export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
-  const [gameService, setGameService] = useState<EnhancedGameSessionService | null>(null);
+  const [gameService, setGameService] = useState<BufferedGameSessionService | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
     explosiveWordMatches: 0,
@@ -59,7 +59,7 @@ export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
   // Initialize game service
   useEffect(() => {
     if (props.userId) {
-      const service = new EnhancedGameSessionService(supabaseBrowser);
+      const service = getBufferedGameSessionService();
       setGameService(service);
     }
   }, [props.userId]);

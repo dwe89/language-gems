@@ -18,7 +18,7 @@ import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
 import { RewardEngine } from '../../../services/rewards/RewardEngine';
-import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../services/buffered/BufferedGameSessionService';
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import { FSRSService } from '../../../services/fsrsService';
 import { assignmentExposureService } from '../../../services/assignments/AssignmentExposureService';
@@ -1099,7 +1099,7 @@ function ImprovedSentenceTowersGame({
     if (gameSessionId && user) {
       const responseTime = (Date.now() - questionStartTime) / 1000;
       try {
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
 
         // Record gem in assignment mode using GameAssignmentWrapper's system
         console.log('🔮 [WORD TOWERS] Checking gem recording availability:', {
@@ -1334,7 +1334,7 @@ function ImprovedSentenceTowersGame({
       if (gameSessionId) {
         // For non-assignment mode, use direct session service
         try {
-          const sessionService = new EnhancedGameSessionService();
+          const sessionService = getBufferedGameSessionService();
 
           // For incorrect answers, still record the vocabulary word attempt for analytics
           // but no gems will be awarded (only correct answers get gems)

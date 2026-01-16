@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService, BufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { GemSpeedBuilder } from './GemSpeedBuilder';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
@@ -32,7 +32,7 @@ interface SpeedBuilderGameWrapperProps {
   vocabularyList?: any[];
   sentenceConfig?: any;
   gameSessionId?: string | null;
-  gameService?: EnhancedGameSessionService | null;
+  gameService?: BufferedGameSessionService | null;
   onOpenSettings?: () => void;
   onBackToMenu?: () => void;
   onGameEnd: (result: {
@@ -86,7 +86,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
     if (!props.userId) return;
 
     try {
-      const sessionService = new EnhancedGameSessionService();
+      const sessionService = getBufferedGameSessionService();
       const startTime = new Date();
       // Handle demo user ID by mapping to a valid UUID
       const effectiveUserId = props.userId === 'demo-user-id' ? '388c67a4-2202-4214-86e8-3f20481e6cb6' : props.userId;
@@ -114,7 +114,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
   const endGameSession = async () => {
     if (gameSessionId && props.userId && sessionStartTime && !props.isAssignmentMode) {
       try {
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalWordsPlaced > 0
           ? (sessionStats.correctWordsPlaced / sessionStats.totalWordsPlaced) * 100
@@ -166,7 +166,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
     // Calculate rapid fire metrics
     const sessionDuration = sessionStartTime ? (Date.now() - sessionStartTime.getTime()) / 1000 : 120;
     const wordsPerMinute = (stats.totalWordsPlaced / sessionDuration) * 60;
-    
+
     // Update session stats
     setSessionStats({
       totalWordsPlaced: stats.totalWordsPlaced,

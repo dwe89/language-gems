@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import { GameConfig } from './LavaTempleWordRestoreGame';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { createAudio } from '@/utils/audioUtils';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { useDictationGame } from '../../../../hooks/useSentenceGame';
 import { Settings, VolumeX, Volume2, Castle, AlertTriangle, ArrowLeft } from 'lucide-react';
 import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
@@ -240,8 +240,8 @@ export default function TempleRestoration({
         const cleanWord = word.toLowerCase().replace(/[.,!?;:]/, '');
         // Skip very short words and common articles/prepositions
         const skipWords = ['el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'a', 'y', 'o', 'con', 'por', 'para',
-                          'le', 'la', 'les', 'un', 'une', 'des', 'du', 'de', 'et', 'ou', 'avec', 'pour', 'par',
-                          'der', 'die', 'das', 'ein', 'eine', 'und', 'oder', 'mit', 'für', 'von', 'zu', 'in'];
+          'le', 'la', 'les', 'un', 'une', 'des', 'du', 'de', 'et', 'ou', 'avec', 'pour', 'par',
+          'der', 'die', 'das', 'ein', 'eine', 'und', 'oder', 'mit', 'für', 'von', 'zu', 'in'];
         return cleanWord.length > 2 && !skipWords.includes(cleanWord);
       });
 
@@ -325,7 +325,7 @@ export default function TempleRestoration({
 
   // Handle word selection
   const handleWordSelect = async (gapIndex: number, word: string) => {
-    
+
     setSelectedWords(prev => ({
       ...prev,
       [gapIndex]: word
@@ -377,7 +377,7 @@ export default function TempleRestoration({
 
           // Record practice with FSRS using EnhancedGameSessionService
           if (gameSessionId) {
-            const sessionService = new EnhancedGameSessionService();
+            const sessionService = getBufferedGameSessionService();
             const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'lava-temple-word-restore', {
               vocabularyId: wordData.id,
               wordText: wordData.word,
@@ -406,9 +406,9 @@ export default function TempleRestoration({
         try {
           // Use multiple fallbacks for sentence text to avoid undefined
           const sentenceText = currentSentence.complete_sentence ||
-                              currentSentence.source_sentence ||
-                              currentSentence.sentence ||
-                              'Unknown sentence';
+            currentSentence.source_sentence ||
+            currentSentence.sentence ||
+            'Unknown sentence';
 
           // Only process if we have a valid sentence
           if (sentenceText && sentenceText !== 'Unknown sentence') {
@@ -497,15 +497,15 @@ export default function TempleRestoration({
       setCorrectAnswers(prev => prev + 1);
       // Base score on difficulty level
       const difficultyMultiplier = gameConfig.difficulty === 'advanced' ? 15 :
-                                   gameConfig.difficulty === 'intermediate' ? 12 : 10;
+        gameConfig.difficulty === 'intermediate' ? 12 : 10;
       setScore(prev => prev + difficultyMultiplier);
-      
+
       // Play success sound
       if (correctSoundRef.current) {
         correctSoundRef.current.currentTime = 0;
         correctSoundRef.current.play().catch(console.log);
       }
-      
+
       // Play temple power sound for extra effect
       if (templePowerRef.current) {
         setTimeout(() => {
@@ -524,7 +524,7 @@ export default function TempleRestoration({
     // Auto-advance after feedback
     setTimeout(() => {
       setShowFeedback(false);
-      
+
       if (currentSentenceIndex < sentences.length - 1) {
         // Move to next sentence
         const nextIndex = currentSentenceIndex + 1;
@@ -543,7 +543,7 @@ export default function TempleRestoration({
           language: gameConfig.language,
           difficulty: gameConfig.difficulty
         };
-        
+
         onRestorationComplete(results);
       }
     }, 2000);
@@ -599,7 +599,7 @@ export default function TempleRestoration({
               Tablet {currentSentenceIndex + 1} of {sentences.length}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="text-right text-white">
               <div className="text-lg">Score: <span className="text-yellow-400 font-bold">{score}</span></div>
@@ -674,11 +674,10 @@ export default function TempleRestoration({
 
                     return (
                       <span key={index} className="inline-block mx-1">
-                        <span className={`inline-block min-w-[120px] px-4 py-2 rounded-lg border-2 border-dashed ${
-                          selectedWord
+                        <span className={`inline-block min-w-[120px] px-4 py-2 rounded-lg border-2 border-dashed ${selectedWord
                             ? 'border-yellow-400 bg-yellow-400/20 text-yellow-300'
                             : 'border-orange-400 bg-orange-400/10 text-orange-300'
-                        }`}>
+                          }`}>
                           {selectedWord || '___'}
                         </span>
                       </span>
@@ -703,11 +702,10 @@ export default function TempleRestoration({
                         <motion.button
                           key={option.id}
                           onClick={() => handleWordSelect(gapIndex, option.option_text)}
-                          className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
-                            selectedWords[gapIndex] === option.option_text
+                          className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${selectedWords[gapIndex] === option.option_text
                               ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50'
                               : 'bg-orange-600/80 text-white hover:bg-orange-500 border border-orange-400'
-                          }`}
+                            }`}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
@@ -725,11 +723,10 @@ export default function TempleRestoration({
               <motion.button
                 onClick={handleSubmitRestoration}
                 disabled={!areAllGapsFilled()}
-                className={`px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 ${
-                  areAllGapsFilled()
+                className={`px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 ${areAllGapsFilled()
                     ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400 shadow-lg'
                     : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                }`}
+                  }`}
                 whileHover={areAllGapsFilled() ? { scale: 1.05 } : {}}
                 whileTap={areAllGapsFilled() ? { scale: 0.95 } : {}}
               >
@@ -765,11 +762,10 @@ export default function TempleRestoration({
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className={`bg-gradient-to-b p-8 rounded-2xl border-4 text-center max-w-md mx-4 ${
-                isCorrect 
-                  ? 'from-green-800 to-green-900 border-green-500' 
+              className={`bg-gradient-to-b p-8 rounded-2xl border-4 text-center max-w-md mx-4 ${isCorrect
+                  ? 'from-green-800 to-green-900 border-green-500'
                   : 'from-red-800 to-red-900 border-red-500'
-              }`}
+                }`}
             >
               <div className="text-6xl mb-4">
                 {isCorrect ? '✨' : '💥'}
@@ -778,8 +774,8 @@ export default function TempleRestoration({
                 {isCorrect ? 'Inscription Restored!' : 'Restoration Failed'}
               </h3>
               <p className="text-lg text-white/90 mb-4">
-                {isCorrect 
-                  ? 'The ancient text glows with renewed power!' 
+                {isCorrect
+                  ? 'The ancient text glows with renewed power!'
                   : 'The tablet remains incomplete. Study the context more carefully.'}
               </p>
               {isCorrect && (

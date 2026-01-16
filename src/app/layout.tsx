@@ -15,6 +15,7 @@ import { getOrganizationSchema, getWebsiteSchema } from '../lib/seo/structuredDa
 import { ChatbotProvider } from '../components/providers/ChatbotProvider'
 import ChatbotWrapper from '../components/ui/ChatbotWrapper'
 import * as Sentry from '@sentry/nextjs'
+import { ServiceWorkerRegistration } from '../components/ServiceWorkerRegistration'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -118,6 +119,14 @@ export function generateMetadata(): Metadata {
   return (
     <html lang="en">
       <head>
+        {/* PWA / Mobile App Meta Tags */}
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="theme-color" content="#1a1a2e" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Favicons */}
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png" />
@@ -142,6 +151,7 @@ export function generateMetadata(): Metadata {
             </CartProvider>
           </AuthProvider>
         </SupabaseProvider>
+        <ServiceWorkerRegistration />
         <Analytics />
         <Script src="/console-tests.js" strategy="afterInteractive" />
       </body>

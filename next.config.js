@@ -2,6 +2,10 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: false, // Forcing this to false to speed up builds
 });
 
+// Capacitor mobile build flag - see MOBILE_APP_GUIDE.md for setup
+// For mobile builds, we DON'T use static export - instead Capacitor loads from your live URL
+const isMobileBuild = process.env.MOBILE_BUILD === 'true';
+
 /** @type {import('next').NextConfig} */
 const config = {
   eslint: {
@@ -130,7 +134,7 @@ const config = {
       { source: '/games/lava-temple-word-restore', destination: '/activities/lava-temple-word-restore', permanent: true },
       { source: '/games/verb-quest', destination: '/activities/verb-quest', permanent: true },
       { source: '/games/vocab-blast', destination: '/activities/vocab-blast', permanent: true },
-      
+
       { source: '/student-dashboard/games', destination: '/student-dashboard/activities', permanent: true },
       { source: '/student-dashboard/games/vocab-master', destination: '/student-dashboard/activities/vocab-master', permanent: true },
       { source: '/student-dashboard/games/speed-builder', destination: '/student-dashboard/activities/speed-builder', permanent: true },

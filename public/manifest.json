@@ -1,0 +1,57 @@
+{
+    "name": "Language Gems",
+    "short_name": "LangGems",
+    "description": "Interactive GCSE language learning platform with 15+ engaging games for Spanish, French, and German vocabulary practice.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1a1a2e",
+    "theme_color": "#8b5cf6",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "lang": "en-GB",
+    "categories": [
+        "education",
+        "games"
+    ],
+    "icons": [
+        {
+            "src": "/favicon-16x16.png",
+            "sizes": "16x16",
+            "type": "image/png"
+        },
+        {
+            "src": "/favicon-32x32.png",
+            "sizes": "32x32",
+            "type": "image/png"
+        },
+        {
+            "src": "/favicon-64x64.png",
+            "sizes": "64x64",
+            "type": "image/png"
+        },
+        {
+            "src": "/favicon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ],
+    "screenshots": [],
+    "prefer_related_applications": false,
+    "related_applications": [
+        {
+            "platform": "play",
+            "id": "com.languagegems.app"
+        },
+        {
+            "platform": "itunes",
+            "id": "com.languagegems.app"
+        }
+    ]
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService, BufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import VerbQuestGame from './VerbQuestGame';
 import { Character } from './Character';
@@ -20,7 +20,7 @@ interface VerbQuestGameWrapperProps {
 
 export default function VerbQuestGameWrapper(props: VerbQuestGameWrapperProps) {
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
-  const [gameService, setGameService] = useState<EnhancedGameSessionService | null>(null);
+  const [gameService, setGameService] = useState<BufferedGameSessionService | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
     questsCompleted: 0,
@@ -42,7 +42,7 @@ export default function VerbQuestGameWrapper(props: VerbQuestGameWrapperProps) {
   // Initialize game service
   useEffect(() => {
     if (props.userId) {
-      const service = new EnhancedGameSessionService(supabaseBrowser);
+      const service = getBufferedGameSessionService();
       setGameService(service);
     }
   }, [props.userId]);

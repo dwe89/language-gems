@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService, BufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { useGameVocabulary, transformVocabularyForGame } from '../../../../hooks/useGameVocabulary';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import HangmanGame from './HangmanGame';
@@ -105,7 +105,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
   const [hasShownModal, setHasShownModal] = useState(false);
 
   // Enhanced game service integration
-  const [gameService, setGameService] = useState<EnhancedGameSessionService | null>(null);
+  const [gameService, setGameService] = useState<BufferedGameSessionService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
   // 🎯 Use assignment session from props if available, otherwise use wrapper's own session
@@ -139,7 +139,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
   // Initialize game service
   useEffect(() => {
     if (props.userId) {
-      const service = new EnhancedGameSessionService(supabaseBrowser);
+      const service = getBufferedGameSessionService();
       setGameService(service);
     }
   }, [props.userId]);
@@ -469,7 +469,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
           (result === 'win' ? 1 : 0);
 
         // Record word attempt using new gems system (exposure-based for hangman)
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         await sessionService.recordWordAttempt(effectiveGameSessionId!, 'hangman', {
           // ✅ FIXED: Use correct ID field based on vocabulary source
           vocabularyId: gameStats.isCustomVocabulary ? undefined : gameStats.vocabularyId,

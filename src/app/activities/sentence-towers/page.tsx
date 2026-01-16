@@ -17,7 +17,7 @@ import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
 import { RewardEngine } from '../../../services/rewards/RewardEngine';
-import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../services/buffered/BufferedGameSessionService';
 import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
 import { useSentences } from '../../../hooks/useSentences';
 import { FSRSService } from '../../../services/fsrsService';
@@ -689,7 +689,7 @@ function ImprovedSentenceTowersGame({
 
       // End the existing session instead of creating a new one
       if (gameSessionId) {
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         await sessionService.endGameSession(gameSessionId, {
           student_id: userId || user.id,
           assignment_id: isAssignmentMode ? assignmentId : undefined,
@@ -1050,7 +1050,7 @@ function ImprovedSentenceTowersGame({
     if (gameSessionId && user) {
       const responseTime = (Date.now() - questionStartTime) / 1000;
       try {
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         await sessionService.recordSentenceAttempt(gameSessionId, 'sentence-towers', {
           // ✅ FIXED: Use correct ID field based on vocabulary source
           sentenceId: option.isCustomVocabulary ? undefined : (option.id || `sentence-${Date.now()}`),
@@ -1234,7 +1234,7 @@ function ImprovedSentenceTowersGame({
     if (gameSessionId && user && incorrectOption && currentTargetWord) {
       const responseTime = (Date.now() - questionStartTime) / 1000;
       try {
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         await sessionService.recordSentenceAttempt(gameSessionId, 'sentence-towers', {
           // ✅ FIXED: Use correct ID field based on vocabulary source
           sentenceId: currentTargetWord.isCustomVocabulary ? undefined : (currentTargetWord.id || `sentence-${Date.now()}`),
@@ -1401,7 +1401,7 @@ function ImprovedSentenceTowersGame({
     // Create game session using EnhancedGameSessionService
     if ((userId || user) && !gameSessionId) {
       try {
-        const sessionService = new EnhancedGameSessionService();
+        const sessionService = getBufferedGameSessionService();
         const sessionId = await sessionService.startGameSession({
           student_id: userId || user!.id,
           assignment_id: isAssignmentMode ? assignmentId : undefined,

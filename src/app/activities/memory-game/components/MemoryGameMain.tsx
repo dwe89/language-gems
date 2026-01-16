@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { createClient } from '../../../../utils/supabase/client';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
@@ -823,7 +823,7 @@ export default function MemoryGameMain({
 
               // 🎯 Always use EnhancedGameSessionService for vocabulary tracking
               if (effectiveGameSessionId) {
-                const sessionService = new EnhancedGameSessionService();
+                const sessionService = getBufferedGameSessionService();
                 const gemEvent = await sessionService.recordWordAttempt(effectiveGameSessionId, 'memory-game', {
                   // ✅ FIXED: Use correct ID field based on vocabulary source
                   vocabularyId: firstCard.isCustomVocabulary ? undefined : firstCard.vocabularyId,

@@ -22,7 +22,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { SoundProvider, useSound, SoundControls } from './SoundManager';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { useSentenceGame } from '../../../../hooks/useSentenceGame';
 
 // Types
@@ -298,30 +298,30 @@ const GemDropTarget: React.FC<{
         background: !word && !isOver
           ? 'rgba(6, 182, 212, 0.05)'
           : !word && isOver
-          ? 'rgba(6, 182, 212, 0.2)'
-          : word && !showFeedback
-          ? 'rgba(6, 182, 212, 0.15)'
-          : word && showFeedback && isCorrect
-          ? 'rgba(16, 185, 129, 0.2)'
-          : 'rgba(239, 68, 68, 0.2)',
+            ? 'rgba(6, 182, 212, 0.2)'
+            : word && !showFeedback
+              ? 'rgba(6, 182, 212, 0.15)'
+              : word && showFeedback && isCorrect
+                ? 'rgba(16, 185, 129, 0.2)'
+                : 'rgba(239, 68, 68, 0.2)',
         border: !word && !isOver
           ? '3px dashed rgba(6, 182, 212, 0.4)'
           : !word && isOver
-          ? '3px dashed rgba(6, 182, 212, 0.8)'
-          : word && !showFeedback
-          ? '3px solid rgba(6, 182, 212, 0.6)'
-          : word && showFeedback && isCorrect
-          ? '3px solid rgba(16, 185, 129, 0.8)'
-          : '3px solid rgba(239, 68, 68, 0.8)',
+            ? '3px dashed rgba(6, 182, 212, 0.8)'
+            : word && !showFeedback
+              ? '3px solid rgba(6, 182, 212, 0.6)'
+              : word && showFeedback && isCorrect
+                ? '3px solid rgba(16, 185, 129, 0.8)'
+                : '3px solid rgba(239, 68, 68, 0.8)',
         boxShadow: !word && !isOver
           ? '0 0 20px rgba(6, 182, 212, 0.3), inset 0 0 20px rgba(6, 182, 212, 0.1)'
           : !word && isOver
-          ? '0 0 40px rgba(6, 182, 212, 0.6), inset 0 0 30px rgba(6, 182, 212, 0.2)'
-          : word && !showFeedback
-          ? '0 0 25px rgba(6, 182, 212, 0.4), inset 0 0 25px rgba(6, 182, 212, 0.15)'
-          : word && showFeedback && isCorrect
-          ? '0 0 30px rgba(16, 185, 129, 0.6), inset 0 0 30px rgba(16, 185, 129, 0.2)'
-          : '0 0 30px rgba(239, 68, 68, 0.6), inset 0 0 30px rgba(239, 68, 68, 0.2)'
+            ? '0 0 40px rgba(6, 182, 212, 0.6), inset 0 0 30px rgba(6, 182, 212, 0.2)'
+            : word && !showFeedback
+              ? '0 0 25px rgba(6, 182, 212, 0.4), inset 0 0 25px rgba(6, 182, 212, 0.15)'
+              : word && showFeedback && isCorrect
+                ? '0 0 30px rgba(16, 185, 129, 0.6), inset 0 0 30px rgba(16, 185, 129, 0.2)'
+                : '0 0 30px rgba(239, 68, 68, 0.6), inset 0 0 30px rgba(239, 68, 68, 0.2)'
       }}
     >
       {/* Slot number indicator */}
@@ -469,7 +469,7 @@ const GemSpeedBuilderInternal: React.FC<{
       window.location.href = `/student-dashboard/assignments/${assignmentId}`;
     }
   };
-  
+
   // State
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'paused' | 'completed'>('ready');
   const [currentSentence, setCurrentSentence] = useState<SentenceData | null>(null);
@@ -500,7 +500,7 @@ const GemSpeedBuilderInternal: React.FC<{
   const [sentenceStartTime, setSentenceStartTime] = useState<number>(0);
   const [targetSentenceCount] = useState(10); // Complete after 10 sentences
 
-  
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize game
@@ -533,7 +533,7 @@ const GemSpeedBuilderInternal: React.FC<{
     } else if (timeLeft === 0) {
       endGame();
     }
-    
+
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
@@ -550,29 +550,29 @@ const GemSpeedBuilderInternal: React.FC<{
   // Load assignment configuration for assignment mode
   const loadAssignmentConfig = async () => {
     if (!assignmentId || mode !== 'assignment') return;
-    
+
     try {
       console.log('Loading assignment config for assignment:', assignmentId);
-      
+
       // Get the user session for authentication
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       const response = await fetch(`/api/assignments/${assignmentId}`, {
         method: 'GET',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('Assignment config loaded:', data);
-        
+
         // Extract game config from vocabulary_criteria field
         const gameConfig = data.assignment?.game_config || data.assignment?.vocabulary_criteria || {};
         console.log('Speed Builder game config:', gameConfig);
-        
+
         // Override theme/topic from assignment config
         if (gameConfig.theme) {
           theme = gameConfig.theme;
@@ -583,9 +583,9 @@ const GemSpeedBuilderInternal: React.FC<{
         if (gameConfig.tier) {
           tier = gameConfig.tier;
         }
-        
+
         console.log('Updated config from assignment - theme:', theme, 'topic:', topic, 'tier:', tier);
-        
+
       } else {
         console.error('Failed to load assignment config, status:', response.status);
       }
@@ -597,11 +597,11 @@ const GemSpeedBuilderInternal: React.FC<{
   const fetchSentences = async () => {
     try {
       setIsLoading(true);
-      
+
       // Check if we have sentence selection config from the unified selector
       if (sentenceConfig) {
         console.log('Using unified sentence config:', sentenceConfig);
-        
+
         const requestBody = {
           language: sentenceConfig.language,
           curriculumLevel: sentenceConfig.curriculumLevel,
@@ -610,9 +610,9 @@ const GemSpeedBuilderInternal: React.FC<{
           count: 15,
           customMode: sentenceConfig.customMode
         };
-        
+
         console.log('Sending unified API request with:', requestBody);
-        
+
         const response = await fetch('/api/games/speed-builder/unified-sentences', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -620,11 +620,11 @@ const GemSpeedBuilderInternal: React.FC<{
         });
 
         console.log('Unified API response status:', response.status);
-        
+
         if (response.ok) {
           const data = await response.json();
           console.log('Unified API response data:', data);
-          
+
           if (data.sentences?.length > 0) {
             setAvailableSentences(data.sentences);
             loadSentence(data.sentences[0]);
@@ -637,7 +637,7 @@ const GemSpeedBuilderInternal: React.FC<{
         }
       } else {
         console.log('No unified sentence config found, using legacy API');
-        
+
         // Fallback to legacy API for backward compatibility
         const themeMapping: { [key: string]: string } = {
           'Identity and Culture': 'People and lifestyle',
@@ -649,9 +649,9 @@ const GemSpeedBuilderInternal: React.FC<{
           'Travel and Culture': 'Communication and the world around us',
           'Technology and Modern Life': 'Popular culture'
         };
-        
+
         const apiTheme = themeMapping[theme || ''] || 'People and lifestyle';
-        
+
         const requestBody = {
           mode,
           assignmentId,
@@ -662,13 +662,13 @@ const GemSpeedBuilderInternal: React.FC<{
           difficulty: 'medium',
           vocabularyList: vocabularyList || []
         };
-        
+
         const response = await fetch('/api/games/speed-builder/sentences', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody)
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.sentences?.length > 0) {
@@ -678,7 +678,7 @@ const GemSpeedBuilderInternal: React.FC<{
           }
         }
       }
-      
+
       // If all APIs fail or return no sentences, show error
       console.log('No sentences available for the selected criteria');
       setAvailableSentences([]);
@@ -697,7 +697,7 @@ const GemSpeedBuilderInternal: React.FC<{
     console.log('Loading sentence:', sentence.text);
     setCurrentSentence(sentence);
     setShowSentenceResult(false); // Reset feedback state
-    
+
     // Split sentence into words and assign gem types
     const words = await Promise.all(
       sentence.text.split(' ').map(async (word, index) => {
@@ -706,7 +706,7 @@ const GemSpeedBuilderInternal: React.FC<{
         try {
           // Clean the word for vocabulary lookup
           const cleanWord = word.toLowerCase().replace(/[¿¡.,!?]/g, '');
-          
+
           const { data: vocabData } = await supabase
             .from('centralized_vocabulary')
             .select('id')
@@ -714,7 +714,7 @@ const GemSpeedBuilderInternal: React.FC<{
             .eq('language', 'es')
             .eq('should_track_for_fsrs', true)
             .limit(1);
-          
+
           if (vocabData && vocabData.length > 0) {
             vocabularyId = vocabData[0].id;
             console.log(`✅ Found vocabulary ID for "${word}": ${vocabularyId}`);
@@ -724,7 +724,7 @@ const GemSpeedBuilderInternal: React.FC<{
         } catch (error) {
           console.warn(`Failed to lookup vocabulary for "${word}":`, error);
         }
-        
+
         return {
           id: vocabularyId || `fallback-${sentence.id}-${index}`, // Use vocabulary ID if found, fallback otherwise
           text: word,
@@ -736,15 +736,15 @@ const GemSpeedBuilderInternal: React.FC<{
         };
       })
     );
-    
+
     console.log('Created words:', words);
-    
+
     // Shuffle words for gameplay - using a deterministic shuffle to avoid hydration issues
     const shuffled = [...words].sort((a, b) => a.text.length - b.text.length).reverse();
     setShuffledWords(shuffled);
     setPlacedWords(new Array(words.length).fill(null));
     setHintWordIndex(null);
-    
+
     console.log('Shuffled words:', shuffled);
     console.log('Initialized placed words array with length:', words.length);
   };
@@ -761,7 +761,7 @@ const GemSpeedBuilderInternal: React.FC<{
   // Track sentence completion
   const trackSentenceCompletion = async (success: boolean) => {
     if (sessionId && sessionId.startsWith('demo-')) return; // Skip for demo mode
-    
+
     try {
       // This would send completion data to the API for tracking
       console.log(`Sentence ${success ? 'completed' : 'failed'}`);
@@ -863,13 +863,13 @@ const GemSpeedBuilderInternal: React.FC<{
         if (currentIndex !== -1) {
           const newPlacedWords = [...prevPlaced];
           newPlacedWords[currentIndex] = null;
-          
+
           // Add back to shuffled words
           setShuffledWords(prevShuffled => {
             const wordExists = prevShuffled.some(w => w.id === word.id);
             return wordExists ? prevShuffled : [...prevShuffled, word];
           });
-          
+
           console.log(`Removed word from position ${currentIndex}, added back to shuffled`);
           return newPlacedWords;
         }
@@ -882,38 +882,38 @@ const GemSpeedBuilderInternal: React.FC<{
     // Normal drop operation - use functional updates to ensure consistency
     setPlacedWords(prevPlaced => {
       console.log('Current placed words in setter:', prevPlaced.map((w, i) => `[${i}]: ${w ? `${w.text}(${w.id})` : 'null'}`));
-      
+
       const newPlacedWords = [...prevPlaced];
-      
+
       // Find where the word currently is in placed words
       const currentPlacedIndex = prevPlaced.findIndex(w => w?.id === word.id);
       console.log(`Word currently at placed index: ${currentPlacedIndex}`);
       console.log(`Target position ${targetIndex} currently has:`, newPlacedWords[targetIndex] ? `${newPlacedWords[targetIndex]?.text}(${newPlacedWords[targetIndex]?.id})` : 'null');
-      
+
       // Only displace if there's actually a DIFFERENT word at the target position
       if (newPlacedWords[targetIndex] && newPlacedWords[targetIndex]?.id !== word.id) {
         const displacedWord = newPlacedWords[targetIndex];
         console.log(`Displacing DIFFERENT word "${displacedWord?.text}" from position ${targetIndex}`);
-        
+
         // Add displaced word back to shuffled
         setShuffledWords(prevShuffled => {
           const existsInShuffled = prevShuffled.some(w => w.id === displacedWord!.id);
           return existsInShuffled ? prevShuffled : [...prevShuffled, displacedWord!];
         });
       }
-      
+
       // Remove the word from its current placed position (only if it's different from target)
       if (currentPlacedIndex !== -1 && currentPlacedIndex !== targetIndex) {
         newPlacedWords[currentPlacedIndex] = null;
         console.log(`Cleared word from its previous placed position ${currentPlacedIndex}`);
       }
-      
+
       // Place the word in the target position
       newPlacedWords[targetIndex] = word;
       console.log(`Placed word "${word.text}" at position ${targetIndex}`);
-      
+
       console.log('New placed words:', newPlacedWords.map((w, i) => `[${i}]: ${w ? `${w.text}(${w.id})` : 'null'}`));
-      
+
       return newPlacedWords;
     });
 
@@ -942,8 +942,8 @@ const GemSpeedBuilderInternal: React.FC<{
       if (gameSessionId) {
         (async () => {
           try {
-            const sessionService = new EnhancedGameSessionService();
-            
+            const sessionService = getBufferedGameSessionService();
+
             // Use the vocabulary ID if available, otherwise skip tracking
             if (!word.vocabularyId) {
               console.log(`⚠️ Skipping tracking for "${word.text}" - no vocabulary ID found`);
@@ -997,7 +997,7 @@ const GemSpeedBuilderInternal: React.FC<{
   // Check if sentence is complete (with words array parameter)
   const checkSentenceCompleteWithWords = async (wordsArray: (WordItem | null)[]) => {
     if (wordsArray.length === 0 || wordsArray.some(w => w === null)) return;
-    
+
     const isCorrect = wordsArray.every((word, index) => {
       if (!word || !currentSentence) return false;
       return word.correctPosition === index;
@@ -1060,7 +1060,7 @@ const GemSpeedBuilderInternal: React.FC<{
 
       // Track sentence completion
       trackSentenceCompletion(true);
-      
+
       // Show celebration effect
       setTimeout(() => {
         if (typeof window !== 'undefined') {
@@ -1070,7 +1070,7 @@ const GemSpeedBuilderInternal: React.FC<{
             origin: { y: 0.8 }
           });
         }
-        
+
         // Move to next sentence after celebration
         setTimeout(() => {
           setShowSentenceResult(false);
@@ -1081,14 +1081,14 @@ const GemSpeedBuilderInternal: React.FC<{
     } else {
       // Sentence has errors - give option to fix
       playSound('incorrect');
-      
+
       // After 3 seconds, give option to correct or move wrong words back
       setTimeout(() => {
         // Auto-return incorrect words to available pool
-        const incorrectWords = wordsArray.filter((word, index) => 
+        const incorrectWords = wordsArray.filter((word, index) =>
           word && word.correctPosition !== index
         );
-        
+
         if (incorrectWords.length > 0) {
           // Remove incorrect words from placed positions
           const newPlacedWords = [...placedWords];
@@ -1098,7 +1098,7 @@ const GemSpeedBuilderInternal: React.FC<{
             }
           });
           setPlacedWords(newPlacedWords);
-          
+
           // Add incorrect words back to shuffled words
           setShuffledWords(prev => {
             const currentIds = prev.map(w => w.id);
@@ -1106,7 +1106,7 @@ const GemSpeedBuilderInternal: React.FC<{
             return [...prev, ...newWords];
           });
         }
-        
+
         setShowSentenceResult(false);
       }, 3000);
     }
@@ -1159,7 +1159,7 @@ const GemSpeedBuilderInternal: React.FC<{
       origin: { y: 0.6 }
     });
     playSound('levelComplete');
-    
+
     // Call onGameComplete callback if provided
     if (onGameComplete) {
       onGameComplete(stats);
@@ -1643,11 +1643,11 @@ const GemSpeedBuilderInternal: React.FC<{
               >
                 <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </motion.div>
-              
+
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">
                 Sprint Champion!
               </h2>
-              
+
               <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6 w-full max-w-md">
                 <motion.div
                   initial={{ scale: 0 }}

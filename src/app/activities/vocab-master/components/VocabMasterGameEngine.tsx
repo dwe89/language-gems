@@ -15,7 +15,7 @@ import { audioFeedbackService } from '../../../../services/audioFeedbackService'
 import { achievementService, Achievement } from '../../../../services/achievementService';
 import { GEM_TYPES } from '../../vocabulary-mining/utils/gameConstants';
 import { RewardEngine, type GemRarity } from '../../../../services/rewards/RewardEngine';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 
 // Import mode components
 import { DictationMode } from '../modes/DictationMode';
@@ -434,7 +434,7 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
 
             // UNIFIED RECORDING
             // Use gameService if available (preferred), otherwise try global legacy function or new service
-            const serviceToUse = gameService || (config.gameSessionId ? new EnhancedGameSessionService() : null);
+            const serviceToUse = gameService || (config.gameSessionId ? getBufferedGameSessionService() : null);
 
             if (serviceToUse && config.gameSessionId) {
               await serviceToUse.recordWordAttempt(config.gameSessionId, 'vocab-master', {

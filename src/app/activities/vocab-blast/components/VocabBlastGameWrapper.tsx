@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { getBufferedGameSessionService, BufferedGameSessionService } from '../../../../services/buffered/BufferedGameSessionService';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
@@ -75,7 +75,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
   const [error, setError] = useState<string | null>(null);
 
   // Enhanced game service integration
-  const [gameService, setGameService] = useState<EnhancedGameSessionService | null>(null);
+  const [gameService, setGameService] = useState<BufferedGameSessionService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const sessionStartedRef = useRef(false); // Prevent duplicate session starts
 
@@ -85,7 +85,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
   // Initialize game service
   useEffect(() => {
     if (props.userId) {
-      const service = new EnhancedGameSessionService(supabaseBrowser);
+      const service = getBufferedGameSessionService();
       setGameService(service);
     }
   }, [props.userId]);
