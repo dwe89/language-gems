@@ -56,3 +56,6 @@ db_cluster-*
 # Capacitor native projects (optional - remove if you want to track these)
 # /ios/
 # /android/
+
+# OpenCode config
+opencode.json
