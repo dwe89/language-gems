@@ -476,7 +476,7 @@ export default function SentenceTowersPage() {
 }
 
 // Extract the main game logic into a separate component
-function ImprovedSentenceTowersGame({
+export function ImprovedSentenceTowersGame({
   gameVocabulary,
   onBackToMenu,
   config,

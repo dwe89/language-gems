@@ -50,8 +50,6 @@ export default function GrammarPageContent({
   const searchParams = useSearchParams();
   const isAssignmentMode = !!searchParams.get('assignment');
 
-  console.log('📄 [PAGE CONTENT] Rendering with assignment mode:', isAssignmentMode);
-
   return (
     <>
       {/* Assignment Tracker (invisible, only tracks when in assignment mode) */}

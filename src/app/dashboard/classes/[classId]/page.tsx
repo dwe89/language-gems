@@ -102,7 +102,7 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
         }
 
         setClassData(classDataResult);
-        
+
         // Check if current user is the class owner
         setIsClassOwner(classDataResult.teacher_id === user.id);
 
@@ -292,7 +292,7 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
       }
 
       // Download the PDF with school code
-      downloadStudentCredentialsPDF(data.students, data.className, {
+      await downloadStudentCredentialsPDF(data.students, data.className, {
         schoolCode: data.schoolCode
       });
 
@@ -594,8 +594,8 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                   <div>
                     <h2 className="text-2xl font-bold text-slate-900">Students</h2>
                     <p className="text-slate-600 mt-1">
-                      {isClassOwner 
-                        ? 'Manage your class members and track their progress' 
+                      {isClassOwner
+                        ? 'Manage your class members and track their progress'
                         : `${students.length} student${students.length !== 1 ? 's' : ''} enrolled`}
                     </p>
                     {!isClassOwner && (
@@ -669,7 +669,7 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                       </div>
                       <h3 className="text-2xl font-bold text-slate-900 mb-3">No students yet</h3>
                       <p className="text-slate-600 mb-8 leading-relaxed">
-                        {isClassOwner 
+                        {isClassOwner
                           ? 'Add students to your class to track their progress and assign vocabulary work.'
                           : 'This class doesn\'t have any students yet.'}
                       </p>
@@ -755,25 +755,23 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                       .map((student, index) => (
                         <div
                           key={student.id}
-                          className={`flex items-center gap-4 p-6 rounded-2xl border-2 transition-all ${
-                            index === 0
+                          className={`flex items-center gap-4 p-6 rounded-2xl border-2 transition-all ${index === 0
                               ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300'
                               : index === 1
-                              ? 'bg-gradient-to-r from-slate-50 to-gray-50 border-slate-300'
-                              : index === 2
-                              ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300'
-                              : 'bg-white border-slate-200'
-                          }`}
+                                ? 'bg-gradient-to-r from-slate-50 to-gray-50 border-slate-300'
+                                : index === 2
+                                  ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300'
+                                  : 'bg-white border-slate-200'
+                            }`}
                         >
-                          <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
-                            index === 0
+                          <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${index === 0
                               ? 'bg-yellow-400 text-yellow-900'
                               : index === 1
-                              ? 'bg-slate-400 text-slate-900'
-                              : index === 2
-                              ? 'bg-orange-400 text-orange-900'
-                              : 'bg-slate-200 text-slate-700'
-                          }`}>
+                                ? 'bg-slate-400 text-slate-900'
+                                : index === 2
+                                  ? 'bg-orange-400 text-orange-900'
+                                  : 'bg-slate-200 text-slate-700'
+                            }`}>
                             {index + 1}
                           </div>
 

@@ -121,6 +121,30 @@ const mobileGames = [
         duration: '5-10 min',
         available: true,
     },
+    {
+        id: 'detective-listening',
+        name: 'Detective Listening',
+        description: 'Solve mysteries with audio clues',
+        icon: '🔍',
+        gradient: 'from-slate-600 via-amber-600 to-orange-600',
+        path: '/mobile-games/detective-listening',
+        category: 'listening',
+        difficulty: 'Medium',
+        duration: '4-6 min',
+        available: true,
+    },
+    {
+        id: 'case-file-translator',
+        name: 'Case File Translator',
+        description: 'Translate sentences to solve cases',
+        icon: '📁',
+        gradient: 'from-slate-700 via-blue-600 to-indigo-700',
+        path: '/mobile-games/case-file-translator',
+        category: 'sentences',
+        difficulty: 'Medium',
+        duration: '4-6 min',
+        available: true,
+    },
 ];
 
 // Category filters
@@ -128,6 +152,7 @@ const categories = [
     { id: 'all', name: 'All Games', icon: Gamepad2 },
     { id: 'vocabulary', name: 'Vocabulary', icon: BookOpen },
     { id: 'sentences', name: 'Sentences', icon: Globe2 },
+    { id: 'listening', name: 'Listening', icon: Globe2 },
     { id: 'spelling', name: 'Spelling', icon: Brain },
 ];
 

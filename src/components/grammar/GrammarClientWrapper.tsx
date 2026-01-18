@@ -24,19 +24,9 @@ export default function GrammarClientWrapper({
   const searchParams = useSearchParams();
   const assignmentId = searchParams.get('assignment');
   const activityId = searchParams.get('activityId');
-  const mode = searchParams.get('mode');
-
-  console.log('🎯 [CLIENT WRAPPER] Checking assignment mode:', {
-    assignmentId,
-    activityId,
-    mode,
-    topicId,
-    shouldWrap: !!assignmentId
-  });
 
   // If we're in assignment mode, wrap with GrammarSkillWrapper
   if (assignmentId) {
-    console.log('✅ [CLIENT WRAPPER] Using GrammarSkillWrapper');
     return (
       <GrammarSkillWrapper
         assignmentId={assignmentId}
@@ -54,6 +44,5 @@ export default function GrammarClientWrapper({
   }
 
   // Otherwise, render children directly
-  console.log('❌ [CLIENT WRAPPER] No assignment mode, rendering normally');
   return <>{children}</>;
 }

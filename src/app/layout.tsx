@@ -12,7 +12,6 @@ import { ThemeProvider } from '../components/theme/ThemeProvider'
 import { ToastProvider } from '../components/ui/use-toast';
 import { StructuredData } from '../components/seo/SEOWrapper'
 import { getOrganizationSchema, getWebsiteSchema } from '../lib/seo/structuredData'
-import * as Sentry from '@sentry/nextjs'
 import { ServiceWorkerRegistration } from '../components/ServiceWorkerRegistration'
 import { CapacitorProvider, MobileTabBar, MobileAuthGate } from '../components/capacitor';
 
@@ -100,9 +99,6 @@ export function generateMetadata(): Metadata {
       google: 'ZJi5l8ZBh1kFEFjdLavm0_YJcSVGcNMAD4_IJkLm9JQ',
       yandex: 'your-yandex-verification-code', // Still placeholder, update if needed
     },
-    other: {
-      ...Sentry.getTraceData()
-    }
   };
 } export default function RootLayout({
   children,

@@ -29,10 +29,6 @@ export function MobileSplashScreen({ platform }: Props) {
     return (
         <div
             className="fixed inset-0 bg-[#1a1a2e] flex flex-col items-center justify-center z-[99999]"
-            style={{
-                paddingTop: 'env(safe-area-inset-top, 0px)',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            }}
         >
             {/* Animated background gradient */}
             <div className="absolute inset-0 overflow-hidden">
@@ -42,9 +38,8 @@ export function MobileSplashScreen({ platform }: Props) {
 
             {/* Logo and branding */}
             <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
+                initial={{ scale: 1, opacity: 1 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
                 className="relative z-10 flex flex-col items-center"
             >
                 {/* Gem Icon */}

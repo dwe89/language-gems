@@ -1,43 +1,28 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 /**
- * Capacitor Configuration for Language Gems Mobile App
+ * INTELLIGENT CAPACITOR CONFIG
  * 
- * SWITCH BETWEEN DEVELOPMENT AND PRODUCTION:
- * - Development: Uses localhost:3000 (see changes instantly)
- * - Production: Uses languagegems.com (deploy to Vercel first)
+ * This file automatically switches between Dev and Prod based on the 
+ * environment variable 'CAP_MODE'.
  */
+
+const IS_PROD = process.env.CAP_MODE === 'prod';
+
+// Physical device IP for LAN dev, or localhost for simulator
+const DEV_URL = 'http://192.168.1.120:3000';
+const PROD_URL = 'https://www.languagegems.com';
 
 const config: CapacitorConfig = {
     appId: 'com.languagegems.app',
     appName: 'Language Gems',
-
-    // The webDir is only used for local/offline fallback
-    webDir: 'public',
+    webDir: 'public', // Always use public for hybrid remote mode
 
     server: {
-        // ============================================
-        // DEVELOPMENT MODE - See changes instantly
-        // ============================================
-        // Run `npm run dev` first, then run the app
-        //
-        // iOS SIMULATOR: Use localhost (simulator runs on Mac)
-        // url: 'http://localhost:3000',
-        //
-        // ANDROID EMULATOR: Use 10.0.2.2 (emulator's loopback to host)
-        // url: 'http://10.0.2.2:3000',
-        //
-        // PHYSICAL DEVICES: Use your Mac's LAN IP (run: ifconfig | grep inet)
-        // url: 'http://192.168.1.120:3000',
-        //
-        cleartext: true, // Required for http (not https)
+        // Switch URL based on mode
+        url: IS_PROD ? PROD_URL : DEV_URL,
+        cleartext: !IS_PROD, // Allow insecure http only in dev
 
-        // ============================================
-        // PRODUCTION MODE - Uncomment when ready
-        // ============================================
-        // url: 'https://languagegems.com',
-
-        // Allow navigation to external URLs (OAuth, Stripe, etc.)
         allowNavigation: [
             'languagegems.com',
             '*.languagegems.com',
@@ -60,10 +45,10 @@ const config: CapacitorConfig = {
             backgroundColor: '#1a1a2e',
         },
         SplashScreen: {
-            launchShowDuration: 0, // Don't auto-hide - JS will call hide()
-            launchAutoHide: false, // Keep native splash until JS is ready
+            launchShowDuration: 0,
+            launchAutoHide: false, // Use our JS handover logic
             backgroundColor: '#1a1a2e',
-            showSpinner: false, // Don't show native spinner - JS handles UI
+            showSpinner: false,
             androidScaleType: 'CENTER_CROP',
             splashFullScreen: true,
             splashImmersive: true,
@@ -79,8 +64,8 @@ const config: CapacitorConfig = {
 
     android: {
         backgroundColor: '#1a1a2e',
-        allowMixedContent: true,
-        webContentsDebuggingEnabled: true, // Enable for development
+        allowMixedContent: !IS_PROD,
+        webContentsDebuggingEnabled: !IS_PROD,
     },
 };
 

@@ -1,5 +1,5 @@
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: false, // Forcing this to false to speed up builds
+  enabled: process.env.ANALYZE === 'true',
 });
 
 // Capacitor mobile build flag - see MOBILE_APP_GUIDE.md for setup

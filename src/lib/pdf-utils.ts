@@ -1,4 +1,4 @@
-import { jsPDF } from 'jspdf';
+// jsPDF is dynamically imported when needed to reduce bundle size
 // jspdf-autotable is no longer used for this design.
 
 // Re-export the interface for broader usability
@@ -48,13 +48,13 @@ const LIGHT_GRAY_BG = [250, 250, 250];
 // --- Cut Line Styling (scissors-friendly dashed lines) ---
 const CUT_LINE_COLOR = [100, 100, 100];
 const CUT_LINE_WIDTH = 0.5;
-const DASH_PATTERN = [3, 2]; // 3mm line, 2mm gap
+const DASH_PATTERN: [number, number] = [3, 2]; // 3mm line, 2mm gap
 
 /**
  * Draws a single student credential card onto the PDF document.
  */
 function drawStudentCard(
-  doc: jsPDF,
+  doc: any, // jsPDF instance
   student: StudentCredential,
   x: number,
   y: number,
@@ -145,15 +145,18 @@ function drawStudentCard(
  * @param options - Optional PDF generation options (school code).
  * @returns A jsPDF document instance.
  */
-export function generateStudentCredentialsPDF(
+export async function generateStudentCredentialsPDF(
   students: StudentCredential[],
   className: string,
   options?: PDFGenerationOptions
-): jsPDF {
+): Promise<any> {
+  // Dynamically import jsPDF only when needed (saves ~200KB from initial bundle)
+  const { jsPDF } = await import('jspdf');
+
   const doc = new jsPDF('p', 'mm', 'a4');
 
   // --- Header Section Setup ---
-  const drawHeader = (doc: jsPDF, className: string, options?: PDFGenerationOptions) => {
+  const drawHeader = (doc: any, className: string, options?: PDFGenerationOptions) => {
     // Brand Title
     doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
@@ -184,7 +187,7 @@ export function generateStudentCredentialsPDF(
 
   // --- Student Credentials Cards Loop ---
   students.forEach((student, index) => {
-    
+
     // CORRECTION: Check the global index to manage page breaks.
     // If this is not the first card (index > 0) AND it's the start of a new page block (index is a multiple of 8), add a new page.
     if (index > 0 && index % CARDS_PER_PAGE === 0) {
@@ -224,12 +227,12 @@ export function generateStudentCredentialsPDF(
  * @param className - The name of the class.
  * @param options - Optional PDF generation options (school code).
  */
-export function downloadStudentCredentialsPDF(
+export async function downloadStudentCredentialsPDF(
   students: StudentCredential[],
   className: string,
   options?: PDFGenerationOptions
-): void {
-  const doc = generateStudentCredentialsPDF(students, className, options);
+): Promise<void> {
+  const doc = await generateStudentCredentialsPDF(students, className, options);
   // Ensure the filename is safe and clean
   const safeClassName = className.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_');
   const fileName = `${safeClassName}_LanguageGems_Credentials.pdf`;

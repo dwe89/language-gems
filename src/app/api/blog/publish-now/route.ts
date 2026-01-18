@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '../../../../lib/supabase-server';
 import { createServiceRoleClient } from '../../../../utils/supabase/client';
-import * as Sentry from '@sentry/nextjs';
 
 /**
  * Immediate publish & notify endpoint
@@ -9,11 +8,6 @@ import * as Sentry from '@sentry/nextjs';
  * without waiting for the cron job
  */
 export async function POST(request: NextRequest) {
-  const transaction = Sentry.startTransaction({
-    op: 'blog.publish-now',
-    name: 'Immediate Blog Publish & Notify',
-  });
-
   try {
     // Check authentication - only admin can publish
     const supabase = await createClient();
@@ -47,7 +41,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (fetchError || !post) {
-      Sentry.captureException(fetchError);
+      console.error('Error fetching post:', fetchError);
       return NextResponse.json(
         { success: false, error: 'Post not found' },
         { status: 404 }
@@ -57,10 +51,10 @@ export async function POST(request: NextRequest) {
     // Check if already published
     if (post.status === 'published' && post.is_published) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Post is already published',
-          alreadyPublished: true 
+          alreadyPublished: true
         },
         { status: 400 }
       );
@@ -80,7 +74,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (updateError) {
-      Sentry.captureException(updateError);
+      console.error('Error publishing post:', updateError);
       return NextResponse.json(
         { success: false, error: 'Failed to publish post' },
         { status: 500 }
@@ -102,7 +96,6 @@ export async function POST(request: NextRequest) {
       });
     } catch (revalidateError) {
       console.warn('Failed to revalidate pages:', revalidateError);
-      Sentry.captureException(revalidateError);
       // Don't fail the entire operation for revalidation errors
     }
 
@@ -126,18 +119,11 @@ export async function POST(request: NextRequest) {
       } else {
         const errorData = await emailResponse.json();
         console.warn('Email notification failed:', errorData);
-        Sentry.captureMessage('Email notification failed after immediate publish', {
-          level: 'warning',
-          extra: { postId, error: errorData }
-        });
       }
     } catch (emailError) {
       console.error('Failed to send email notifications:', emailError);
-      Sentry.captureException(emailError);
       // Don't fail the entire operation for email errors
     }
-
-    transaction.finish();
 
     return NextResponse.json({
       success: true,
@@ -155,13 +141,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error in publish-now:', error);
-    Sentry.captureException(error);
-    transaction.finish();
 
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error.message || 'Failed to publish post' 
+      {
+        success: false,
+        error: error.message || 'Failed to publish post'
       },
       { status: 500 }
     );
@@ -227,4 +211,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

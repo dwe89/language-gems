@@ -27,7 +27,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import ExcelJS from 'exceljs';
+// ExcelJS is dynamically imported when needed to reduce bundle size
 
 interface TeacherVocabularyAnalyticsDashboardProps {
   classId?: string;
@@ -1125,6 +1125,9 @@ export default function TeacherVocabularyAnalyticsDashboard({
 
               <button
                 onClick={async () => {
+                  // Dynamically import ExcelJS only when needed (saves ~500KB from initial bundle)
+                  const ExcelJS = await import('exceljs');
+
                   // Create a new workbook
                   const workbook = new ExcelJS.Workbook();
                   workbook.creator = 'LanguageGems';
