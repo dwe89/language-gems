@@ -13,23 +13,9 @@ import { ThemeProvider } from '../noughts-and-crosses/components/ThemeProvider';
 import AssignmentThemeSelector from '../../../components/games/AssignmentThemeSelector';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
 import { useSharedVocabulary, SharedVocabularyToast } from '../../../components/games/ShareVocabularyButton';
+import { VocabBlastGameSettings } from './components/VocabBlastGame';
 
 export type GameState = 'menu' | 'settings' | 'playing' | 'completed' | 'paused';
-
-export interface VocabBlastGameSettings {
-  difficulty: string;
-  category: string;
-  language: string;
-  theme: string;
-  subcategory?: string;
-  mode: 'categories' | 'custom';
-  customWords?: string[];
-  timeLimit?: number;
-  // KS4-specific parameters
-  curriculumLevel?: string;
-  examBoard?: 'AQA' | 'edexcel';
-  tier?: 'foundation' | 'higher';
-}
 
 export default function VocabBlastPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();

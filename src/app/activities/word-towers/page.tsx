@@ -385,7 +385,7 @@ export default function SentenceTowersPage() {
         onBackToAssignments={handleBackToAssignments}
         onBackToMenu={() => router.push('/games/word-towers')}
       >
-        {({ assignment, vocabulary, sentences, onProgressUpdate, onGameComplete, gameSessionId, onOpenSettings, toggleMusic, isMusicEnabled }) => {
+        {({ assignment, vocabulary, sentences, onProgressUpdate, onGameComplete, gameSessionId, toggleMusic, isMusicEnabled }) => {
           console.log('🎮 [WORD TOWERS] Game data received:', {
             assignmentId: assignment?.id,
             vocabularyCount: vocabulary?.length || 0,
@@ -552,7 +552,7 @@ export default function SentenceTowersPage() {
 }
 
 // Extract the main game logic into a separate component
-function ImprovedSentenceTowersGame({
+export function ImprovedSentenceTowersGame({
   gameVocabulary,
   onBackToMenu,
   config,
@@ -560,7 +560,8 @@ function ImprovedSentenceTowersGame({
   assignment,
   assignmentGameSessionId,
   onGameComplete,
-  onProgressUpdate
+  onProgressUpdate,
+  isMobile = false
 }: {
   gameVocabulary: any[];
   onBackToMenu: () => void;
@@ -570,11 +571,13 @@ function ImprovedSentenceTowersGame({
   assignmentGameSessionId?: string | null;
   onGameComplete?: (gameProgress: any) => void;
   onProgressUpdate?: (progress: any) => void;
+  isMobile?: boolean; // Mobile-specific optimizations
 }) {
 
   // Authentication and services
   const { user } = useAuth();
   const { supabase } = useSupabase();
+  const searchParams = useSearchParams();
 
   // Initialize FSRS spaced repetition system
   const [fsrsService, setFsrsService] = useState<FSRSService | null>(null);
@@ -694,7 +697,7 @@ function ImprovedSentenceTowersGame({
   const effectIdRef = useRef(0);
 
   // Constants for tower display
-  const VISIBLE_BLOCKS = 7; // Only show last 7 blocks
+  const VISIBLE_BLOCKS = isMobile ? 5 : 7; // Show fewer blocks on mobile for better fit
 
   // Sound effects hook
   const sounds = useSounds(settings.soundEnabled);

@@ -8,7 +8,7 @@ import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import {
   User, ShoppingBag, Settings, Crown, ArrowRight, School, BookOpen, Users,
   ClipboardList, Target,
-  BarChart3, Star, ChevronRight, Activity, Plus
+  BarChart3, Star, ChevronRight, Activity, Plus, Gamepad2
 } from 'lucide-react';
 
 export default function AccountPage() {
@@ -30,21 +30,6 @@ export default function AccountPage() {
     assignmentsCreated: 0
   });
   const router = useRouter();
-
-  // Redirect students and learners to their dashboard - they shouldn't access the account page
-  useEffect(() => {
-    if (!isLoading) {
-      if (isStudent) {
-        setTimeout(() => {
-          router.replace('/student-dashboard');
-        }, 150);
-      } else if (isLearner) {
-        setTimeout(() => {
-          router.replace('/learner-dashboard');
-        }, 150);
-      }
-    }
-  }, [isLoading, isStudent, isLearner, router]);
 
   // Load school information and teacher specific stats for teachers
   useEffect(() => {
@@ -167,17 +152,6 @@ export default function AccountPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
           <p className="text-slate-600">Loading your account...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isStudent || isLearner) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-          <p className="text-slate-600">Redirecting to your dashboard...</p>
         </div>
       </div>
     );
@@ -316,6 +290,40 @@ export default function AccountPage() {
 
 
 
+
+
+        {/* Student/Learner Dashboard Link */}
+        {(isStudent || isLearner) && (
+          <div className="mb-8">
+            <Link
+              href={isLearner ? '/learner-dashboard' : '/student-dashboard'}
+              className="group relative overflow-hidden bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 p-8 block"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center space-x-6">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Gamepad2 className="h-8 w-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2 flex items-center">
+                      Student Dashboard
+                    </h2>
+                    <p className="text-white/90 text-lg">
+                      Return to your learning activities and progress
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl group-hover:bg-white/30 transition-colors">
+                  <ArrowRight className="h-8 w-8 text-white group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* Teacher Dashboard - Prominent Feature for Subscribed Teachers */}
         {isTeacher && hasSubscription && (

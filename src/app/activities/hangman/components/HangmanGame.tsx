@@ -88,6 +88,7 @@ interface HangmanGameProps {
   toggleMusic?: () => void;
   isMusicEnabled?: boolean;
   onThemeChange?: (theme: string) => void;
+  isMobile?: boolean;
 }
 
 const MAX_ATTEMPTS = 6;
@@ -106,7 +107,23 @@ type ExtendedThemeContextType = {
   };
 };
 
-export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX, onOpenSettings, gameSessionId, userId, assignmentId, toggleMusic, isMusicEnabled, onThemeChange }: HangmanGameProps) {
+export function GameContent({
+  settings,
+  vocabulary,
+  onBackToMenu,
+  onGameEnd,
+  isFullscreen,
+  isAssignmentMode,
+  playSFX,
+  onOpenSettings,
+  gameSessionId,
+  userId,
+  assignmentId,
+  toggleMusic,
+  isMusicEnabled,
+  onThemeChange,
+  isMobile
+}: HangmanGameProps) {
 
 
   const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
@@ -642,6 +659,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           mistakes={wrongGuesses}
           maxMistakes={MAX_ATTEMPTS}
           className="w-full h-full"
+          isMobile={isMobile}
         />
       );
     }
@@ -650,19 +668,20 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       return <TokyoNightsAnimation
         mistakes={wrongGuesses}
         maxMistakes={MAX_ATTEMPTS}
+        isMobile={isMobile}
       />;
     }
 
     if (themeId === 'temple') {
-      return <LavaTempleAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
+      return <LavaTempleAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} isMobile={isMobile} />;
     }
 
     if (themeId === 'space') {
-      return <SpaceExplorerAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
+      return <SpaceExplorerAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} isMobile={isMobile} />;
     }
 
     // Pirate theme animation
-    return <PirateAdventureAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
+    return <PirateAdventureAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} isMobile={isMobile} />;
   };
 
 
@@ -738,7 +757,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           const isCorrect = isUsed && doesWordContainLetter(word, lowerLetter);
           const isWrong = isUsed && !doesWordContainLetter(word, lowerLetter);
 
-          let buttonClass = `w-10 h-10 md:w-16 md:h-16 text-lg md:text-2xl font-bold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95`;
+          let buttonClass = `w-8 h-10 md:w-16 md:h-16 text-base md:text-2xl font-bold rounded-lg md:rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95`;
 
           if (isCorrect) {
             // Apply theme-specific styles for correct letters
@@ -949,7 +968,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
   }, [settings.theme]);
 
   return (
-    <div className={`flex flex-col ${isAssignmentMode ? 'h-auto min-h-[750px]' : 'min-h-screen'} ${themeClassesState.background} ${themeClassesState.text} ${isAssignmentMode ? 'relative' : 'overflow-hidden'}`}>
+    <div className={`flex flex-col ${isAssignmentMode ? 'h-auto min-h-[750px]' : (isMobile ? 'h-full' : 'min-h-screen')} ${themeClassesState.background} ${themeClassesState.text} ${isAssignmentMode ? 'relative' : 'overflow-hidden'}`}>
       {/* Custom CSS for glow effects */}
       <style jsx>{`
         .glow-pink {
@@ -993,12 +1012,12 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
             {formatTime(timer)}
           </div>
 
-          {/* Lives remaining in top bar */}
-          {gameStatus === 'playing' && (
+          {/* Lives display removed as per request */}
+          {/* {gameStatus === 'playing' && (
             <div className="text-xs md:text-sm font-medium">
               <span className="opacity-75">Lives:</span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Control buttons */}
@@ -1111,7 +1130,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       </div>
 
       {/* Main game content area - Unified layout */}
-      <div className="relative z-40 flex-1 flex flex-col">
+      <div className={`relative z-40 flex-1 flex flex-col ${isMobile ? 'pb-24' : ''}`}>
         <div className="flex-1"></div>
 
         {/* Word display positioned much lower */}

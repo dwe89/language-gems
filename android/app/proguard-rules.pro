@@ -5,17 +5,49 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ===== CAPACITOR WEBVIEW RULES =====
+# Keep JavaScript interface classes - REQUIRED for Capacitor
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Keep Capacitor classes
+-keep class com.getcapacitor.** { *; }
+-keep class com.capacitorjs.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Keep plugin classes
+-keep class * extends com.getcapacitor.Plugin { *; }
+
+# ===== WEBVIEW RULES =====
+-keepclassmembers class * extends android.webkit.WebViewClient {
+    public void *(android.webkit.WebView, java.lang.String, android.graphics.Bitmap);
+    public boolean *(android.webkit.WebView, java.lang.String);
+    public void *(android.webkit.WebView, java.lang.String);
+}
+
+# ===== DEBUGGING RULES =====
+# Preserve line numbers for debugging crash reports
+-keepattributes SourceFile,LineNumberTable
+
+# Hide the original source file name in stack traces
+-renamesourcefileattribute SourceFile
+
+# ===== GENERAL SECURITY =====
+# Remove logging in release builds for security
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+}
+
+# Keep annotations
+-keepattributes *Annotation*
+
+# ===== KOTLIN =====
+-keep class kotlin.** { *; }
+-keep class kotlin.Metadata { *; }
+-dontwarn kotlin.**
+
+# ===== OKHTTP (if used by plugins) =====
+-dontwarn okhttp3.**
+-dontwarn okio.**

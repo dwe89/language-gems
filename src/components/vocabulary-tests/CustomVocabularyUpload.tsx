@@ -12,6 +12,7 @@ import {
   Download,
   Info
 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../auth/AuthProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';
 
@@ -60,7 +61,7 @@ export default function CustomVocabularyUpload({
   };
 
   const updateVocabularyItem = (index: number, field: keyof VocabularyItem, value: string) => {
-    setVocabularyItems(prev => prev.map((item, i) => 
+    setVocabularyItems(prev => prev.map((item, i) =>
       i === index ? { ...item, [field]: value } : item
     ));
   };
@@ -72,7 +73,7 @@ export default function CustomVocabularyUpload({
     lines.forEach((line, index) => {
       if (line.trim()) {
         const parts = line.split(',').map(part => part.trim().replace(/"/g, ''));
-        
+
         if (parts.length >= 2) {
           items.push({
             target_word: parts[0],
@@ -96,17 +97,17 @@ export default function CustomVocabularyUpload({
       if (line.trim()) {
         // Try tab-separated first, then comma-separated
         let parts = line.split('\t').map(part => part.trim());
-        
+
         // If only one part found with tabs, try commas
         if (parts.length < 2) {
           parts = line.split(',').map(part => part.trim().replace(/"/g, ''));
         }
-        
+
         // Also try semicolons as a fallback
         if (parts.length < 2) {
           parts = line.split(';').map(part => part.trim());
         }
-        
+
         if (parts.length >= 2) {
           items.push({
             target_word: parts[0],
@@ -153,7 +154,7 @@ export default function CustomVocabularyUpload({
   };
 
   const validateVocabularyItems = (): boolean => {
-    const validItems = vocabularyItems.filter(item => 
+    const validItems = vocabularyItems.filter(item =>
       item.target_word.trim() && item.english_translation.trim()
     );
 
@@ -182,7 +183,7 @@ export default function CustomVocabularyUpload({
       // Prepare vocabulary items - these will be stored in the test's vocabulary_criteria JSONB field
       // NOT in centralized_vocabulary table (which is for permanent, curated vocabulary)
       const vocabularyData = vocabularyItems.map(item => ({
-        id: crypto.randomUUID(), // Generate UUID for tracking
+        id: uuidv4(), // Generate UUID for tracking
         language: language,
         word: item.target_word.trim(),
         translation: item.english_translation.trim(),
@@ -278,11 +279,10 @@ comer,to eat`;
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
               onClick={() => setUploadMethod('manual')}
-              className={`p-4 rounded-lg border-2 text-left transition-all ${
-                uploadMethod === 'manual'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${uploadMethod === 'manual'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+                }`}
             >
               <Plus className="h-5 w-5 text-blue-600 mb-2" />
               <h4 className="font-medium text-gray-900">Manual Entry</h4>
@@ -291,11 +291,10 @@ comer,to eat`;
 
             <button
               onClick={() => setUploadMethod('csv')}
-              className={`p-4 rounded-lg border-2 text-left transition-all ${
-                uploadMethod === 'csv'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${uploadMethod === 'csv'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+                }`}
             >
               <FileText className="h-5 w-5 text-blue-600 mb-2" />
               <h4 className="font-medium text-gray-900">CSV Import</h4>
@@ -304,11 +303,10 @@ comer,to eat`;
 
             <button
               onClick={() => setUploadMethod('paste')}
-              className={`p-4 rounded-lg border-2 text-left transition-all ${
-                uploadMethod === 'paste'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${uploadMethod === 'paste'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+                }`}
             >
               <Upload className="h-5 w-5 text-blue-600 mb-2" />
               <h4 className="font-medium text-gray-900">Bulk Paste</h4>
@@ -330,7 +328,7 @@ comer,to eat`;
                 <span>Download Template</span>
               </button>
             </div>
-            
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
               <div className="flex items-start space-x-2">
                 <Info className="h-4 w-4 text-blue-600 mt-0.5" />
@@ -348,7 +346,7 @@ comer,to eat`;
               className="w-full h-32 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Paste your CSV data here..."
             />
-            
+
             <button
               onClick={handleCsvImport}
               className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
@@ -364,7 +362,7 @@ comer,to eat`;
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium text-gray-900">Bulk Paste</h4>
             </div>
-            
+
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
               <div className="flex items-start space-x-2">
                 <Info className="h-4 w-4 text-green-600 mt-0.5" />
@@ -385,7 +383,7 @@ comer,to eat`;
               className="w-full h-32 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
               placeholder="Paste your vocabulary data here (one pair per line)..."
             />
-            
+
             <button
               onClick={handlePasteImport}
               className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
@@ -480,7 +478,7 @@ comer,to eat`;
           >
             Cancel
           </button>
-          
+
           <button
             onClick={handleSaveVocabulary}
             disabled={loading || vocabularyItems.length === 0}

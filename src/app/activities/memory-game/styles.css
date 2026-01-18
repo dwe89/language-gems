@@ -608,4 +608,62 @@
 
 .input-label {
   color: #4a5568;
+}
+
+/* Mobile page container - only affects the mobile page wrapper */
+.mobile-loading-container {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #ec4899;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.mobile-game-container {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.mobile-game-container .game-container {
+  height: 100%;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-game-container .cards-container {
+  flex: 1;
+  height: auto;
+  max-height: none;
+  min-height: 0;
+}
+
+.mobile-game-container .cards-grid {
+  min-height: 0;
+  height: 100%;
+  gap: 6px;
+}
+
+.mobile-game-container .card {
+  aspect-ratio: 3/4;
+  min-height: 50px;
 } 

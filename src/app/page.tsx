@@ -30,6 +30,7 @@ import { useEditablePage } from '../hooks/useEditablePage';
 import { isAdmin } from '../lib/adminCheck';
 import PageEditButton from '../components/admin/PageEditButton';
 import { iconMap } from '../lib/iconMap';
+import { useCapacitor } from '../components/capacitor'; // Added
 
 // Universal hero text variations
 const heroTextVariations = [
@@ -83,6 +84,7 @@ export default function Home() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [showSignupModal, setShowSignupModal] = useState(false);
+  const { isNativeApp, isReady: capacitorReady } = useCapacitor(); // Added
 
   // Load editable page content
   const { pageData, isLoading, reload } = useEditablePage('homepage');
@@ -92,6 +94,14 @@ export default function Home() {
 
   // Auto-redirect logged-in users to their appropriate dashboard
   useEffect(() => {
+    // If native app, always redirect to mobile home, regardless of login state for now
+    // (Auth state will be handled by auth guard on protected routes if needed, 
+    // but mobile home itself is a public landing for the app shell)
+    if (capacitorReady && isNativeApp) {
+      window.location.href = '/mobile-home';
+      return;
+    }
+
     const from = searchParams.get('from');
     if (from === 'dashboard') {
       // Skip redirect if coming from dashboard
@@ -104,7 +114,16 @@ export default function Home() {
     } else if (user?.user_metadata?.role === 'teacher') {
       window.location.href = '/dashboard';
     }
-  }, [user, searchParams]);
+  }, [user, searchParams, isNativeApp, capacitorReady]);
+
+  // PREVENT FLASH: Show loading state while checking for native app
+  if (!capacitorReady || isNativeApp) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#1a1a2e]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
 
   // Fallback features if page data not loaded
   const defaultFeatures = [

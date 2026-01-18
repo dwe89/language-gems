@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { Gamepad2, Building2, Rocket, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star, Clock } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useDemoAuth } from '../auth/DemoAuthProvider';
+import { useCapacitor } from '../capacitor';
 import Footer from '../layout/Footer';
 import DemoBanner from '../demo/DemoBanner';
 import SmartSignupSelector from '../auth/SmartSignupSelector';
@@ -174,6 +175,7 @@ type Game = {
 export default function GamesPageClient() {
   const { user, isLoading } = useAuth();
   const { isDemo } = useDemoAuth();
+  const { isNativeApp, isReady: capacitorReady } = useCapacitor();
   const router = useRouter();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -360,7 +362,8 @@ export default function GamesPageClient() {
   });
 
   // If user is not authenticated and not in demo mode, show login gate
-  if (!isLoading && !user && !isDemo) {
+  // Skip in native app - MobileAuthGate handles auth centrally
+  if (!isLoading && !user && !isDemo && !(capacitorReady && isNativeApp)) {
     return <LoginRequiredGate />;
   }
 
@@ -377,7 +380,15 @@ export default function GamesPageClient() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
+    <div
+      className={`min-h-screen ${capacitorReady && isNativeApp
+          ? 'bg-[#1a1a2e] pb-24'
+          : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+        }`}
+      style={capacitorReady && isNativeApp ? {
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+      } : undefined}
+    >
       <div className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-8">
           <div className="flex items-center mb-2">
@@ -524,12 +535,17 @@ export default function GamesPageClient() {
         </div>
       </div>
 
-      <Footer />
-      <SmartSignupSelector
-        isOpen={showSignupSelector}
-        onClose={() => setShowSignupSelector(false)}
-        triggerRef={buttonRef}
-      />
+      {/* Hide footer and web modals in native app */}
+      {!(capacitorReady && isNativeApp) && (
+        <>
+          <Footer />
+          <SmartSignupSelector
+            isOpen={showSignupSelector}
+            onClose={() => setShowSignupSelector(false)}
+            triggerRef={buttonRef}
+          />
+        </>
+      )}
       <GamesDevWarningDialog />
     </div>
   );

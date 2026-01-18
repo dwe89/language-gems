@@ -6,6 +6,7 @@ interface ClassicHangmanAnimationProps {
     mistakes: number;
     maxMistakes: number;
     className?: string;
+    isMobile?: boolean;
 }
 
 type Star = { x: number; y: number; radius: number; twinkleOffset: number };
@@ -14,7 +15,7 @@ type Bird = { x: number; y: number; speed: number; wingPhase: number };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-export default function ClassicHangmanAnimation({ mistakes, maxMistakes, className }: ClassicHangmanAnimationProps) {
+export default function ClassicHangmanAnimation({ mistakes, maxMistakes, className, isMobile = false }: ClassicHangmanAnimationProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationFrameId = useRef<number>();
@@ -193,7 +194,7 @@ export default function ClassicHangmanAnimation({ mistakes, maxMistakes, classNa
 
         const drawGround = (progress: number, time: number) => {
             const { width, height } = state;
-            const groundY = height * 0.84;
+            const groundY = height * (isMobile ? 0.75 : 0.84);
             const gradient = ctx.createLinearGradient(0, groundY, 0, height);
             gradient.addColorStop(0, progress < 0.6 ? '#3f7d4a' : '#1c2f27');
             gradient.addColorStop(1, '#0a1311');
@@ -215,8 +216,8 @@ export default function ClassicHangmanAnimation({ mistakes, maxMistakes, classNa
             ctx.lineWidth = 1;
             ctx.setLineDash([4, 12]);
             ctx.beginPath();
-            ctx.moveTo(width * 0.35, height * 0.84);
-            ctx.quadraticCurveTo(width * 0.52, height * 0.78 + Math.sin(time / 500) * 10, width * 0.7, height * 0.84);
+            ctx.moveTo(width * 0.35, height * (isMobile ? 0.75 : 0.84));
+            ctx.quadraticCurveTo(width * 0.52, height * (isMobile ? 0.69 : 0.78) + Math.sin(time / 500) * 10, width * 0.7, height * (isMobile ? 0.75 : 0.84));
             ctx.stroke();
             ctx.restore();
 
@@ -280,8 +281,9 @@ export default function ClassicHangmanAnimation({ mistakes, maxMistakes, classNa
         const drawGallows = (_progress: number, time: number) => {
             const { width, height } = state;
             const baseX = width * 0.17;
-            const baseY = height * 0.68;
-            const poleHeight = height * 0.55;
+            // Mobile: 0.55/0.35, Desktop: 0.68/0.55
+            const baseY = height * (isMobile ? 0.55 : 0.68);
+            const poleHeight = height * (isMobile ? 0.35 : 0.55);
             const beamLength = width * 0.37;
 
             const gradient = ctx.createLinearGradient(baseX, baseY - poleHeight, baseX + 25, baseY);
@@ -327,25 +329,27 @@ export default function ClassicHangmanAnimation({ mistakes, maxMistakes, classNa
             const { width, height, ghost } = state;
             const isGameOver = progress >= 1;
             const anchorX = width * 0.54;
-            const anchorY = height * 0.13;
-            const sway = Math.sin(time / 520) * (isGameOver ? 10 : 4);
+            // Mobile: 0.22, Desktop: 0.13
+            const anchorY = height * (isMobile ? 0.22 : 0.13);
+            const sway = Math.sin(time / 520) * (isGameOver ? (isMobile ? 6 : 10) : (isMobile ? 3 : 4));
 
             ctx.strokeStyle = '#d6b483';
-            ctx.lineWidth = 5;
+            ctx.lineWidth = isMobile ? 4 : 5;
             ctx.beginPath();
             ctx.moveTo(anchorX, anchorY);
-            ctx.quadraticCurveTo(anchorX + sway * 0.4, anchorY + height * 0.06, anchorX + sway, anchorY + height * 0.12);
+            ctx.quadraticCurveTo(anchorX + sway * 0.4, anchorY + height * (isMobile ? 0.04 : 0.06), anchorX + sway, anchorY + height * (isMobile ? 0.08 : 0.12));
             ctx.stroke();
 
             const headX = anchorX + sway;
-            const headY = anchorY + height * 0.14;
-            const bodyLength = height * 0.18;
+            const headY = anchorY + height * (isMobile ? 0.09 : 0.14);
+            const bodyLength = height * (isMobile ? 0.12 : 0.18);
+            const headRadius = isMobile ? 16 : 22;
 
             ctx.beginPath();
             ctx.strokeStyle = '#000';
             ctx.fillStyle = '#fde1bd';
-            ctx.lineWidth = 4;
-            ctx.arc(headX, headY, 22, 0, Math.PI * 2);
+            ctx.lineWidth = isMobile ? 3 : 4;
+            ctx.arc(headX, headY, headRadius, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
@@ -355,36 +359,36 @@ export default function ClassicHangmanAnimation({ mistakes, maxMistakes, classNa
                 ctx.fillStyle = '#000';
                 const blink = Math.sin(time / 2400) > 0.92;
                 if (blink) {
-                    ctx.fillRect(headX - 12, headY - 10, 10, 3);
-                    ctx.fillRect(headX + 2, headY - 10, 10, 3);
+                    ctx.fillRect(headX - (isMobile ? 9 : 12), headY - (isMobile ? 8 : 10), (isMobile ? 8 : 10), (isMobile ? 2 : 3));
+                    ctx.fillRect(headX + (isMobile ? 1 : 2), headY - (isMobile ? 8 : 10), (isMobile ? 8 : 10), (isMobile ? 2 : 3));
                 } else {
-                    ctx.arc(headX - 10, headY - 6, 3, 0, Math.PI * 2);
-                    ctx.arc(headX + 10, headY - 6, 3, 0, Math.PI * 2);
+                    ctx.arc(headX - (isMobile ? 7 : 10), headY - (isMobile ? 5 : 6), (isMobile ? 2.5 : 3), 0, Math.PI * 2);
+                    ctx.arc(headX + (isMobile ? 7 : 10), headY - (isMobile ? 5 : 6), (isMobile ? 2.5 : 3), 0, Math.PI * 2);
                 }
                 ctx.fill();
 
                 ctx.beginPath();
                 const sadness = clamp(progress, 0, 1);
-                ctx.arc(headX, headY + 12, 10, Math.PI * (0.15 + sadness * 0.3), Math.PI * (0.85 - sadness * 0.3));
+                ctx.arc(headX, headY + (isMobile ? 9 : 12), (isMobile ? 7 : 10), Math.PI * (0.15 + sadness * 0.3), Math.PI * (0.85 - sadness * 0.3));
                 ctx.stroke();
             } else {
                 ctx.strokeStyle = '#321010';
-                ctx.lineWidth = 3;
+                ctx.lineWidth = isMobile ? 2 : 3;
                 ctx.beginPath();
-                ctx.moveTo(headX - 12, headY - 8);
-                ctx.lineTo(headX - 4, headY);
-                ctx.moveTo(headX - 4, headY - 8);
-                ctx.lineTo(headX - 12, headY);
-                ctx.moveTo(headX + 4, headY - 8);
-                ctx.lineTo(headX + 12, headY);
-                ctx.moveTo(headX + 12, headY - 8);
-                ctx.lineTo(headX + 4, headY);
+                ctx.moveTo(headX - (isMobile ? 9 : 12), headY - (isMobile ? 6 : 8));
+                ctx.lineTo(headX - (isMobile ? 3 : 4), headY);
+                ctx.moveTo(headX - (isMobile ? 3 : 4), headY - (isMobile ? 6 : 8));
+                ctx.lineTo(headX - (isMobile ? 9 : 12), headY);
+                ctx.moveTo(headX + (isMobile ? 3 : 4), headY - (isMobile ? 6 : 8));
+                ctx.lineTo(headX + (isMobile ? 9 : 12), headY);
+                ctx.moveTo(headX + (isMobile ? 9 : 12), headY - (isMobile ? 6 : 8));
+                ctx.lineTo(headX + (isMobile ? 3 : 4), headY);
                 ctx.stroke();
             }
             ctx.restore();
 
-            const breathing = isGameOver ? 0 : Math.sin(time / 480) * 3;
-            const bodyTop = headY + 24 + breathing;
+            const breathing = isGameOver ? 0 : Math.sin(time / 480) * (isMobile ? 2 : 3);
+            const bodyTop = headY + (isMobile ? 18 : 24) + breathing;
             const bodyBottom = bodyTop + bodyLength;
 
             ctx.beginPath();
@@ -394,26 +398,26 @@ export default function ClassicHangmanAnimation({ mistakes, maxMistakes, classNa
 
             if (progress > 0.2) {
                 ctx.beginPath();
-                ctx.moveTo(headX, bodyTop + 30);
-                ctx.lineTo(headX - 45, bodyTop + 70);
+                ctx.moveTo(headX, bodyTop + (isMobile ? 20 : 30));
+                ctx.lineTo(headX - (isMobile ? 30 : 45), bodyTop + (isMobile ? 50 : 70));
                 ctx.stroke();
             }
             if (progress > 0.35) {
                 ctx.beginPath();
-                ctx.moveTo(headX, bodyTop + 30);
-                ctx.lineTo(headX + 45, bodyTop + 70);
+                ctx.moveTo(headX, bodyTop + (isMobile ? 20 : 30));
+                ctx.lineTo(headX + (isMobile ? 30 : 45), bodyTop + (isMobile ? 50 : 70));
                 ctx.stroke();
             }
             if (progress > 0.55) {
                 ctx.beginPath();
                 ctx.moveTo(headX, bodyBottom);
-                ctx.lineTo(headX - 35, bodyBottom + 70);
+                ctx.lineTo(headX - (isMobile ? 25 : 35), bodyBottom + (isMobile ? 50 : 70));
                 ctx.stroke();
             }
             if (progress > 0.75) {
                 ctx.beginPath();
                 ctx.moveTo(headX, bodyBottom);
-                ctx.lineTo(headX + 35, bodyBottom + 70);
+                ctx.lineTo(headX + (isMobile ? 25 : 35), bodyBottom + (isMobile ? 50 : 70));
                 ctx.stroke();
             }
         };
@@ -571,7 +575,7 @@ export default function ClassicHangmanAnimation({ mistakes, maxMistakes, classNa
     return (
         <div
             ref={containerRef}
-            className={`relative w-full max-w-full h-full aspect-[4/5] md:aspect-[3/4] lg:aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-[0_40px_120px_-40px_rgba(15,23,42,0.9)] overflow-hidden ${className ?? ''}`}
+            className={`relative w-full max-w-full h-full aspect-[3/2] md:aspect-[3/4] lg:aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-[0_40px_120px_-40px_rgba(15,23,42,0.9)] overflow-hidden ${className ?? ''}`}
         >
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(96,165,250,0.06),_transparent_55%)]" />
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { RealTimeAnalyticsService } from './realTimeAnalyticsService';
 import { AIInsightsService } from './aiInsightsService';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface PipelineInsight {
   id: string;
@@ -119,17 +120,17 @@ export class AIInsightsPipelineService {
     try {
       // 1. Aggregate latest analytics data for teacher's students
       const classes = await this.getTeacherClasses(teacherId);
-      
+
       for (const classData of classes) {
         // Update analytics cache for this class
         await this.realTimeAnalytics.aggregateClassMetrics(classData.id, teacherId);
-        
+
         // Generate AI insights for this class
         const insights = await this.aiInsights.generateProactiveInsights(teacherId, classData.id);
-        
+
         // Filter and prioritize insights
         const filteredInsights = this.filterInsightsByConfig(insights, config);
-        
+
         // Store new insights
         for (const insight of filteredInsights) {
           await this.storeInsight(insight, teacherId, classData.id);
@@ -155,9 +156,9 @@ export class AIInsightsPipelineService {
 
     // Get unique teacher IDs and their details
     const uniqueTeacherIds = [...new Set(data.map(c => c.teacher_id))];
-    
+
     const { data: teachers, error: teachersError } = await this.supabase.auth.admin.listUsers();
-    
+
     if (teachersError) {
       throw new Error(`Failed to get teacher details: ${teachersError.message}`);
     }
@@ -201,7 +202,7 @@ export class AIInsightsPipelineService {
     const typeWeight = config.priority_weights[insight.insight_type] || 1;
     const confidenceWeight = insight.confidence_score;
     const priorityWeight = insight.priority === 'high' ? 3 : insight.priority === 'medium' ? 2 : 1;
-    
+
     return typeWeight * confidenceWeight * priorityWeight;
   }
 
@@ -210,7 +211,7 @@ export class AIInsightsPipelineService {
    */
   private mapToePipelineInsight(insight: any): PipelineInsight {
     return {
-      id: insight.id || crypto.randomUUID(),
+      id: insight.id || uuidv4(),
       title: insight.title,
       description: insight.description,
       recommendation: insight.recommendation,
@@ -233,7 +234,7 @@ export class AIInsightsPipelineService {
   private async storeInsight(insight: PipelineInsight, teacherId: string, classId: string): Promise<void> {
     // Check if similar insight already exists
     const existingInsight = await this.findSimilarInsight(insight, teacherId);
-    
+
     if (existingInsight) {
       // Update existing insight
       await this.updateInsight(existingInsight.id, insight);

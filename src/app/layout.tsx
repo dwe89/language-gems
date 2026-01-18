@@ -12,10 +12,9 @@ import { ThemeProvider } from '../components/theme/ThemeProvider'
 import { ToastProvider } from '../components/ui/use-toast';
 import { StructuredData } from '../components/seo/SEOWrapper'
 import { getOrganizationSchema, getWebsiteSchema } from '../lib/seo/structuredData'
-import { ChatbotProvider } from '../components/providers/ChatbotProvider'
-import ChatbotWrapper from '../components/ui/ChatbotWrapper'
 import * as Sentry from '@sentry/nextjs'
 import { ServiceWorkerRegistration } from '../components/ServiceWorkerRegistration'
+import { CapacitorProvider, MobileTabBar, MobileAuthGate } from '../components/capacitor';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -135,22 +134,28 @@ export function generateMetadata(): Metadata {
       </head>
       <body className={`${inter.variable} ${cinzel.variable} ${pirataOne.variable} font-sans`}>
         <StructuredData data={globalStructuredData} />
-        <SupabaseProvider>
-          <AuthProvider>
-            <CartProvider>
-              <ThemeProvider>
-                <ToastProvider>
-                  <ChatbotProvider>
-                    <Suspense fallback={<div>Loading...</div>}>
-                      <ClientLayout>{children}</ClientLayout>
-                    </Suspense>
-                    <ChatbotWrapper />
-                  </ChatbotProvider>
-                </ToastProvider>
-              </ThemeProvider>
-            </CartProvider>
-          </AuthProvider>
-        </SupabaseProvider>
+        <CapacitorProvider>
+          <SupabaseProvider>
+            <AuthProvider>
+              <MobileAuthGate>
+                <CartProvider>
+                  <ThemeProvider>
+                    <ToastProvider>
+                      <Suspense fallback={
+                        <div className="fixed inset-0 bg-[#1a1a2e] flex items-center justify-center z-[99998]">
+                          {/* Matches splash screen background - no visible content to avoid double logo */}
+                        </div>
+                      }>
+                        <ClientLayout>{children}</ClientLayout>
+                      </Suspense>
+                    </ToastProvider>
+                  </ThemeProvider>
+                </CartProvider>
+                <MobileTabBar />
+              </MobileAuthGate>
+            </AuthProvider>
+          </SupabaseProvider>
+        </CapacitorProvider>
         <ServiceWorkerRegistration />
         <Analytics />
         <Script src="/console-tests.js" strategy="afterInteractive" />

@@ -70,7 +70,7 @@ export class GemsAnalyticsService {
     );
     this.dualTrackService = new DualTrackAnalyticsService(this.supabase);
   }
-  
+
   /**
    * Get comprehensive gems analytics for a student
    * OPTIMIZED: Uses parallel queries and single gem_events fetch
@@ -78,7 +78,7 @@ export class GemsAnalyticsService {
   async getStudentGemsAnalytics(studentId: string): Promise<StudentGemsAnalytics> {
     try {
       console.log('🔍 [GEMS ANALYTICS] Loading analytics for student:', studentId);
-      
+
       // Calculate time boundaries once
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -101,20 +101,20 @@ export class GemsAnalyticsService {
           .not('gems_total', 'is', null)
           .order('started_at', { ascending: false })
           .limit(100),
-        
+
         // Get gem collection count
         this.supabase
           .from('vocabulary_gem_collection')
           .select('mastery_level', { count: 'exact', head: true })
           .eq('student_id', studentId),
-        
+
         // 🚀 OPTIMIZATION: Get ALL gem events in a SINGLE query instead of 4 separate queries
         // This replaces: masteryGemsData, todaysMasteryGemsData, getTodaysActivityGems, getTodaysMasteryGems, getTodaysGrammarGems
         this.supabase
           .from('gem_events')
           .select('gem_rarity, gem_type, created_at')
           .eq('student_id', studentId),
-        
+
         // Get XP breakdown
         this.dualTrackService.getXPBreakdown(studentId)
       ]);
@@ -128,8 +128,11 @@ export class GemsAnalyticsService {
       const allGemEvents = allGemEventsResult.data || [];
 
       // Calculate totals from sessions
-      const totalXP = sessions.reduce((sum, s) => sum + (s.xp_earned || 0), 0);
-      
+      // Use consolidated metrics for Total XP if available, otherwise fallback to session sum
+      // This ensures we capture Mastery and Grammar XP which might not be in enhanced_game_sessions
+      const sessionsXP = sessions.reduce((sum, s) => sum + (s.xp_earned || 0), 0);
+      const totalXP = xpBreakdown?.totalXP || sessionsXP;
+
       // Calculate level (simplified - 1000 XP per level)
       const currentLevel = Math.floor(totalXP / 1000) + 1;
       const xpToNextLevel = 1000 - (totalXP % 1000);
@@ -141,7 +144,7 @@ export class GemsAnalyticsService {
       const gemsByRarityToday: Record<GemRarity, number> = {
         new_discovery: 0, common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0
       };
-      
+
       let todaysActivityGems = 0;
       let todaysMasteryGemsCount = 0;
       let todaysGrammarGemsCount = 0;
@@ -149,18 +152,18 @@ export class GemsAnalyticsService {
       allGemEvents.forEach(gem => {
         const gemDate = new Date(gem.created_at);
         const isToday = gemDate >= today;
-        
+
         // Count mastery gems by rarity (all time)
         if (gem.gem_type === 'mastery' && gem.gem_rarity && gem.gem_rarity in gemsByRarity) {
           gemsByRarity[gem.gem_rarity as GemRarity]++;
-          
+
           // Count today's mastery gems by rarity
           if (isToday) {
             gemsByRarityToday[gem.gem_rarity as GemRarity]++;
             todaysMasteryGemsCount++;
           }
         }
-        
+
         // Count today's gems by type
         if (isToday) {
           if (gem.gem_type === 'activity') todaysActivityGems++;
@@ -177,14 +180,14 @@ export class GemsAnalyticsService {
       const gemsThisWeek = sessions.filter(s => s.started_at >= oneWeekAgo).reduce((sum, s) => sum + (s.gems_total || 0), 0);
       const gemsThisMonth = sessions.filter(s => s.started_at >= oneMonthAgo).reduce((sum, s) => sum + (s.gems_total || 0), 0);
       const averageGemsPerSession = sessions.length > 0 ? totalGems / sessions.length : 0;
-      
+
       // Find favorite game type
       const gameTypeCounts: Record<string, number> = {};
       sessions.forEach(session => {
         gameTypeCounts[session.game_type] = (gameTypeCounts[session.game_type] || 0) + 1;
       });
-      const favoriteGameType = Object.entries(gameTypeCounts).sort(([,a], [,b]) => b - a)[0]?.[0] || 'vocab-master';
-      
+      const favoriteGameType = Object.entries(gameTypeCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || 'vocab-master';
+
       // Recent sessions summary (first 10)
       const recentSessions: GemsSessionSummary[] = sessions.slice(0, 10).map(session => ({
         sessionId: session.id,
@@ -227,13 +230,13 @@ export class GemsAnalyticsService {
         masteryGemsToday: todaysMasteryGemsCount,
         grammarGemsToday: todaysGrammarGemsCount
       };
-      
+
     } catch (error) {
       console.error('Error fetching student gems analytics:', error);
       throw error;
     }
   }
-  
+
   /**
    * Get gems analytics for a class
    */
@@ -244,15 +247,15 @@ export class GemsAnalyticsService {
         .from('class_students')
         .select('student_id, profiles!inner(display_name)')
         .eq('class_id', classId);
-      
+
       if (studentsError) throw studentsError;
-      
+
       const studentIds = classStudents?.map(cs => cs.student_id) || [];
-      
+
       if (studentIds.length === 0) {
         return this.getEmptyClassAnalytics(classId);
       }
-      
+
       // Get sessions for all students in the class
       const { data: sessions, error: sessionsError } = await this.supabase
         .from('enhanced_game_sessions')
@@ -266,13 +269,13 @@ export class GemsAnalyticsService {
         `)
         .in('student_id', studentIds)
         .not('gems_total', 'is', null);
-      
+
       if (sessionsError) throw sessionsError;
-      
+
       // Calculate class totals
       const totalGems = sessions?.reduce((sum, s) => sum + (s.gems_total || 0), 0) || 0;
       const averageGemsPerStudent = studentIds.length > 0 ? totalGems / studentIds.length : 0;
-      
+
       // Calculate gem distribution
       const gemDistribution: Record<GemRarity, number> = {
         common: 0,
@@ -281,7 +284,7 @@ export class GemsAnalyticsService {
         epic: 0,
         legendary: 0
       };
-      
+
       sessions?.forEach(session => {
         if (session.gems_by_rarity) {
           Object.entries(session.gems_by_rarity).forEach(([rarity, count]) => {
@@ -289,7 +292,7 @@ export class GemsAnalyticsService {
           });
         }
       });
-      
+
       // Calculate top performers
       const studentStats: Record<string, { gems: number; xp: number }> = {};
       sessions?.forEach(session => {
@@ -299,7 +302,7 @@ export class GemsAnalyticsService {
         studentStats[session.student_id].gems += session.gems_total || 0;
         studentStats[session.student_id].xp += session.xp_earned || 0;
       });
-      
+
       const topPerformers = Object.entries(studentStats)
         .map(([studentId, stats]) => {
           const student = classStudents?.find(cs => cs.student_id === studentId);
@@ -312,7 +315,7 @@ export class GemsAnalyticsService {
         })
         .sort((a, b) => b.totalGems - a.totalGems)
         .slice(0, 10);
-      
+
       // Calculate game type breakdown
       const gameTypeStats: Record<string, { gems: number; accuracy: number; count: number }> = {};
       sessions?.forEach(session => {
@@ -323,13 +326,13 @@ export class GemsAnalyticsService {
         gameTypeStats[session.game_type].accuracy += session.accuracy_percentage || 0;
         gameTypeStats[session.game_type].count += 1;
       });
-      
+
       const gameTypeBreakdown = Object.entries(gameTypeStats).map(([gameType, stats]) => ({
         gameType,
         totalGems: stats.gems,
         averageAccuracy: stats.count > 0 ? stats.accuracy / stats.count : 0
       }));
-      
+
       return {
         classId,
         totalStudents: studentIds.length,
@@ -339,13 +342,13 @@ export class GemsAnalyticsService {
         gemDistribution,
         gameTypeBreakdown
       };
-      
+
     } catch (error) {
       console.error('Error fetching class gems analytics:', error);
       throw error;
     }
   }
-  
+
   /**
    * Get empty analytics structure for classes with no data
    */

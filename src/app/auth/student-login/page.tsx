@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { createClient } from '../../../utils/supabase/client';
+import { Capacitor } from '@capacitor/core';
 import { Gem, Gamepad2, Trophy, TrendingUp, Eye, EyeOff, User, Lock, AlertCircle } from 'lucide-react';
 import GameSlideshow from '../../../components/student/GameSlideshow';
 import StudentHeader from '../../../components/student/StudentHeader';
@@ -78,7 +79,11 @@ export default function StudentLoginPage() {
 
       // Redirect to student dashboard
       setTimeout(() => {
-        router.push('/student-dashboard');
+        if (Capacitor.isNativePlatform()) {
+          router.push('/mobile-home');
+        } else {
+          router.push('/student-dashboard');
+        }
       }, 1000);
     } catch (error: any) {
       setError(error.message || 'An unexpected error occurred');

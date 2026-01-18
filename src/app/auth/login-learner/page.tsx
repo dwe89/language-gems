@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
+import { Capacitor } from '@capacitor/core';
 import { motion } from 'framer-motion';
 import {
   Mail,
@@ -42,7 +43,11 @@ export default function LearnerLoginPage() {
 
       // Check for redirect parameter
       const redirectTo = searchParams?.get('redirectTo') || '/learner-dashboard';
-      router.push(redirectTo);
+      if (Capacitor.isNativePlatform()) {
+        router.push('/mobile-home');
+      } else {
+        router.push(redirectTo);
+      }
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Login failed');

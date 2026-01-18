@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
+import { Capacitor } from '@capacitor/core';
 import {
   BookOpen,
   Mail,
@@ -68,7 +69,12 @@ export default function TeacherLoginPage() {
 
       // Check for redirect parameter
       const redirectTo = searchParams?.get('redirectTo') || '/account';
-      router.push(redirectTo);
+
+      if (Capacitor.isNativePlatform()) {
+        router.push('/mobile-teacher-home');
+      } else {
+        router.push(redirectTo);
+      }
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -272,8 +278,8 @@ export default function TeacherLoginPage() {
               transition={{ delay: 0.9 }}
               className="mt-4 text-center"
             >
-              <Link 
-                href="/auth/forgot-password" 
+              <Link
+                href="/auth/forgot-password"
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
               >
                 Forgot your password?

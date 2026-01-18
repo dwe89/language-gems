@@ -17,6 +17,9 @@ const config = {
   distDir: '.next',
   trailingSlash: false,
 
+  // Output 'export' for mobile builds (static files), otherwise default (SSR nodes server)
+  // output: isMobileBuild ? 'export' : undefined,
+
   // Increase API route timeout for bulk operations
   experimental: {
     proxyTimeout: 120000, // 2 minutes
@@ -24,6 +27,8 @@ const config = {
 
   // Allow student subdomain for development
   async headers() {
+    // Headers are not supported in static export
+
     return [
       {
         source: '/_next/static/chunks/:path*',

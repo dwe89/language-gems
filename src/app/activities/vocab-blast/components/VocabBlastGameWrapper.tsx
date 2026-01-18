@@ -5,8 +5,7 @@ import { getBufferedGameSessionService, BufferedGameSessionService } from '../..
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
-import { VocabBlastGameSettings } from '../page';
-import VocabBlastGame from './VocabBlastGame';
+import VocabBlastGame, { VocabBlastGameSettings } from './VocabBlastGame';
 
 interface VocabBlastGameWrapperProps {
   settings: VocabBlastGameSettings;

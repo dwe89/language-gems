@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+    <key>UIUserInterfaceStyle</key>
+    <string>Dark</string>
 	<key>CFBundleDisplayName</key>
         <string>Language Gems</string>
 	<key>CFBundleExecutable</key>
@@ -45,5 +47,27 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.languagegems.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>languagegems</string>
+			</array>
+		</dict>
+	</array>
+	<!-- REQUIRED: Export Compliance - App uses standard HTTPS encryption only -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<!-- REQUIRED: Face ID usage description for biometric login -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Language Gems uses Face ID to securely and quickly log you into your account.</string>
+	<!-- Push Notifications background mode -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

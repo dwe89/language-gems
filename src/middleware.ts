@@ -24,8 +24,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // Check if this is a protected route that needs auth
-  const isProtectedRoute = (path.startsWith('/dashboard') && path !== '/dashboard/preview') ||
-    path.startsWith('/activities');
+  // MOBILE APP: Only dashboard is protected. Games/activities are public.
+  const isProtectedRoute = (path.startsWith('/dashboard') && path !== '/dashboard/preview');
 
   if (isProtectedRoute) {
     try {

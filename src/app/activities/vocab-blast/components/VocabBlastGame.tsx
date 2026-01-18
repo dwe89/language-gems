@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Pause, Play, Volume2, VolumeX, Settings } from 'lucide-react';
 import { GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
-import { VocabBlastGameSettings } from '../page';
 import { useTheme } from '../../noughts-and-crosses/components/ThemeProvider';
 import { useAudio } from '../../vocab-blast/hooks/useAudio';
 import VocabBlastEngine from './VocabBlastEngine';
@@ -13,6 +12,21 @@ import UniversalThemeSelector from '../../../../components/games/UniversalThemeS
 import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import QuickThemeSelector from '../../../../components/games/QuickThemeSelector';
 import { GAME_COMPLETION_THRESHOLDS } from '../../../../services/assignments/GameCompletionService';
+
+export interface VocabBlastGameSettings {
+  difficulty: string;
+  category: string;
+  language: string;
+  theme: string;
+  subcategory?: string;
+  mode: 'categories' | 'custom';
+  customWords?: string[];
+  timeLimit?: number;
+  // KS4-specific parameters
+  curriculumLevel?: string;
+  examBoard?: 'AQA' | 'edexcel';
+  tier?: 'foundation' | 'higher';
+}
 
 interface VocabBlastGameProps {
   settings: VocabBlastGameSettings;
@@ -47,6 +61,7 @@ interface VocabBlastGameProps {
   showAssignmentThemeSelector?: boolean;
   onToggleAssignmentThemeSelector?: () => void;
   onThemeChange?: (theme: string) => void;
+  isMobile?: boolean;
 }
 
 export interface VocabItem {
@@ -99,7 +114,8 @@ export default function VocabBlastGame({
   onAssignmentThemeChange,
   showAssignmentThemeSelector,
   onToggleAssignmentThemeSelector,
-  onThemeChange
+  onThemeChange,
+  isMobile = false
 }: VocabBlastGameProps) {
   const { themeClasses } = useTheme();
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -207,16 +223,21 @@ export default function VocabBlastGame({
   }, [isAssignmentMode, gameSessionId]);
 
   // Initialize game
+  // Initialize game state from props
   useEffect(() => {
     if (vocabulary.length > 0) {
       setAvailableWords([...vocabulary]);
-      selectNextWord();
       setGameActive(true);
-      startWordSpawning();
-      startWinConditionCheck();
-      // Don't start background music immediately - wait for user interaction
+      // Reset other states if needed
+      setGameEnded(false);
+      gameEndedRef.current = false;
     }
+  }, [vocabulary]);
 
+
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (wordSpawnRef.current) {
         clearInterval(wordSpawnRef.current);
@@ -226,7 +247,7 @@ export default function VocabBlastGame({
       }
       stopBackgroundMusic();
     };
-  }, [vocabulary]);
+  }, []);
 
   // Check win conditions periodically
   const startWinConditionCheck = () => {
@@ -315,6 +336,16 @@ export default function VocabBlastGame({
       }
     }
   }, [availableWords, gameActive]);
+
+  // Start game loops when ready (placed here to access selectNextWord)
+  useEffect(() => {
+    if (gameActive && availableWords.length > 0 && !currentWord && !gameEndedRef.current) {
+      // Only select word if we don't have one and game is active
+      selectNextWord();
+      startWordSpawning();
+      startWinConditionCheck();
+    }
+  }, [gameActive, availableWords, currentWord, selectNextWord]);
 
   const handleCorrectAnswer = useCallback(async (word: GameVocabularyWord) => {
     try {
@@ -667,23 +698,124 @@ export default function VocabBlastGame({
     );
   }
 
+  // Show intro modal before game starts
+  if (!storyDismissed) {
+    return (
+      <div className="min-h-screen relative overflow-hidden">
+        {/* Video Background */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/games/vocab-blast/images/vocab-blast.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/60" />
+
+        {/* Intro Modal */}
+        <div className="absolute inset-0 flex items-center justify-center z-20 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="bg-gradient-to-br from-slate-900/95 via-blue-900/95 to-slate-900/95 backdrop-blur-xl rounded-3xl p-6 md:p-10 max-w-lg w-full border-2 border-blue-400/30 shadow-2xl shadow-blue-500/20"
+          >
+            {/* Title */}
+            <motion.h1
+              className="text-3xl md:text-5xl font-bold text-center mb-4 md:mb-6"
+              style={{
+                background: 'linear-gradient(135deg, #60a5fa 0%, #c084fc 50%, #f472b6 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 0 40px rgba(96,165,250,0.5)'
+              }}
+            >
+              🚀 Gem Blaster
+            </motion.h1>
+
+            {/* Word to translate */}
+            <div className="text-center mb-6">
+              <p className="text-slate-300 text-sm md:text-base mb-2">Translate this word:</p>
+              <div className="bg-black/50 px-6 py-3 rounded-xl inline-block border border-blue-400/30">
+                <span className="text-2xl md:text-3xl font-bold text-white">{currentWord.word}</span>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="space-y-3 mb-8">
+              <div className="flex items-start gap-3 text-slate-200">
+                <span className="text-2xl">💎</span>
+                <p className={`${isMobile ? 'text-sm' : 'text-base'}`}>Gems will fall from the sky with different translations</p>
+              </div>
+              <div className="flex items-start gap-3 text-slate-200">
+                <span className="text-2xl">🎯</span>
+                <p className={`${isMobile ? 'text-sm' : 'text-base'}`}>Tap the gem with the <strong className="text-green-400">correct translation</strong></p>
+              </div>
+              <div className="flex items-start gap-3 text-slate-200">
+                <span className="text-2xl">🚀</span>
+                <p className={`${isMobile ? 'text-sm' : 'text-base'}`}>Your rocket will blast the gem!</p>
+              </div>
+              <div className="flex items-start gap-3 text-slate-200">
+                <span className="text-2xl">❤️</span>
+                <p className={`${isMobile ? 'text-sm' : 'text-base'}`}>You have 3 lives - don't let the correct gem escape!</p>
+              </div>
+            </div>
+
+            {/* Target */}
+            <div className="text-center mb-6">
+              <p className="text-slate-400 text-sm">Complete <span className="text-blue-400 font-bold">{targets.targetWordsLearned} words</span> to win!</p>
+            </div>
+
+            {/* Start Button */}
+            <motion.button
+              onClick={() => {
+                startMusicOnInteraction();
+                setStoryDismissed(true);
+              }}
+              className="w-full py-4 px-8 rounded-2xl font-bold text-lg md:text-xl text-white transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%)',
+                boxShadow: '0 0 30px rgba(34,197,94,0.5), inset 0 1px 0 rgba(255,255,255,0.2)'
+              }}
+              whileHover={{ scale: 1.02, boxShadow: '0 0 40px rgba(34,197,94,0.7)' }}
+              whileTap={{ scale: 0.98 }}
+            >
+              🚀 Launch Game!
+            </motion.button>
+
+            {/* Skip hint */}
+            <p className="text-center text-slate-500 text-xs mt-4">
+              Music will start when you tap Launch
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Game UI Overlay */}
       <div className="absolute inset-0 z-10 pointer-events-none">
-        {/* Top Menu Bar - Single Line Layout */}
-        <div className="flex items-center justify-between p-3 md:p-4 pointer-events-auto bg-black/40 backdrop-blur-sm border-b border-white/10">
+        {/* Top Menu Bar - Responsive Layout */}
+        <div className={`
+          flex items-center justify-between pointer-events-auto bg-black/40 backdrop-blur-sm border-b border-white/10
+          ${isMobile ? 'pt-12 pb-2 px-3 items-start' : 'p-3 md:p-4'}
+        `}>
           {/* Left Section: Menu, Pause, Settings */}
           <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={isAssignmentMode ? onBackToAssignment : onBackToMenu}
-              className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
+              className={`flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20 ${isMobile ? 'px-3 py-2' : ''}`}
             >
-              <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">{isAssignmentMode ? 'Back' : 'Menu'}</span>
+              <ArrowLeft className="w-4 h-4 md:w-4 md:h-4" />
+              <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>{isAssignmentMode ? 'Back' : 'Menu'}</span>
             </button>
 
-            {!isAssignmentMode && (
+            {!isMobile && !isAssignmentMode && (
               <button
                 onClick={togglePause}
                 className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
@@ -693,7 +825,6 @@ export default function VocabBlastGame({
               </button>
             )}
 
-            {/* Settings button */}
             {onOpenSettings && (
               <motion.button
                 onClick={() => {
@@ -704,19 +835,18 @@ export default function VocabBlastGame({
                     onOpenSettings();
                   }
                 }}
-                className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                className={`flex items-center justify-center p-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20 ${isMobile ? 'w-9 h-9' : 'px-3 md:px-4 py-2 md:py-2.5 gap-2'}`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title={isAssignmentMode ? "Change Theme" : "Customize your game: Change Language, Level, Topic & Theme"}
+                title={isAssignmentMode ? "Change Theme" : "Game Settings"}
               >
                 <Settings className="h-5 w-5 md:h-6 md:w-6" />
-                <span className="hidden md:inline">Game Settings</span>
-                <span className="md:hidden">Settings</span>
+                {!isMobile && <span className="hidden md:inline">Game Settings</span>}
               </motion.button>
             )}
 
-            {/* Quick Theme Selector */}
-            {!isAssignmentMode && onThemeChange && (
+            {/* Quick Theme Selector - Desktop Only for now */}
+            {!isMobile && !isAssignmentMode && onThemeChange && (
               <QuickThemeSelector
                 currentTheme={settings.theme}
                 onThemeChange={(theme) => onThemeChange(theme)}
@@ -727,68 +857,48 @@ export default function VocabBlastGame({
             )}
           </div>
 
-          {/* Center Section: Title */}
-          <div className="text-center">
-            <h1 className="text-lg md:text-xl font-bold text-white">{getThemeTitle()}</h1>
-          </div>
+          {/* Center Title - Hidden on small mobile screens to save space for stats */}
+          {!isMobile && (
+            <div className="text-center absolute left-1/2 transform -translate-x-1/2">
+              <h1 className="text-lg md:text-xl font-bold text-white whitespace-nowrap">{getThemeTitle()}</h1>
+            </div>
+          )}
 
-          {/* Right Section: Stats and Controls - Spread out */}
-          <div className="flex items-center gap-6 md:gap-8">
-            {/* Progress Stats - Spread out horizontally */}
-            <div className="flex items-center gap-4 md:gap-6 text-white">
-              <motion.div
-                className="text-lg md:text-xl font-bold flex items-center gap-2"
-                animate={{
-                  scale: gameStats.progressPercentage >= 80 ? [1, 1.05, 1] : 1,
-                  color: gameStats.progressPercentage >= 80 ? '#10B981' : '#FFFFFF'
-                }}
-                transition={{ duration: 0.5, repeat: gameStats.progressPercentage >= 80 ? Infinity : 0 }}
-              >
-                🎯 {Math.round(gameStats.progressPercentage)}%
-              </motion.div>
+          {/* Right Section: Stats */}
+          <div className="flex items-center gap-3">
+            {/* Progress Stats */}
+            <div className={`flex items-center ${isMobile ? 'gap-2 text-xs' : 'gap-4 md:gap-6 text-white'}`}>
 
-              <div className="text-sm md:text-base font-medium">
-                Score: {gameStats.score}/{gameStats.targetScore}
+              {/* Score - Compact on mobile */}
+              <div className={`${isMobile ? 'bg-black/40 px-2 py-1 rounded' : 'text-sm md:text-base font-medium'}`}>
+                <span className="text-amber-400 font-bold">{gameStats.score}</span>
+                <span className="opacity-70">/{gameStats.targetScore}</span>
               </div>
 
-              <div className="text-sm md:text-base font-medium">
-                Words: {gameStats.wordsLearned}/{gameStats.targetWordsLearned}
-              </div>
-
-              <div className="flex items-center gap-2 text-sm md:text-base font-medium">
-                <span>Lives:</span>
-                <div className="flex gap-1">
-                  {Array.from({ length: gameStats.lives }, (_, i) => (
-                    <motion.span
-                      key={`heart-${i}`}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="text-red-500"
-                    >
-                      ❤️
-                    </motion.span>
-                  ))}
-                  {Array.from({ length: 3 - gameStats.lives }, (_, i) => (
-                    <motion.span
-                      key={`empty-${i}`}
-                      initial={{ scale: 1 }}
-                      animate={{ scale: 0.8, opacity: 0.5 }}
-                      className="text-gray-500"
-                    >
-                      🖤
-                    </motion.span>
-                  ))}
-                </div>
+              {/* Lives - Icons only on mobile */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: gameStats.lives }, (_, i) => (
+                  <motion.span
+                    key={`heart-${i}`}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className={`${isMobile ? 'text-sm' : 'text-lg'} text-red-500`}
+                  >
+                    ❤️
+                  </motion.span>
+                ))}
               </div>
             </div>
 
-            {/* Mute Button */}
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
-            >
-              {soundEnabled ? <Volume2 className="w-3 h-3 md:w-4 md:h-4" /> : <VolumeX className="w-3 h-3 md:w-4 md:h-4" />}
-            </button>
+            {/* Mute Button - Desktop only usually, or simplified */}
+            {!isMobile && (
+              <button
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
+              >
+                {soundEnabled ? <Volume2 className="w-3 h-3 md:w-4 md:h-4" /> : <VolumeX className="w-3 h-3 md:w-4 md:h-4" />}
+              </button>
+            )}
           </div>
         </div>
 

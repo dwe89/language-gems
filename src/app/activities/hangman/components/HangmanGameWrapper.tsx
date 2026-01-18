@@ -35,6 +35,7 @@ interface HangmanGameWrapperProps {
   toggleMusic?: () => void;
   isMusicEnabled?: boolean;
   onThemeChange?: (theme: string) => void;
+  isMobile?: boolean;
 }
 
 interface GameVocabularyWord {
@@ -575,6 +576,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
         toggleMusic={props.toggleMusic}
         isMusicEnabled={props.isMusicEnabled}
         onThemeChange={props.onThemeChange}
+        isMobile={props.isMobile}
       />
     </>
   );
